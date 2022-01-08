@@ -1,8 +1,12 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2580
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Bold;
 \f3\fswiss\fcharset0 Helvetica-Oblique;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red2\green2\blue2;}
-{\*\expandedcolortbl;;\csgray\c0;\csgenericrgb\c784\c784\c784;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red2\green2\blue2;\red0\green0\blue255;
+\red0\green0\blue0;\red101\green76\blue29;\red0\green0\blue109;\red32\green108\blue135;\red19\green118\blue70;
+\red144\green1\blue18;\red15\green112\blue1;}
+{\*\expandedcolortbl;;\csgray\c0;\csgenericrgb\c784\c784\c784;\cssrgb\c0\c0\c100000;
+\cssrgb\c0\c0\c0;\cssrgb\c47451\c36863\c14902;\cssrgb\c0\c6275\c50196;\cssrgb\c14902\c49804\c60000;\cssrgb\c3529\c52549\c34510;
+\cssrgb\c63922\c8235\c8235;\cssrgb\c0\c50196\c0;}
 \deftab720
 \pard\pardeftab720\sl300\partightenfactor0
 
@@ -19,25 +23,53 @@ cargo doc --open\
 \
 \pard\pardeftab720\sl420\partightenfactor0
 
-\f1\fs48 \cf3 \CocoaLigature1 http://www.roguebasin.com/index.php?title=Category:Articles\
+\f1\fs48 \cf3 \CocoaLigature1 http://www.roguebasin.com/index.php?title=How_to_Write_a_Roguelike_in_15_Steps\
+http://www.roguebasin.com/index.php?title=Category:Articles\
 https://www.reddit.com/r/roguelikedev\
 http://malazan.wikia.com/wiki/Malazan_Wiki\
 https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguelikes/\
+\
+
+\f2\b type state\
+
+\f1\b0 encodes state transitions into the type system so bad operations are impossible\
+	https://cliffle.com/blog/rust-typestate\
+\pard\pardeftab720\sl480\partightenfactor0
+
+\f0\fs34 \cf4 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec4 fn\cf5 \strokec5  \cf6 \strokec6 valid_response\cf5 \strokec5 (\cf7 \strokec7 r\cf5 \strokec5 : \cf8 \strokec8 HttpResponse\cf5 \strokec5 ) \{\
+    \cf7 \strokec7 r\cf5 \strokec5 .\cf6 \strokec6 status_line\cf5 \strokec5 (\cf9 \strokec9 200\cf5 \strokec5 , \cf10 \strokec10 "OK"\cf5 \strokec5 )\cf11 \strokec11                           // required\cf5 \strokec5 \
+      .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "X-Unexpected"\cf5 \strokec5 , \cf10 \strokec10 "Spanish-Inquisition"\cf5 \strokec5 )\cf11 \strokec11   // zero or more\cf5 \strokec5 \
+      .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "Content-Length"\cf5 \strokec5 , \cf10 \strokec10 "6"\cf5 \strokec5 )                  \
+      .\cf6 \strokec6 body\cf5 \strokec5 (\cf10 \strokec10 "Hello!"\cf5 \strokec5 )\cf11 \strokec11                                  // optional\cf5 \strokec5 \
+\}\
+\
+\cf4 \strokec4 fn\cf5 \strokec5  \cf6 \strokec6 broken_response_1\cf5 \strokec5 (\cf7 \strokec7 r\cf5 \strokec5 : \cf8 \strokec8 HttpResponse\cf5 \strokec5 ) \{\
+    \cf7 \strokec7 r\cf5 \strokec5 .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "X-Unexpected"\cf5 \strokec5 , \cf10 \strokec10 "Spanish-Inquisition"\cf5 \strokec5 )\cf11 \strokec11  // missing status line\cf5 \strokec5 \
+\}\
+\
+\cf4 \strokec4 fn\cf5 \strokec5  \cf6 \strokec6 broken_response_2\cf5 \strokec5 (\cf7 \strokec7 r\cf5 \strokec5 : \cf8 \strokec8 HttpResponse\cf5 \strokec5 ) \{\
+    \cf7 \strokec7 r\cf5 \strokec5 .\cf6 \strokec6 status_line\cf5 \strokec5 (\cf9 \strokec9 200\cf5 \strokec5 , \cf10 \strokec10 "OK"\cf5 \strokec5 )\
+      .\cf6 \strokec6 body\cf5 \strokec5 (\cf10 \strokec10 "Hello!"\cf5 \strokec5 )\
+      .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "X-Unexpected"\cf5 \strokec5 , \cf10 \strokec10 "Spanish-Inquisition"\cf5 \strokec5 )\cf11 \strokec11     // must be before body\cf5 \strokec5 \
+\}\
+\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-\cf3 \
+
+\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
 Open in External App extension\
 \
 had a rustfmt.tml file:\
 max_width = 150\
 \
-\pard\pardeftab720\sl420\partightenfactor0
-\cf3 http://www.roguebasin.com/index.php?title=How_to_Write_a_Roguelike_in_15_Steps\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 Step 3 - It's a boy!\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf3 \'95\'a0Get basic IO working:\
+\f1\b0 \cf3 \'95\'a0Look at include_bytes and matches and todo macros\
+\'95\'a0Look at the awesomer-rust list\
+\'95\'a0Get basic IO working:\
 	- render a basic map\
 	- use arrow keys to make an @ move around\
 	- hard-code some impassible terrain (something simple like # is impassible)\
@@ -66,7 +98,10 @@ Step 4 - The map\
 	  (inventory item against another object)\
 	- later would have other actions like cast a spell\
 	- for NPCs this will post event(s), in some cases this could be zero events\
-\'95 Support levels larger than the screen
+\'95 Errors, and maybe warnings, should save off event stream.\
+\'95 Support levels larger than the screen\
+\'95 Do a better job with field of view?\
+	- https://www.reddit.com/r/roguelikedev/comments/qjscoh/distance_formula_for_player_field_of_view/?utm_source=share&utm_medium=ios_app&utm_name=iossmf
 \f2\b \
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
@@ -132,6 +167,7 @@ player can also use an inventory item against an object\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Add support for persistence\
+	- would it be better to use sqlite for persistence? \
 	- should state objects save a checksum to verify that loads work?\
 \'95\'a0Support a key bindings file?
 \f2\b \
@@ -151,12 +187,21 @@ Step 7 - Interaction\
 \f1\b0 \'95\'a0Add character stats, should be object tags\
 \'95 Support combat\
 	- for now this can be unarmed combat\
-	- should be tags for this
-\f2\b \
-\
-Step 8 - Data files\
+	- should be tags for this\
+\'95 Support death\
+	- should be a wizard command to roll back\
+	- probably gated by a command line option (possibly type state too)\
+\'95\'a0Need a way to rest\
+	- also add a health bar for the player\
+	- and maybe targeted and near by NPCs\
+\'95 Should be a wizard command to get combat details\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1\b0 \'95\'a0Make it easier to create new objects\
+\f2\b \cf3 \
+Step 8 - Data files\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Make it easier to create new objects\
 	- this would probably involve something like a macro rather than a config file
 \f2\b \
 \
@@ -165,59 +210,106 @@ Step 9 - Items\
 \f1\b0 \'95\'a0Randomly place items on the level\
 \'95\'a0Support picking them up\
 \'95 Support using items\
+\'95 Health pots\
 \'95 Support wielding a weapon\
 	- implicit action should use a weapon if it's equipped\
 \'95 If an NPC is killed it should drop whatever was in its inventory\
 \'95\'a0May want to support stacking\
 	- arrows? food? javelins? munitions?\
-\'95\'a0May want a config file to configure which are auto-picked up
-\f2\b \
-\
-Step 10 - Magic\
+\'95\'a0May want a config file to configure which are auto-picked up\
+\'95 Related skills should go up together (albeit more slowly)\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1\b0 \'95\'a0Add some basic spells \
+\f2\b \cf3 \
+Step 10 - Magic\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Add some basic spells \
 \'95\'a0Maybe just a few from one warren\
 \'95\'a0NPCs should also be able to cast spells (or use a particular ability that amounts to a spell)
 \f2\b \
-\
-Step 11 - Simple game\
 
-\f1\b0 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
+\f1\b0 \'95 Not sure about these\
+	- magic requires either free hands or focus weapon\
+	- maybe at high skill can do easy spells with one free hand\
+	- focus weapons are usually staffs\
+	- focus weapons can improve either all spells or a school\
+	- can melee with focus weapons\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 \
+Step 11 - Simple game\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
 	- inside is arena with spectators\
 \'95 Add the crippled god's sword\
 	- god may intercede to actually kill Rhulad\
 	- can't un-equip it\
-	- if die with it on then speed and craziness increase\
+	- if die with it on then speed and craziness increase, non-melee stats decrease\
 	- crazy 1: "You feel like you're being watched", few others like that\
 	- crazy 2: chance of seeing things that aren't there
 \f2\b \
 
 \f1\b0 	- crazy 3: often see things that aren't there, including seeing things that are there as something else\
 	- crazy 4: make random movements, miss messages (getting hit, walking into walls)\
+	- crazy 5: can't use potions or scrolls\
 \'95 Add a weapon or two that'll allow you to kill Rhulad\
 \'95 Add a vitr lake\
 	- description should say that it is eating away at the ground\
-	- use sword on lake and win the game
+	- use sword on lake and win the game\
+\'95 Probably want a speech at the start
 \f2\b \
 \
 Step 12 - Levels\
 
-\f1\b0 \'95\'a0Vitr lake should slowly expand
+\f1\b0 \'95 Need a default level, maybe shadow\
+	- bottom could have a portal into chaos\
+	- chaos portal should move? makes sense for it to be chaotic...\
+\'95 Will need to add a chaos branch\
+	- levels should be re-generated each time enter them\
+	- levels should slowly mutate?\
+	- at the bottom should be a vitr lake\
+	-\'a0vitr lake should slowly expand\
+		` may want some sort of warning before it engulfs a new square\
+		` don't think this needs to happen when player is not on that level\
+		  because chaos levels change on entry
 \f2\b \
 \
 Step 13 - Experience\
 
-\f1\b0 \'95\'a0xxx
+\f1\b0 \'95\'a0Player should level up and gain more power and new skills.\
+\'95 NPCs should have levels as well\
+\'95 Should be able to look at an NPC and get a sense of how powerful they are\
+\'95 Add support for different character classes
 \f2\b \
 \
 Step 14 - Citizens\
 
-\f1\b0 \'95\'a0xxx
+\f1\b0 \'95\'a0May want to add shop keepers. Or maybe something more akin to quarter-masters\
+   or NPCs that have unique items to sell. Maybe even roaming Trygalle trade guild\
+   could have special items.\
+\'95\'a0May want to add support for quests. Would be cool to be sent to regions in the real world.
 \f2\b \
 \
 Step 15 - Free at last
 \f1\b0 \
-\'95\'a0xxx
+\'95\'a0Switch to a web UI.\
+\'95\'a0Setup a server to allow others to play. Can maybe just host this locally.
 \f2\b \
-\
+
+\f1\b0 \'95 Need some sort of alert system:\
+	- for errors and warnings (with pointer to saved off event stream)\
+	- too many concurrent connections (ie system starts to bog down)\
+	- persistent connections (user connection stays open for days)\
+	- total number of connections spikes (dos attack or maybe just busy)\
+	- took too long to service HTTP request\
+	- failed to open connection\
+\'95\'a0May want to kick people if they are idle too long\
+	- might happen automatically with TCP\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 * Play some other games\
+	Brogue\
+	Caves of Qud\
+	Dwarf Fortress\
 }
