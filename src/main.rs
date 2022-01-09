@@ -44,5 +44,6 @@ fn main() {
     //	info!(root_logger, "started up"; "seed" => options.seed, "on" => local.to_rfc2822());
 
     let level = Level::new();
-    terminal::run(root_logger, level);
+    let mut terminal = terminal::Terminal::new(root_logger, level);
+    terminal.run();
 }
