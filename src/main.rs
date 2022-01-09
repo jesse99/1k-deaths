@@ -1,16 +1,17 @@
 #[macro_use]
-extern crate slog;
-extern crate termion;
+extern crate slog; // for info!, debug!, etc
 
 use slog::Logger;
-use sloggers::Build;
+use sloggers::Build; // for build trait
 use std::cmp::min;
 use std::collections::HashMap;
-use std::fmt;
-use std::io::{stdin, stdout, Write};
+use std::fmt::{self, Formatter};
+use std::io::{self, stdin, stdout, Write};
+use std::panic;
+use std::path::Path;
 use std::process;
-use std::str::FromStr;
-use termion::input::TermRead;
+use std::str::FromStr; // for from_str trait
+use termion::input::TermRead; // for keys trait
 use termion::raw::IntoRawMode;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -45,7 +46,7 @@ impl Point {
 }
 
 impl fmt::Display for Point {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
@@ -176,7 +177,7 @@ fn handle_input(key: termion::event::Key, level: &mut Level) -> GameState {
 }
 
 fn restore_terminal() {
-    let mut stdout = std::io::stdout();
+    let mut stdout = io::stdout();
     let _ = write!(
         stdout,
         "{}{}{}{}",
@@ -191,20 +192,22 @@ fn restore_terminal() {
     let _ = process::Command::new("reset").output(); // new line mode isn't reset w/o this
 }
 
+// Note that logging is async which should be OK as long as we continue to unwind
+// on panics (though note that aborting would shrink binary size).
 fn make_logger() -> Logger {
     // let severity = match sloggers::types::Severity::from_str(&options.log_level) {
     let severity = match sloggers::types::Severity::from_str("debug") {
         Ok(l) => l,
         Err(_) => {
             eprintln!("--log-level should be critical, error, warning, info, debug, or trace");
-            std::process::exit(1);
+            process::exit(1);
         }
     };
 
     // "event" => event			uses slog::Value trait (so that output is structured)
     // "event" => %event		uses Display trait
     // "event" => ?event		uses Debug trait
-    let path = std::path::Path::new("1k-deaths.log");
+    let path = Path::new("1k-deaths.log");
     let mut builder = sloggers::file::FileLoggerBuilder::new(path);
     builder.format(sloggers::types::Format::Compact);
     builder.overflow_strategy(sloggers::types::OverflowStrategy::Block); // TODO: logging is async which is kinda lame
@@ -231,8 +234,8 @@ fn main() {
     )
     .unwrap();
 
-    let old_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |arg| {
+    let old_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |arg| {
         restore_terminal();
         old_hook(arg);
     }));
