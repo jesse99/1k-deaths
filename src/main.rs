@@ -1,10 +1,15 @@
+#[macro_use]
+extern crate slog;
 extern crate termion;
 
+use slog::Logger;
+use sloggers::Build;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{stdin, stdout, Write};
 use std::process;
+use std::str::FromStr;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
@@ -186,7 +191,35 @@ fn restore_terminal() {
     let _ = process::Command::new("reset").output(); // new line mode isn't reset w/o this
 }
 
+fn make_logger() -> Logger {
+    // let severity = match sloggers::types::Severity::from_str(&options.log_level) {
+    let severity = match sloggers::types::Severity::from_str("debug") {
+        Ok(l) => l,
+        Err(_) => {
+            eprintln!("--log-level should be critical, error, warning, info, debug, or trace");
+            std::process::exit(1);
+        }
+    };
+
+    // "event" => event			uses slog::Value trait (so that output is structured)
+    // "event" => %event		uses Display trait
+    // "event" => ?event		uses Debug trait
+    let path = std::path::Path::new("1k-deaths.log");
+    let mut builder = sloggers::file::FileLoggerBuilder::new(path);
+    builder.format(sloggers::types::Format::Compact);
+    builder.overflow_strategy(sloggers::types::OverflowStrategy::Block); // TODO: logging is async which is kinda lame
+    builder.source_location(sloggers::types::SourceLocation::None);
+    builder.level(severity);
+    builder.truncate();
+    builder.build().unwrap()
+}
+
 fn main() {
+    let root_logger = make_logger();
+    let local = chrono::Local::now();
+    info!(root_logger, "started up"; "on" => local.to_rfc2822(), "version" => env!("CARGO_PKG_VERSION"));
+    //	info!(root_logger, "started up"; "seed" => options.seed, "on" => local.to_rfc2822());
+
     let stdout = stdout();
     let mut stdout = stdout.lock().into_raw_mode().unwrap();
     write!(
@@ -214,9 +247,11 @@ fn main() {
         render(&mut stdout, &level);
 
         if let Some(c) = key_iter.next() {
-            state = handle_input(c.unwrap(), &mut level);
+            let c = c.unwrap();
+            debug!(root_logger, "input"; "key" => ?c);
+            state = handle_input(c, &mut level);
         } else {
-            panic!("Couldn't read keys");
+            panic!("Couldn't read the next key");
         }
     }
     restore_terminal();
