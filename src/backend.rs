@@ -14,24 +14,23 @@ use event::Event;
 use level::Level;
 use pov::PoV;
 
-// define a Game object with
-//    event stream vector
-//    level object
-//    later other state objects, eg NPCs in view
-// when an event is posted notify all the state objects
-trait EventPosted {
-    fn posted(&mut self, event: Event);
-}
-
+/// Top-level backend object encapsulating the game state.
 pub struct Game {
     // This is the canonical state of the game.
     stream: Vec<Event>,
 
     // These are synthesized state objects that store state based on the event stream
     // to make it easier to write the backend logic and render the UI. When a new event
-    // is posted the posted event for each of these is called.
+    // is added to the stream the posted method is called for each of these.
     level: Level,
     pov: PoV,
+}
+
+mod details {
+    /// View into game after posting an event to Level.
+    pub struct Game1<'a> {
+        pub level: &'a super::Level,
+    }
 }
 
 impl Game {
@@ -137,7 +136,14 @@ impl Game {
 
     fn post(&mut self, event: Event) {
         self.stream.push(event);
+
+        // This is the type state pattern: as events are posted new state
+        // objects are updated and upcoming state objects can safely reference
+        // them. To enforce this at compile time Game1, Game2, etc objects
+        // are used to provide views into Game.
         self.level.posted(event);
-        self.pov.posted(event);
+
+        let game1 = details::Game1 { level: &self.level };
+        self.pov.posted(&game1, event);
     }
 }

@@ -1,7 +1,6 @@
 use super::event::Event;
 use super::point::Point;
 use super::size::Size;
-use super::EventPosted;
 use fnv::FnvHashMap;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -29,20 +28,7 @@ impl Level {
         }
     }
 
-    pub fn can_move(&self, dx: i32, dy: i32) -> bool {
-        let new_loc = Point::new(self.player.x + dx, self.player.y + dy);
-        match self.terrain.get(&new_loc).unwrap() {
-            Terrain::ClosedDoor => false,
-            Terrain::DeepWater => false,
-            Terrain::ShallowWater => true,
-            Terrain::Wall => false,
-            Terrain::Ground => true,
-        }
-    }
-}
-
-impl EventPosted for Level {
-    fn posted(&mut self, event: Event) {
+    pub fn posted(&mut self, event: Event) {
         match event {
             Event::NewLevel { width, height } => {
                 self.size = Size::new(width, height);
@@ -55,5 +41,16 @@ impl EventPosted for Level {
             Event::PlayerMoved(loc) => self.player = loc,
             _ => (),
         };
+    }
+
+    pub fn can_move(&self, dx: i32, dy: i32) -> bool {
+        let new_loc = Point::new(self.player.x + dx, self.player.y + dy);
+        match self.terrain.get(&new_loc).unwrap() {
+            Terrain::ClosedDoor => false,
+            Terrain::DeepWater => false,
+            Terrain::ShallowWater => true,
+            Terrain::Wall => false,
+            Terrain::Ground => true,
+        }
     }
 }

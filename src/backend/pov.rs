@@ -1,8 +1,8 @@
+use super::details::Game1;
 use super::event::Event;
 use super::fov::FoV;
 use super::level::{Level, Terrain};
 use super::point::Point;
-use super::EventPosted;
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -20,6 +20,30 @@ impl PoV {
         }
     }
 
+    pub fn posted(&mut self, game: &Game1, event: Event) {
+        match event {
+            Event::NewGame => self.dirty = true,
+            Event::NewLevel {
+                width: _,
+                height: _,
+            } => self.dirty = true,
+            Event::SetTerrain(loc, new_terrain) => {
+                // Only dirty if the terrain change was something that would
+                // change visibility.
+                let old_terrain = game.level.terrain.get(&loc).unwrap_or(&Terrain::Wall);
+                let old_blocks = blocks_los(*old_terrain);
+                let new_blocks = blocks_los(new_terrain);
+                if old_blocks != new_blocks {
+                    self.dirty = true;
+                }
+            }
+            // TODO: this should dirty only if the origin changes. Maybe we can add an id to PoV
+            // and check to see if loc matches that id's location.
+            Event::PlayerMoved(_loc) => self.dirty = true,
+        };
+    }
+
+    /// Returns true if loc is visible from origin.
     pub fn visible(&mut self, origin: &Point, level: &Level, loc: &Point) -> bool {
         if self.dirty {
             self.refresh(origin, level);
@@ -55,25 +79,5 @@ fn blocks_los(terrain: Terrain) -> bool {
         Terrain::ShallowWater => false,
         Terrain::Wall => true,
         Terrain::Ground => false,
-    }
-}
-
-impl EventPosted for PoV {
-    fn posted(&mut self, event: Event) {
-        match event {
-            Event::NewGame => self.dirty = true,
-            Event::NewLevel {
-                width: _,
-                height: _,
-            } => self.dirty = true,
-            Event::SetTerrain(_loc, _terrain) => {
-                // TODO: try changing the signature so that it takes a Game reference
-                // TODO: would have to add a warning that game fields may not be updated
-                // TODO: dirty only if terrain changes visibility
-                // TODO: can we do something similar with moved? maybe add an id field and check level to see if id's match?
-                self.dirty = true;
-            }
-            Event::PlayerMoved(_loc) => self.dirty = true,
-        };
     }
 }
