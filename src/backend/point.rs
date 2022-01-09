@@ -13,9 +13,9 @@ impl Point {
     }
 
     // /// top-left
-    // pub fn origin() -> Point {
-    //     Point { x: 0, y: 0 }
-    // }
+    pub fn origin() -> Point {
+        Point { x: 0, y: 0 }
+    }
 }
 
 impl fmt::Display for Point {

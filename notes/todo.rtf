@@ -76,25 +76,6 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
-\'95\'a0Switch to some sort of event sourcing design\
-\'95 Add events\
-	- new game event\
-	- reset level event\
-	- set terrain event\
-	- etc\
-\'95\'a0Add state objects\
-	- update these as events are posted\
-	- Level: hash map of Location to Square\
-	- UI\
-\'95 Add action objects\
-	- this is where the logic is, typically a dual dispatch sort of thing\
-	- for the player this either posts event(s) or writes a non-game message\
-	  eg opens a door or tells the user "You bump into the wall"\
-	- player actions will be either the implicit action (arrow keying) or a use action\
-	  (inventory item against another object)\
-	- later would have other actions like cast a spell\
-	- for NPCs this will post event(s), in some cases this could be zero events\
-\'95 Errors, and maybe warnings, should save off event stream.\
 \'95 Support levels larger than the screen\
 \'95\'a0Support messages:\
 	- should be a few lines at the bottom of the screen dedicated to messages\
@@ -103,6 +84,63 @@ max_width = 150\
 \'95 Do a better job with field of view?\
 	- https://www.reddit.com/r/roguelikedev/comments/qjscoh/distance_formula_for_player_field_of_view/?utm_source=share&utm_medium=ios_app&utm_name=iossmf
 \f2\b \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f3\i\b0 \cf3 	\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\i0\b \cf3 Step 5 - Saving/Loading\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Add support for persistence\
+	- just persist event stream\
+	- would it be better to use sqlite for persistence? how would that help?\
+	- should state objects save a checksum to verify that loads work?\
+	- would be cool to optionally update UI on load\
+	   maybe hit a key to terminate loading the stream\
+\'95 Errors, and maybe warnings, should save off event stream.\
+\'95 Support a config file?\
+	- log level\
+	- log path\
+	- key bindings\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 \
+Step 6 - It's alive! Alive!\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Add aggressive and fleeing NPCs\
+	- these move either toward or away from the player\
+	- will need a simple time system (use ints)\
+\'95 Look into Dijkstra Maps\
+	- http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps\
+	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
+\f2\b \
+\
+Step 7 - Interaction\
+
+\f1\b0 \'95\'a0Add character stats, should be object tags\
+\'95 Add action objects\
+	- this is where the logic is, typically a dual dispatch sort of thing\
+	- for the player this either posts event(s) or writes a non-game message\
+	  eg opens a door or tells the user "You bump into the wall"\
+	- player actions will be either the implicit action (arrow keying) or a use action\
+	  (inventory item against another object)\
+	- later would have other actions like cast a spell\
+	- for NPCs this will post event(s), in some cases this could be zero events\
+\'95 Support combat\
+	- for now this can be unarmed combat\
+	- should be tags for this\
+\'95 Support death\
+	- should be a wizard command to roll back\
+	- probably gated by a command line option (possibly type state too)\
+\'95\'a0Need a way to rest\
+	- also add a health bar for the player\
+	- and maybe targeted and near by NPCs\
+\'95 Should be a wizard command to get combat details\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 \
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
@@ -116,8 +154,9 @@ max_width = 150\
 \f1\i0 \
 	Brand(element)\
 	\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f3\i 	
+\f3\i \cf3 	
 \f1\i0 Binding(String) 
 \f3\i used to tie two objects together, eg a key and a door
 \f1\i0 	\
@@ -136,8 +175,9 @@ max_width = 150\
 	Player\
 	
 \f3\i 	\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1\i0 Object\
+\f1\i0 \cf3 Object\
 	name\
 	description\
 	tags: Vec<ObjectTag>\
@@ -148,8 +188,9 @@ Square\
 \f1\i0 \
 	objects: Vec<Object>\
 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f3\i terrain is semi-permanent\
+\f3\i \cf3 terrain is semi-permanent\
 stuff like munitions will transition terrain, eg to rubble\
 \
 player moving does an implicit action against objects there\
@@ -160,44 +201,9 @@ player moving does an implicit action against objects there\
 player can also use an inventory item against an object\
 	uses range of inventory item\
 	normally at least current and adjacent squares\
-	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f2\i0\b \cf3 Step 5 - Saving/Loading\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Add support for persistence\
-	- would it be better to use sqlite for persistence? \
-	- should state objects save a checksum to verify that loads work?\
-\'95\'a0Support a key bindings file?
-\f2\b \
-\
-Step 6 - It's alive! Alive!\
-
-\f1\b0 \'95\'a0Add aggressive and fleeing NPCs\
-	- these move either toward or away from the player\
-	- will need a simple time system (use ints)\
-\'95 Look into Dijkstra Maps\
-	- http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps\
-	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
-\f2\b \
-\
-Step 7 - Interaction\
-
-\f1\b0 \'95\'a0Add character stats, should be object tags\
-\'95 Support combat\
-	- for now this can be unarmed combat\
-	- should be tags for this\
-\'95 Support death\
-	- should be a wizard command to roll back\
-	- probably gated by a command line option (possibly type state too)\
-\'95\'a0Need a way to rest\
-	- also add a health bar for the player\
-	- and maybe targeted and near by NPCs\
-\'95 Should be a wizard command to get combat details\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 \
+\f2\i0\b \cf3 \
 Step 8 - Data files\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 

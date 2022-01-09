@@ -1,5 +1,5 @@
 //! Rendering and UI using termion terminal module.
-use super::backend::{GameState, Level, Point, Terrain};
+use super::backend::{Game, Point, Terrain};
 use slog::Logger;
 use std::cmp::min;
 use std::io::{stdin, stdout, Write};
@@ -8,14 +8,20 @@ use std::process;
 use termion::input::TermRead; // for keys trait
 use termion::raw::IntoRawMode;
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum GameState {
+    Running,
+    Exiting,
+}
+
 pub struct Terminal {
     root_logger: Logger,
-    level: Level,
+    game: Game,
     stdout: Box<dyn Write>,
 }
 
 impl Terminal {
-    pub fn new(root_logger: Logger, level: Level) -> Terminal {
+    pub fn new(root_logger: Logger, game: Game) -> Terminal {
         let stdout = stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -29,7 +35,7 @@ impl Terminal {
 
         Terminal {
             root_logger,
-            level,
+            game,
             stdout: Box::new(stdout),
         }
     }
@@ -53,10 +59,10 @@ impl Terminal {
 
     fn render(&mut self) {
         let (width, height) = termion::terminal_size().expect("couldn't get terminal size");
-        for y in 0..min(self.level.height as u16, height) {
-            for x in 0..min(self.level.width as u16, width) {
+        for y in 0..min(self.game.height() as u16, height) {
+            for x in 0..min(self.game.width() as u16, width) {
                 let pt = Point::new(x as i32, y as i32);
-                if pt == self.level.player {
+                if pt == self.game.player() {
                     let color = termion::color::AnsiValue::rgb(0, 0, 4);
                     let _ = write!(
                         self.stdout,
@@ -67,7 +73,7 @@ impl Terminal {
                     );
                 } else {
                     let color = termion::color::AnsiValue::grayscale(0);
-                    let symbol = match self.level.terrain.get(&pt).unwrap() {
+                    let symbol = match self.game.terrain(&pt) {
                         Terrain::DeepWater => "W",
                         Terrain::ShallowWater => "w",
                         Terrain::Wall => "#",
@@ -89,10 +95,10 @@ impl Terminal {
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
         match key {
-            termion::event::Key::Left => self.level.handle_move_player(-1, 0),
-            termion::event::Key::Right => self.level.handle_move_player(1, 0),
-            termion::event::Key::Up => self.level.handle_move_player(0, -1),
-            termion::event::Key::Down => self.level.handle_move_player(0, 1),
+            termion::event::Key::Left => self.game.move_player(-1, 0),
+            termion::event::Key::Right => self.game.move_player(1, 0),
+            termion::event::Key::Up => self.game.move_player(0, -1),
+            termion::event::Key::Down => self.game.move_player(0, 1),
             termion::event::Key::Char('q') => return GameState::Exiting,
             _ => (),
         };

@@ -10,7 +10,7 @@ use std::path::Path;
 use std::process;
 use std::str::FromStr; // for from_str trait
 
-use backend::Level;
+use backend::Game;
 
 // Note that logging is async which should be OK as long as we continue to unwind
 // on panics (though note that aborting would shrink binary size).
@@ -43,7 +43,8 @@ fn main() {
     info!(root_logger, "started up"; "on" => local.to_rfc2822(), "version" => env!("CARGO_PKG_VERSION"));
     //	info!(root_logger, "started up"; "seed" => options.seed, "on" => local.to_rfc2822());
 
-    let level = Level::new();
-    let mut terminal = terminal::Terminal::new(root_logger, level);
+    let mut game = Game::new();
+    game.start();
+    let mut terminal = terminal::Terminal::new(root_logger, game);
     terminal.run();
 }
