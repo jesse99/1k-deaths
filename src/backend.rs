@@ -9,6 +9,7 @@ mod vec2d;
 
 pub use level::Terrain;
 pub use point::Point;
+pub use size::Size;
 
 use event::Event;
 use level::Level;
@@ -47,7 +48,7 @@ impl Game {
         let height = 60;
 
         self.post(Event::NewGame);
-        self.post(Event::NewLevel { width, height });
+        self.post(Event::NewLevel(Size::new(width, height)));
         self.post(Event::PlayerMoved(Point::new(20, 10)));
 
         // Terrain defaults to ground

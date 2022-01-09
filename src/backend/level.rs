@@ -30,8 +30,8 @@ impl Level {
 
     pub fn posted(&mut self, event: Event) {
         match event {
-            Event::NewLevel { width, height } => {
-                self.size = Size::new(width, height);
+            Event::NewLevel(new_size) => {
+                self.size = new_size;
                 self.player = Point::new(20, 10); // TODO: need to do better here
                 self.terrain = FnvHashMap::default();
             }

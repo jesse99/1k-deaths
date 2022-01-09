@@ -23,10 +23,7 @@ impl PoV {
     pub fn posted(&mut self, game: &Game1, event: Event) {
         match event {
             Event::NewGame => self.dirty = true,
-            Event::NewLevel {
-                width: _,
-                height: _,
-            } => self.dirty = true,
+            Event::NewLevel(_size) => self.dirty = true,
             Event::SetTerrain(loc, new_terrain) => {
                 // Only dirty if the terrain change was something that would
                 // change visibility.
