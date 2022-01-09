@@ -1,6 +1,6 @@
 use std::fmt::{self, Formatter};
 
-/// Location within a level.
+/// Represents a point in cartesian space, typically a location within a level.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Point {
     pub x: i32,

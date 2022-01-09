@@ -1,7 +1,6 @@
 //! Rendering and UI using termion terminal module.
 use super::backend::{Game, Point, Terrain};
 use slog::Logger;
-use std::cmp::min;
 use std::io::{stdin, stdout, Write};
 use std::panic;
 use std::process;
@@ -59,30 +58,39 @@ impl Terminal {
 
     fn render(&mut self) {
         let (width, height) = termion::terminal_size().expect("couldn't get terminal size");
-        for y in 0..min(self.game.height() as u16, height) {
-            for x in 0..min(self.game.width() as u16, width) {
-                let pt = Point::new(x as i32, y as i32);
+        let width = width as i32;
+        let height = height as i32;
+
+        let start_loc = Point::new(
+            self.game.player().x - width / 2,
+            self.game.player().y - height / 2,
+        );
+        for y in 0..height {
+            for x in 0..width {
+                let pt = Point::new(start_loc.x + x, start_loc.y + y);
                 if pt == self.game.player() {
                     let color = termion::color::AnsiValue::rgb(0, 0, 4);
                     let _ = write!(
                         self.stdout,
                         "{}{}@",
-                        termion::cursor::Goto(x + 1, y + 1), // termion is 1-based
+                        termion::cursor::Goto(x as u16 + 1, y as u16 + 1), // termion is 1-based
                         // termion::color::Bg(view.bg),
                         termion::color::Fg(color)
                     );
                 } else {
                     let color = termion::color::AnsiValue::grayscale(0);
                     let symbol = match self.game.terrain(&pt) {
-                        Terrain::DeepWater => "W",
-                        Terrain::ShallowWater => "w",
-                        Terrain::Wall => "#",
-                        Terrain::Ground => ".",
+                        Some(Terrain::ClosedDoor) => "+",
+                        Some(Terrain::DeepWater) => "W",
+                        Some(Terrain::ShallowWater) => "w",
+                        Some(Terrain::Wall) => "#",
+                        Some(Terrain::Ground) => ".",
+                        None => " ",
                     };
                     let _ = write!(
                         self.stdout,
                         "{}{}{}",
-                        termion::cursor::Goto(x + 1, y + 1), // termion is 1-based
+                        termion::cursor::Goto(x as u16 + 1, y as u16 + 1), // termion is 1-based
                         // termion::color::Bg(view.bg),
                         termion::color::Fg(color),
                         symbol

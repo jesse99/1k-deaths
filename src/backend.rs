@@ -1,13 +1,18 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod event;
+mod fov;
 mod level;
 mod point;
+mod pov;
+mod size;
+mod vec2d;
 
 pub use level::Terrain;
 pub use point::Point;
 
 use event::Event;
 use level::Level;
+use pov::PoV;
 
 // define a Game object with
 //    event stream vector
@@ -26,6 +31,7 @@ pub struct Game {
     // to make it easier to write the backend logic and render the UI. When a new event
     // is posted the posted event for each of these is called.
     level: Level,
+    pov: PoV,
 }
 
 impl Game {
@@ -33,12 +39,13 @@ impl Game {
         Game {
             stream: Vec::new(),
             level: Level::new(),
+            pov: PoV::new(),
         }
     }
 
     pub fn start(&mut self) {
-        let width = 100;
-        let height = 30;
+        let width = 200;
+        let height = 60;
 
         self.post(Event::NewGame);
         self.post(Event::NewLevel { width, height });
@@ -79,14 +86,29 @@ impl Game {
         self.post(Event::SetTerrain(Point::new(32, 20), Terrain::ShallowWater));
         self.post(Event::SetTerrain(Point::new(30, 18), Terrain::ShallowWater));
         self.post(Event::SetTerrain(Point::new(30, 22), Terrain::ShallowWater));
-    }
 
-    pub fn width(&self) -> i32 {
-        self.level.width
-    }
-
-    pub fn height(&self) -> i32 {
-        self.level.height
+        // Large room
+        let room_loc = Point::new(100, 20);
+        let room_height = 30;
+        let room_width = 25;
+        for y in room_loc.y..(room_loc.y + room_height) {
+            self.post(Event::SetTerrain(Point::new(room_loc.x, y), Terrain::Wall));
+            self.post(Event::SetTerrain(
+                Point::new(room_loc.x + room_width - 1, y),
+                Terrain::Wall,
+            ));
+        }
+        for x in room_loc.x..(room_loc.x + room_width) {
+            self.post(Event::SetTerrain(Point::new(x, room_loc.y), Terrain::Wall));
+            self.post(Event::SetTerrain(
+                Point::new(x, room_loc.y + room_height - 1),
+                Terrain::Wall,
+            ));
+        }
+        self.post(Event::SetTerrain(
+            Point::new(room_loc.x, room_loc.y + room_height / 2),
+            Terrain::ClosedDoor,
+        ));
     }
 
     pub fn player(&self) -> Point {
@@ -102,12 +124,20 @@ impl Game {
         }
     }
 
-    pub fn terrain(&self, loc: &Point) -> Terrain {
-        *self.level.terrain.get(loc).unwrap()
+    /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
+    /// Otherwise return None.
+    pub fn terrain(&mut self, loc: &Point) -> Option<Terrain> {
+        // mutable because state objects may have been invalidated
+        if self.pov.visible(&self.level.player, &self.level, loc) {
+            self.level.terrain.get(loc).copied()
+        } else {
+            None
+        }
     }
 
     fn post(&mut self, event: Event) {
         self.stream.push(event);
         self.level.posted(event);
+        self.pov.posted(event);
     }
 }
