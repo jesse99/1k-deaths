@@ -1,5 +1,5 @@
 //! Rendering and UI using termion terminal module.
-use super::backend::{self, GameState, Level, Point, Terrain};
+use super::backend::{GameState, Level, Point, Terrain};
 use slog::Logger;
 use std::cmp::min;
 use std::io::{stdin, stdout, Write};
@@ -89,10 +89,10 @@ impl Terminal {
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
         match key {
-            termion::event::Key::Left => backend::handle_move_player(&mut self.level, -1, 0),
-            termion::event::Key::Right => backend::handle_move_player(&mut self.level, 1, 0),
-            termion::event::Key::Up => backend::handle_move_player(&mut self.level, 0, -1),
-            termion::event::Key::Down => backend::handle_move_player(&mut self.level, 0, 1),
+            termion::event::Key::Left => self.level.handle_move_player(-1, 0),
+            termion::event::Key::Right => self.level.handle_move_player(1, 0),
+            termion::event::Key::Up => self.level.handle_move_player(0, -1),
+            termion::event::Key::Down => self.level.handle_move_player(0, 1),
             termion::event::Key::Char('q') => return GameState::Exiting,
             _ => (),
         };
