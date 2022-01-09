@@ -59,9 +59,6 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 \f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 there\'92s a matches! macro that\'92ll return true if an expr matches a pattern
 \f0\fs34 \cf5 \expnd0\expndtw0\kerning0
 \outl0\strokewidth0 \strokec5 \
-\pard\pardeftab720\sl480\partightenfactor0
-\cf5 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
 Open in External App extension\
@@ -71,19 +68,19 @@ max_width = 150\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f2\b \cf3 Step 3 - It's a boy!\
+\f2\b \cf3 Step 4 - The map\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf3 \'95\'a0Make sure that all the TODOs are addressed
-\f2\b \
-\
-Step 4 - The map\
-
-\f1\b0 \'95\'a0Look at these:\
+\f1\b0 \cf3 \'95 Review rust notes\
+\'95\'a0Look at these:\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
-\'95 Start using modules.\
+\'95 Start using modules\
+	- create a struct for terminal\
+	- terminal should implement drop so we can get rid of the panic handler\
+	  (and hide restore_terminal)\
+	- terminal should have the run loop\
 \'95\'a0Switch to some sort of event sourcing design\
 \'95 Add events\
 	- new game event\
