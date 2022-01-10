@@ -76,12 +76,18 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
-\'95 Do a better job with field of view?\
-	- remember what was visible and render it in gray\
-	- \
 \'95\'a0Support messages:\
-	- should be a few lines at the bottom of the screen dedicated to messages\
-	- water should print a message, "You splash through the water\'94, \'93You bump into the wall\'94\
+	- add messages to backend\
+		` will need new events\
+		` messages should have some sort of priority\
+		` will need a state object with a circular buffer of messages\
+		` buffer size should be fairly large\
+		` generate some messages: "You splash through the water\'94, \'93You bump into the wall\'94\
+	- terminal needs to dedicate a few rows to show the last N messages\
+		` color these by priority\
+		` later could have a command to show the last N messages\
+			possibly with scrolling support\
+			maybe even support for searching\
 	- error and warning logging should be echoed to messages somehow\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 

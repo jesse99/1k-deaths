@@ -136,7 +136,7 @@ impl Game {
     }
 
     // TODO: probably want to return something to indicate whether a UI refresh is neccesary
-    // TODO: maybe something fine grained, like only update messages
+    // TODO: maybe something fine grained, like only need to update messages
     pub fn move_player(&mut self, dx: i32, dy: i32) {
         if self.level.can_move(dx, dy) {
             let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
@@ -145,13 +145,13 @@ impl Game {
     }
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
-    /// Otherwise return None.
+    /// Otherwise return None. This is mutable because state objects like Level merely set
+    /// a dirty flag when events are posted and may need to refresh here.
     pub fn tile(&mut self, loc: &Point) -> Tile {
-        // mutable because state objects may have been invalidated
         let tile = if self.pov.visible(&self.level.player, &self.level, loc) {
             match self.level.terrain.get(loc) {
                 Some(terrain) => Tile::Visible(*terrain),
-                None => Tile::NotVisible, // completely outside the level
+                None => Tile::NotVisible, // completely outside the level (tho want to hide this fact from the UI)
             }
         } else {
             match self.old_pov.get(loc) {
@@ -161,7 +161,10 @@ impl Game {
         };
 
         // Update the old PoV with the current PoV (this is a fast operation
-        // if the current PoV hasn't changed).
+        // if the current PoV hasn't changed). TODO: though this (and level's
+        // edition check) will be called a lot. If they show up in profiling
+        // we could add some sort of lock-like object to ensure that that is
+        // done before the UI starts calling the tile method).
         self.old_pov.update(&self.level, &self.pov);
 
         tile
