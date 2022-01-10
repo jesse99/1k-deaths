@@ -177,7 +177,9 @@ where
         let loc = Point::new(self.start.x + real_x, self.start.y + real_y);
         if !visited.contains(&loc) {
             visited.insert(loc);
-            (self.visible_tile)(loc);
+            if loc.distance2(&self.start) <= self.radius * self.radius {
+                (self.visible_tile)(loc);
+            }
             // } else {
             // 	println!("{?:}", loc);
         }
@@ -364,7 +366,7 @@ mod tests {
         let original = Vec2d::new(size, '.');
         let actual = visit_tiles(&original, size, radius);
 
-        let expected = "\n???????\n?.....?\n?.....?\n?..x..?\n?.....?\n?.....?\n???????";
+        let expected = "\n???????\n???.???\n??...??\n?..x..?\n??...??\n???.???\n???????";
         assert_eq!(actual, expected);
     }
 

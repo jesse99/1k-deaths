@@ -68,7 +68,7 @@ impl PoV {
         let mut view = FoV {
             start: *origin,
             size: level.size,
-            radius: 20, // TODO: do better with this
+            radius: 15, // TODO: do better with this
             visible_tile: |loc| {
                 self.visible.insert(loc);
             },
