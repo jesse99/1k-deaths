@@ -28,6 +28,46 @@ pub enum Tile {
     NotVisible,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum Topic {
+    // /// An operation could not be completed.
+    // Error,
+    /// Something that doesn't affect the game, e.g. bumping into a wall.
+    NonGamePlay,
+    // /// NPC was damaged (but not by the player).
+    // NpcIsDamaged, // TODO: might want to have a separate Topic for player allies
+
+    // /// NPC was attacked but not damaged (but not by the player).
+    // NpcIsNotDamaged,
+
+    // /// The player has caused damage.
+    // PlayerDidDamage,
+
+    // /// The player attacked but did no damage.
+    // PlayerDidNoDamage,
+
+    // /// The player has taken damage.
+    // PlayerIsDamaged,
+
+    // /// The player was attacked but took no damage.
+    // PlayerIsNotDamaged,
+
+    // /// The player will operate less well.
+    // PlayerIsImpaired, // TODO: probably also want a PlayerEnchanced
+
+    // /// The player is at risk of taking damage.
+    // PlayerIsThreatened,
+
+    // /// An operation was not completely successful.
+    // Warning,
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct Message {
+    pub topic: Topic,
+    pub text: String,
+}
+
 /// Top-level backend object encapsulating the game state.
 pub struct Game {
     // This is the canonical state of the game.
@@ -36,7 +76,7 @@ pub struct Game {
     // These are synthesized state objects that store state based on the event stream
     // to make it easier to write the backend logic and render the UI. When a new event
     // is added to the stream the posted method is called for each of these.
-    messages: Vec<String>,
+    messages: Vec<Message>,
     level: Level,
     pov: PoV,
     old_pov: OldPoV,
@@ -66,19 +106,17 @@ impl Game {
     }
 
     pub fn start(&mut self) {
-        self.messages.push(String::from("message 1")); // TODO: get rid of these
-        self.messages.push(String::from("message 2"));
-        self.messages.push(String::from("message 3"));
-        self.messages.push(String::from("message 4"));
-        self.messages.push(String::from("message 5"));
-        self.messages.push(String::from("message 6"));
-
         let width = 200;
         let height = 60;
 
         self.post(Event::NewGame);
         self.post(Event::NewLevel(Size::new(width, height)));
         self.post(Event::PlayerMoved(Point::new(20, 10)));
+
+        self.post(Event::AddMessage(Message {
+            topic: Topic::NonGamePlay,
+            text: String::from("Welcome to 1k-deaths!"),
+        }));
 
         // Terrain defaults to ground
         for y in 0..height {
@@ -140,7 +178,7 @@ impl Game {
         ));
     }
 
-    pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &String> {
+    pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
         let iter = self.messages.iter();
         if limit < self.messages.len() {
             iter.skip(self.messages.len() - limit)
@@ -156,9 +194,13 @@ impl Game {
     // TODO: probably want to return something to indicate whether a UI refresh is neccesary
     // TODO: maybe something fine grained, like only need to update messages
     pub fn move_player(&mut self, dx: i32, dy: i32) {
+        let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
         if self.level.can_move(dx, dy) {
-            let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
             self.post(Event::PlayerMoved(new_loc));
+        }
+
+        if let Some(message) = self.moved_message(new_loc) {
+            self.post(Event::AddMessage(message));
         }
     }
 
@@ -188,22 +230,45 @@ impl Game {
         tile
     }
 
+    fn moved_message(&self, new_loc: Point) -> Option<Message> {
+        match self.level.terrain.get(&new_loc).unwrap() {
+            Terrain::ClosedDoor => None,
+            Terrain::DeepWater => Some(Message {
+                topic: Topic::NonGamePlay,
+                text: String::from("That water is too deep."),
+            }),
+            Terrain::ShallowWater => Some(Message {
+                topic: Topic::NonGamePlay,
+                text: String::from("You splash through the water."),
+            }),
+            Terrain::Wall => Some(Message {
+                topic: Topic::NonGamePlay,
+                text: String::from("You bump into the wall."),
+            }),
+            Terrain::Ground => None,
+        }
+    }
+
     fn post(&mut self, event: Event) {
-        self.stream.push(event);
+        self.stream.push(event.clone());
 
-        // This is the type state pattern: as events are posted new state
-        // objects are updated and upcoming state objects can safely reference
-        // them. To enforce this at compile time Game1, Game2, etc objects
-        // are used to provide views into Game.
-        self.level.posted(event);
+        if let Event::AddMessage(message) = event {
+            self.messages.push(message);
+        } else {
+            // This is the type state pattern: as events are posted new state
+            // objects are updated and upcoming state objects can safely reference
+            // them. To enforce this at compile time Game1, Game2, etc objects
+            // are used to provide views into Game.
+            self.level.posted(&event);
 
-        let game1 = details::Game1 { level: &self.level };
-        self.pov.posted(&game1, event);
+            let game1 = details::Game1 { level: &self.level };
+            self.pov.posted(&game1, &event);
 
-        let game2 = details::Game2 {
-            level: &self.level,
-            pov: &self.pov,
-        };
-        self.old_pov.posted(&game2, event);
+            let game2 = details::Game2 {
+                level: &self.level,
+                pov: &self.pov,
+            };
+            self.old_pov.posted(&game2, &event);
+        }
     }
 }

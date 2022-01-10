@@ -22,16 +22,16 @@ impl PoV {
         }
     }
 
-    pub fn posted(&mut self, game: &Game1, event: Event) {
+    pub fn posted(&mut self, game: &Game1, event: &Event) {
         match event {
             Event::NewGame => self.dirty = true,
             Event::NewLevel(_size) => self.dirty = true,
             Event::SetTerrain(loc, new_terrain) => {
                 // Only dirty if the terrain change was something that would
                 // change visibility.
-                let old_terrain = game.level.terrain.get(&loc).unwrap_or(&Terrain::Wall);
+                let old_terrain = game.level.terrain.get(loc).unwrap_or(&Terrain::Wall);
                 let old_blocks = blocks_los(*old_terrain);
-                let new_blocks = blocks_los(new_terrain);
+                let new_blocks = blocks_los(*new_terrain);
                 if old_blocks != new_blocks {
                     self.dirty = true;
                 }
@@ -39,6 +39,7 @@ impl PoV {
             // TODO: this should dirty only if the origin changes. Maybe we can add an id to PoV
             // and check to see if loc matches that id's location.
             Event::PlayerMoved(_loc) => self.dirty = true,
+            _ => (),
         };
     }
 

@@ -15,13 +15,14 @@ pub fn render(stdout: &mut Box<dyn Write>, view: &View, game: &mut Game) {
             let h = (view.origin.x + x + 1) as u16; // termion is 1-based
             let v = (view.origin.y + y + 1) as u16;
             if pt == game.player() {
-                let fg = termion::color::AnsiValue::rgb(0, 0, 4);
+                let fg = Color::Blue;
+                let bg = Color::Black;
                 let _ = write!(
                     stdout,
-                    "{}{}@",
+                    "{}{}{}@",
                     termion::cursor::Goto(h, v),
-                    // termion::color::Bg(view.bg),
-                    termion::color::Fg(fg)
+                    termion::color::Bg(color::to_termion(bg)),
+                    termion::color::Fg(color::to_termion(fg))
                 );
             } else {
                 let tile = game.tile(&pt);

@@ -28,17 +28,17 @@ impl Level {
         }
     }
 
-    pub fn posted(&mut self, event: Event) {
+    pub fn posted(&mut self, event: &Event) {
         match event {
             Event::NewLevel(new_size) => {
-                self.size = new_size;
+                self.size = *new_size;
                 self.player = Point::new(20, 10); // TODO: need to do better here
                 self.terrain = FnvHashMap::default();
             }
             Event::SetTerrain(loc, terrain) => {
-                self.terrain.insert(loc, terrain);
+                self.terrain.insert(*loc, *terrain);
             }
-            Event::PlayerMoved(loc) => self.player = loc,
+            Event::PlayerMoved(loc) => self.player = *loc,
             _ => (),
         };
     }
