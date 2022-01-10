@@ -36,6 +36,7 @@ pub struct Game {
     // These are synthesized state objects that store state based on the event stream
     // to make it easier to write the backend logic and render the UI. When a new event
     // is added to the stream the posted method is called for each of these.
+    messages: Vec<String>,
     level: Level,
     pov: PoV,
     old_pov: OldPoV,
@@ -57,6 +58,7 @@ impl Game {
     pub fn new() -> Game {
         Game {
             stream: Vec::new(),
+            messages: Vec::new(),
             level: Level::new(),
             pov: PoV::new(),
             old_pov: OldPoV::new(),
@@ -64,6 +66,13 @@ impl Game {
     }
 
     pub fn start(&mut self) {
+        self.messages.push(String::from("message 1")); // TODO: get rid of these
+        self.messages.push(String::from("message 2"));
+        self.messages.push(String::from("message 3"));
+        self.messages.push(String::from("message 4"));
+        self.messages.push(String::from("message 5"));
+        self.messages.push(String::from("message 6"));
+
         let width = 200;
         let height = 60;
 
@@ -129,6 +138,15 @@ impl Game {
             Point::new(room_loc.x, room_loc.y + room_height / 2),
             Terrain::ClosedDoor,
         ));
+    }
+
+    pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &String> {
+        let iter = self.messages.iter();
+        if limit < self.messages.len() {
+            iter.skip(self.messages.len() - limit)
+        } else {
+            iter.skip(0)
+        }
     }
 
     pub fn player(&self) -> Point {
