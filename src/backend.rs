@@ -1,17 +1,20 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod event;
 mod level;
+mod message;
+mod object;
 mod old_pov;
 mod pov;
 mod primitives;
 
-pub use level::Terrain;
+pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
 
 use event::Event;
 use level::Level;
+use level::Terrain;
 use old_pov::OldPoV;
 use pov::PoV;
 
@@ -19,51 +22,11 @@ const MAX_MESSAGES: usize = 1000;
 
 pub enum Tile {
     /// player can see this
-    Visible(Terrain),
+    Visible { bg: Color, fg: Color, symbol: char },
     /// player can't see this but has in the past, note that this may not reflect the current state
-    Stale(Terrain),
+    Stale(char),
     /// player has never seen this location
     NotVisible,
-}
-
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub enum Topic {
-    // /// An operation could not be completed.
-    // Error,
-    /// Something that doesn't affect the game, e.g. bumping into a wall.
-    NonGamePlay, // TODO: might want to change this to Announcement and add an ImportantAnnouncement
-                 // /// NPC was damaged (but not by the player).
-                 // NpcIsDamaged, // TODO: might want to have a separate Topic for player allies
-
-                 // /// NPC was attacked but not damaged (but not by the player).
-                 // NpcIsNotDamaged,
-
-                 // /// The player has caused damage.
-                 // PlayerDidDamage,
-
-                 // /// The player attacked but did no damage.
-                 // PlayerDidNoDamage,
-
-                 // /// The player has taken damage.
-                 // PlayerIsDamaged,
-
-                 // /// The player was attacked but took no damage.
-                 // PlayerIsNotDamaged,
-
-                 // /// The player will operate less well.
-                 // PlayerIsImpaired, // TODO: probably also want a PlayerEnchanced
-
-                 // /// The player is at risk of taking damage.
-                 // PlayerIsThreatened,
-
-                 // /// An operation was not completely successful.
-                 // Warning,
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct Message {
-    pub topic: Topic,
-    pub text: String,
 }
 
 /// Top-level backend object encapsulating the game state.
@@ -207,13 +170,25 @@ impl Game {
     /// a dirty flag when events are posted and may need to refresh here.
     pub fn tile(&mut self, loc: &Point) -> Tile {
         let tile = if self.pov.visible(&self.level.player, &self.level, loc) {
-            match self.level.terrain.get(loc) {
-                Some(terrain) => Tile::Visible(*terrain),
-                None => Tile::NotVisible, // completely outside the level (tho want to hide this fact from the UI)
+            if *loc == self.level.player {
+                Tile::Visible {
+                    bg: Color::Black,
+                    fg: Color::Blue,
+                    symbol: '@',
+                }
+            } else {
+                match self.level.terrain.get(loc) {
+                    Some(terrain) => Tile::Visible {
+                        bg: to_back_color(*terrain),
+                        fg: to_fore_color(*terrain),
+                        symbol: to_symbol(*terrain),
+                    },
+                    None => Tile::NotVisible, // completely outside the level (tho want to hide this fact from the UI)
+                }
             }
         } else {
             match self.old_pov.get(loc) {
-                Some(terrain) => Tile::Stale(terrain),
+                Some(terrain) => Tile::Stale(to_symbol(terrain)),
                 None => Tile::NotVisible, // not visible and never seen
             }
         };
@@ -271,5 +246,35 @@ impl Game {
             };
             self.old_pov.posted(&game2, &event);
         }
+    }
+}
+
+fn to_symbol(terrain: Terrain) -> char {
+    match terrain {
+        Terrain::ClosedDoor => '+',
+        Terrain::DeepWater => 'W',
+        Terrain::ShallowWater => '~',
+        Terrain::Wall => '#',
+        Terrain::Ground => '.',
+    }
+}
+
+fn to_back_color(terrain: Terrain) -> Color {
+    match terrain {
+        Terrain::ClosedDoor => Color::Black,
+        Terrain::DeepWater => Color::LightBlue,
+        Terrain::ShallowWater => Color::LightBlue,
+        Terrain::Wall => Color::Black,
+        Terrain::Ground => Color::Black,
+    }
+}
+
+fn to_fore_color(terrain: Terrain) -> Color {
+    match terrain {
+        Terrain::ClosedDoor => Color::Green,
+        Terrain::DeepWater => Color::Blue,
+        Terrain::ShallowWater => Color::Blue,
+        Terrain::Wall => Color::Chocolate,
+        Terrain::Ground => Color::LightSlateGray,
     }
 }

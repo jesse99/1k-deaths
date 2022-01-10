@@ -77,9 +77,11 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
 \'95\'a0Add objects\
-	- should terrain be an object? would likely more code more consistent\
+	- move message into a module\
 	- objects are composed of tags\
 	- start with a door object  \
+	- add a look (or examine) command\
+		` later could support tab and shift-tab\
 	- don\'92t make Terrain public from backend\
 	- add a crappy sword and a badass sword\
 		` walking over them adds them to inventory\
@@ -106,27 +108,7 @@ max_width = 150\
 	- characters can extend the level doing stuff like digging through stone walls\
 	- add a pick axe and test this\
 	\
-Terrain                            
-\f3\i could use a builder to make these
-\f1\i0 \
-	background color       
-\f3\i unusual for other objects to have a bg color\
-	
-\f1\i0 impassible                  
-\f3\i no characters can pass thru it\
-
-\f1\i0 	material                      
-\f3\i wood, stone, metal (can affect passability, flame resistence, etc)\
-	
-\f1\i0 durability                     
-\f3\i if goes to 0 description changes and can become passable (instead of \'93wall\'94 \'93rubble\'94)
-\f1\i0 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 enum ObjectTag\
+enum ObjectTag\
 	Weapon\
 	MinDamage(i32)\
 	MaxDamage(i32)\
@@ -162,24 +144,10 @@ Terrain
 \f3\i can have multiples: non-portable weapon could also be terrain, eg ballista
 \f1\i0 \
 	
-\f3\i 	\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f1\i0 \cf3 Object\
-	name\
-	description\
-	symbol\
-	color\
-	tags: Vec<ObjectTag>\
-\
-Square      
-\f3\i assert first object has bg color and not portable
+\f3\i 	
 \f1\i0 \
-	objects: Vec<Object>\
-\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f3\i \cf3 terrain is semi-permanent\
+\f3\i terrain is semi-permanent\
 stuff like munitions will transition terrain, eg to rubble\
 \
 player moving does an implicit action against objects there\
