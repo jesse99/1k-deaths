@@ -8,6 +8,8 @@ pub struct MessagesView {
     pub size: Size,
 }
 
+// TODO: Should have a command to show a screen full of messages. Ideally
+// with support for scrolling and perhaps even searching.
 impl MessagesView {
     pub fn render(&self, stdout: &mut Box<dyn Write>, game: &Game) {
         let h = (self.origin.x + 1) as u16; // termion is 1-based

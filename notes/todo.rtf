@@ -68,7 +68,7 @@ max_width = 150\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f2\b \cf3 Step 4 - The map\
+\f2\b \cf3 Step 7 - Interaction\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95 Review rust notes\
@@ -76,53 +76,21 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
-\'95\'a0Support messages:\
-	- terminal needs to dedicate a few rows to show the last N messages\
-		` later could have a command to show the last N messages\
-			possibly with scrolling support\
-			maybe even support for searching\
-	- error and warning logging should be echoed to messages somehow\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f3\i \cf3 	\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f2\i0\b \cf3 Step 5 - Saving/Loading\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Add support for persistence\
-	- just persist event stream\
-	- would it be better to use sqlite for persistence? how would that help?\
-	- should state objects save a checksum to verify that loads work?\
-	- would be cool to optionally update UI on load\
-	   maybe hit a key to terminate loading the stream\
-\'95 Errors, and maybe warnings, should save off event stream.\
-\'95 Support a config file?\
-	- log level\
-	- log path\
-	- key bindings\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 \
-Step 6 - It's alive! Alive!\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Add aggressive and fleeing NPCs\
-	- these move either toward or away from the player\
-	- will need a simple time system (use ints)\
-\'95 Look into Dijkstra Maps\
-	- http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps\
-	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
-\f2\b \
-
-\f1\b0 \'95 May want to add a backend/primitives module\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 \
-Step 7 - Interaction\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Add character stats, should be object tags\
+\'95\'a0Add objects\
+	- everything but the terrain should be an object\
+	- objects are composed of tags\
+	- start with a door object\
+	- add a crappy sword and a badass sword\
+		` walking over them adds them to inventory\
+		` could have little vaults with swords\
+		` maybe make them armories\
+		` could have a sign object, step on it and it says \'93You see a sign saying \'91Lesser Armory\'92\'94\
+	- add a doorman\
+		` moves out of the way if you have a badass sword\
+		` otherwise says you are not worthy\
+	- add Rhulad \
+		` walking into him wins the game\
+		` little message, \'93After an epic fight you defeat Rhulad!\'94\
 \'95 Add action objects\
 	- this is where the logic is, typically a dual dispatch sort of thing\
 	- for the player this either posts event(s) or writes a non-game message\
@@ -131,20 +99,9 @@ Step 7 - Interaction\
 	  (inventory item against another object)\
 	- later would have other actions like cast a spell\
 	- for NPCs this will post event(s), in some cases this could be zero events\
-\'95 Support combat\
-	- for now this can be unarmed combat\
-	- should be tags for this\
-\'95 Support death\
-	- should be a wizard command to roll back\
-	- probably gated by a command line option (possibly type state too)\
-\'95\'a0Need a way to rest\
-	- also add a health bar for the player\
-	- and maybe targeted and near by NPCs\
-\'95 Should be a wizard command to get combat details\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
-\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 enum ObjectTag\
@@ -183,6 +140,8 @@ Step 7 - Interaction\
 \f1\i0 \cf3 Object\
 	name\
 	description\
+	symbol\
+	color\
 	tags: Vec<ObjectTag>\
 \
 Square\
@@ -207,6 +166,49 @@ player can also use an inventory item against an object\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f2\i0\b \cf3 \
+Step 6 - It's alive! Alive!\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Add character stats, should be object tags\
+\'95\'a0Add aggressive and fleeing NPCs\
+	- these move either toward or away from the player\
+	- will need a simple time system (use ints)\
+\'95 Look into Dijkstra Maps\
+	- http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps\
+	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
+\f2\b \
+
+\f1\b0 \'95 May want to add a backend/primitives module\
+\'95 Support combat\
+	- for now this can be unarmed combat\
+	- should be tags for this\
+\'95 Support death\
+	- should be a wizard command to roll back\
+	- probably gated by a command line option (possibly type state too)\
+\'95\'a0Need a way to rest\
+	- also add a health bar for the player\
+	- and maybe targeted and near by NPCs\
+\'95 Should be a wizard command to get combat details\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 \
+Step 5 - Saving/Loading\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Add support for persistence\
+	- just persist event stream\
+	- would it be better to use sqlite for persistence? how would that help?\
+	- should state objects save a checksum to verify that loads work?\
+	- would be cool to optionally update UI on load\
+	   maybe hit a key to terminate loading the stream\
+\'95 Errors, and maybe warnings, should save off event stream.\
+\'95 Support a config file?\
+	- log level\
+	- log path\
+	- key bindings\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 \
 Step 8 - Data files\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
