@@ -1,18 +1,14 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
-mod color;
 mod event;
-mod fov;
 mod level;
 mod old_pov;
-mod point;
 mod pov;
-mod size;
-mod vec2d;
+mod primitives;
 
-pub use color::Color;
 pub use level::Terrain;
-pub use point::Point;
-pub use size::Size;
+pub use primitives::Color;
+pub use primitives::Point;
+pub use primitives::Size;
 
 use event::Event;
 use level::Level;

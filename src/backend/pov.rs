@@ -1,8 +1,8 @@
 use super::details::Game1;
 use super::event::Event;
-use super::fov::FoV;
 use super::level::{Level, Terrain};
-use super::point::Point;
+use super::primitives::FoV;
+use super::Point;
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events

@@ -77,9 +77,10 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
 \'95\'a0Add objects\
-	- everything but the terrain should be an object\
+	- should terrain be an object? would likely more code more consistent\
 	- objects are composed of tags\
 	- start with a door object  \
+	- don\'92t make Terrain public from backend\
 	- add a crappy sword and a badass sword\
 		` walking over them adds them to inventory\
 		` could have little vaults with swords\
@@ -100,26 +101,48 @@ max_width = 150\
 	  (inventory item against another object)\
 	- later would have other actions like cast a spell\
 	- for NPCs this will post event(s), in some cases this could be zero events\
+\'95 Levels should be unbounded\
+	- would need a default square (eg stone wall)\
+	- characters can extend the level doing stuff like digging through stone walls\
+	- add a pick axe and test this\
+	\
+Terrain                            
+\f3\i could use a builder to make these
+\f1\i0 \
+	background color       
+\f3\i unusual for other objects to have a bg color\
+	
+\f1\i0 impassible                  
+\f3\i no characters can pass thru it\
+
+\f1\i0 	material                      
+\f3\i wood, stone, metal (can affect passability, flame resistence, etc)\
+	
+\f1\i0 durability                     
+\f3\i if goes to 0 description changes and can become passable (instead of \'93wall\'94 \'93rubble\'94)
+\f1\i0 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 enum ObjectTag\
-	MeleeWeapon\
-	RangedWeapon\
+	Weapon\
 	MinDamage(i32)\
 	MaxDamage(i32)\
 	Range(i32)          
-\f3\i defaults to 1
+\f3\i ranged weapon, spell, etc
 \f1\i0 \
 	Brand(element)\
+	Portable            
+\f3\i i.e. can go into inventory
+\f1\i0 \
 	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f3\i \cf3 	
 \f1\i0 Binding(String) 
-\f3\i used to tie two objects together, eg a key and a door
+\f3\i used to associate objects, eg a key and a door
 \f1\i0 	\
 	Door(material)    
 \f3\i wood, stone, steel
@@ -132,8 +155,12 @@ max_width = 150\
 	Chest(contents) has a binding if a key is required
 \f1\i0 \
 	\
-	Character\
-	Player\
+	Character           
+\f3\i terrain, weapon, character are all individual tags
+\f1\i0 \
+	Player                 
+\f3\i can have multiples: non-portable weapon could also be terrain, eg ballista
+\f1\i0 \
 	
 \f3\i 	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
@@ -145,9 +172,8 @@ max_width = 150\
 	color\
 	tags: Vec<ObjectTag>\
 \
-Square\
-	terrain    
-\f3\i ground, wall, rubble, grass, shallow water, deep water, oil, vitr (walls should have a material, maybe use liquid with a type)
+Square      
+\f3\i assert first object has bg color and not portable
 \f1\i0 \
 	objects: Vec<Object>\
 \

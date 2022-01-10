@@ -1,6 +1,6 @@
 use super::event::Event;
-use super::point::Point;
-use super::size::Size;
+use super::Point;
+use super::Size;
 use fnv::FnvHashMap;
 
 #[derive(Clone, Copy, Eq, PartialEq)]

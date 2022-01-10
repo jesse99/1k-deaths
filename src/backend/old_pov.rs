@@ -1,8 +1,8 @@
 use super::details::Game2;
 use super::event::Event;
 use super::level::{Level, Terrain};
-use super::point::Point;
 use super::pov::PoV;
+use super::Point;
 use fnv::FnvHashMap;
 
 /// Locations that were visible to a character. Note that PoV overrides

@@ -1,7 +1,7 @@
 use super::level::Terrain;
-use super::point::Point;
-use super::size::Size;
 use super::Message;
+use super::Point;
+use super::Size;
 
 /// These are the "facts" associated with a particular game. All game state
 /// should be able to be re-constructed from the event stream.
