@@ -161,7 +161,7 @@ fn to_back_color(terrain: Terrain) -> Color {
 
 fn to_fore_color(terrain: Terrain) -> Color {
     match terrain {
-        Terrain::ClosedDoor => Color::Red,
+        Terrain::ClosedDoor => Color::Green,
         Terrain::DeepWater => Color::Blue,
         Terrain::ShallowWater => Color::Blue,
         Terrain::Wall => Color::Chocolate,
