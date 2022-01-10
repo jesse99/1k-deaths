@@ -1,5 +1,7 @@
 //! Rendering and UI using termion terminal module.
-use super::backend::{Game, Point, Terrain};
+mod color;
+
+use super::backend::{Color, Game, Point, Terrain, Tile};
 use slog::Logger;
 use std::io::{stdin, stdout, Write};
 use std::panic;
@@ -78,21 +80,28 @@ impl Terminal {
                         termion::color::Fg(color)
                     );
                 } else {
-                    let color = termion::color::AnsiValue::grayscale(0);
-                    let symbol = match self.game.terrain(&pt) {
-                        Some(Terrain::ClosedDoor) => "+",
-                        Some(Terrain::DeepWater) => "W",
-                        Some(Terrain::ShallowWater) => "w",
-                        Some(Terrain::Wall) => "#",
-                        Some(Terrain::Ground) => ".",
-                        None => " ",
+                    let tile = self.game.tile(&pt);
+                    let bg = match tile {
+                        Tile::Visible(terrain) => to_back_color(terrain), // TODO: use black if there is a character or item?
+                        Tile::Stale(_terrain) => Color::LightGrey,
+                        Tile::NotVisible => Color::Black,
+                    };
+                    let fg = match tile {
+                        Tile::Visible(terrain) => to_fore_color(terrain),
+                        Tile::Stale(_terrain) => Color::DarkGray,
+                        Tile::NotVisible => Color::Black,
+                    };
+                    let symbol = match tile {
+                        Tile::Visible(terrain) => to_symbol(terrain),
+                        Tile::Stale(terrain) => to_symbol(terrain),
+                        Tile::NotVisible => ' ',
                     };
                     let _ = write!(
                         self.stdout,
-                        "{}{}{}",
+                        "{}{}{}{}",
                         termion::cursor::Goto(x as u16 + 1, y as u16 + 1), // termion is 1-based
-                        // termion::color::Bg(view.bg),
-                        termion::color::Fg(color),
+                        termion::color::Bg(color::to_termion(bg)),
+                        termion::color::Fg(color::to_termion(fg)),
                         symbol
                     );
                 }
@@ -127,5 +136,35 @@ impl Drop for Terminal {
         let _ = write!(self.stdout, "{}", termion::clear::All);
         self.stdout.flush().unwrap();
         let _ = process::Command::new("reset").output(); // new line mode isn't reset w/o this
+    }
+}
+
+fn to_symbol(terrain: Terrain) -> char {
+    match terrain {
+        Terrain::ClosedDoor => '+',
+        Terrain::DeepWater => 'W',
+        Terrain::ShallowWater => '~',
+        Terrain::Wall => '#',
+        Terrain::Ground => '.',
+    }
+}
+
+fn to_back_color(terrain: Terrain) -> Color {
+    match terrain {
+        Terrain::ClosedDoor => Color::Black,
+        Terrain::DeepWater => Color::LightBlue,
+        Terrain::ShallowWater => Color::LightBlue,
+        Terrain::Wall => Color::Black,
+        Terrain::Ground => Color::Black,
+    }
+}
+
+fn to_fore_color(terrain: Terrain) -> Color {
+    match terrain {
+        Terrain::ClosedDoor => Color::Red,
+        Terrain::DeepWater => Color::Blue,
+        Terrain::ShallowWater => Color::Blue,
+        Terrain::Wall => Color::Chocolate,
+        Terrain::Ground => Color::LightSlateGray,
     }
 }

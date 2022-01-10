@@ -1,19 +1,32 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
+mod color;
 mod event;
 mod fov;
 mod level;
+mod old_pov;
 mod point;
 mod pov;
 mod size;
 mod vec2d;
 
+pub use color::Color;
 pub use level::Terrain;
 pub use point::Point;
 pub use size::Size;
 
 use event::Event;
 use level::Level;
+use old_pov::OldPoV;
 use pov::PoV;
+
+pub enum Tile {
+    /// player can see this
+    Visible(Terrain),
+    /// player can't see this but has in the past, note that this may not reflect the current state
+    Stale(Terrain),
+    /// player has never seen this location
+    NotVisible,
+}
 
 /// Top-level backend object encapsulating the game state.
 pub struct Game {
@@ -25,12 +38,18 @@ pub struct Game {
     // is added to the stream the posted method is called for each of these.
     level: Level,
     pov: PoV,
+    old_pov: OldPoV,
 }
 
 mod details {
     /// View into game after posting an event to Level.
     pub struct Game1<'a> {
         pub level: &'a super::Level,
+    }
+
+    pub struct Game2<'a> {
+        pub level: &'a super::Level,
+        pub pov: &'a super::PoV,
     }
 }
 
@@ -40,6 +59,7 @@ impl Game {
             stream: Vec::new(),
             level: Level::new(),
             pov: PoV::new(),
+            old_pov: OldPoV::new(),
         }
     }
 
@@ -126,13 +146,25 @@ impl Game {
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
     /// Otherwise return None.
-    pub fn terrain(&mut self, loc: &Point) -> Option<Terrain> {
+    pub fn tile(&mut self, loc: &Point) -> Tile {
         // mutable because state objects may have been invalidated
-        if self.pov.visible(&self.level.player, &self.level, loc) {
-            self.level.terrain.get(loc).copied()
+        let tile = if self.pov.visible(&self.level.player, &self.level, loc) {
+            match self.level.terrain.get(loc) {
+                Some(terrain) => Tile::Visible(*terrain),
+                None => Tile::NotVisible, // completely outside the level
+            }
         } else {
-            None
-        }
+            match self.old_pov.get(loc) {
+                Some(terrain) => Tile::Stale(terrain),
+                None => Tile::NotVisible, // not visible and never seen
+            }
+        };
+
+        // Update the old PoV with the current PoV (this is a fast operation
+        // if the current PoV hasn't changed).
+        self.old_pov.update(&self.level, &self.pov);
+
+        tile
     }
 
     fn post(&mut self, event: Event) {
@@ -146,5 +178,11 @@ impl Game {
 
         let game1 = details::Game1 { level: &self.level };
         self.pov.posted(&game1, event);
+
+        let game2 = details::Game2 {
+            level: &self.level,
+            pov: &self.pov,
+        };
+        self.old_pov.posted(&game2, event);
     }
 }

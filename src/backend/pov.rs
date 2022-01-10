@@ -8,6 +8,7 @@ use fnv::FnvHashSet;
 /// Field of View for a character. These are invalidated for certain events
 /// (e.g. terrain changes).
 pub struct PoV {
+    edition: u32, // incremented each time visible is updated
     visible: FnvHashSet<Point>,
     dirty: bool, // true if visible is invalid
 }
@@ -15,6 +16,7 @@ pub struct PoV {
 impl PoV {
     pub fn new() -> PoV {
         PoV {
+            edition: 0,
             visible: FnvHashSet::default(),
             dirty: true,
         }
@@ -40,10 +42,20 @@ impl PoV {
         };
     }
 
+    pub fn edition(&self) -> u32 {
+        self.edition
+    }
+
+    /// Returns an iterator covering all the visible locations.
+    pub fn locations(&self) -> std::collections::hash_set::Iter<'_, Point> {
+        self.visible.iter()
+    }
+
     /// Returns true if loc is visible from origin.
     pub fn visible(&mut self, origin: &Point, level: &Level, loc: &Point) -> bool {
         if self.dirty {
             self.refresh(origin, level);
+            self.edition = self.edition.wrapping_add(1);
             self.dirty = false;
         }
 
