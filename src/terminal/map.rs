@@ -1,55 +1,61 @@
 use super::color;
-use super::View;
-use crate::backend::{Color, Game, Point, Terrain, Tile};
+use crate::backend::{Color, Game, Point, Size, Terrain, Tile};
 use std::io::Write;
 
 /// Responsible for drawing the level, i.e. the terrain, characters, items, etc.
-pub fn render(stdout: &mut Box<dyn Write>, view: &View, game: &mut Game) {
-    let start_loc = Point::new(
-        game.player().x - view.size.width / 2,
-        game.player().y - view.size.height / 2,
-    );
-    for y in 0..view.size.height {
-        for x in 0..view.size.width {
-            let pt = Point::new(start_loc.x + x, start_loc.y + y);
-            let h = (view.origin.x + x + 1) as u16; // termion is 1-based
-            let v = (view.origin.y + y + 1) as u16;
-            if pt == game.player() {
-                let fg = Color::Blue;
-                let bg = Color::Black;
-                let _ = write!(
-                    stdout,
-                    "{}{}{}@",
-                    termion::cursor::Goto(h, v),
-                    termion::color::Bg(color::to_termion(bg)),
-                    termion::color::Fg(color::to_termion(fg))
-                );
-            } else {
-                let tile = game.tile(&pt);
-                let bg = match tile {
-                    Tile::Visible(terrain) => to_back_color(terrain), // TODO: use black if there is a character or item?
-                    Tile::Stale(_terrain) => Color::LightGrey,
-                    Tile::NotVisible => Color::Black,
-                };
-                let fg = match tile {
-                    Tile::Visible(terrain) => to_fore_color(terrain),
-                    Tile::Stale(_terrain) => Color::DarkGray,
-                    Tile::NotVisible => Color::Black,
-                };
-                let symbol = match tile {
-                    Tile::Visible(terrain) => to_symbol(terrain),
-                    Tile::Stale(terrain) => to_symbol(terrain),
-                    Tile::NotVisible => ' ',
-                };
-                // TODO: use a function to return a tuple with sumbol, fg, and bg
-                let _ = write!(
-                    stdout,
-                    "{}{}{}{}",
-                    termion::cursor::Goto(h, v),
-                    termion::color::Bg(color::to_termion(bg)),
-                    termion::color::Fg(color::to_termion(fg)),
-                    symbol
-                );
+pub struct MapView {
+    pub origin: Point,
+    pub size: Size,
+}
+
+impl MapView {
+    pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game) {
+        let start_loc = Point::new(
+            game.player().x - self.size.width / 2,
+            game.player().y - self.size.height / 2,
+        );
+        for y in 0..self.size.height {
+            for x in 0..self.size.width {
+                let pt = Point::new(start_loc.x + x, start_loc.y + y);
+                let h = (self.origin.x + x + 1) as u16; // termion is 1-based
+                let v = (self.origin.y + y + 1) as u16;
+                if pt == game.player() {
+                    let fg = Color::Blue;
+                    let bg = Color::Black;
+                    let _ = write!(
+                        stdout,
+                        "{}{}{}@",
+                        termion::cursor::Goto(h, v),
+                        termion::color::Bg(color::to_termion(bg)),
+                        termion::color::Fg(color::to_termion(fg))
+                    );
+                } else {
+                    let tile = game.tile(&pt);
+                    let bg = match tile {
+                        Tile::Visible(terrain) => to_back_color(terrain), // TODO: use black if there is a character or item?
+                        Tile::Stale(_terrain) => Color::LightGrey,
+                        Tile::NotVisible => Color::Black,
+                    };
+                    let fg = match tile {
+                        Tile::Visible(terrain) => to_fore_color(terrain),
+                        Tile::Stale(_terrain) => Color::DarkGray,
+                        Tile::NotVisible => Color::Black,
+                    };
+                    let symbol = match tile {
+                        Tile::Visible(terrain) => to_symbol(terrain),
+                        Tile::Stale(terrain) => to_symbol(terrain),
+                        Tile::NotVisible => ' ',
+                    };
+                    // TODO: use a function to return a tuple with sumbol, fg, and bg
+                    let _ = write!(
+                        stdout,
+                        "{}{}{}{}",
+                        termion::cursor::Goto(h, v),
+                        termion::color::Bg(color::to_termion(bg)),
+                        termion::color::Fg(color::to_termion(fg)),
+                        symbol
+                    );
+                }
             }
         }
     }

@@ -1,29 +1,35 @@
 use super::color;
-use super::View;
-use crate::backend::{Color, Game, Topic};
+use crate::backend::{Color, Game, Point, Size, Topic};
 use std::io::Write;
 
 /// Responsible for drawing the last few messages.
-pub fn render(stdout: &mut Box<dyn Write>, view: &View, game: &Game) {
-    let h = (view.origin.x + 1) as u16; // termion is 1-based
-    let mut v = (view.origin.y + 1) as u16;
-    for message in game.recent_messages(view.size.height as usize) {
-        let fg = to_fore_color(message.topic);
-        let bg = Color::White;
+pub struct MessagesView {
+    pub origin: Point,
+    pub size: Size,
+}
 
-        // Pad the string out to the full terminal width so that the back
-        // color of the line is correct.
-        let mut text = message.text.clone();
-        text.push_str(&String::from(' ').repeat(view.size.width as usize - text.len()));
-        let _ = write!(
-            stdout,
-            "{}{}{}{}",
-            termion::cursor::Goto(h, v),
-            termion::color::Bg(color::to_termion(bg)),
-            termion::color::Fg(color::to_termion(fg)),
-            text // TODO: will need to wrap long lines, possibly with some sort of indication that it has wrapped
-        );
-        v += 1;
+impl MessagesView {
+    pub fn render(&self, stdout: &mut Box<dyn Write>, game: &Game) {
+        let h = (self.origin.x + 1) as u16; // termion is 1-based
+        let mut v = (self.origin.y + 1) as u16;
+        for message in game.recent_messages(self.size.height as usize) {
+            let fg = to_fore_color(message.topic);
+            let bg = Color::White;
+
+            // Pad the string out to the full terminal width so that the back
+            // color of the line is correct.
+            let mut text = message.text.clone();
+            text.push_str(&String::from(' ').repeat(self.size.width as usize - text.len()));
+            let _ = write!(
+                stdout,
+                "{}{}{}{}",
+                termion::cursor::Goto(h, v),
+                termion::color::Bg(color::to_termion(bg)),
+                termion::color::Fg(color::to_termion(fg)),
+                text // TODO: will need to wrap long lines, possibly with some sort of indication that it has wrapped
+            );
+            v += 1;
+        }
     }
 }
 

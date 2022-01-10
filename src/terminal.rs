@@ -4,6 +4,8 @@ mod map;
 mod messages;
 
 use super::backend::{Game, Point, Size};
+use map::MapView;
+use messages::MessagesView;
 use slog::Logger;
 use std::io::{stdin, stdout, Write};
 use std::panic;
@@ -19,18 +21,13 @@ pub enum GameState {
     Exiting,
 }
 
-pub struct View {
-    pub origin: Point,
-    pub size: Size,
-}
-
 pub struct Terminal {
     root_logger: Logger,
     game: Game,
     stdout: Box<dyn Write>,
 
-    map: View,
-    messages: View,
+    map: MapView,
+    messages: MessagesView,
 }
 
 impl Terminal {
@@ -55,11 +52,11 @@ impl Terminal {
             root_logger,
             game,
             stdout: Box::new(stdout),
-            map: View {
+            map: MapView {
                 origin: Point::new(0, 0),
                 size: Size::new(width, height - NUM_MESSAGES),
             },
-            messages: View {
+            messages: MessagesView {
                 origin: Point::new(0, height - NUM_MESSAGES),
                 size: Size::new(width, NUM_MESSAGES),
             },
@@ -83,10 +80,9 @@ impl Terminal {
         }
     }
 
-    // TODO: maybe we should leverage View more?
     fn render(&mut self) {
-        map::render(&mut self.stdout, &self.map, &mut self.game);
-        messages::render(&mut self.stdout, &self.messages, &self.game);
+        self.map.render(&mut self.stdout, &mut self.game);
+        self.messages.render(&mut self.stdout, &self.game);
         self.stdout.flush().unwrap();
     }
 

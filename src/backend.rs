@@ -19,6 +19,8 @@ use level::Level;
 use old_pov::OldPoV;
 use pov::PoV;
 
+const MAX_MESSAGES: usize = 1000;
+
 pub enum Tile {
     /// player can see this
     Visible(Terrain),
@@ -254,6 +256,9 @@ impl Game {
 
         if let Event::AddMessage(message) = event {
             self.messages.push(message);
+            while self.messages.len() > MAX_MESSAGES {
+                self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
+            }
         } else {
             // This is the type state pattern: as events are posted new state
             // objects are updated and upcoming state objects can safely reference
