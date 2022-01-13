@@ -1,6 +1,6 @@
 use super::details::Game1;
 use super::primitives::FoV;
-use super::{Cell, Event, Level, Object, Point, Size};
+use super::{Cell, Event, Level, Object, Point};
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -73,7 +73,6 @@ impl PoV {
 
         let mut view = FoV {
             start: *origin,
-            size: Size::new(2 * 15, 2 * 15),
             radius: 15, // TODO: do better with this
             visible_tile: |loc| {
                 self.visible.insert(loc);

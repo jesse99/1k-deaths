@@ -4,6 +4,7 @@
 // code at http://www.roguebasin.com/index.php?title=Permissive_Field_of_View_in_Python by
 // Aaron MacDonald.
 use super::point::Point;
+#[cfg(test)] // for now this is only used within unit tests
 use super::size::Size;
 #[cfg(test)] // for now this is only used within unit tests
 use super::vec2d::Vec2d;
@@ -19,9 +20,6 @@ where
 {
     /// Where to start checking for visible cells from. Typically the position of a character.
     pub start: Point,
-
-    /// How many cells to check. Typically the size of the level.
-    pub size: Size, // TODO: why do we have both size and radius?
 
     /// Maximum distance that LOS can extend to.
     pub radius: i32,
@@ -55,22 +53,14 @@ where
         } else {
             self.radius
         };
-        let max_extent_x = if self.size.width - self.start.x - 1 < self.radius {
-            self.size.width - self.start.x - 1
-        } else {
-            self.radius
-        };
+        let max_extent_x = self.radius;
 
         let min_extent_y = if self.start.y < self.radius {
             self.start.y
         } else {
             self.radius
         };
-        let max_extent_y = if self.size.height - self.start.y - 1 < self.radius {
-            self.size.height - self.start.y - 1
-        } else {
-            self.radius
-        };
+        let max_extent_y = self.radius;
 
         // Northeast quadrant
         self.check_quadrant(&mut visited, Point::new(1, 1), max_extent_x, max_extent_y);
@@ -113,6 +103,7 @@ where
         // 2  4  7
         // @  1  3  6  .  .  .
         let max_i = extent_x + extent_y;
+        assert!(max_i >= 0);
         let mut i = 1;
         while i != max_i + 1 && !active_views.is_empty() {
             let start_j = if 0 > i - extent_x { 0 } else { i - extent_x };
@@ -120,7 +111,7 @@ where
 
             let mut j = start_j;
 
-            while j != max_j + 1 && view_index < active_views.len() {
+            while j < max_j + 1 && view_index < active_views.len() {
                 let x = i - j;
                 let y = j;
                 self.visit_coord(visited, x, y, delta, view_index, &mut active_views);
@@ -441,23 +432,36 @@ mod tests {
         assert_eq!(actual, expected);
     }
 
+    fn get_symbol(cells: &Vec2d<char>, loc: &Point) -> char {
+        if loc.x >= 0 && loc.y >= 0 && loc.x < cells.size().width && loc.y < cells.size().height {
+            *cells.get(*loc)
+        } else {
+            '#'
+        }
+    }
+
     fn visit_tiles(old_cells: &Vec2d<char>, size: Size, radius: i32) -> String {
         let mut new_cells = Vec2d::new(size, '?');
         {
             let start = Point::new(size.width / 2, size.height / 2);
             let mut view = super::FoV {
                 start,
-                size,
                 radius,
                 visible_tile: |loc| {
                     let value = if loc == start {
                         'x'
                     } else {
-                        *old_cells.get(loc)
+                        get_symbol(old_cells, &loc)
                     };
-                    new_cells.set(loc, value);
+                    if loc.x >= 0
+                        && loc.y >= 0
+                        && loc.x < new_cells.size().width
+                        && loc.y < new_cells.size().height
+                    {
+                        new_cells.set(loc, value);
+                    }
                 },
-                blocks_los: |loc| *old_cells.get(loc) == '#',
+                blocks_los: |loc| get_symbol(old_cells, &loc) == '#',
             };
 
             view.visit();
