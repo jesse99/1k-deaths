@@ -2,9 +2,9 @@
 mod cell;
 mod event;
 mod level;
+mod make;
 mod message;
 mod object;
-mod objects;
 mod old_pov;
 mod pov;
 mod primitives;
@@ -86,7 +86,7 @@ impl Game {
             for x in 0..width {
                 // TODO: may want a SetAllTerrain variant to avoid a zillion events
                 // TODO: or have NewLevel take a default terrain
-                self.post(Event::AddObject(Point::new(x, y), objects::dirt()));
+                self.post(Event::AddObject(Point::new(x, y), make::dirt()));
             }
         }
 
@@ -95,24 +95,24 @@ impl Game {
             self.post(Event::ChangeObject(
                 Point::new(0, y),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
             self.post(Event::ChangeObject(
                 Point::new(width - 1, y),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
         }
         for x in 0..width {
             self.post(Event::ChangeObject(
                 Point::new(x, 0),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
             self.post(Event::ChangeObject(
                 Point::new(x, height - 1),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
         }
 
@@ -120,69 +120,69 @@ impl Game {
         self.post(Event::ChangeObject(
             Point::new(29, 20),
             Tag::Terrain,
-            objects::deep_water(),
+            make::deep_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(30, 20),
             Tag::Terrain,
-            objects::deep_water(),
+            make::deep_water(),
         )); // lake center
         self.post(Event::ChangeObject(
             Point::new(31, 20),
             Tag::Terrain,
-            objects::deep_water(),
+            make::deep_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(30, 19),
             Tag::Terrain,
-            objects::deep_water(),
+            make::deep_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(30, 21),
             Tag::Terrain,
-            objects::deep_water(),
+            make::deep_water(),
         ));
 
         self.post(Event::ChangeObject(
             Point::new(29, 19),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(31, 19),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(29, 21),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(31, 21),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
 
         self.post(Event::ChangeObject(
             Point::new(28, 20),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(32, 20),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(30, 18),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
         self.post(Event::ChangeObject(
             Point::new(30, 22),
             Tag::Terrain,
-            objects::shallow_water(),
+            make::shallow_water(),
         ));
 
         // Large room
@@ -193,34 +193,34 @@ impl Game {
             self.post(Event::ChangeObject(
                 Point::new(room_loc.x, y),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
             self.post(Event::ChangeObject(
                 Point::new(room_loc.x + room_width - 1, y),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
         }
         for x in room_loc.x..(room_loc.x + room_width) {
             self.post(Event::ChangeObject(
                 Point::new(x, room_loc.y),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
             self.post(Event::ChangeObject(
                 Point::new(x, room_loc.y + room_height - 1),
                 Tag::Terrain,
-                objects::stone_wall(),
+                make::stone_wall(),
             ));
         }
         self.post(Event::ChangeObject(
             Point::new(room_loc.x, room_loc.y + room_height / 2),
             Tag::Terrain,
-            objects::door(),
+            make::door(),
         ));
 
         // Now that the terrain is down we can add items and characters.
-        self.post(Event::AddObject(Point::new(20, 10), objects::player()));
+        self.post(Event::AddObject(Point::new(20, 10), make::player()));
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
