@@ -1,8 +1,5 @@
 use super::details::Game2;
-use super::event::Event;
-use super::level::{Level, Terrain};
-use super::pov::PoV;
-use super::Point;
+use super::{Event, Level, PoV, Point};
 use fnv::FnvHashMap;
 
 /// Locations that were visible to a character. Note that PoV overrides
@@ -10,8 +7,8 @@ use fnv::FnvHashMap;
 /// visible. Current;y this is only used for the Player to render locations
 /// that he has seen before.
 pub struct OldPoV {
-    old: FnvHashMap<Point, Terrain>, // may not match the current Level state
-    edition: u32,                    // current PoV edition
+    old: FnvHashMap<Point, char>, // may not match the current Level state
+    edition: u32,                 // current PoV edition
 }
 
 impl OldPoV {
@@ -24,7 +21,7 @@ impl OldPoV {
 
     pub fn posted(&mut self, _game: &Game2, event: &Event) {
         match event {
-            Event::NewGame | Event::NewLevel(_) => {
+            Event::NewGame | Event::NewLevel => {
                 self.old.clear();
                 self.edition = 0;
             }
@@ -35,15 +32,16 @@ impl OldPoV {
     pub fn update(&mut self, level: &Level, pov: &PoV) {
         if pov.edition() != self.edition {
             for loc in pov.locations() {
-                if let Some(terrain) = level.terrain.get(loc) {
-                    self.old.insert(*loc, *terrain);
+                if let Some(cell) = level.cells.get(loc) {
+                    let (_, _, symbol) = cell.to_bg_fg_symbol();
+                    self.old.insert(*loc, symbol);
                 }
             }
             self.edition = pov.edition();
         }
     }
 
-    pub fn get(&self, loc: &Point) -> Option<Terrain> {
+    pub fn get(&self, loc: &Point) -> Option<char> {
         self.old.get(loc).copied()
     }
 }

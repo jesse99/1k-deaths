@@ -1,8 +1,6 @@
 use super::details::Game1;
-use super::event::Event;
-use super::level::{Level, Terrain};
 use super::primitives::FoV;
-use super::Point;
+use super::{Cell, Event, Level, Object, Point, Size};
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -22,19 +20,26 @@ impl PoV {
         }
     }
 
-    pub fn posted(&mut self, game: &Game1, event: &Event) {
+    // TODO: visibility checks need to be some sort action, i.e. double dispatch
+    // would it help if objects kept track of a location (point, in inv, or equipped)?
+    // or do we need to give objects a unique id? could use a new state object to track that
+    //    think we'll need something like that for stuff like ranged combat
+    //    want to be able to easily attack the same NPC even if it moved
+    pub fn posted(&mut self, _game: &Game1, event: &Event) {
         match event {
             Event::NewGame => self.dirty = true,
-            Event::NewLevel(_size) => self.dirty = true,
-            Event::SetTerrain(loc, new_terrain) => {
-                // Only dirty if the terrain change was something that would
-                // change visibility.
-                let old_terrain = game.level.terrain.get(loc).unwrap_or(&Terrain::Wall);
-                let old_blocks = blocks_los(*old_terrain);
-                let new_blocks = blocks_los(*new_terrain);
-                if old_blocks != new_blocks {
+            Event::NewLevel => self.dirty = true,
+            Event::AddObject(_loc, new_obj) => {
+                if !self.dirty && obj_blocks_los(new_obj) {
                     self.dirty = true;
                 }
+            }
+            Event::ChangeObject(_loc, _tag, _new_obj) => {
+                // TODO: This is currently only used for terrain, e.g. to open
+                // a door. These changes will normally require dirtying the PoV
+                // so, in theory, we could be smarter about this (but note that
+                // the Level has already changed).
+                self.dirty = true;
             }
             // TODO: this should dirty only if the origin changes. Maybe we can add an id to PoV
             // and check to see if loc matches that id's location.
@@ -68,13 +73,13 @@ impl PoV {
 
         let mut view = FoV {
             start: *origin,
-            size: level.size,
+            size: Size::new(2 * 15, 2 * 15),
             radius: 15, // TODO: do better with this
             visible_tile: |loc| {
                 self.visible.insert(loc);
             },
-            blocks_los: |loc| match level.terrain.get(&loc) {
-                Some(terrain) => blocks_los(*terrain),
+            blocks_los: |loc| match level.cells.get(&loc) {
+                Some(cell) => blocks_los(cell),
                 None => true,
             },
         };
@@ -82,12 +87,14 @@ impl PoV {
     }
 }
 
-fn blocks_los(terrain: Terrain) -> bool {
-    match terrain {
-        Terrain::ClosedDoor => true,
-        Terrain::DeepWater => false,
-        Terrain::ShallowWater => false,
-        Terrain::Wall => true,
-        Terrain::Ground => false,
+fn obj_blocks_los(obj: &Object) -> bool {
+    if let Some(false) = obj.door() {
+        true
+    } else {
+        obj.wall()
     }
+}
+
+fn blocks_los(cell: &Cell) -> bool {
+    cell.iter().any(obj_blocks_los)
 }

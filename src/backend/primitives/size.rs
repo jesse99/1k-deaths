@@ -12,12 +12,12 @@ impl Size {
         Size { width, height }
     }
 
-    pub fn zero() -> Size {
-        Size {
-            width: 0,
-            height: 0,
-        }
-    }
+    // pub fn zero() -> Size {
+    //     Size {
+    //         width: 0,
+    //         height: 0,
+    //     }
+    // }
 
     #[cfg(test)] // for now this is only used within unit tests
     pub fn area(self) -> i32 {

@@ -88,10 +88,10 @@ impl Terminal {
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
         match key {
-            termion::event::Key::Left => self.game.move_player(-1, 0),
-            termion::event::Key::Right => self.game.move_player(1, 0),
-            termion::event::Key::Up => self.game.move_player(0, -1),
-            termion::event::Key::Down => self.game.move_player(0, 1),
+            termion::event::Key::Left => self.game.probe(-1, 0),
+            termion::event::Key::Right => self.game.probe(1, 0),
+            termion::event::Key::Up => self.game.probe(0, -1),
+            termion::event::Key::Down => self.game.probe(0, 1),
             termion::event::Key::Char('q') => return GameState::Exiting,
             _ => (),
         };

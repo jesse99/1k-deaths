@@ -1,56 +1,41 @@
-use super::event::Event;
-use super::Point;
-use super::Size;
+use super::{Cell, Event, Point, Tag};
 use fnv::FnvHashMap;
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub enum Terrain {
-    // TODO: this will change in the future when we move towards more of a component system
-    ClosedDoor,
-    DeepWater,
-    Ground,
-    ShallowWater,
-    Wall,
-}
-
 pub struct Level {
-    pub size: Size,
     pub player: Point,
-    pub terrain: FnvHashMap<Point, Terrain>, // TODO: does a hash map really help? could use Vec2d
+    pub cells: FnvHashMap<Point, Cell>,
 }
 
 impl Level {
     pub fn new() -> Level {
         Level {
-            size: Size::zero(),
             player: Point::origin(),
-            terrain: FnvHashMap::default(),
+            cells: FnvHashMap::default(),
         }
     }
 
     pub fn posted(&mut self, event: &Event) {
         match event {
-            Event::NewLevel(new_size) => {
-                self.size = *new_size;
+            Event::NewLevel => {
                 self.player = Point::new(20, 10); // TODO: need to do better here
-                self.terrain = FnvHashMap::default();
+                self.cells = FnvHashMap::default();
             }
-            Event::SetTerrain(loc, terrain) => {
-                self.terrain.insert(*loc, *terrain);
+            Event::AddObject(loc, obj) => {
+                let cell = self.cells.entry(*loc).or_insert_with(Cell::new);
+                cell.append(obj.clone());
             }
-            Event::PlayerMoved(loc) => self.player = *loc,
+            Event::ChangeObject(loc, tag, obj) => {
+                let cell = self.cells.get_mut(loc).unwrap();
+                cell.replace(tag, obj.clone());
+            }
+            Event::PlayerMoved(loc) => {
+                let cell = self.cells.get_mut(&self.player).unwrap();
+                let obj = cell.remove(&Tag::Player);
+                self.player = *loc;
+                let cell = self.cells.entry(self.player).or_insert_with(Cell::new);
+                cell.append(obj);
+            }
             _ => (),
         };
-    }
-
-    pub fn can_move(&self, dx: i32, dy: i32) -> bool {
-        let new_loc = Point::new(self.player.x + dx, self.player.y + dy);
-        match self.terrain.get(&new_loc).unwrap() {
-            Terrain::ClosedDoor => false,
-            Terrain::DeepWater => false,
-            Terrain::ShallowWater => true,
-            Terrain::Wall => false,
-            Terrain::Ground => true,
-        }
     }
 }

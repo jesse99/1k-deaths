@@ -1,3 +1,4 @@
+extern crate derive_more;
 #[macro_use]
 extern crate slog; // for info!, debug!, etc
 

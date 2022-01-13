@@ -21,7 +21,7 @@ where
     pub start: Point,
 
     /// How many cells to check. Typically the size of the level.
-    pub size: Size,
+    pub size: Size, // TODO: why do we have both size and radius?
 
     /// Maximum distance that LOS can extend to.
     pub radius: i32,

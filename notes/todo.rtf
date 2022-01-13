@@ -77,12 +77,13 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
 \'95\'a0Add objects\
-	- move message into a module\
-	- objects are composed of tags\
-	- start with a door object  \
+	- rename objects module something like make or build?\
+	- may need OpenDoor and ClosedDoor (symbols will change)\
+	- level should be composed of Cells\
+	- port the existing code over to the new design  \
 	- add a look (or examine) command\
 		` later could support tab and shift-tab\
-	- don\'92t make Terrain public from backend\
+	- large room should have metal walls\
 	- add a crappy sword and a badass sword\
 		` walking over them adds them to inventory\
 		` could have little vaults with swords\
@@ -120,6 +121,9 @@ enum ObjectTag\
 \f3\i i.e. can go into inventory
 \f1\i0 \
 	\
+	Inventory([Objects]),   
+\f3\i or ids?
+\f1\i0 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f3\i \cf3 	

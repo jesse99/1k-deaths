@@ -1,8 +1,10 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
+mod cell;
 mod event;
 mod level;
 mod message;
 mod object;
+mod objects;
 mod old_pov;
 mod pov;
 mod primitives;
@@ -12,9 +14,10 @@ pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
 
+use cell::Cell;
 use event::Event;
 use level::Level;
-use level::Terrain;
+use object::{Liquid, Material, Object, Tag};
 use old_pov::OldPoV;
 use pov::PoV;
 
@@ -71,72 +74,153 @@ impl Game {
         let height = 60;
 
         self.post(Event::NewGame);
-        self.post(Event::NewLevel(Size::new(width, height)));
-        self.post(Event::PlayerMoved(Point::new(20, 10)));
-
         self.post(Event::AddMessage(Message {
             topic: Topic::NonGamePlay,
             text: String::from("Welcome to 1k-deaths!"),
         }));
+
+        self.post(Event::NewLevel);
 
         // Terrain defaults to ground
         for y in 0..height {
             for x in 0..width {
                 // TODO: may want a SetAllTerrain variant to avoid a zillion events
                 // TODO: or have NewLevel take a default terrain
-                self.post(Event::SetTerrain(Point::new(x, y), Terrain::Ground));
+                self.post(Event::AddObject(Point::new(x, y), objects::dirt()));
             }
         }
 
         // Walls along the edges
         for y in 0..height {
-            self.post(Event::SetTerrain(Point::new(0, y), Terrain::Wall));
-            self.post(Event::SetTerrain(Point::new(width - 1, y), Terrain::Wall));
+            self.post(Event::ChangeObject(
+                Point::new(0, y),
+                Tag::Terrain,
+                objects::stone_wall(),
+            ));
+            self.post(Event::ChangeObject(
+                Point::new(width - 1, y),
+                Tag::Terrain,
+                objects::stone_wall(),
+            ));
         }
         for x in 0..width {
-            self.post(Event::SetTerrain(Point::new(x, 0), Terrain::Wall));
-            self.post(Event::SetTerrain(Point::new(x, height - 1), Terrain::Wall));
+            self.post(Event::ChangeObject(
+                Point::new(x, 0),
+                Tag::Terrain,
+                objects::stone_wall(),
+            ));
+            self.post(Event::ChangeObject(
+                Point::new(x, height - 1),
+                Tag::Terrain,
+                objects::stone_wall(),
+            ));
         }
 
         // Small lake
-        self.post(Event::SetTerrain(Point::new(29, 20), Terrain::DeepWater));
-        self.post(Event::SetTerrain(Point::new(30, 20), Terrain::DeepWater)); // lake center
-        self.post(Event::SetTerrain(Point::new(31, 20), Terrain::DeepWater));
-        self.post(Event::SetTerrain(Point::new(30, 19), Terrain::DeepWater));
-        self.post(Event::SetTerrain(Point::new(30, 21), Terrain::DeepWater));
+        self.post(Event::ChangeObject(
+            Point::new(29, 20),
+            Tag::Terrain,
+            objects::deep_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(30, 20),
+            Tag::Terrain,
+            objects::deep_water(),
+        )); // lake center
+        self.post(Event::ChangeObject(
+            Point::new(31, 20),
+            Tag::Terrain,
+            objects::deep_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(30, 19),
+            Tag::Terrain,
+            objects::deep_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(30, 21),
+            Tag::Terrain,
+            objects::deep_water(),
+        ));
 
-        self.post(Event::SetTerrain(Point::new(29, 19), Terrain::ShallowWater));
-        self.post(Event::SetTerrain(Point::new(31, 19), Terrain::ShallowWater));
-        self.post(Event::SetTerrain(Point::new(29, 21), Terrain::ShallowWater));
-        self.post(Event::SetTerrain(Point::new(31, 21), Terrain::ShallowWater));
+        self.post(Event::ChangeObject(
+            Point::new(29, 19),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(31, 19),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(29, 21),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(31, 21),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
 
-        self.post(Event::SetTerrain(Point::new(28, 20), Terrain::ShallowWater));
-        self.post(Event::SetTerrain(Point::new(32, 20), Terrain::ShallowWater));
-        self.post(Event::SetTerrain(Point::new(30, 18), Terrain::ShallowWater));
-        self.post(Event::SetTerrain(Point::new(30, 22), Terrain::ShallowWater));
+        self.post(Event::ChangeObject(
+            Point::new(28, 20),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(32, 20),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(30, 18),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
+        self.post(Event::ChangeObject(
+            Point::new(30, 22),
+            Tag::Terrain,
+            objects::shallow_water(),
+        ));
 
         // Large room
         let room_loc = Point::new(100, 20);
         let room_height = 30;
         let room_width = 25;
         for y in room_loc.y..(room_loc.y + room_height) {
-            self.post(Event::SetTerrain(Point::new(room_loc.x, y), Terrain::Wall));
-            self.post(Event::SetTerrain(
+            self.post(Event::ChangeObject(
+                Point::new(room_loc.x, y),
+                Tag::Terrain,
+                objects::stone_wall(),
+            ));
+            self.post(Event::ChangeObject(
                 Point::new(room_loc.x + room_width - 1, y),
-                Terrain::Wall,
+                Tag::Terrain,
+                objects::stone_wall(),
             ));
         }
         for x in room_loc.x..(room_loc.x + room_width) {
-            self.post(Event::SetTerrain(Point::new(x, room_loc.y), Terrain::Wall));
-            self.post(Event::SetTerrain(
+            self.post(Event::ChangeObject(
+                Point::new(x, room_loc.y),
+                Tag::Terrain,
+                objects::stone_wall(),
+            ));
+            self.post(Event::ChangeObject(
                 Point::new(x, room_loc.y + room_height - 1),
-                Terrain::Wall,
+                Tag::Terrain,
+                objects::stone_wall(),
             ));
         }
-        self.post(Event::SetTerrain(
+        self.post(Event::ChangeObject(
             Point::new(room_loc.x, room_loc.y + room_height / 2),
-            Terrain::ClosedDoor,
+            Tag::Terrain,
+            objects::door(),
         ));
+
+        // Now that the terrain is down we can add items and characters.
+        self.post(Event::AddObject(Point::new(20, 10), objects::player()));
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
@@ -152,16 +236,19 @@ impl Game {
         self.level.player
     }
 
-    // TODO: probably want to return something to indicate whether a UI refresh is neccesary
-    // TODO: maybe something fine grained, like only need to update messages
-    pub fn move_player(&mut self, dx: i32, dy: i32) {
+    /// Do something with an adjacent cell, this can be move into it, attack
+    /// an enemy there, start a dialog with a friendly character, open a door,
+    /// etc.
+    pub fn probe(&mut self, dx: i32, dy: i32) {
+        // TODO: probably want to return something to indicate whether a UI refresh is neccesary
+        // TODO: maybe something fine grained, like only need to update messages
         let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
-        if self.level.can_move(dx, dy) {
-            self.post(Event::PlayerMoved(new_loc));
-        }
-
-        if let Some(message) = self.moved_message(new_loc) {
-            self.post(Event::AddMessage(message));
+        if let Some(cell) = self.level.cells.get(&new_loc) {
+            match self.probe_cell(cell) {
+                Probe::Move => self.post(Event::PlayerMoved(new_loc)),
+                Probe::Failed(topic, text) => self.post(Event::AddMessage(Message { topic, text })),
+                Probe::NoOp => {}
+            }
         }
     }
 
@@ -170,25 +257,15 @@ impl Game {
     /// a dirty flag when events are posted and may need to refresh here.
     pub fn tile(&mut self, loc: &Point) -> Tile {
         let tile = if self.pov.visible(&self.level.player, &self.level, loc) {
-            if *loc == self.level.player {
-                Tile::Visible {
-                    bg: Color::Black,
-                    fg: Color::Blue,
-                    symbol: '@',
-                }
+            if let Some(cell) = self.level.cells.get(loc) {
+                let (bg, fg, symbol) = cell.to_bg_fg_symbol();
+                Tile::Visible { bg, fg, symbol }
             } else {
-                match self.level.terrain.get(loc) {
-                    Some(terrain) => Tile::Visible {
-                        bg: to_back_color(*terrain),
-                        fg: to_fore_color(*terrain),
-                        symbol: to_symbol(*terrain),
-                    },
-                    None => Tile::NotVisible, // completely outside the level (tho want to hide this fact from the UI)
-                }
+                Tile::NotVisible // completely outside the level (tho want to hide this fact from the UI)
             }
         } else {
             match self.old_pov.get(loc) {
-                Some(terrain) => Tile::Stale(to_symbol(terrain)),
+                Some(symbol) => Tile::Stale(symbol),
                 None => Tile::NotVisible, // not visible and never seen
             }
         };
@@ -202,26 +279,9 @@ impl Game {
 
         tile
     }
+}
 
-    fn moved_message(&self, new_loc: Point) -> Option<Message> {
-        match self.level.terrain.get(&new_loc).unwrap() {
-            Terrain::ClosedDoor => None,
-            Terrain::DeepWater => Some(Message {
-                topic: Topic::NonGamePlay,
-                text: String::from("That water is too deep."),
-            }),
-            Terrain::ShallowWater => Some(Message {
-                topic: Topic::NonGamePlay,
-                text: String::from("You splash through the water."),
-            }),
-            Terrain::Wall => Some(Message {
-                topic: Topic::NonGamePlay,
-                text: String::from("You bump into the wall."),
-            }),
-            Terrain::Ground => None,
-        }
-    }
-
+impl Game {
     fn post(&mut self, event: Event) {
         self.stream.push(event.clone());
 
@@ -247,34 +307,73 @@ impl Game {
             self.old_pov.posted(&game2, &event);
         }
     }
+
+    fn probe_cell(&self, cell: &Cell) -> Probe {
+        for obj in cell.iter().rev() {
+            let p = self.probe_obj(obj);
+            match p {
+                Probe::Move => return p,
+                Probe::Failed(_, _) => return p,
+                Probe::NoOp => (),
+            }
+        }
+        panic!("Probe found nothing to do");
+    }
+
+    fn probe_obj(&self, obj: &Object) -> Probe {
+        if obj.character() {
+            Probe::Failed(Topic::NonGamePlay, String::from("There is somebody there."))
+        } else if let Some(open) = obj.door() {
+            if open {
+                Probe::Move
+            } else {
+                Probe::Failed(Topic::NonGamePlay, String::from("The door is closed."))
+            }
+        } else if let Some((liquid, deep)) = obj.liquid() {
+            match liquid {
+                Liquid::Water => {
+                    if deep {
+                        Probe::Failed(Topic::NonGamePlay, String::from("The water is too deep."))
+                    } else {
+                        Probe::Move
+                    }
+                }
+                Liquid::Vitr => Probe::Failed(
+                    Topic::NonGamePlay,
+                    String::from("Do you have a death wish?"),
+                ),
+            }
+        } else if obj.wall() {
+            Probe::Failed(Topic::NonGamePlay, String::from("You bump into the wall."))
+        } else if obj.ground() {
+            Probe::Move
+        } else {
+            Probe::NoOp
+        }
+    }
+
+    // pub fn blocks_los(cell: &Cell) -> bool {
+    //     for obj in cell.iter() {
+    //         for tag in &obj.tags {
+    //             if tag_blocks_los(tag) {
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //     false
+    // }
+    // pub fn tag_blocks_los(tag: &Tag) -> bool {
+    //     match tag {
+    //         Tag::Door { open } => !open,
+    //         Tag::Character(_symbol) => true,
+    //         Tag::Player => true,
+    //     }
+    // }
 }
 
-fn to_symbol(terrain: Terrain) -> char {
-    match terrain {
-        Terrain::ClosedDoor => '+',
-        Terrain::DeepWater => 'W',
-        Terrain::ShallowWater => '~',
-        Terrain::Wall => '#',
-        Terrain::Ground => '.',
-    }
-}
-
-fn to_back_color(terrain: Terrain) -> Color {
-    match terrain {
-        Terrain::ClosedDoor => Color::Black,
-        Terrain::DeepWater => Color::LightBlue,
-        Terrain::ShallowWater => Color::LightBlue,
-        Terrain::Wall => Color::Black,
-        Terrain::Ground => Color::Black,
-    }
-}
-
-fn to_fore_color(terrain: Terrain) -> Color {
-    match terrain {
-        Terrain::ClosedDoor => Color::Green,
-        Terrain::DeepWater => Color::Blue,
-        Terrain::ShallowWater => Color::Blue,
-        Terrain::Wall => Color::Chocolate,
-        Terrain::Ground => Color::LightSlateGray,
-    }
+enum Probe {
+    Move,
+    Failed(Topic, String),
+    NoOp,
+    // TODO: attack, etc
 }

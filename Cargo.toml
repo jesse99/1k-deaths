@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.19"		# datetime library
-fnv = "1.0.7"			# custom hasher that is much more performant for small keys
-slog = "2.7.0"			# structured logging
-sloggers = "2.1.1"		# slog convenience functions
-termion = "1.5.6"		# terminal support
+chrono = "0.4.19"	    # datetime library
+derive_more = "0.99.17" # helper to derive traits like Display for structs and enums
+fnv = "1.0.7"	        # custom hasher that is much more performant for small keys
+slog = "2.7.0" 	        # structured logging
+sloggers = "2.1.1"      # slog convenience functions
+termion = "1.5.6"       # terminal support
