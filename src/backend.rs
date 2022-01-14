@@ -8,6 +8,7 @@ mod object;
 mod old_pov;
 mod pov;
 mod primitives;
+mod tag;
 
 pub use message::{Message, Topic};
 pub use primitives::Color;
@@ -17,9 +18,10 @@ pub use primitives::Size;
 use cell::Cell;
 use event::Event;
 use level::Level;
-use object::{Liquid, Material, Object, Tag};
+use object::Object;
 use old_pov::OldPoV;
 use pov::PoV;
+use tag::{Liquid, Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
 
