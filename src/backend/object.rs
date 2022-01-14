@@ -1,6 +1,7 @@
 use super::Color;
 use derive_more::Display;
 use fnv::FnvHashSet;
+use std::fmt::{self, Formatter};
 
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
@@ -62,6 +63,25 @@ pub enum Tag {
     Material(Material),
     /// Characters and portable objects all have names.
     Name(String),
+}
+
+impl fmt::Display for Tag {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Tag::Character => write!(f, "Character"),
+            Tag::Player => write!(f, "Player"),
+            Tag::ClosedDoor => write!(f, "ClosedDoor"),
+            Tag::Ground => write!(f, "Ground"),
+            Tag::Liquid { liquid, deep } => write!(f, "Liquid({liquid}, {deep}"),
+            Tag::OpenDoor => write!(f, "OpenDoor"),
+            Tag::Terrain => write!(f, "Terrain"),
+            Tag::Wall => write!(f, "Wall"),
+            Tag::Background(color) => write!(f, "Background({color})"),
+            Tag::Durability { current, max } => write!(f, "Durability({current}, {max})"),
+            Tag::Material(material) => write!(f, "Material({material})"),
+            Tag::Name(text) => write!(f, "Name({text})"),
+        }
+    }
 }
 
 /// Objects are a very general concept: they contain state that may be combined
@@ -209,33 +229,45 @@ impl Object {
 impl Object {
     #[cfg(debug_assertions)]
     pub fn invariant(&self) {
-        assert!(!self.description.is_empty(), "Must have a description");
+        assert!(
+            !self.description.is_empty(),
+            "Must have a description: {self}"
+        );
         if self.terrain() {
             // TODO: terrain cannot have the Portable tag
             assert!(
                 self.background().is_some(),
-                "Terrain objects must have a Background",
+                "Terrain objects must have a Background: {self}",
             );
             assert!(
                 !self.character(),
-                "Terrain objects cannot also be Characters",
+                "Terrain objects cannot also be Characters: {self}",
             );
         }
         if self.door().is_some() {
             if let Some((current, _max)) = self.durability() {
-                assert!(current > 0, "Destroyed doors should change to Ground");
+                assert!(
+                    current > 0,
+                    "Destroyed doors should change to Ground: {self}"
+                );
             }
         }
         if self.wall() {
             if let Some((current, _max)) = self.durability() {
-                assert!(current > 0, "Destroyed walls should change to Ground");
+                assert!(
+                    current > 0,
+                    "Destroyed walls should change to Ground: {self}"
+                );
             }
         }
         if self.character() {
-            assert!(self.name().is_some(), "Character's must have a name")
+            assert!(
+                self.name().is_some(),
+                "Character's must have a name: {self}"
+            )
         }
         if self.player() {
-            assert!(self.character(), "Player must be a Character")
+            assert!(self.character(), "Player must be a Character: {self}")
         }
         // TODO: portable must have a name
 
@@ -244,11 +276,17 @@ impl Object {
             let index = to_index(tag);
             assert!(
                 !indexes.contains(&index),
-                "'{}' has duplicate tags",
+                "'{}' has duplicate tags: {self}",
                 self.dname
             );
             indexes.insert(index);
         }
+    }
+}
+
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.dname)
     }
 }
 

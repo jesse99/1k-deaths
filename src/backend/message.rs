@@ -1,7 +1,7 @@
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Topic {
-    // /// An operation could not be completed.
-    // Error,
+    /// An operation could not be completed.
+    Error,
     /// Something that doesn't affect the game, e.g. bumping into a wall.
     NonGamePlay, // TODO: might want to change this to Announcement and add an ImportantAnnouncement
                  // /// NPC was damaged (but not by the player).

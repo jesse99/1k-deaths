@@ -76,16 +76,28 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
+\'95\'a0Generate the level from a text file:\
+	- use include_str! to read it in\
+	- for now hard-code the symbol meanings\
+	- later file could include a symbol mapping, i.e. M=Metal Door\
+	- add Messages for labels that are currently ignored\
+		V *(vitr)\
+		T (tree, blocks LoS)\
+		a and b (signs)\
+		s and S (swords with random descriptions)\
+		D (door man)\
+			says \'93You are not worthy to challenge the Emperor!\'94\
+			or says something else and moves aside\
+		o (spectator, should say something random)\
+			\'93I hope you\'92re prepared to die\'94\
+			\'93I have 10g on you lasting 3 minutes!\'94\
+			\'93The Emperor cannot be defeated!\'94\
+			note that the saying is fixed once a spectator is instantiated\
+		R (rhulad))\
 \'95\'a0Add objects\
-	- large room should have metal walls\
 	- add a crappy sword and a badass sword\
 		` walking over them adds them to inventory\
 		` could have little vaults with swords\
-		` may want a way to build levels from text descriptions\
-			could use include_str!\
-			table with functions maps characters to object builders, eg \'91#\'92 to stone_wall()\
-			or possibly the file has a mapping table\
-		` maybe make them armories\
 		` could have a sign object, step on it and it says \'93You see a sign saying \'91Lesser Armory\'92\'94\
 	- add a doorman\
 		` moves out of the way if you have a badass sword\
@@ -94,6 +106,8 @@ max_width = 150\
 	- add Rhulad \
 		` walking into him wins the game\
 		` little message, \'93After an epic fight you defeat Rhulad!\'94\
+\'95\'a0Get the backend logging\
+	- maybe just event posting, at info?\
 \'95 Add action objects\
 	- this is where the logic is, typically a dual dispatch sort of thing\
 	- for the player this either posts event(s) or writes a non-game message\

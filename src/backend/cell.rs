@@ -1,4 +1,5 @@
 use super::{Color, Object, Tag};
+use std::fmt::{self, Formatter};
 
 /// Levels are composed of Cell's and cells contain Object's.
 pub struct Cell {
@@ -49,7 +50,7 @@ impl Cell {
             self.invariant();
             obj
         } else {
-            panic!("failed to find tag");
+            panic!("failed to find tag {}", tag);
         }
     }
 
@@ -67,23 +68,31 @@ impl Cell {
 
         assert!(
             !self.objects.is_empty(),
-            "Cells must have at least a Terrain object"
+            "Cells must have at least a Terrain object: {self}"
         );
         assert!(
             self.objects[0].terrain(),
-            "First object in a Cell must be a Terrain object"
+            "First object in a Cell must be a Terrain object: {self}"
         );
 
         let count = self.objects.iter().filter(|obj| obj.terrain()).count();
         assert!(
             count == 1,
-            "There must be only one terrain object in a Cell"
+            "There must be only one terrain object in a Cell: {self}"
         );
 
         let count = self.objects.iter().filter(|obj| obj.character()).count();
         assert!(
             count <= 1,
-            "There cannot be more than one Character object in a Cell"
+            "There cannot be more than one Character object in a Cell: {self}"
         );
+    }
+}
+
+impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let s: Vec<String> = self.objects.iter().map(|obj| format!("{obj}")).collect();
+        let s = s.join(", ");
+        write!(f, "[{s}]")
     }
 }

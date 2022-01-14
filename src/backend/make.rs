@@ -1,4 +1,35 @@
-use super::{Color, Liquid, Material, Object, Tag};
+use super::{Color, Event, Game, Liquid, Material, Message, Object, Point, Tag, Topic};
+
+pub fn level(game: &mut Game, map: &str) {
+    let mut loc = Point::origin();
+    for ch in map.chars() {
+        match ch {
+            ' ' => game.post(Event::AddObject(loc, dirt())),
+            '#' => game.post(Event::AddObject(loc, stone_wall())),
+            'M' => game.post(Event::AddObject(loc, metal_wall())),
+            '+' => game.post(Event::AddObject(loc, door())),
+            '~' => game.post(Event::AddObject(loc, shallow_water())),
+            'W' => game.post(Event::AddObject(loc, deep_water())),
+            'P' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(loc, player()));
+            }
+            '\n' => (),
+            _ => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddMessage(Message {
+                    topic: Topic::Error,
+                    text: format!("Ignoring map char '{ch}'"),
+                }));
+            }
+        }
+        if ch == '\n' {
+            loc = Point::new(0, loc.y + 1);
+        } else {
+            loc = Point::new(loc.x + 1, loc.y);
+        }
+    }
+}
 
 pub fn dirt() -> Object {
     Object {
@@ -17,6 +48,16 @@ pub fn stone_wall() -> Object {
         symbol: '#',
         color: Color::Chocolate,
         description: String::from("a stone wall"),
+    }
+}
+
+pub fn metal_wall() -> Object {
+    Object {
+        dname: String::from("metal wall"),
+        tags: wall_tags(Color::Black, Material::Metal),
+        symbol: '#',
+        color: Color::Silver,
+        description: String::from("a metal wall"),
     }
 }
 

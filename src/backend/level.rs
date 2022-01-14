@@ -17,10 +17,12 @@ impl Level {
     pub fn posted(&mut self, event: &Event) {
         match event {
             Event::NewLevel => {
-                self.player = Point::new(20, 10); // TODO: need to do better here
                 self.cells = FnvHashMap::default();
             }
             Event::AddObject(loc, obj) => {
+                if obj.player() {
+                    self.player = *loc;
+                }
                 let cell = self.cells.entry(*loc).or_insert_with(Cell::new);
                 cell.append(obj.clone());
             }
