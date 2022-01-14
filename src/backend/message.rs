@@ -37,3 +37,12 @@ pub struct Message {
     pub topic: Topic,
     pub text: String,
 }
+
+impl Message {
+    pub fn new(topic: Topic, msg: &str) -> Message {
+        Message {
+            topic,
+            text: String::from(msg),
+        }
+    }
+}

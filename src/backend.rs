@@ -245,8 +245,12 @@ impl Game {
         let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
         if let Some(cell) = self.level.cells.get(&new_loc) {
             match self.probe_cell(cell) {
-                Probe::Move => self.post(Event::PlayerMoved(new_loc)),
-                Probe::Failed(topic, text) => self.post(Event::AddMessage(Message { topic, text })),
+                Probe::Move(Some(msg)) => {
+                    self.post(Event::AddMessage(msg));
+                    self.post(Event::PlayerMoved(new_loc));
+                }
+                Probe::Move(None) => self.post(Event::PlayerMoved(new_loc)),
+                Probe::Failed(mesg) => self.post(Event::AddMessage(mesg)),
                 Probe::NoOp => {}
             }
         }
@@ -312,8 +316,8 @@ impl Game {
         for obj in cell.iter().rev() {
             let p = self.probe_obj(obj);
             match p {
-                Probe::Move => return p,
-                Probe::Failed(_, _) => return p,
+                Probe::Move(_) => return p,
+                Probe::Failed(_) => return p,
                 Probe::NoOp => (),
             }
         }
@@ -322,58 +326,43 @@ impl Game {
 
     fn probe_obj(&self, obj: &Object) -> Probe {
         if obj.character() {
-            Probe::Failed(Topic::NonGamePlay, String::from("There is somebody there."))
+            Probe::Failed(Message::new(Topic::NonGamePlay, "There is somebody there."))
         } else if let Some(open) = obj.door() {
             if open {
-                Probe::Move
+                Probe::Move(None)
             } else {
-                Probe::Failed(Topic::NonGamePlay, String::from("The door is closed."))
+                Probe::Failed(Message::new(Topic::NonGamePlay, "The door is closed."))
             }
         } else if let Some((liquid, deep)) = obj.liquid() {
             match liquid {
                 Liquid::Water => {
                     if deep {
-                        Probe::Failed(Topic::NonGamePlay, String::from("The water is too deep."))
+                        Probe::Failed(Message::new(Topic::NonGamePlay, "The water is too deep."))
                     } else {
-                        Probe::Move
+                        Probe::Move(Some(Message::new(
+                            Topic::NonGamePlay,
+                            "You splash through the water.",
+                        )))
                     }
                 }
-                Liquid::Vitr => Probe::Failed(
+                Liquid::Vitr => Probe::Failed(Message::new(
                     Topic::NonGamePlay,
-                    String::from("Do you have a death wish?"),
-                ),
+                    "Do you have a death wish?",
+                )),
             }
         } else if obj.wall() {
-            Probe::Failed(Topic::NonGamePlay, String::from("You bump into the wall."))
+            Probe::Failed(Message::new(Topic::NonGamePlay, "You bump into the wall."))
         } else if obj.ground() {
-            Probe::Move
+            Probe::Move(None)
         } else {
             Probe::NoOp
         }
     }
-
-    // pub fn blocks_los(cell: &Cell) -> bool {
-    //     for obj in cell.iter() {
-    //         for tag in &obj.tags {
-    //             if tag_blocks_los(tag) {
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //     false
-    // }
-    // pub fn tag_blocks_los(tag: &Tag) -> bool {
-    //     match tag {
-    //         Tag::Door { open } => !open,
-    //         Tag::Character(_symbol) => true,
-    //         Tag::Player => true,
-    //     }
-    // }
 }
 
 enum Probe {
-    Move,
-    Failed(Topic, String),
+    Move(Option<Message>),
+    Failed(Message),
     NoOp,
     // TODO: attack, etc
 }

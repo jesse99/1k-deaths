@@ -76,14 +76,22 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
+\'95 Add a look (or examine) command\
+	- need a ShiftMode event and enum, for now variants are Move and Look\
+	- \'91l\'92 key toggles Look on, escape exits (maybe \'91l\'92 toggles)\
+	- game (or maybe Level) will have to keep track of look location\
+	- when look is toggle on (and when look loc moves) add a message event \
+	- rename probe to shift\
+	- later could support tab and shift-tab\
 \'95\'a0Add objects\
-	- rename objects module something like make or build?\
-	- add a look (or examine) command\
-		` later could support tab and shift-tab\
 	- large room should have metal walls\
 	- add a crappy sword and a badass sword\
 		` walking over them adds them to inventory\
 		` could have little vaults with swords\
+		` may want a way to build levels from text descriptions\
+			could use include_str!\
+			table with functions maps characters to object builders, eg \'91#\'92 to stone_wall()\
+			or possibly the file has a mapping table\
 		` maybe make them armories\
 		` could have a sign object, step on it and it says \'93You see a sign saying \'91Lesser Armory\'92\'94\
 	- add a doorman\
