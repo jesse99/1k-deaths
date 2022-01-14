@@ -1,4 +1,5 @@
 use super::{Message, Object, Point, ProbeMode, Tag};
+use std::fmt::{self, Formatter};
 
 /// These are the "facts" associated with a particular game. All game state
 /// should be able to be re-constructed from the event stream.
@@ -12,4 +13,18 @@ pub enum Event {
     ChangeObject(Point, Tag, Object),
     ChangeProbe(ProbeMode),
     PlayerMoved(Point),
+}
+
+impl fmt::Display for Event {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Event::AddMessage(mesg) => write!(f, "AddMessage({mesg})"),
+            Event::NewGame => write!(f, "NewGame"),
+            Event::NewLevel => write!(f, "NewLevel"),
+            Event::AddObject(loc, obj) => write!(f, "AddObject({loc}, {obj})"),
+            Event::ChangeObject(loc, tag, obj) => write!(f, "ChangeObject({loc}, {tag}, {obj})"),
+            Event::ChangeProbe(mode) => write!(f, "ChangeProbe({mode})"),
+            Event::PlayerMoved(loc) => write!(f, "PlayerMoved({loc})"),
+        }
+    }
 }

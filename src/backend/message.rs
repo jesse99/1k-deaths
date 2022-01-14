@@ -1,4 +1,6 @@
-#[derive(Clone, Copy, Eq, PartialEq)]
+use derive_more::Display;
+
+#[derive(Clone, Copy, Display, Eq, PartialEq)]
 pub enum Topic {
     /// An operation could not be completed.
     Error,
@@ -32,7 +34,8 @@ pub enum Topic {
                  // Warning,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Display, Eq, PartialEq)]
+#[display(fmt = "{} {}", topic, text)]
 pub struct Message {
     pub topic: Topic,
     pub text: String,

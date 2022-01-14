@@ -44,7 +44,7 @@ fn main() {
     info!(root_logger, "started up"; "on" => local.to_rfc2822(), "version" => env!("CARGO_PKG_VERSION"));
     //	info!(root_logger, "started up"; "seed" => options.seed, "on" => local.to_rfc2822());
 
-    let mut game = Game::new();
+    let mut game = Game::new(root_logger.new(o!()));
     game.start();
     let mut terminal = terminal::Terminal::new(root_logger, game);
     terminal.run();

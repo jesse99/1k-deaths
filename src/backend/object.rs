@@ -48,6 +48,15 @@ impl Object {
         None
     }
 
+    pub fn sign(&self) -> Option<String> {
+        for tag in &self.tags {
+            if let Tag::Sign = tag {
+                return Some(self.description.clone());
+            }
+        }
+        None
+    }
+
     pub fn ground(&self) -> bool {
         for tag in &self.tags {
             if let Tag::Ground = tag {
@@ -208,6 +217,14 @@ impl fmt::Display for Object {
     }
 }
 
+impl fmt::Debug for Object {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let tags: Vec<String> = self.tags.iter().map(|tag| format!("{tag}")).collect();
+        let tags = tags.join(", ");
+        write!(f, "dname: {} tags: {}", self.dname, tags)
+    }
+}
+
 // TODO: Could use enum_index instead although that does require that variant
 // values implement the Default trait.
 fn to_index(tag: &Tag) -> i32 {
@@ -215,16 +232,19 @@ fn to_index(tag: &Tag) -> i32 {
         Tag::Character => 1,
         Tag::Player => 2,
 
-        Tag::ClosedDoor => 3,
-        Tag::Ground => 4,
-        Tag::Liquid { liquid: _, deep: _ } => 5,
-        Tag::OpenDoor => 6,
-        Tag::Terrain => 7,
-        Tag::Wall => 8,
+        Tag::Sign => 3,
 
-        Tag::Background(_bg) => 9,
-        Tag::Durability { current: _, max: _ } => 10,
-        Tag::Material(_material) => 11,
-        Tag::Name(_name) => 12,
+        Tag::ClosedDoor => 4,
+        Tag::Ground => 5,
+        Tag::Liquid { liquid: _, deep: _ } => 6,
+        Tag::OpenDoor => 7,
+        Tag::Terrain => 8,
+        Tag::Tree => 9,
+        Tag::Wall => 10,
+
+        Tag::Background(_bg) => 11,
+        Tag::Durability { current: _, max: _ } => 12,
+        Tag::Material(_material) => 13,
+        Tag::Name(_name) => 14,
     }
 }

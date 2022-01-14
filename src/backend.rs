@@ -10,6 +10,7 @@ mod pov;
 mod primitives;
 mod tag;
 
+use derive_more::Display;
 pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
@@ -21,12 +22,13 @@ use level::Level;
 use object::Object;
 use old_pov::OldPoV;
 use pov::PoV;
+use slog::Logger;
 use tag::{Liquid, Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
 
 /// This changes the behavior of the movement keys associated with the player.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum ProbeMode {
     /// Move the player to empty cells (or attempt to interact with an object at that cell).
     Moving,
@@ -63,6 +65,7 @@ pub struct Game {
     pov: PoV,
     old_pov: OldPoV,
     mode: ProbeMode,
+    // logger: Logger,
 }
 
 mod details {
@@ -78,7 +81,7 @@ mod details {
 }
 
 impl Game {
-    pub fn new() -> Game {
+    pub fn new(_logger: Logger) -> Game {
         Game {
             stream: Vec::new(),
             messages: Vec::new(),
@@ -86,6 +89,7 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             mode: ProbeMode::Moving,
+            // logger,
         }
     }
 
@@ -291,6 +295,15 @@ impl Game {
             }
         } else if obj.wall() {
             Probe::Failed(Message::new(Topic::NonGamePlay, "You bump into the wall."))
+        } else if let Some(text) = obj.sign() {
+            // info!(self.logger, "moved"; "obj" => ?obj);
+            Probe::Move(Some(Message {
+                // TODO: we should check the terrain to see if it is something we can move through
+                // Probably need to return something like Probe::Message and then somehow flatten
+                // the return values.
+                topic: Topic::NonGamePlay,
+                text: format!("You see a sign {text}."),
+            }))
         } else if obj.ground() {
             Probe::Move(None)
         } else {

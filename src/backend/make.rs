@@ -9,10 +9,20 @@ pub fn level(game: &mut Game, map: &str) {
             'M' => game.post(Event::AddObject(loc, metal_wall())),
             '+' => game.post(Event::AddObject(loc, door())),
             '~' => game.post(Event::AddObject(loc, shallow_water())),
+            'V' => game.post(Event::AddObject(loc, vitr())),
+            'T' => game.post(Event::AddObject(loc, tree())),
             'W' => game.post(Event::AddObject(loc, deep_water())),
             'P' => {
                 game.post(Event::AddObject(loc, dirt()));
                 game.post(Event::AddObject(loc, player()));
+            }
+            'a' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(loc, sign("the Lesser Armory")));
+            }
+            'b' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(loc, sign("the Greater Armory")));
             }
             '\n' => (),
             _ => {
@@ -31,7 +41,7 @@ pub fn level(game: &mut Game, map: &str) {
     }
 }
 
-pub fn dirt() -> Object {
+fn dirt() -> Object {
     Object {
         dname: String::from("dirt"),
         tags: ground_tags(Color::Black),
@@ -41,7 +51,7 @@ pub fn dirt() -> Object {
     }
 }
 
-pub fn stone_wall() -> Object {
+fn stone_wall() -> Object {
     Object {
         dname: String::from("stone wall"),
         tags: wall_tags(Color::Black, Material::Stone),
@@ -51,7 +61,7 @@ pub fn stone_wall() -> Object {
     }
 }
 
-pub fn metal_wall() -> Object {
+fn metal_wall() -> Object {
     Object {
         dname: String::from("metal wall"),
         tags: wall_tags(Color::Black, Material::Metal),
@@ -61,7 +71,17 @@ pub fn metal_wall() -> Object {
     }
 }
 
-pub fn door() -> Object {
+fn tree() -> Object {
+    Object {
+        dname: String::from("tree"),
+        tags: tree_tags(),
+        symbol: 'T',
+        color: Color::ForestGreen,
+        description: String::from("a tree"),
+    }
+}
+
+fn door() -> Object {
     Object {
         dname: String::from("closed door"),
         tags: door_tags(Color::Black, Material::Stone, false),
@@ -71,7 +91,7 @@ pub fn door() -> Object {
     }
 }
 
-pub fn shallow_water() -> Object {
+fn shallow_water() -> Object {
     Object {
         dname: String::from("shallow water"),
         tags: shallow_water_tags(),
@@ -81,7 +101,7 @@ pub fn shallow_water() -> Object {
     }
 }
 
-pub fn deep_water() -> Object {
+fn deep_water() -> Object {
     Object {
         dname: String::from("deep water"),
         tags: deep_water_tags(),
@@ -91,13 +111,33 @@ pub fn deep_water() -> Object {
     }
 }
 
-pub fn player() -> Object {
+fn vitr() -> Object {
+    Object {
+        dname: String::from("vitr"),
+        tags: vitr_tags(),
+        symbol: 'V',
+        color: Color::Gold,
+        description: String::from("a pool of chaotic acid"),
+    }
+}
+
+fn player() -> Object {
     Object {
         dname: String::from("player"),
         tags: player_tags(),
         symbol: '@',
         color: Color::Blue,
         description: String::from("yourself"),
+    }
+}
+
+fn sign(text: &str) -> Object {
+    Object {
+        dname: String::from("sign"),
+        tags: sign_tags(),
+        symbol: 'i',
+        color: Color::Pink,
+        description: format!("a sign that says '{text}'"),
     }
 }
 
@@ -126,6 +166,16 @@ fn deep_water_tags() -> Vec<Tag> {
         Tag::Terrain,
     ]
 }
+fn vitr_tags() -> Vec<Tag> {
+    vec![
+        Tag::Liquid {
+            liquid: Liquid::Vitr,
+            deep: true,
+        },
+        Tag::Background(Color::Black),
+        Tag::Terrain,
+    ]
+}
 
 fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
     let durability = 5 * to_durability(material); // walls are quite a bit tougher than something like a door
@@ -139,6 +189,10 @@ fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
         Tag::Background(bg),
         Tag::Terrain,
     ]
+}
+
+fn tree_tags() -> Vec<Tag> {
+    vec![Tag::Tree, Tag::Background(Color::Black), Tag::Terrain]
 }
 
 fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
@@ -165,6 +219,10 @@ fn player_tags() -> Vec<Tag> {
         Tag::Name(String::from("yourself")),
         Tag::Player,
     ]
+}
+
+fn sign_tags() -> Vec<Tag> {
+    vec![Tag::Sign]
 }
 
 fn to_durability(material: Material) -> i32 {
