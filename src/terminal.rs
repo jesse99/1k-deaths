@@ -3,7 +3,7 @@ mod color;
 mod map;
 mod messages;
 
-use super::backend::{Game, Point, Size};
+use super::backend::{Game, Point, ProbeMode, Size};
 use map::MapView;
 use messages::MessagesView;
 use slog::Logger;
@@ -88,11 +88,23 @@ impl Terminal {
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
         match key {
+            termion::event::Key::Esc => self.game.probe_mode(ProbeMode::Moving),
             termion::event::Key::Left => self.game.probe(-1, 0),
             termion::event::Key::Right => self.game.probe(1, 0),
             termion::event::Key::Up => self.game.probe(0, -1),
             termion::event::Key::Down => self.game.probe(0, 1),
+            termion::event::Key::Char('1') => self.game.probe(-1, 1),
+            termion::event::Key::Char('2') => self.game.probe(0, 1),
+            termion::event::Key::Char('3') => self.game.probe(1, 1),
+            termion::event::Key::Char('4') => self.game.probe(-1, 0),
+            termion::event::Key::Char('6') => self.game.probe(1, 0),
+            termion::event::Key::Char('7') => self.game.probe(-1, -1),
+            termion::event::Key::Char('8') => self.game.probe(0, -1),
+            termion::event::Key::Char('9') => self.game.probe(1, -1),
             termion::event::Key::Char('q') => return GameState::Exiting,
+            termion::event::Key::Char('x') => {
+                self.game.probe_mode(ProbeMode::Examine(self.game.player()))
+            }
             _ => (),
         };
         GameState::Running

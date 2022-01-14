@@ -20,23 +20,33 @@ impl MapView {
                 let h = (self.origin.x + x + 1) as u16; // termion is 1-based
                 let v = (self.origin.y + y + 1) as u16;
                 let tile = game.tile(&pt);
-                let (bg, fg, symbol) = match tile {
+                let (bg, fg, symbol, focused) = match tile {
                     Tile::Visible {
                         bg: b,
                         fg: f,
                         symbol: s,
-                    } => (b, f, s), // TODO: use black if there is a character or item?
-                    Tile::Stale(s) => (Color::LightGrey, Color::DarkGray, s),
-                    Tile::NotVisible => (Color::Black, Color::Black, ' '),
+                        focus: o,
+                    } => (b, f, s, o), // TODO: use black if there is a character or item?
+                    Tile::Stale {
+                        symbol: s,
+                        focus: o,
+                    } => (Color::LightGrey, Color::DarkGray, s, o),
+                    Tile::NotVisible => (Color::Black, Color::Black, ' ', false),
                 };
                 let _ = write!(
                     stdout,
-                    "{}{}{}{}",
+                    "{}{}{}",
                     termion::cursor::Goto(h, v),
                     termion::color::Bg(color::to_termion(bg)),
-                    termion::color::Fg(color::to_termion(fg)),
-                    symbol
+                    termion::color::Fg(color::to_termion(fg))
                 );
+                if focused {
+                    let _ = write!(stdout, "{}", termion::style::Invert);
+                }
+                let _ = write!(stdout, "{}", symbol);
+                if focused {
+                    let _ = write!(stdout, "{}", termion::style::Reset);
+                }
             }
         }
     }

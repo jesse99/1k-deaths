@@ -23,12 +23,28 @@ use pov::PoV;
 
 const MAX_MESSAGES: usize = 1000;
 
+/// This changes the behavior of the movement keys associated with the player.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProbeMode {
+    /// Move the player to empty cells (or attempt to interact with an object at that cell).
+    Moving,
+    /// Print descriptions for objects at the cell.
+    Examine(Point),
+    // TODO: need something like Focus or Target to allow the user to select a cell/character
+    // for stuff like ranged attacks
+}
+
 pub enum Tile {
     /// player can see this
-    Visible { bg: Color, fg: Color, symbol: char },
+    Visible {
+        bg: Color,
+        fg: Color,
+        symbol: char,
+        focus: bool,
+    },
     /// player can't see this but has in the past, note that this may not reflect the current state
-    Stale(char),
-    /// player has never seen this location
+    Stale { symbol: char, focus: bool },
+    /// player has never seen this location (and it may not exist)
     NotVisible,
 }
 
@@ -44,6 +60,7 @@ pub struct Game {
     level: Level,
     pov: PoV,
     old_pov: OldPoV,
+    mode: ProbeMode,
 }
 
 mod details {
@@ -66,6 +83,7 @@ impl Game {
             level: Level::new(),
             pov: PoV::new(),
             old_pov: OldPoV::new(),
+            mode: ProbeMode::Moving,
         }
     }
 
@@ -236,40 +254,86 @@ impl Game {
         self.level.player
     }
 
+    // TODO: When ProbeMode is not Moving should support tab and shift-tab to move
+    // to the next "interesting" cell where interesting might just be a cell
+    // with a non-player Character.
+    pub fn probe_mode(&mut self, mode: ProbeMode) {
+        assert_ne!(self.mode, mode);
+        self.post(Event::ChangeProbe(mode));
+    }
+
     /// Do something with an adjacent cell, this can be move into it, attack
     /// an enemy there, start a dialog with a friendly character, open a door,
     /// etc.
     pub fn probe(&mut self, dx: i32, dy: i32) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
-        let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
-        if let Some(cell) = self.level.cells.get(&new_loc) {
-            match self.probe_cell(cell) {
-                Probe::Move(Some(msg)) => {
-                    self.post(Event::AddMessage(msg));
-                    self.post(Event::PlayerMoved(new_loc));
+        match self.mode {
+            ProbeMode::Moving => {
+                let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
+                if let Some(cell) = self.level.cells.get(&new_loc) {
+                    match self.probe_cell(cell) {
+                        Probe::Move(Some(msg)) => {
+                            self.post(Event::AddMessage(msg));
+                            self.post(Event::PlayerMoved(new_loc));
+                        }
+                        Probe::Move(None) => self.post(Event::PlayerMoved(new_loc)),
+                        Probe::Failed(mesg) => self.post(Event::AddMessage(mesg)),
+                        Probe::NoOp => {}
+                    }
                 }
-                Probe::Move(None) => self.post(Event::PlayerMoved(new_loc)),
-                Probe::Failed(mesg) => self.post(Event::AddMessage(mesg)),
-                Probe::NoOp => {}
             }
-        }
+            ProbeMode::Examine(loc) => {
+                let new_loc = Point::new(loc.x + dx, loc.y + dy);
+                if self.pov.visible(&self.level.player, &self.level, &new_loc) {
+                    let cell = self.level.cells.get(&new_loc).unwrap();
+                    let descs: Vec<String> = cell
+                        .iter()
+                        .rev()
+                        .map(|obj| obj.description.clone())
+                        .collect();
+                    let descs = descs.join(", and ");
+                    let text = format!("You see {descs}.");
+                    self.post(Event::AddMessage(Message {
+                        topic: Topic::NonGamePlay,
+                        text,
+                    }));
+                    self.post(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
+                } else if self.old_pov.get(&new_loc).is_some() {
+                    let text = "You can no longer see there.".to_string();
+                    self.post(Event::AddMessage(Message {
+                        topic: Topic::NonGamePlay,
+                        text,
+                    }));
+                    self.post(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
+                };
+            }
+        };
     }
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
     /// Otherwise return None. This is mutable because state objects like Level merely set
     /// a dirty flag when events are posted and may need to refresh here.
     pub fn tile(&mut self, loc: &Point) -> Tile {
+        let focus = match self.mode {
+            ProbeMode::Moving => false,
+            ProbeMode::Examine(eloc) => *loc == eloc,
+        };
         let tile = if self.pov.visible(&self.level.player, &self.level, loc) {
             if let Some(cell) = self.level.cells.get(loc) {
                 let (bg, fg, symbol) = cell.to_bg_fg_symbol();
-                Tile::Visible { bg, fg, symbol }
+                Tile::Visible {
+                    bg,
+                    fg,
+                    symbol,
+                    focus,
+                }
             } else {
                 Tile::NotVisible // completely outside the level (tho want to hide this fact from the UI)
             }
         } else {
             match self.old_pov.get(loc) {
-                Some(symbol) => Tile::Stale(symbol),
+                Some(symbol) => Tile::Stale { symbol, focus },
                 None => Tile::NotVisible, // not visible and never seen
             }
         };
@@ -289,12 +353,7 @@ impl Game {
     fn post(&mut self, event: Event) {
         self.stream.push(event.clone());
 
-        if let Event::AddMessage(message) = event {
-            self.messages.push(message);
-            while self.messages.len() > MAX_MESSAGES {
-                self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
-            }
-        } else {
+        if !self.handled_game_event(&event) {
             // This is the type state pattern: as events are posted new state
             // objects are updated and upcoming state objects can safely reference
             // them. To enforce this at compile time Game1, Game2, etc objects
@@ -309,6 +368,23 @@ impl Game {
                 pov: &self.pov,
             };
             self.old_pov.posted(&game2, &event);
+        }
+    }
+
+    fn handled_game_event(&mut self, event: &Event) -> bool {
+        match event {
+            Event::AddMessage(message) => {
+                self.messages.push(message.clone());
+                while self.messages.len() > MAX_MESSAGES {
+                    self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
+                }
+                true
+            }
+            Event::ChangeProbe(mode) => {
+                self.mode = *mode;
+                true
+            }
+            _ => false,
         }
     }
 
