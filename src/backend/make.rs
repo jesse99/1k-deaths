@@ -16,6 +16,14 @@ pub fn level(game: &mut Game, map: &str) {
                 game.post(Event::AddObject(loc, dirt()));
                 game.post(Event::AddObject(loc, player()));
             }
+            's' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(loc, weak_sword()));
+            }
+            'S' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(loc, mighty_sword()));
+            }
             'a' => {
                 game.post(Event::AddObject(loc, dirt()));
                 game.post(Event::AddObject(loc, sign("the Lesser Armory")));
@@ -141,6 +149,26 @@ fn sign(text: &str) -> Object {
     }
 }
 
+fn weak_sword() -> Object {
+    Object {
+        dname: String::from("weak_sword"),
+        tags: weak_sword_tags(),
+        symbol: 's',
+        color: Color::Silver,
+        description: "a nicked long sword".to_string(),
+    }
+}
+
+fn mighty_sword() -> Object {
+    Object {
+        dname: String::from("mighty_sword"),
+        tags: mighty_sword_tags(),
+        symbol: 'S',
+        color: Color::Silver,
+        description: "the Sword of Impending Doom".to_string(),
+    }
+}
+
 fn ground_tags(bg: Color) -> Vec<Tag> {
     vec![Tag::Ground, Tag::Background(bg), Tag::Terrain]
 }
@@ -218,6 +246,17 @@ fn player_tags() -> Vec<Tag> {
         },
         Tag::Name(String::from("yourself")),
         Tag::Player,
+    ]
+}
+
+fn weak_sword_tags() -> Vec<Tag> {
+    vec![Tag::Name(String::from("long sword")), Tag::Portable]
+}
+
+fn mighty_sword_tags() -> Vec<Tag> {
+    vec![
+        Tag::Name(String::from("Sword of Impending Doom")),
+        Tag::Portable,
     ]
 }
 

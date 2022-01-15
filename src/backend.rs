@@ -240,6 +240,10 @@ impl Game {
     fn handled_game_event(&mut self, event: &Event) -> bool {
         match event {
             Event::AddMessage(message) => {
+                if let Topic::Error = message.topic {
+                    // TODO: do we really want to do this?
+                    error!("Logged error '{}'", message.text);
+                }
                 self.messages.push(message.clone());
                 while self.messages.len() > MAX_MESSAGES {
                     self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue

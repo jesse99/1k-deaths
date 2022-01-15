@@ -48,6 +48,15 @@ impl Object {
         None
     }
 
+    pub fn portable(&self) -> bool {
+        for tag in &self.tags {
+            if let Tag::Portable = tag {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn sign(&self) -> Option<String> {
         for tag in &self.tags {
             if let Tag::Sign = tag {
@@ -232,19 +241,20 @@ fn to_index(tag: &Tag) -> i32 {
         Tag::Character => 1,
         Tag::Player => 2,
 
-        Tag::Sign => 3,
+        Tag::Portable => 3,
+        Tag::Sign => 4,
 
-        Tag::ClosedDoor => 4,
-        Tag::Ground => 5,
-        Tag::Liquid { liquid: _, deep: _ } => 6,
-        Tag::OpenDoor => 7,
-        Tag::Terrain => 8,
-        Tag::Tree => 9,
-        Tag::Wall => 10,
+        Tag::ClosedDoor => 5,
+        Tag::Ground => 6,
+        Tag::Liquid { liquid: _, deep: _ } => 7,
+        Tag::OpenDoor => 8,
+        Tag::Terrain => 9,
+        Tag::Tree => 10,
+        Tag::Wall => 11,
 
-        Tag::Background(_bg) => 11,
-        Tag::Durability { current: _, max: _ } => 12,
-        Tag::Material(_material) => 13,
-        Tag::Name(_name) => 14,
+        Tag::Background(_bg) => 12,
+        Tag::Durability { current: _, max: _ } => 13,
+        Tag::Material(_material) => 14,
+        Tag::Name(_name) => 15,
     }
 }

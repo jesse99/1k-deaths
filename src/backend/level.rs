@@ -6,6 +6,8 @@ pub struct Level {
     pub cells: FnvHashMap<Point, Cell>,
 }
 
+// TODO: levels should have a default object so if a player does something like
+// dig through walls he'll never reach an end
 impl Level {
     pub fn new() -> Level {
         Level {

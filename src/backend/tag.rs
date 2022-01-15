@@ -2,23 +2,6 @@ use super::Color;
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
-/// Affects behavior of items like burning oil or a pick axe. Also affects
-/// spell behavior and whether characters can move through terrain.
-#[allow(dead_code)]
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
-pub enum Material {
-    Wood,
-    Stone,
-    Metal,
-}
-
-/// Used with Tag::Liquid.
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
-pub enum Liquid {
-    Water,
-    Vitr,
-}
-
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
 /// concept because those classes can be combined.
@@ -30,6 +13,9 @@ pub enum Tag {
     /// Will also have a Character tag.
     Player,
 
+    /// The object is something that can be picked up and placed into a
+    /// Character's inventory.
+    Portable,
     /// Description will have the sign's message.
     Sign,
 
@@ -69,11 +55,29 @@ pub enum Tag {
     Name(String),
 }
 
+/// Affects behavior of items like burning oil or a pick axe. Also affects
+/// spell behavior and whether characters can move through terrain.
+#[allow(dead_code)]
+#[derive(Clone, Copy, Display, Eq, PartialEq)]
+pub enum Material {
+    Wood,
+    Stone,
+    Metal,
+}
+
+/// Used with Tag::Liquid.
+#[derive(Clone, Copy, Display, Eq, PartialEq)]
+pub enum Liquid {
+    Water,
+    Vitr,
+}
+
 impl fmt::Display for Tag {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Tag::Character => write!(f, "Character"),
             Tag::Player => write!(f, "Player"),
+            Tag::Portable => write!(f, "Portable"),
             Tag::Sign => write!(f, "Sign"),
             Tag::ClosedDoor => write!(f, "ClosedDoor"),
             Tag::Ground => write!(f, "Ground"),
