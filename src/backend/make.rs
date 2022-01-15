@@ -262,6 +262,7 @@ fn player_tags() -> Vec<Tag> {
             current: 100,
             max: 100,
         },
+        Tag::Inventory(Vec::new()),
         Tag::Name(String::from("yourself")),
         Tag::Player,
     ]

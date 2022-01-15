@@ -1,4 +1,4 @@
-use super::Color;
+use super::{Color, Object};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
@@ -8,10 +8,13 @@ use std::fmt::{self, Formatter};
 #[derive(Clone, Eq, PartialEq)]
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when
-    /// players try to move into them. Will also have a Name tag. XXX mention optional tags
+    /// players try to move into them. Will also have a Name tag. May have
+    /// an Inventory tag.
     Character,
-    /// Will also have a Character tag.
+    /// Will also have Character and Inventory tags.
     Player,
+    /// Objects that a Character has picked up.
+    Inventory(Vec<Object>),
 
     /// The object is something that can be picked up and placed into a
     /// Character's inventory.
@@ -77,6 +80,7 @@ impl fmt::Display for Tag {
         match self {
             Tag::Character => write!(f, "Character"),
             Tag::Player => write!(f, "Player"),
+            Tag::Inventory(_) => write!(f, "Inventory"),
             Tag::Portable => write!(f, "Portable"),
             Tag::Sign => write!(f, "Sign"),
             Tag::ClosedDoor => write!(f, "ClosedDoor"),

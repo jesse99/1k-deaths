@@ -44,6 +44,26 @@ impl Cell {
     //     obj
     // }
 
+    pub fn contains(&self, tag: &Tag) -> bool {
+        self.objects.iter().any(|obj| obj.has(tag))
+    }
+
+    // pub fn get(&mut self, tag: &Tag) -> &Object {
+    //     if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
+    //         &self.objects[index]
+    //     } else {
+    //         panic!("failed to find tag {}", tag);
+    //     }
+    // }
+
+    pub fn get_mut(&mut self, tag: &Tag) -> &mut Object {
+        if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
+            &mut self.objects[index]
+        } else {
+            panic!("failed to find tag {}", tag);
+        }
+    }
+
     pub fn remove(&mut self, tag: &Tag) -> Object {
         if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
             let obj = self.objects.remove(index);

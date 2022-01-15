@@ -6,7 +6,7 @@ use std::fmt::{self, Formatter};
 /// in arbitrary ways (e.g. in theory a cobra could be both a Character and a
 /// wieldable Weapon). But note that it's the Action objects that encapsulate
 /// behavior.
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
     pub dname: String,
@@ -34,6 +34,24 @@ impl Object {
             }
         }
         false
+    }
+
+    // pub fn inventory(&self) -> Option<&Vec<Object>> {
+    //     for tag in &self.tags {
+    //         if let Tag::Inventory(objects) = tag {
+    //             return Some(objects);
+    //         }
+    //     }
+    //     None
+    // }
+
+    pub fn inventory_mut(&mut self) -> Option<&mut Vec<Object>> {
+        for tag in &mut self.tags {
+            if let Tag::Inventory(objects) = tag {
+                return Some(objects);
+            }
+        }
+        None
     }
 
     /// Returns open or closed (or None if there is no door).
@@ -170,7 +188,6 @@ impl Object {
             "Must have a description: {self}"
         );
         if self.terrain() {
-            // TODO: terrain cannot have the Portable tag
             assert!(
                 self.background().is_some(),
                 "Terrain objects must have a Background: {self}",
@@ -178,6 +195,10 @@ impl Object {
             assert!(
                 !self.character(),
                 "Terrain objects cannot also be Characters: {self}",
+            );
+            assert!(
+                !self.portable(),
+                "Terrain objects cannot be Portable: {self}",
             );
         }
         if self.door().is_some() {
@@ -200,12 +221,21 @@ impl Object {
             assert!(
                 self.name().is_some(),
                 "Character's must have a name: {self}"
-            )
+            );
+            assert!(
+                !self.portable(),
+                "Character objects cannot be Portable: {self}",
+            );
         }
         if self.player() {
             assert!(self.character(), "Player must be a Character: {self}")
         }
-        // TODO: portable must have a name
+        if self.portable() {
+            assert!(
+                self.name().is_some(),
+                "Portable objects must have a Name: {self}"
+            )
+        }
 
         let mut indexes = FnvHashSet::default();
         for tag in &self.tags {
@@ -240,21 +270,22 @@ fn to_index(tag: &Tag) -> i32 {
     match tag {
         Tag::Character => 1,
         Tag::Player => 2,
+        Tag::Inventory(_) => 3,
 
-        Tag::Portable => 3,
-        Tag::Sign => 4,
+        Tag::Portable => 4,
+        Tag::Sign => 5,
 
-        Tag::ClosedDoor => 5,
-        Tag::Ground => 6,
-        Tag::Liquid { liquid: _, deep: _ } => 7,
-        Tag::OpenDoor => 8,
-        Tag::Terrain => 9,
-        Tag::Tree => 10,
-        Tag::Wall => 11,
+        Tag::ClosedDoor => 6,
+        Tag::Ground => 7,
+        Tag::Liquid { liquid: _, deep: _ } => 8,
+        Tag::OpenDoor => 9,
+        Tag::Terrain => 10,
+        Tag::Tree => 11,
+        Tag::Wall => 12,
 
-        Tag::Background(_bg) => 12,
-        Tag::Durability { current: _, max: _ } => 13,
-        Tag::Material(_material) => 14,
-        Tag::Name(_name) => 15,
+        Tag::Background(_bg) => 13,
+        Tag::Durability { current: _, max: _ } => 14,
+        Tag::Material(_material) => 15,
+        Tag::Name(_name) => 16,
     }
 }

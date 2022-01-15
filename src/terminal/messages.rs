@@ -38,6 +38,7 @@ impl MessagesView {
 fn to_fore_color(topic: Topic) -> Color {
     match topic {
         Topic::Error => Color::Red,
+        Topic::Item => Color::Black,
         Topic::NonGamePlay => Color::Blue,
     }
 }

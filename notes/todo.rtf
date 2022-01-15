@@ -79,8 +79,6 @@ max_width = 150\
 \'95\'a0Generate the level from a text file:\
 	- add Messages for labels that are currently ignored\
 		s and S (swords)\
-			randomize description\
-			these should auto-pickup and go into inventory\
 			review probe logic\
 				do we want Probe enum?\
 				can we check if terrain blocks movement when there is a sign?\
@@ -96,9 +94,9 @@ max_width = 150\
 			walking into him puts his sword into your inventory\
 			little message, \'93After an epic fight you defeat Rhulad!\'94\
 	- later file could include a symbol mapping, i.e. M=Metal Door\
-\'95 Use a different logger? Maybe a magical one that doesn\'92t require a logger object\
-   to be passed in?\
-	- log event posting, at info?\
+\'95 Log event posting, at info?\
+\'95 Would be great if could guarantee that mutation only happened in response to an event\
+	- maybe type state?\
 \'95 Add action objects\
 	- this is where the logic is, typically a dual dispatch sort of thing\
 	- for the player this either posts event(s) or writes a non-game message\
@@ -107,6 +105,7 @@ max_width = 150\
 	  (inventory item against another object)\
 	- later would have other actions like cast a spell\
 	- for NPCs this will post event(s), in some cases this could be zero events\
+\'95 If a character id is added don\'92t make it a simple string\
 \'95 Levels should be unbounded\
 	- would need a default square (eg stone wall)\
 	- characters can extend the level doing stuff like digging through stone walls\
@@ -120,9 +119,6 @@ enum ObjectTag\
 \f3\i ranged weapon, spell, etc
 \f1\i0 \
 	Brand(element)\
-	Portable            
-\f3\i i.e. can go into inventory
-\f1\i0 \
 	\
 	Inventory([Objects]),   
 \f3\i or ids?
@@ -133,9 +129,6 @@ enum ObjectTag\
 \f1\i0 Binding(String) 
 \f3\i used to associate objects, eg a key and a door
 \f1\i0 	\
-	Door(material)    
-\f3\i wood, stone, steel
-\f1\i0 \
 	Fountain(type)   
 \f3\i water or blood\
 	
@@ -143,19 +136,11 @@ enum ObjectTag\
 \f3\i keys should have a binding\
 	Chest(contents) has a binding if a key is required
 \f1\i0 \
-	\
-	Character           
-\f3\i terrain, weapon, character are all individual tags
-\f1\i0 \
-	Player                 
-\f3\i can have multiples: non-portable weapon could also be terrain, eg ballista
-\f1\i0 \
 	
 \f3\i 	
 \f1\i0 \
 
-\f3\i terrain is semi-permanent\
-stuff like munitions will transition terrain, eg to rubble\
+\f3\i stuff like munitions will transition terrain, eg to rubble\
 \
 player moving does an implicit action against objects there\
 	attempt to open door\

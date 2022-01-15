@@ -10,6 +10,7 @@ pub enum Event {
     NewGame,
     NewLevel,
     AddObject(Point, Object),
+    AddToInventory(Point), // TODO: this will likely need to take a character id, and maybe an item id
     ChangeObject(Point, Tag, Object),
     ChangeProbe(ProbeMode),
     PlayerMoved(Point),
@@ -22,6 +23,7 @@ impl fmt::Display for Event {
             Event::NewGame => write!(f, "NewGame"),
             Event::NewLevel => write!(f, "NewLevel"),
             Event::AddObject(loc, obj) => write!(f, "AddObject({loc}, {obj})"),
+            Event::AddToInventory(loc) => write!(f, "AddToInventory({loc})"),
             Event::ChangeObject(loc, tag, obj) => write!(f, "ChangeObject({loc}, {tag}, {obj})"),
             Event::ChangeProbe(mode) => write!(f, "ChangeProbe({mode})"),
             Event::PlayerMoved(loc) => write!(f, "PlayerMoved({loc})"),

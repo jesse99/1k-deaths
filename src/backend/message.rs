@@ -4,6 +4,8 @@ use derive_more::Display;
 pub enum Topic {
     /// An operation could not be completed.
     Error,
+    /// Player did something with an item.
+    Item,
     /// Something that doesn't affect the game, e.g. bumping into a wall.
     NonGamePlay, // TODO: might want to change this to Announcement and add an ImportantAnnouncement
                  // /// NPC was damaged (but not by the player).

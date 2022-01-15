@@ -142,8 +142,12 @@ impl Game {
                         Probe::Move(Some(msg)) => {
                             self.post(Event::AddMessage(msg));
                             self.post(Event::PlayerMoved(new_loc));
+                            self.attempt_pickup(&new_loc);
                         }
-                        Probe::Move(None) => self.post(Event::PlayerMoved(new_loc)),
+                        Probe::Move(None) => {
+                            self.post(Event::PlayerMoved(new_loc));
+                            self.attempt_pickup(&new_loc);
+                        }
                         Probe::Change(tag, obj) => {
                             self.post(Event::ChangeObject(new_loc, tag, obj))
                         }
@@ -257,7 +261,30 @@ impl Game {
                 self.mode = *mode;
                 true
             }
+            Event::AddToInventory(loc) => {
+                let cell = self.level.cells.get_mut(loc).unwrap();
+                let item = cell.remove(&Tag::Portable);
+                let name = item.name().unwrap();
+                let mesg = Message {
+                    topic: Topic::Item,
+                    text: format!("You pick up the {name}."),
+                };
+                self.messages.push(mesg);
+
+                let cell = self.level.cells.get_mut(&self.level.player).unwrap();
+                let obj = cell.get_mut(&Tag::Player);
+                let inv = obj.inventory_mut().unwrap();
+                inv.push(item);
+                true
+            }
             _ => false,
+        }
+    }
+
+    fn attempt_pickup(&mut self, new_loc: &Point) {
+        let new_cell = self.level.cells.get_mut(new_loc).unwrap();
+        if new_cell.contains(&Tag::Portable) {
+            self.post(Event::AddToInventory(*new_loc));
         }
     }
 
