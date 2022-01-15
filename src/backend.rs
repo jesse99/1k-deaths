@@ -92,6 +92,15 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             mode: ProbeMode::Moving,
+
+            // TODO:
+            // 1) Use a random seed. Be sure to log this and also allow for
+            // specifying the seed (probably via a command line option).
+            // 2) SmallRng is not guaranteed to be portable so results may
+            // not be reproducible between platforms.
+            // 3) We're going to have to be able to persist the RNG. rand_pcg
+            // supports serde so that would likely work. If not we could
+            // create our own simple RNG.
             rng: RefCell::new(SmallRng::seed_from_u64(100)), // TODO: use a random seed (be sure to log it)
         }
     }
