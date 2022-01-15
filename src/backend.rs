@@ -22,7 +22,7 @@ use level::Level;
 use object::Object;
 use old_pov::OldPoV;
 use pov::PoV;
-use slog::Logger;
+// use slog::Logger;
 use tag::{Liquid, Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
@@ -65,7 +65,6 @@ pub struct Game {
     pov: PoV,
     old_pov: OldPoV,
     mode: ProbeMode,
-    // logger: Logger,
 }
 
 mod details {
@@ -81,7 +80,7 @@ mod details {
 }
 
 impl Game {
-    pub fn new(_logger: Logger) -> Game {
+    pub fn new() -> Game {
         Game {
             stream: Vec::new(),
             messages: Vec::new(),

@@ -6,7 +6,7 @@ mod messages;
 use super::backend::{Game, Point, ProbeMode, Size};
 use map::MapView;
 use messages::MessagesView;
-use slog::Logger;
+// use slog::Logger;
 use std::io::{stdin, stdout, Write};
 use std::panic;
 use std::process;
@@ -22,7 +22,6 @@ pub enum GameState {
 }
 
 pub struct Terminal {
-    root_logger: Logger,
     game: Game,
     stdout: Box<dyn Write>,
 
@@ -31,7 +30,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn new(root_logger: Logger, game: Game) -> Terminal {
+    pub fn new(game: Game) -> Terminal {
         let stdout = stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -46,10 +45,9 @@ impl Terminal {
         let (width, height) = termion::terminal_size().expect("couldn't get terminal size");
         let width = width as i32;
         let height = height as i32;
-        debug!(root_logger, "terminal size"; "width" => width, "height" => height);
+        info!("terminal size is {} x {}", width, height);
 
         Terminal {
-            root_logger,
             game,
             stdout: Box::new(stdout),
             map: MapView {
@@ -72,7 +70,7 @@ impl Terminal {
             self.render();
             if let Some(c) = key_iter.next() {
                 let c = c.unwrap();
-                debug!(self.root_logger, "input"; "key" => ?c);
+                debug!("input key {:?}", c);
                 state = self.handle_input(c);
             } else {
                 panic!("Couldn't read the next key");

@@ -79,32 +79,22 @@ max_width = 150\
 \'95\'a0Generate the level from a text file:\
 	- add Messages for labels that are currently ignored\
 		s and S (swords with random descriptions)\
+			these should auto-pickup and go into inventory\
 		D (door man)\
 			says \'93You are not worthy to challenge the Emperor!\'94\
 			or says something else and moves aside\
 		o (spectator, should say something random)\
 			\'93I hope you\'92re prepared to die\'94\
-			\'93I have 10g on you lasting 3 minutes!\'94\
+			\'93I have 10g on you lasting at least 3 minutes!\'94\
 			\'93The Emperor cannot be defeated!\'94\
 			note that the saying is fixed once a spectator is instantiated\
 		R (rhulad))\
+			walking into him puts his sword into your inventory\
+			little message, \'93After an epic fight you defeat Rhulad!\'94\
 	- later file could include a symbol mapping, i.e. M=Metal Door\
 \'95 Use a different logger? Maybe a magical one that doesn\'92t require a logger object\
    to be passed in?\
-\'95\'a0Add objects\
-	- add a crappy sword and a badass sword\
-		` walking over them adds them to inventory\
-		` could have little vaults with swords\
-		` could have a sign object, step on it and it says \'93You see a sign saying \'91Lesser Armory\'92\'94\
-	- add a doorman\
-		` moves out of the way if you have a badass sword\
-		` will need double thick walls so he can stand in the recess\
-		` otherwise says you are not worthy\
-	- add Rhulad \
-		` walking into him wins the game\
-		` little message, \'93After an epic fight you defeat Rhulad!\'94\
-\'95\'a0Get the backend logging\
-	- maybe just event posting, at info?\
+	- log event posting, at info?\
 \'95 Add action objects\
 	- this is where the logic is, typically a dual dispatch sort of thing\
 	- for the player this either posts event(s) or writes a non-game message\
