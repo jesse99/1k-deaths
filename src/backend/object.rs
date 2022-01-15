@@ -19,143 +19,78 @@ pub struct Object {
 // Tag accessors
 impl Object {
     pub fn character(&self) -> bool {
-        for tag in &self.tags {
-            if let Tag::Character = tag {
-                return true;
-            }
-        }
-        false
+        self.tags.iter().any(|tag| tag.is_character())
     }
 
     pub fn player(&self) -> bool {
-        for tag in &self.tags {
-            if let Tag::Player = tag {
-                return true;
-            }
-        }
-        false
+        self.tags.iter().any(|tag| tag.is_player())
     }
 
     // pub fn inventory(&self) -> Option<&Vec<Object>> {
-    //     for tag in &self.tags {
-    //         if let Tag::Inventory(objects) = tag {
-    //             return Some(objects);
-    //         }
-    //     }
-    //     None
+    //     self.tags.iter().find_map(|tag| tag.as_inventory())
     // }
 
     pub fn inventory_mut(&mut self) -> Option<&mut Vec<Object>> {
-        for tag in &mut self.tags {
-            if let Tag::Inventory(objects) = tag {
-                return Some(objects);
-            }
-        }
-        None
+        self.tags.iter_mut().find_map(|tag| tag.as_mut_inventory())
     }
 
     /// Returns open or closed (or None if there is no door).
     pub fn door(&self) -> Option<bool> {
-        for tag in &self.tags {
-            if let Tag::OpenDoor = tag {
-                return Some(true);
-            } else if let Tag::ClosedDoor = tag {
-                return Some(false);
-            }
+        if self.tags.iter().any(|tag| tag.is_open_door()) {
+            Some(true)
+        } else if self.tags.iter().any(|tag| tag.is_closed_door()) {
+            Some(false)
+        } else {
+            None
         }
-        None
     }
 
     pub fn portable(&self) -> bool {
-        for tag in &self.tags {
-            if let Tag::Portable = tag {
-                return true;
-            }
-        }
-        false
+        self.tags.iter().any(|tag| tag.is_portable())
     }
 
-    pub fn sign(&self) -> Option<String> {
-        for tag in &self.tags {
-            if let Tag::Sign = tag {
-                return Some(self.description.clone());
-            }
+    pub fn sign(&self) -> Option<&String> {
+        // This one is a little tricky because we need to make sure that the
+        // object is actually a sign.
+        if self.tags.iter().any(|tag| tag.is_sign()) {
+            self.tags.iter().find_map(|tag| tag.as_name()) // this should always work
+        } else {
+            None
         }
-        None
     }
 
     pub fn ground(&self) -> bool {
-        for tag in &self.tags {
-            if let Tag::Ground = tag {
-                return true;
-            }
-        }
-        false
+        self.tags.iter().any(|tag| tag.is_ground())
     }
 
     /// Returns (Liquid, deep) (or None if there's no liquid).
     pub fn liquid(&self) -> Option<(Liquid, bool)> {
-        for tag in &self.tags {
-            if let Tag::Liquid { liquid, deep } = tag {
-                return Some((*liquid, *deep));
-            }
-        }
-        None
+        self.tags.iter().find_map(|tag| tag.as_liquid())
     }
 
     pub fn terrain(&self) -> bool {
-        for tag in &self.tags {
-            if let Tag::Terrain = tag {
-                return true;
-            }
-        }
-        false
+        self.tags.iter().any(|tag| tag.is_terrain())
     }
 
     pub fn wall(&self) -> bool {
-        for tag in &self.tags {
-            if let Tag::Wall = tag {
-                return true;
-            }
-        }
-        false
+        self.tags.iter().any(|tag| tag.is_wall())
     }
 
     pub fn background(&self) -> Option<Color> {
-        for tag in &self.tags {
-            if let Tag::Background(bg) = tag {
-                return Some(*bg);
-            }
-        }
-        None
+        self.tags.iter().find_map(|tag| tag.as_background())
     }
 
     /// Returns (current max) durability (or None).
     pub fn durability(&self) -> Option<(i32, i32)> {
-        for tag in &self.tags {
-            if let Tag::Durability { current, max } = tag {
-                return Some((*current, *max));
-            }
-        }
-        None
+        self.tags.iter().find_map(|tag| tag.as_durability())
     }
 
     // pub fn material(&self) -> Option<Material> {
-    //     for tag in &self.tags {
-    //         if let Tag::Material(material) = tag {
-    //             return Some(*material);
-    //         }
-    //     }
-    //     None
+    //     self.tags.iter().find_map(|tag| tag.as_material())
     // }
 
-    pub fn name(&self) -> Option<String> {
-        for tag in &self.tags {
-            if let Tag::Name(name) = tag {
-                return Some(name.clone());
-            }
-        }
-        None
+    pub fn name(&self) -> Option<&String> {
+        self.tags.iter().find_map(|tag| tag.as_name())
     }
 
     /// This uses to_index so it will consider tags like Material(Stone) and

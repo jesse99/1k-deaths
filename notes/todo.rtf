@@ -19,7 +19,6 @@ clear && printf '\\e[3J' && cargo test\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 cargo doc --open\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 \
 \pard\pardeftab720\sl420\partightenfactor0
 
@@ -37,51 +36,69 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 \pard\pardeftab720\sl480\partightenfactor0
 
 \f0\fs34 \cf4 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec4 fn\cf5 \strokec5  \cf6 \strokec6 valid_response\cf5 \strokec5 (\cf7 \strokec7 r\cf5 \strokec5 : \cf8 \strokec8 HttpResponse\cf5 \strokec5 ) \{\
-    \cf7 \strokec7 r\cf5 \strokec5 .\cf6 \strokec6 status_line\cf5 \strokec5 (\cf9 \strokec9 200\cf5 \strokec5 , \cf10 \strokec10 "OK"\cf5 \strokec5 )\cf11 \strokec11                           // required\cf5 \strokec5 \
-      .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "X-Unexpected"\cf5 \strokec5 , \cf10 \strokec10 "Spanish-Inquisition"\cf5 \strokec5 )\cf11 \strokec11   // zero or more\cf5 \strokec5 \
-      .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "Content-Length"\cf5 \strokec5 , \cf10 \strokec10 "6"\cf5 \strokec5 )                  \
-      .\cf6 \strokec6 body\cf5 \strokec5 (\cf10 \strokec10 "Hello!"\cf5 \strokec5 )\cf11 \strokec11                                  // optional\cf5 \strokec5 \
+fn\cf5  \cf6 valid_response\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
+    \cf7 r\cf5 .\cf6 status_line\cf5 (\cf9 200\cf5 , \cf10 "OK"\cf5 )\cf11                           // required\cf5 \
+      .\cf6 header\cf5 (\cf10 "X-Unexpected"\cf5 , \cf10 "Spanish-Inquisition"\cf5 )\cf11   // zero or more\cf5 \
+      .\cf6 header\cf5 (\cf10 "Content-Length"\cf5 , \cf10 "6"\cf5 )                  \
+      .\cf6 body\cf5 (\cf10 "Hello!"\cf5 )\cf11                                  // optional\cf5 \
 \}\
 \
-\cf4 \strokec4 fn\cf5 \strokec5  \cf6 \strokec6 broken_response_1\cf5 \strokec5 (\cf7 \strokec7 r\cf5 \strokec5 : \cf8 \strokec8 HttpResponse\cf5 \strokec5 ) \{\
-    \cf7 \strokec7 r\cf5 \strokec5 .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "X-Unexpected"\cf5 \strokec5 , \cf10 \strokec10 "Spanish-Inquisition"\cf5 \strokec5 )\cf11 \strokec11  // missing status line\cf5 \strokec5 \
+\cf4 fn\cf5  \cf6 broken_response_1\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
+    \cf7 r\cf5 .\cf6 header\cf5 (\cf10 "X-Unexpected"\cf5 , \cf10 "Spanish-Inquisition"\cf5 )\cf11  // missing status line\cf5 \
 \}\
 \
-\cf4 \strokec4 fn\cf5 \strokec5  \cf6 \strokec6 broken_response_2\cf5 \strokec5 (\cf7 \strokec7 r\cf5 \strokec5 : \cf8 \strokec8 HttpResponse\cf5 \strokec5 ) \{\
-    \cf7 \strokec7 r\cf5 \strokec5 .\cf6 \strokec6 status_line\cf5 \strokec5 (\cf9 \strokec9 200\cf5 \strokec5 , \cf10 \strokec10 "OK"\cf5 \strokec5 )\
-      .\cf6 \strokec6 body\cf5 \strokec5 (\cf10 \strokec10 "Hello!"\cf5 \strokec5 )\
-      .\cf6 \strokec6 header\cf5 \strokec5 (\cf10 \strokec10 "X-Unexpected"\cf5 \strokec5 , \cf10 \strokec10 "Spanish-Inquisition"\cf5 \strokec5 )\cf11 \strokec11     // must be before body\cf5 \strokec5 \
+\cf4 fn\cf5  \cf6 broken_response_2\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
+    \cf7 r\cf5 .\cf6 status_line\cf5 (\cf9 200\cf5 , \cf10 "OK"\cf5 )\
+      .\cf6 body\cf5 (\cf10 "Hello!"\cf5 )\
+      .\cf6 header\cf5 (\cf10 "X-Unexpected"\cf5 , \cf10 "Spanish-Inquisition"\cf5 )\cf11     // must be before body\cf5 \
 \}\
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 there\'92s a matches! macro that\'92ll return true if an expr matches a pattern
+\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 there\'92s a matches! macro that\'92ll return true if an expr matches a pattern
 \f0\fs34 \cf5 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec5 \
+\
 
-\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \
 Open in External App extension\
 \
 had a rustfmt.tml file:\
 max_width = 150\
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 Step 7 - Interaction\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95 Review rust notes\
 \'95\'a0Look at these:\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
+\'95 Should be able to rewrite object methods using find\
+\'95 Think there was a backend method that could be re-written using cloned\
+\'95 Replace probing:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 	
+\f1\b0 if the terrain is passable\
+		if there is a character there\
+			interact with it\
+		elif there is a closed door\
+			open it\
+		else\
+			move player\
+	else\
+		fail message\
+			\
+	after move\
+		optional message like, \'93You splash through the water\'94\
+		if sign\
+			read it\
+		if portable\
+			pick it up\
 \'95\'a0Generate the level from a text file:\
 	- add Messages for labels that are currently ignored\
-		s and S (swords)\
-			review probe logic\
-				do we want Probe enum?\
-				can we check if terrain blocks movement when there is a sign?\
 		D (door man)\
 			says \'93You are not worthy to challenge the Emperor!\'94\
 			or says something else and moves aside\
@@ -123,7 +140,7 @@ enum ObjectTag\
 	Inventory([Objects]),   
 \f3\i or ids?
 \f1\i0 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\i \cf3 	
 \f1\i0 Binding(String) 
@@ -150,11 +167,11 @@ player moving does an implicit action against objects there\
 player can also use an inventory item against an object\
 	uses range of inventory item\
 	normally at least current and adjacent squares\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\i0\b \cf3 \
 Step 6 - It's alive! Alive!\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
@@ -176,11 +193,11 @@ Step 6 - It's alive! Alive!\
 	- also add a health bar for the player\
 	- and maybe targeted and near by NPCs\
 \'95 Should be a wizard command to get combat details\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
 Step 5 - Saving/Loading\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Add support for persistence\
 	- just persist event stream\
@@ -193,11 +210,11 @@ Step 5 - Saving/Loading\
 	- log level\
 	- log path\
 	- key bindings\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
 Step 8 - Data files\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Make it easier to create new objects\
 	- this would probably involve something like a macro rather than a config file
@@ -216,11 +233,11 @@ Step 9 - Items\
 	- arrows? food? javelins? munitions?\
 \'95\'a0May want a config file to configure which are auto-picked up\
 \'95 Related skills should go up together (albeit more slowly)\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
 Step 10 - Magic\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Add some basic spells \
 \'95\'a0Maybe just a few from one warren\
@@ -233,11 +250,11 @@ Step 10 - Magic\
 	- focus weapons are usually staffs\
 	- focus weapons can improve either all spells or a school\
 	- can melee with focus weapons\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
 Step 11 - Simple game\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
 	- inside is arena with spectators\
@@ -305,8 +322,7 @@ Step 15 - Free at last
 	- failed to open connection\
 \'95\'a0May want to kick people if they are idle too long\
 	- might happen automatically with TCP\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf3 * Play some other games\
+* Play some other games\
 	Brogue\
 	Caves of Qud\
 	Dwarf Fortress\

@@ -2,6 +2,23 @@ use super::{Color, Object};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
+/// Affects behavior of items like burning oil or a pick axe. Also affects
+/// spell behavior and whether characters can move through terrain.
+#[allow(dead_code)]
+#[derive(Clone, Copy, Display, Eq, PartialEq)]
+pub enum Material {
+    Wood,
+    Stone,
+    Metal,
+}
+
+/// Used with Tag::Liquid.
+#[derive(Clone, Copy, Display, Eq, PartialEq)]
+pub enum Liquid {
+    Water,
+    Vitr,
+}
+
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
 /// concept because those classes can be combined.
@@ -58,21 +75,100 @@ pub enum Tag {
     Name(String),
 }
 
-/// Affects behavior of items like burning oil or a pick axe. Also affects
-/// spell behavior and whether characters can move through terrain.
 #[allow(dead_code)]
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
-pub enum Material {
-    Wood,
-    Stone,
-    Metal,
-}
+impl Tag {
+    pub fn is_character(&self) -> bool {
+        matches!(self, Tag::Character)
+    }
 
-/// Used with Tag::Liquid.
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
-pub enum Liquid {
-    Water,
-    Vitr,
+    pub fn is_player(&self) -> bool {
+        matches!(self, Tag::Player)
+    }
+    pub fn is_inventory(&self) -> bool {
+        matches!(self, Tag::Inventory(_))
+    }
+    pub fn is_portable(&self) -> bool {
+        matches!(self, Tag::Portable)
+    }
+    pub fn is_sign(&self) -> bool {
+        matches!(self, Tag::Sign)
+    }
+    pub fn is_closed_door(&self) -> bool {
+        matches!(self, Tag::ClosedDoor)
+    }
+    pub fn is_ground(&self) -> bool {
+        matches!(self, Tag::Ground)
+    }
+    pub fn is_liquid(&self) -> bool {
+        matches!(self, Tag::Liquid { liquid: _, deep: _ })
+    }
+    pub fn is_open_door(&self) -> bool {
+        matches!(self, Tag::OpenDoor)
+    }
+    pub fn is_terrain(&self) -> bool {
+        matches!(self, Tag::Terrain)
+    }
+    pub fn is_tree(&self) -> bool {
+        matches!(self, Tag::Tree)
+    }
+    pub fn is_wall(&self) -> bool {
+        matches!(self, Tag::Wall)
+    }
+    pub fn is_background(&self) -> bool {
+        matches!(self, Tag::Background(_))
+    }
+    pub fn is_durability(&self) -> bool {
+        matches!(self, Tag::Durability { current: _, max: _ })
+    }
+    pub fn is_material(&self) -> bool {
+        matches!(self, Tag::Material(_))
+    }
+    pub fn is_name(&self) -> bool {
+        matches!(self, Tag::Name(_))
+    }
+
+    pub fn as_inventory(&self) -> Option<&Vec<Object>> {
+        match self {
+            Tag::Inventory(result) => Some(result),
+            _ => None,
+        }
+    }
+    pub fn as_mut_inventory(&mut self) -> Option<&mut Vec<Object>> {
+        match self {
+            Tag::Inventory(result) => Some(result),
+            _ => None,
+        }
+    }
+    pub fn as_liquid(&self) -> Option<(Liquid, bool)> {
+        match *self {
+            Tag::Liquid { liquid, deep } => Some((liquid, deep)),
+            _ => None,
+        }
+    }
+    pub fn as_background(&self) -> Option<Color> {
+        match *self {
+            Tag::Background(result) => Some(result),
+            _ => None,
+        }
+    }
+    pub fn as_durability(&self) -> Option<(i32, i32)> {
+        match *self {
+            Tag::Durability { current, max } => Some((current, max)),
+            _ => None,
+        }
+    }
+    pub fn as_material(&self) -> Option<Material> {
+        match *self {
+            Tag::Material(result) => Some(result),
+            _ => None,
+        }
+    }
+    pub fn as_name(&self) -> Option<&String> {
+        match self {
+            Tag::Name(result) => Some(result),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for Tag {
