@@ -10,19 +10,22 @@ mod pov;
 mod primitives;
 mod tag;
 
-use derive_more::Display;
 pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
 
 use cell::Cell;
+use derive_more::Display;
 use event::Event;
 use level::Level;
 use object::Object;
 use old_pov::OldPoV;
 use pov::PoV;
-// use slog::Logger;
+use rand::prelude::*;
+use rand::rngs::SmallRng;
+use rand::RngCore;
+use std::cell::{RefCell, RefMut};
 use tag::{Liquid, Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
@@ -65,6 +68,7 @@ pub struct Game {
     pov: PoV,
     old_pov: OldPoV,
     mode: ProbeMode,
+    pub rng: RefCell<SmallRng>,
 }
 
 mod details {
@@ -88,7 +92,7 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             mode: ProbeMode::Moving,
-            // logger,
+            rng: RefCell::new(SmallRng::seed_from_u64(100)), // TODO: use a random seed (be sure to log it)
         }
     }
 
@@ -105,6 +109,11 @@ impl Game {
         // TODO: or have NewLevel take a default terrain
         let map = include_str!("backend/maps/start.txt");
         make::level(self, map);
+    }
+
+    // We're using a RefCell to avoid taking too many mutable Game references.
+    pub fn rng(&self) -> RefMut<'_, dyn RngCore> {
+        self.rng.borrow_mut()
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {

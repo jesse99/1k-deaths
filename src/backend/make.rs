@@ -19,7 +19,7 @@ pub fn level(game: &mut Game, map: &str) {
             }
             's' => {
                 game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(loc, weak_sword()));
+                game.post(Event::AddObject(loc, weak_sword(game)));
             }
             'S' => {
                 game.post(Event::AddObject(loc, dirt()));
@@ -160,14 +160,14 @@ pub fn sign(text: &str) -> Object {
     }
 }
 
-pub fn weak_sword() -> Object {
+pub fn weak_sword(game: &Game) -> Object {
     let swords = vec![
         ("long sword", "a nicked long sword"),
         ("broadsword", "a dull broadsword"),
         ("long knife", "a shiny long knife"),
         ("dagger", "a pointy dagger"),
     ];
-    let sword = swords.iter().choose(&mut thread_rng()).unwrap();
+    let sword = swords.iter().choose(&mut *game.rng()).unwrap();
     Object {
         dname: String::from("weak_sword"),
         tags: weak_sword_tags(sword.0),
