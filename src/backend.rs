@@ -144,6 +144,9 @@ impl Game {
                             self.post(Event::PlayerMoved(new_loc));
                         }
                         Probe::Move(None) => self.post(Event::PlayerMoved(new_loc)),
+                        Probe::Change(tag, obj) => {
+                            self.post(Event::ChangeObject(new_loc, tag, obj))
+                        }
                         Probe::Failed(mesg) => self.post(Event::AddMessage(mesg)),
                         Probe::NoOp => {}
                     }
@@ -263,6 +266,7 @@ impl Game {
             let p = self.probe_obj(obj);
             match p {
                 Probe::Move(_) => return p,
+                Probe::Change(_, _) => return p,
                 Probe::Failed(_) => return p,
                 Probe::NoOp => (),
             }
@@ -277,7 +281,7 @@ impl Game {
             if open {
                 Probe::Move(None)
             } else {
-                Probe::Failed(Message::new(Topic::NonGamePlay, "The door is closed."))
+                Probe::Change(Tag::ClosedDoor, make::open_door())
             }
         } else if let Some((liquid, deep)) = obj.liquid() {
             match liquid {
@@ -317,6 +321,7 @@ impl Game {
 
 enum Probe {
     Move(Option<Message>),
+    Change(Tag, Object),
     Failed(Message),
     NoOp,
     // TODO: attack, etc

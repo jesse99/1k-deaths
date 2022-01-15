@@ -7,7 +7,7 @@ pub fn level(game: &mut Game, map: &str) {
             ' ' => game.post(Event::AddObject(loc, dirt())),
             '#' => game.post(Event::AddObject(loc, stone_wall())),
             'M' => game.post(Event::AddObject(loc, metal_wall())),
-            '+' => game.post(Event::AddObject(loc, door())),
+            '+' => game.post(Event::AddObject(loc, closed_door())),
             '~' => game.post(Event::AddObject(loc, shallow_water())),
             'V' => game.post(Event::AddObject(loc, vitr())),
             'T' => game.post(Event::AddObject(loc, tree())),
@@ -49,7 +49,7 @@ pub fn level(game: &mut Game, map: &str) {
     }
 }
 
-fn dirt() -> Object {
+pub fn dirt() -> Object {
     Object {
         dname: String::from("dirt"),
         tags: ground_tags(Color::Black),
@@ -59,7 +59,7 @@ fn dirt() -> Object {
     }
 }
 
-fn stone_wall() -> Object {
+pub fn stone_wall() -> Object {
     Object {
         dname: String::from("stone wall"),
         tags: wall_tags(Color::Black, Material::Stone),
@@ -69,7 +69,7 @@ fn stone_wall() -> Object {
     }
 }
 
-fn metal_wall() -> Object {
+pub fn metal_wall() -> Object {
     Object {
         dname: String::from("metal wall"),
         tags: wall_tags(Color::Black, Material::Metal),
@@ -79,7 +79,7 @@ fn metal_wall() -> Object {
     }
 }
 
-fn tree() -> Object {
+pub fn tree() -> Object {
     Object {
         dname: String::from("tree"),
         tags: tree_tags(),
@@ -89,7 +89,7 @@ fn tree() -> Object {
     }
 }
 
-fn door() -> Object {
+pub fn closed_door() -> Object {
     Object {
         dname: String::from("closed door"),
         tags: door_tags(Color::Black, Material::Stone, false),
@@ -99,7 +99,17 @@ fn door() -> Object {
     }
 }
 
-fn shallow_water() -> Object {
+pub fn open_door() -> Object {
+    Object {
+        dname: String::from("open door"),
+        tags: door_tags(Color::Black, Material::Stone, true),
+        symbol: '-',
+        color: Color::Yellow,
+        description: String::from("an open door"),
+    }
+}
+
+pub fn shallow_water() -> Object {
     Object {
         dname: String::from("shallow water"),
         tags: shallow_water_tags(),
@@ -109,7 +119,7 @@ fn shallow_water() -> Object {
     }
 }
 
-fn deep_water() -> Object {
+pub fn deep_water() -> Object {
     Object {
         dname: String::from("deep water"),
         tags: deep_water_tags(),
@@ -119,7 +129,7 @@ fn deep_water() -> Object {
     }
 }
 
-fn vitr() -> Object {
+pub fn vitr() -> Object {
     Object {
         dname: String::from("vitr"),
         tags: vitr_tags(),
@@ -139,7 +149,7 @@ fn player() -> Object {
     }
 }
 
-fn sign(text: &str) -> Object {
+pub fn sign(text: &str) -> Object {
     Object {
         dname: String::from("sign"),
         tags: sign_tags(),
@@ -149,7 +159,7 @@ fn sign(text: &str) -> Object {
     }
 }
 
-fn weak_sword() -> Object {
+pub fn weak_sword() -> Object {
     Object {
         dname: String::from("weak_sword"),
         tags: weak_sword_tags(),
@@ -159,7 +169,7 @@ fn weak_sword() -> Object {
     }
 }
 
-fn mighty_sword() -> Object {
+pub fn mighty_sword() -> Object {
     Object {
         dname: String::from("mighty_sword"),
         tags: mighty_sword_tags(),
