@@ -1,4 +1,5 @@
 use super::{Color, Event, Game, Liquid, Material, Message, Object, Point, Tag, Topic};
+use rand::prelude::*;
 
 pub fn level(game: &mut Game, map: &str) {
     let mut loc = Point::origin();
@@ -160,12 +161,19 @@ pub fn sign(text: &str) -> Object {
 }
 
 pub fn weak_sword() -> Object {
+    let swords = vec![
+        ("long sword", "a nicked long sword"),
+        ("broadsword", "a dull broadsword"),
+        ("long knife", "a shiny long knife"),
+        ("dagger", "a pointy dagger"),
+    ];
+    let sword = swords.iter().choose(&mut thread_rng()).unwrap();
     Object {
         dname: String::from("weak_sword"),
-        tags: weak_sword_tags(),
+        tags: weak_sword_tags(sword.0),
         symbol: 's',
         color: Color::Silver,
-        description: "a nicked long sword".to_string(),
+        description: sword.1.to_string(),
     }
 }
 
@@ -259,8 +267,8 @@ fn player_tags() -> Vec<Tag> {
     ]
 }
 
-fn weak_sword_tags() -> Vec<Tag> {
-    vec![Tag::Name(String::from("long sword")), Tag::Portable]
+fn weak_sword_tags(name: &str) -> Vec<Tag> {
+    vec![Tag::Name(name.to_string()), Tag::Portable]
 }
 
 fn mighty_sword_tags() -> Vec<Tag> {

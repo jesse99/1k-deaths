@@ -10,5 +10,6 @@ chrono = "0.4.19"	    # datetime library
 derive_more = "0.99.17" # helper to derive traits like Display for structs and enums
 fnv = "1.0.7"	        # custom hasher that is much more performant for small keys
 log = "0.4.14" 	        # logging facade
+rand = "0.8.4" 	        # random numbers
 simplelog = "0.11.2" 	# logging to a file
 termion = "1.5.6"       # terminal support
