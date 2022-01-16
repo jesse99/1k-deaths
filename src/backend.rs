@@ -9,6 +9,7 @@ mod old_pov;
 mod pov;
 mod primitives;
 mod tag;
+mod uniques;
 
 pub use message::{Message, Topic};
 pub use primitives::Color;
@@ -260,6 +261,30 @@ impl Game {
 
         tile
     }
+    pub fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
+        let mut deltas = vec![
+            (-1, -1),
+            (-1, 1),
+            (-1, 0),
+            (1, -1),
+            (1, 1),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+        ];
+        deltas.shuffle(&mut *self.rng());
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            if let Some(cell) = self.level.cells.get(&new_loc) {
+                // TODO: this isn't quite right: we should check to see
+                // if the Doorman can move into the terrain
+                if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
+                    return Some(new_loc);
+                }
+            }
+        }
+        None
+    }
 }
 
 impl Game {
@@ -324,88 +349,6 @@ impl Game {
             _ => false,
         }
     }
-
-    // TODO: move these into a uniques module
-    fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
-        let mut deltas = vec![
-            (-1, -1),
-            (-1, 1),
-            (-1, 0),
-            (1, -1),
-            (1, 1),
-            (1, 0),
-            (0, -1),
-            (0, 1),
-        ];
-        deltas.shuffle(&mut *self.rng());
-        for delta in deltas {
-            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            if let Some(cell) = self.level.cells.get(&new_loc) {
-                // TODO: this isn't quite right: we should check to see
-                // if the Doorman can move into the terrain
-                if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
-                    return Some(new_loc);
-                }
-            }
-        }
-        None
-    }
-
-    fn interact_with_spectator(&mut self) {
-        let messages = if matches!(self.state, State::Bumbling) {
-            vec![
-                "I hope you're prepared to die!",
-                "The last champion only lasted thirty seconds.",
-                "How can you defeat a man who will not stay dead?",
-                "I have 10 gold on you lasting over two minutes!",
-                "You're just another dead man walking.",
-            ]
-        } else {
-            vec![
-                "I can't believe that the Emperor is dead.",
-                "You're my hero!",
-                "You've done the impossible!",
-            ]
-        };
-        let text = messages.iter().choose(&mut *self.rng()).unwrap();
-
-        let mesg = Message::new(Topic::NPCSpeaks, text);
-        self.post(Event::AddMessage(mesg));
-    }
-
-    fn interact_with_doorman(&mut self, loc: &Point) {
-        let cell = self.level.cells.get(&self.level.player).unwrap();
-        let obj = cell.get(&Tag::Character);
-        match obj.inventory() {
-            Some(items) if items.iter().any(|obj| obj.description.contains("Doom")) => {
-                let mesg = Message::new(Topic::NPCSpeaks, "Ahh, a new champion for the Emperor!");
-                self.post(Event::AddMessage(mesg));
-
-                if let Some(new_loc) = self.find_empty_cell(loc) {
-                    self.post(Event::NPCMoved(*loc, new_loc));
-                }
-            }
-            _ => {
-                let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
-                self.post(Event::AddMessage(mesg));
-            }
-        }
-    }
-
-    fn interact_with_rhulad(&mut self, loc: &Point) {
-        let mesg = Message::new(
-            Topic::NonGamePlay,
-            "After an epic battle you kill the Emperor!",
-        );
-        self.post(Event::AddMessage(mesg));
-
-        self.post(Event::DestroyObject(*loc, Tag::Character));
-        self.post(Event::AddObject(*loc, make::emp_sword()));
-        self.post(Event::AddToInventory(*loc));
-
-        self.state = State::KilledRhulad;
-    }
-
     fn interact_with_terrain(&mut self, loc: &Point) -> bool {
         if !matches!(self.state, State::WonGame) {
             if let Some(cell) = self.level.cells.get(loc) {
@@ -435,9 +378,9 @@ impl Game {
         if let Some(cell) = self.level.cells.get(loc) {
             let obj = cell.get(&Tag::Character);
             match obj.unique() {
-                Some(Unique::Doorman) => self.interact_with_doorman(loc),
-                Some(Unique::Rhulad) => self.interact_with_rhulad(loc),
-                Some(Unique::Spectator) => self.interact_with_spectator(),
+                Some(Unique::Doorman) => uniques::interact_with_doorman(self, loc),
+                Some(Unique::Rhulad) => uniques::interact_with_rhulad(self, loc),
+                Some(Unique::Spectator) => uniques::interact_with_spectator(self),
                 None => (), // Character but not a unique one, TODO: usually will want to attack it
             }
         }
