@@ -5,20 +5,20 @@ use std::fmt::{self, Formatter};
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
 #[allow(dead_code)]
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Material {
     Wood,
     Stone,
     Metal,
 }
 
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Liquid {
     Water,
     Vitr,
 }
 
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Unique {
     /// Blocks the way to Rhulad.
     Doorman,
@@ -29,7 +29,7 @@ pub enum Unique {
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
 /// concept because those classes can be combined.
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when
     /// players try to move into them. Will also have a Name tag. May have

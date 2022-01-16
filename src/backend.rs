@@ -56,7 +56,7 @@ pub enum Tile {
     NotVisible,
 }
 
-#[derive(Clone, Copy, Display)]
+#[derive(Clone, Copy, Debug, Display)]
 pub enum State {
     Bumbling,
     KilledRhulad,
@@ -266,6 +266,7 @@ impl Game {
 impl Game {
     // This should only be called by post_events.
     fn internal_post(&mut self, event: Event) {
+        debug!("processing {event:?}"); // TODO: may want to nuke this once we start saving games
         self.stream.push(event.clone());
 
         if !self.handled_game_event(&event) {

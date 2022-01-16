@@ -75,20 +75,6 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
-\'95\'a0Generate the level from a text file:\
-	- replace NonGamePlay with Announcement and Important\cf3 Announcement\
-		or Normal and Important? maybe get rid of Item too\
-\cf3 	- later file could include a symbol mapping, i.e. M=Metal Door\
-\'95 Log event posting, at info?\
-\'95 Add action objects\
-	- this is where the logic is, typically a dual dispatch sort of thing\
-	- for the player this either posts event(s) or writes a non-game message\
-	  eg opens a door or tells the user "You bump into the wall"\
-	- player actions will be either the implicit action (arrow keying) or a use action\
-	  (inventory item against another object)\
-	- later would have other actions like cast a spell\
-	- for NPCs this will post event(s), in some cases this could be zero events\
-\'95 If a character id is added don\'92t make it a simple string\
 \'95 Levels should be unbounded\
 	- would need a default square (eg stone wall)\
 	- characters can extend the level doing stuff like digging through stone walls\
@@ -169,7 +155,10 @@ player can also use an inventory item against an object\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- these move either toward or away from the player\
 	- will need a simple time system (use ints)\
-\'95 Look into Dijkstra Maps\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 \'95 If a character id is added don\'92t make it a simple string\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 \'95 Look into Dijkstra Maps\
 	- http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps\
 	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
 \f2\b \

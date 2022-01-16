@@ -4,6 +4,9 @@ use rand::prelude::*;
 pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
     let mut loc = Point::origin();
     for ch in map.chars() {
+        // TODO: If we keep these level files we may want to add a symbol
+        // mapping section so that characters can do things like refer to
+        // different uniques.
         match ch {
             ' ' => events.push(Event::AddObject(loc, dirt())),
             '#' => events.push(Event::AddObject(loc, stone_wall())),

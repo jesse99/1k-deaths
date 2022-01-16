@@ -70,7 +70,7 @@ impl Terminal {
             self.render();
             if let Some(c) = key_iter.next() {
                 let c = c.unwrap();
-                debug!("input key {:?}", c);
+                // debug!("input key {:?}", c);
                 state = self.handle_input(c);
             } else {
                 panic!("Couldn't read the next key");

@@ -2,7 +2,7 @@ use derive_more::Display;
 
 // These are the X11 color names (from http://cng.seas.rochester.edu/CNG/docs/x11color.html).
 #[allow(dead_code)]
-#[derive(Clone, Copy, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Color {
     LightPink,
     Pink,
