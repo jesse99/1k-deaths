@@ -4,8 +4,6 @@ use derive_more::Display;
 pub enum Topic {
     /// An operation could not be completed.
     Error,
-    /// Player did something with an item.
-    Item,
     /// An un-important message. Typically something that doesn't affect
     /// game play, e.g. bumping into a wall.
     Normal,

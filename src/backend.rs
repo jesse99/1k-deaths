@@ -351,7 +351,7 @@ impl Game {
                 let item = cell.remove(&Tag::Portable);
                 let name = item.name().unwrap();
                 let mesg = Message {
-                    topic: Topic::Item,
+                    topic: Topic::Normal,
                     text: format!("You pick up the {name}."),
                 };
                 self.messages.push(mesg);
