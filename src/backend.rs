@@ -55,6 +55,12 @@ pub enum Tile {
     NotVisible,
 }
 
+pub enum State {
+    Bumbling,
+    KilledRhulad,
+    WonGame,
+}
+
 /// Top-level backend object encapsulating the game state.
 pub struct Game {
     // This is the canonical state of the game.
@@ -69,6 +75,7 @@ pub struct Game {
     old_pov: OldPoV,
     mode: ProbeMode,
     rng: RefCell<SmallRng>,
+    state: State,
 }
 
 mod details {
@@ -92,6 +99,7 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             mode: ProbeMode::Moving,
+            state: State::Bumbling,
 
             // TODO:
             // 1) Use a random seed. Be sure to log this and also allow for
@@ -335,13 +343,21 @@ impl Game {
     }
 
     fn interact_with_spectator(&mut self) {
-        let messages = vec![
-            "I hope you're prepared to die!",
-            "The last champion only lasted thirty seconds.",
-            "How can you defeat a man who will not stay dead?",
-            "I have 10 gold on you lasting over two minutes!",
-            "You're just another dead man walking.",
-        ];
+        let messages = if matches!(self.state, State::Bumbling) {
+            vec![
+                "I hope you're prepared to die!",
+                "The last champion only lasted thirty seconds.",
+                "How can you defeat a man who will not stay dead?",
+                "I have 10 gold on you lasting over two minutes!",
+                "You're just another dead man walking.",
+            ]
+        } else {
+            vec![
+                "I can't believe that the Emperor is dead.",
+                "You're my hero!",
+                "You've done the impossible!",
+            ]
+        };
         let text = messages.iter().choose(&mut *self.rng()).unwrap();
 
         let mesg = Message::new(Topic::NPCSpeaks, text);
@@ -377,24 +393,29 @@ impl Game {
         self.post(Event::DestroyObject(*loc, Tag::Character));
         self.post(Event::AddObject(*loc, make::emp_sword()));
         self.post(Event::AddToInventory(*loc));
+
+        self.state = State::KilledRhulad;
     }
 
     fn interact_with_terrain(&mut self, loc: &Point) -> bool {
-        if let Some(cell) = self.level.cells.get(loc) {
-            let obj = cell.get(&Tag::Terrain);
-            if let Some((Liquid::Vitr, _)) = obj.liquid() {
-                let cell = self.level.cells.get(&self.level.player).unwrap();
-                let obj = cell.get(&Tag::Player);
-                if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
-                    let mesg = Message::new(
-                        Topic::NonGamePlay,
-                        "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
-                    );
-                    self.post(Event::AddMessage(mesg));
+        if !matches!(self.state, State::WonGame) {
+            if let Some(cell) = self.level.cells.get(loc) {
+                let obj = cell.get(&Tag::Terrain);
+                if let Some((Liquid::Vitr, _)) = obj.liquid() {
+                    let cell = self.level.cells.get(&self.level.player).unwrap();
+                    let obj = cell.get(&Tag::Player);
+                    if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
+                        let mesg = Message::new(
+                            Topic::NonGamePlay,
+                            "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
+                        );
+                        self.post(Event::AddMessage(mesg));
 
-                    let mesg = Message::new(Topic::NonGamePlay, "You have won the game!!");
-                    self.post(Event::AddMessage(mesg));
-                    return true;
+                        let mesg = Message::new(Topic::NonGamePlay, "You have won the game!!");
+                        self.post(Event::AddMessage(mesg));
+                        self.state = State::WonGame;
+                        return true;
+                    }
                 }
             }
         }
