@@ -40,5 +40,6 @@ fn to_fore_color(topic: Topic) -> Color {
         Topic::Error => Color::Red,
         Topic::Item => Color::Black,
         Topic::NonGamePlay => Color::Blue,
+        Topic::NPCSpeaks => Color::Coral,
     }
 }

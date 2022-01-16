@@ -1,4 +1,4 @@
-use super::{Color, Liquid, Tag};
+use super::{Color, Liquid, Tag, Unique};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
 
@@ -26,9 +26,13 @@ impl Object {
         self.tags.iter().any(|tag| tag.is_player())
     }
 
-    // pub fn inventory(&self) -> Option<&Vec<Object>> {
-    //     self.tags.iter().find_map(|tag| tag.as_inventory())
-    // }
+    pub fn unique(&self) -> Option<Unique> {
+        self.tags.iter().find_map(|tag| tag.as_unique())
+    }
+
+    pub fn inventory(&self) -> Option<&Vec<Object>> {
+        self.tags.iter().find_map(|tag| tag.as_inventory())
+    }
 
     pub fn inventory_mut(&mut self) -> Option<&mut Vec<Object>> {
         self.tags.iter_mut().find_map(|tag| tag.as_mut_inventory())
@@ -203,22 +207,23 @@ fn to_index(tag: &Tag) -> i32 {
     match tag {
         Tag::Character => 1,
         Tag::Player => 2,
-        Tag::Inventory(_) => 3,
+        Tag::Unique(_) => 3,
+        Tag::Inventory(_) => 4,
 
-        Tag::Portable => 4,
-        Tag::Sign => 5,
+        Tag::Portable => 5,
+        Tag::Sign => 6,
 
-        Tag::ClosedDoor => 6,
-        Tag::Ground => 7,
-        Tag::Liquid { liquid: _, deep: _ } => 8,
-        Tag::OpenDoor => 9,
-        Tag::Terrain => 10,
-        Tag::Tree => 11,
-        Tag::Wall => 12,
+        Tag::ClosedDoor => 7,
+        Tag::Ground => 8,
+        Tag::Liquid { liquid: _, deep: _ } => 9,
+        Tag::OpenDoor => 10,
+        Tag::Terrain => 11,
+        Tag::Tree => 12,
+        Tag::Wall => 13,
 
-        Tag::Background(_bg) => 13,
-        Tag::Durability { current: _, max: _ } => 14,
-        Tag::Material(_material) => 15,
-        Tag::Name(_name) => 16,
+        Tag::Background(_bg) => 14,
+        Tag::Durability { current: _, max: _ } => 15,
+        Tag::Material(_material) => 16,
+        Tag::Name(_name) => 17,
     }
 }

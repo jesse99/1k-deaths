@@ -1,4 +1,4 @@
-use super::{Color, Event, Game, Liquid, Material, Message, Object, Point, Tag, Topic};
+use super::{Color, Event, Game, Liquid, Material, Message, Object, Point, Tag, Topic, Unique};
 use rand::prelude::*;
 
 pub fn level(game: &mut Game, map: &str) {
@@ -16,6 +16,20 @@ pub fn level(game: &mut Game, map: &str) {
             'P' => {
                 game.post(Event::AddObject(loc, dirt()));
                 game.post(Event::AddObject(loc, player()));
+            }
+            'D' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(
+                    loc,
+                    unique(Unique::Doorman, 'D', Color::Green),
+                ));
+            }
+            'R' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(
+                    loc,
+                    unique(Unique::Rhulad, 'R', Color::Red),
+                ));
             }
             's' => {
                 game.post(Event::AddObject(loc, dirt()));
@@ -140,6 +154,20 @@ pub fn vitr() -> Object {
     }
 }
 
+fn unique(unique: Unique, symbol: char, color: Color) -> Object {
+    let description = match unique {
+        Unique::Doorman => "a royal guard".to_string(),
+        Unique::Rhulad => "the Emperor of a Thousand Deaths".to_string(),
+    };
+    Object {
+        dname: format!("{unique}"),
+        tags: unique_tags(unique),
+        symbol,
+        color,
+        description,
+    }
+}
+
 fn player() -> Object {
     Object {
         dname: String::from("player"),
@@ -252,6 +280,15 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
         if open { Tag::OpenDoor } else { Tag::ClosedDoor },
         Tag::Background(bg),
         Tag::Terrain,
+    ]
+}
+
+fn unique_tags(name: Unique) -> Vec<Tag> {
+    vec![
+        Tag::Character,
+        // Tag::Inventory(Vec::new()),
+        Tag::Name(format!("{name}")),
+        Tag::Unique(name),
     ]
 }
 

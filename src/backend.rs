@@ -26,7 +26,7 @@ use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
-use tag::{Liquid, Material, Tag};
+use tag::{Liquid, Material, Tag, Unique};
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -159,7 +159,7 @@ impl Game {
                     if let Some(mesg) = self.impassible_terrain(cell) {
                         self.post(Event::AddMessage(mesg));
                     } else if cell.contains(&Tag::Character) {
-                        // TODO: interact with it
+                        self.interact_pre_move(&new_loc);
                     } else if cell.contains(&Tag::ClosedDoor) {
                         self.post(Event::ChangeObject(
                             new_loc,
@@ -297,6 +297,55 @@ impl Game {
                 true
             }
             _ => false,
+        }
+    }
+
+    // TODO: move these into a uniques module
+    fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                if dx != 0 || dy != 0 {
+                    let new_loc = Point::new(loc.x + dx, loc.y + dy);
+                    if let Some(cell) = self.level.cells.get(&new_loc) {
+                        if !cell.contains(&Tag::Character) {
+                            return Some(new_loc);
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn interact_with_doorman(&mut self, loc: &Point) {
+        let cell = self.level.cells.get(&self.level.player).unwrap();
+        let obj = cell.get(&Tag::Character);
+        match obj.inventory() {
+            Some(items) if items.iter().any(|obj| obj.description.contains("Doom")) => {
+                let mesg = Message::new(Topic::NPCSpeaks, "Ahh, a new champion for the Emperor!");
+                self.post(Event::AddMessage(mesg));
+
+                if let Some(new_loc) = self.find_empty_cell(loc) {
+                    self.post(Event::NPCMoved(*loc, new_loc));
+                }
+            }
+            _ => {
+                let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
+                self.post(Event::AddMessage(mesg));
+            }
+        }
+    }
+
+    fn interact_with_rhulad(&mut self, _loc: &Point) {}
+
+    fn interact_pre_move(&mut self, loc: &Point) {
+        if let Some(cell) = self.level.cells.get(loc) {
+            let obj = cell.get(&Tag::Character);
+            match obj.unique() {
+                Some(Unique::Doorman) => self.interact_with_doorman(loc),
+                Some(Unique::Rhulad) => self.interact_with_rhulad(loc),
+                None => (), // Character but not a unique one, TODO: usually will want to attack it
+            }
         }
     }
 

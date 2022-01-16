@@ -3,7 +3,7 @@ use std::fmt::{self, Formatter};
 
 /// These are the "facts" associated with a particular game. All game state
 /// should be able to be re-constructed from the event stream.
-#[allow(dead_code)]
+// #[allow(dead_code)]
 #[derive(Clone)]
 pub enum Event {
     AddMessage(Message),
@@ -14,6 +14,7 @@ pub enum Event {
     ChangeObject(Point, Tag, Object),
     ChangeProbe(ProbeMode),
     PlayerMoved(Point),
+    NPCMoved(Point, Point),
 }
 
 impl fmt::Display for Event {
@@ -27,6 +28,7 @@ impl fmt::Display for Event {
             Event::ChangeObject(loc, tag, obj) => write!(f, "ChangeObject({loc}, {tag}, {obj})"),
             Event::ChangeProbe(mode) => write!(f, "ChangeProbe({mode})"),
             Event::PlayerMoved(loc) => write!(f, "PlayerMoved({loc})"),
+            Event::NPCMoved(old, new) => write!(f, "NPCMoved({old}, {new})"),
         }
     }
 }

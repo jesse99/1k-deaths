@@ -12,11 +12,17 @@ pub enum Material {
     Metal,
 }
 
-/// Used with Tag::Liquid.
 #[derive(Clone, Copy, Display, Eq, PartialEq)]
 pub enum Liquid {
     Water,
     Vitr,
+}
+
+#[derive(Clone, Copy, Display, Eq, PartialEq)]
+pub enum Unique {
+    /// Blocks the way to Rhulad.
+    Doorman,
+    Rhulad,
 }
 
 /// Object state and properties consist of a list of these tags. Objects can
@@ -30,6 +36,8 @@ pub enum Tag {
     Character,
     /// Will also have Character and Inventory tags.
     Player,
+    /// NPC with special behavior, e.g. dialog.
+    Unique(Unique),
     /// Objects that a Character has picked up.
     Inventory(Vec<Object>),
 
@@ -127,6 +135,12 @@ impl Tag {
         matches!(self, Tag::Name(_))
     }
 
+    pub fn as_unique(&self) -> Option<Unique> {
+        match *self {
+            Tag::Unique(result) => Some(result),
+            _ => None,
+        }
+    }
     pub fn as_inventory(&self) -> Option<&Vec<Object>> {
         match self {
             Tag::Inventory(result) => Some(result),
@@ -176,6 +190,7 @@ impl fmt::Display for Tag {
         match self {
             Tag::Character => write!(f, "Character"),
             Tag::Player => write!(f, "Player"),
+            Tag::Unique(name) => write!(f, "Unique({name})"),
             Tag::Inventory(_) => write!(f, "Inventory"),
             Tag::Portable => write!(f, "Portable"),
             Tag::Sign => write!(f, "Sign"),

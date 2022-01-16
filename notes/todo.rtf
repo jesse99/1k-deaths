@@ -76,31 +76,12 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
-\'95 Replace probing:\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 	
-\f1\b0 if the terrain is passable\
-		if there is a character there\
-			interact with it\
-		elif there is a closed door\
-			open it\
-		else\
-			move player\
-	else\
-		fail message\
-			\
-	after move\
-		optional message like, \'93You splash through the water\'94\
-		if sign\
-			read it\
-		if portable\
-			pick it up\
 \'95\'a0Generate the level from a text file:\
 	- add Messages for labels that are currently ignored\
 		D (door man)\
 			says \'93You are not worthy to challenge the Emperor!\'94\
 			or says something else and moves aside\
+			may want to put this logic into a chars file (or uniques?)\
 		o (spectator, should say something random)\
 			\'93I hope you\'92re prepared to die\'94\
 			\'93I have 10g on you lasting at least 3 minutes!\'94\
@@ -109,6 +90,8 @@ max_width = 150\
 		R (rhulad))\
 			walking into him puts his sword into your inventory\
 			little message, \'93After an epic fight you defeat Rhulad!\'94\
+	- startup with key summary\
+	- also a spiel about the game (destroy the crippled god\'92s sword)\
 	- later file could include a symbol mapping, i.e. M=Metal Door\
 \'95 Log event posting, at info?\
 \'95 Would be great if could guarantee that mutation only happened in response to an event\

@@ -39,6 +39,12 @@ impl Level {
                 let cell = self.cells.entry(self.player).or_insert_with(Cell::new);
                 cell.append(obj);
             }
+            Event::NPCMoved(old, new) => {
+                let cell = self.cells.get_mut(old).unwrap();
+                let obj = cell.remove(&Tag::Character);
+                let cell = self.cells.entry(*new).or_insert_with(Cell::new);
+                cell.append(obj);
+            }
             _ => (),
         };
     }
