@@ -46,6 +46,7 @@ pub enum Tag {
     Portable,
     /// Description will have the sign's message.
     Sign,
+    EmpSword, // TODO: do we want UniqueNPC and UniqueItem?
 
     /// Normally also has a terrain tag.
     /// Will have Durability (and usually Material) if the door can be broken down.
@@ -56,7 +57,10 @@ pub enum Tag {
     /// Grass, dirt, etc. Will have a Terrain tag,
     Ground,
     /// Water, lava, vitr etc. Will have a Terrain tag,
-    Liquid { liquid: Liquid, deep: bool },
+    Liquid {
+        liquid: Liquid,
+        deep: bool,
+    },
     /// Normally also has a terrain tag. This will also share tags with
     /// ClosedDoor so that they can be preserved as doors transition from
     /// open to closed.
@@ -76,7 +80,10 @@ pub enum Tag {
     Background(Color),
     /// Typically at zero durability an object will change somehow, e.g. a
     /// door will become open or a character will die.
-    Durability { current: i32, max: i32 },
+    Durability {
+        current: i32,
+        max: i32,
+    },
     /// Used for some terrain objects, e.g. walls and doors.
     Material(Material),
     /// Characters and portable objects all have names.
@@ -193,6 +200,7 @@ impl fmt::Display for Tag {
             Tag::Unique(name) => write!(f, "Unique({name})"),
             Tag::Inventory(_) => write!(f, "Inventory"),
             Tag::Portable => write!(f, "Portable"),
+            Tag::EmpSword => write!(f, "EmpSword"),
             Tag::Sign => write!(f, "Sign"),
             Tag::ClosedDoor => write!(f, "ClosedDoor"),
             Tag::Ground => write!(f, "Ground"),

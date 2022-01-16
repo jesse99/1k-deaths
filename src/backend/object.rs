@@ -212,18 +212,19 @@ fn to_index(tag: &Tag) -> i32 {
 
         Tag::Portable => 5,
         Tag::Sign => 6,
+        Tag::EmpSword => 7,
 
-        Tag::ClosedDoor => 7,
-        Tag::Ground => 8,
-        Tag::Liquid { liquid: _, deep: _ } => 9,
-        Tag::OpenDoor => 10,
-        Tag::Terrain => 11,
-        Tag::Tree => 12,
-        Tag::Wall => 13,
+        Tag::ClosedDoor => 8,
+        Tag::Ground => 9,
+        Tag::Liquid { liquid: _, deep: _ } => 10,
+        Tag::OpenDoor => 11,
+        Tag::Terrain => 12,
+        Tag::Tree => 13,
+        Tag::Wall => 14,
 
-        Tag::Background(_bg) => 14,
-        Tag::Durability { current: _, max: _ } => 15,
-        Tag::Material(_material) => 16,
-        Tag::Name(_name) => 17,
+        Tag::Background(_bg) => 15,
+        Tag::Durability { current: _, max: _ } => 16,
+        Tag::Material(_material) => 17,
+        Tag::Name(_name) => 18,
     }
 }

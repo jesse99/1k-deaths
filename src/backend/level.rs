@@ -32,6 +32,10 @@ impl Level {
                 let cell = self.cells.get_mut(loc).unwrap();
                 cell.replace(tag, obj.clone());
             }
+            Event::DestroyObject(loc, tag) => {
+                let cell = self.cells.get_mut(loc).unwrap();
+                cell.remove(tag);
+            }
             Event::PlayerMoved(loc) => {
                 let cell = self.cells.get_mut(&self.player).unwrap();
                 let obj = cell.remove(&Tag::Player);

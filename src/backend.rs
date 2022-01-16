@@ -336,7 +336,17 @@ impl Game {
         }
     }
 
-    fn interact_with_rhulad(&mut self, _loc: &Point) {}
+    fn interact_with_rhulad(&mut self, loc: &Point) {
+        let mesg = Message::new(
+            Topic::NonGamePlay,
+            "After an epic battle you kill the Emperor!",
+        );
+        self.post(Event::AddMessage(mesg));
+
+        self.post(Event::DestroyObject(*loc, Tag::Character));
+        self.post(Event::AddObject(*loc, make::emp_sword()));
+        self.post(Event::AddToInventory(*loc));
+    }
 
     fn interact_pre_move(&mut self, loc: &Point) {
         if let Some(cell) = self.level.cells.get(loc) {

@@ -188,6 +188,16 @@ pub fn sign(text: &str) -> Object {
     }
 }
 
+pub fn emp_sword() -> Object {
+    Object {
+        dname: String::from("emp sword"),
+        tags: emp_sword_tags(),
+        symbol: 'C',
+        color: Color::Silver,
+        description: "the Sword of the Crippled God".to_string(),
+    }
+}
+
 pub fn weak_sword(game: &Game) -> Object {
     let swords = vec![
         ("long sword", "a nicked long sword"),
@@ -313,6 +323,14 @@ fn mighty_sword_tags() -> Vec<Tag> {
     vec![
         Tag::Name(String::from("Sword of Impending Doom")),
         Tag::Portable,
+    ]
+}
+
+fn emp_sword_tags() -> Vec<Tag> {
+    vec![
+        Tag::Name(String::from("Sword of the Crippled God")),
+        Tag::Portable,
+        Tag::EmpSword,
     ]
 }
 
