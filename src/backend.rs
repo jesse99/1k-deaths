@@ -111,6 +111,20 @@ impl Game {
             topic: Topic::NonGamePlay,
             text: String::from("Welcome to 1k-deaths!"),
         }));
+        self.post(Event::AddMessage(Message {
+            topic: Topic::NonGamePlay,
+            text: String::from("Are you the hero will will destroy the Crippled God's sword?"),
+        }));
+        self.post(Event::AddMessage(Message {
+            topic: Topic::NonGamePlay,
+            text: String::from(
+                "Use the arrow keys to move, 'x' to examine squares, and 'q' to quit.",
+            ),
+        }));
+        self.post(Event::AddMessage(Message {
+            topic: Topic::NonGamePlay,
+            text: String::from("Use the escape key to stop examining."),
+        }));
 
         self.post(Event::NewLevel);
 
@@ -142,8 +156,9 @@ impl Game {
     // to the next "interesting" cell where interesting might just be a cell
     // with a non-player Character.
     pub fn probe_mode(&mut self, mode: ProbeMode) {
-        assert_ne!(self.mode, mode);
-        self.post(Event::ChangeProbe(mode));
+        if self.mode != mode {
+            self.post(Event::ChangeProbe(mode));
+        }
     }
 
     /// Do something with an adjacent cell, this can be move into it, attack
