@@ -327,15 +327,24 @@ impl Game {
 
     // TODO: move these into a uniques module
     fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                if dx != 0 || dy != 0 {
-                    let new_loc = Point::new(loc.x + dx, loc.y + dy);
-                    if let Some(cell) = self.level.cells.get(&new_loc) {
-                        if !cell.contains(&Tag::Character) {
-                            return Some(new_loc);
-                        }
-                    }
+        let mut deltas = vec![
+            (-1, -1),
+            (-1, 1),
+            (-1, 0),
+            (1, -1),
+            (1, 1),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+        ];
+        deltas.shuffle(&mut *self.rng());
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            if let Some(cell) = self.level.cells.get(&new_loc) {
+                // TODO: this isn't quite right: we should check to see
+                // if the Doorman can move into the terrain
+                if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
+                    return Some(new_loc);
                 }
             }
         }
