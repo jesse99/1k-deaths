@@ -56,7 +56,7 @@ pub enum Tile {
     NotVisible,
 }
 
-pub enum State {
+enum State {
     Bumbling,
     KilledRhulad,
     WonGame,
@@ -141,11 +141,6 @@ impl Game {
         // TODO: or have NewLevel take a default terrain
         let map = include_str!("backend/maps/start.txt");
         make::level(self, map);
-    }
-
-    // We're using a RefCell to avoid taking too many mutable Game references.
-    pub fn rng(&self) -> RefMut<'_, dyn RngCore> {
-        self.rng.borrow_mut()
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
@@ -261,30 +256,6 @@ impl Game {
 
         tile
     }
-    pub fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
-        let mut deltas = vec![
-            (-1, -1),
-            (-1, 1),
-            (-1, 0),
-            (1, -1),
-            (1, 1),
-            (1, 0),
-            (0, -1),
-            (0, 1),
-        ];
-        deltas.shuffle(&mut *self.rng());
-        for delta in deltas {
-            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            if let Some(cell) = self.level.cells.get(&new_loc) {
-                // TODO: this isn't quite right: we should check to see
-                // if the Doorman can move into the terrain
-                if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
-                    return Some(new_loc);
-                }
-            }
-        }
-        None
-    }
 }
 
 impl Game {
@@ -311,6 +282,36 @@ impl Game {
             };
             self.old_pov.posted(&game2, &event);
         }
+    }
+
+    fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
+        let mut deltas = vec![
+            (-1, -1),
+            (-1, 1),
+            (-1, 0),
+            (1, -1),
+            (1, 1),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+        ];
+        deltas.shuffle(&mut *self.rng());
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            if let Some(cell) = self.level.cells.get(&new_loc) {
+                // TODO: this isn't quite right: we should check to see
+                // if the Doorman can move into the terrain
+                if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
+                    return Some(new_loc);
+                }
+            }
+        }
+        None
+    }
+
+    // We're using a RefCell to avoid taking too many mutable Game references.
+    fn rng(&self) -> RefMut<'_, dyn RngCore> {
+        self.rng.borrow_mut()
     }
 
     fn handled_game_event(&mut self, event: &Event) -> bool {
@@ -349,6 +350,7 @@ impl Game {
             _ => false,
         }
     }
+
     fn interact_with_terrain(&mut self, loc: &Point) -> bool {
         if !matches!(self.state, State::WonGame) {
             if let Some(cell) = self.level.cells.get(loc) {
