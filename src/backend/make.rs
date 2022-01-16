@@ -24,6 +24,13 @@ pub fn level(game: &mut Game, map: &str) {
                     unique(Unique::Doorman, 'D', Color::Green),
                 ));
             }
+            'o' => {
+                game.post(Event::AddObject(loc, dirt()));
+                game.post(Event::AddObject(
+                    loc,
+                    unique(Unique::Spectator, 'o', Color::Plum),
+                ));
+            }
             'R' => {
                 game.post(Event::AddObject(loc, dirt()));
                 game.post(Event::AddObject(
@@ -158,6 +165,7 @@ fn unique(unique: Unique, symbol: char, color: Color) -> Object {
     let description = match unique {
         Unique::Doorman => "a royal guard".to_string(),
         Unique::Rhulad => "the Emperor of a Thousand Deaths".to_string(),
+        Unique::Spectator => "a spectator".to_string(),
     };
     Object {
         dname: format!("{unique}"),

@@ -23,6 +23,7 @@ pub enum Unique {
     /// Blocks the way to Rhulad.
     Doorman,
     Rhulad,
+    Spectator,
 }
 
 /// Object state and properties consist of a list of these tags. Objects can

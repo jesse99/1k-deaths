@@ -317,6 +317,20 @@ impl Game {
         None
     }
 
+    fn interact_with_spectator(&mut self) {
+        let messages = vec![
+            "I hope you're prepared to die!",
+            "The last champion only lasted thirty seconds.",
+            "How can you defeat a man who will not stay dead?",
+            "I have 10 gold on you lasting over two minutes!",
+            "You're just another dead man walking.",
+        ];
+        let text = messages.iter().choose(&mut *self.rng()).unwrap();
+
+        let mesg = Message::new(Topic::NPCSpeaks, text);
+        self.post(Event::AddMessage(mesg));
+    }
+
     fn interact_with_doorman(&mut self, loc: &Point) {
         let cell = self.level.cells.get(&self.level.player).unwrap();
         let obj = cell.get(&Tag::Character);
@@ -354,6 +368,7 @@ impl Game {
             match obj.unique() {
                 Some(Unique::Doorman) => self.interact_with_doorman(loc),
                 Some(Unique::Rhulad) => self.interact_with_rhulad(loc),
+                Some(Unique::Spectator) => self.interact_with_spectator(),
                 None => (), // Character but not a unique one, TODO: usually will want to attack it
             }
         }
