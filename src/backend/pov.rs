@@ -58,17 +58,20 @@ impl PoV {
     }
 
     /// Returns true if loc is visible from origin.
-    pub fn visible(&mut self, origin: &Point, level: &Level, loc: &Point) -> bool {
-        if self.dirty {
-            self.refresh(origin, level);
-            self.edition = self.edition.wrapping_add(1);
-            self.dirty = false;
-        }
-
+    pub fn visible(&self, loc: &Point) -> bool {
+        assert!(!self.dirty);
         self.visible.contains(loc)
     }
 
-    fn refresh(&mut self, origin: &Point, level: &Level) {
+    pub fn refresh(&mut self, origin: &Point, level: &Level) {
+        if self.dirty {
+            self.do_refresh(origin, level);
+            self.edition = self.edition.wrapping_add(1);
+            self.dirty = false;
+        }
+    }
+
+    fn do_refresh(&mut self, origin: &Point, level: &Level) {
         self.visible.clear();
 
         let mut view = FoV {

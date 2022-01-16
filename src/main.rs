@@ -31,7 +31,9 @@ fn main() {
     );
 
     let mut game = Game::new();
-    game.start();
+    let mut events = Vec::with_capacity(1000); // TODO: probably should tune this
+    game.start(&mut events);
+    game.post(events);
     let mut terminal = terminal::Terminal::new(game);
     terminal.run();
 }

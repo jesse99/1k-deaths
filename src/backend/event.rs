@@ -1,4 +1,4 @@
-use super::{Message, Object, Point, ProbeMode, Tag};
+use super::{Message, Object, Point, ProbeMode, State, Tag};
 use std::fmt::{self, Formatter};
 
 /// These are the "facts" associated with a particular game. All game state
@@ -7,6 +7,7 @@ use std::fmt::{self, Formatter};
 pub enum Event {
     AddMessage(Message),
     NewGame,
+    StateChanged(State),
     NewLevel,
     AddObject(Point, Object),
     AddToInventory(Point), // TODO: this will likely need to take a character id, and maybe an item id
@@ -22,6 +23,7 @@ impl fmt::Display for Event {
         match self {
             Event::AddMessage(mesg) => write!(f, "AddMessage({mesg})"),
             Event::NewGame => write!(f, "NewGame"),
+            Event::StateChanged(state) => write!(f, "StateChanged({state})"),
             Event::NewLevel => write!(f, "NewLevel"),
             Event::AddObject(loc, obj) => write!(f, "AddObject({loc}, {obj})"),
             Event::AddToInventory(loc) => write!(f, "AddToInventory({loc})"),

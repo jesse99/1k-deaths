@@ -1,63 +1,63 @@
 use super::{Color, Event, Game, Liquid, Material, Message, Object, Point, Tag, Topic, Unique};
 use rand::prelude::*;
 
-pub fn level(game: &mut Game, map: &str) {
+pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
     let mut loc = Point::origin();
     for ch in map.chars() {
         match ch {
-            ' ' => game.post(Event::AddObject(loc, dirt())),
-            '#' => game.post(Event::AddObject(loc, stone_wall())),
-            'M' => game.post(Event::AddObject(loc, metal_wall())),
-            '+' => game.post(Event::AddObject(loc, closed_door())),
-            '~' => game.post(Event::AddObject(loc, shallow_water())),
-            'V' => game.post(Event::AddObject(loc, vitr())),
-            'T' => game.post(Event::AddObject(loc, tree())),
-            'W' => game.post(Event::AddObject(loc, deep_water())),
+            ' ' => events.push(Event::AddObject(loc, dirt())),
+            '#' => events.push(Event::AddObject(loc, stone_wall())),
+            'M' => events.push(Event::AddObject(loc, metal_wall())),
+            '+' => events.push(Event::AddObject(loc, closed_door())),
+            '~' => events.push(Event::AddObject(loc, shallow_water())),
+            'V' => events.push(Event::AddObject(loc, vitr())),
+            'T' => events.push(Event::AddObject(loc, tree())),
+            'W' => events.push(Event::AddObject(loc, deep_water())),
             'P' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(loc, player()));
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(loc, player()));
             }
             'D' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(
                     loc,
                     unique(Unique::Doorman, 'D', Color::Green),
                 ));
             }
             'o' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(
                     loc,
                     unique(Unique::Spectator, 'o', Color::Plum),
                 ));
             }
             'R' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(
                     loc,
                     unique(Unique::Rhulad, 'R', Color::Red),
                 ));
             }
             's' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(loc, weak_sword(game)));
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(loc, weak_sword(game)));
             }
             'S' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(loc, mighty_sword()));
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(loc, mighty_sword()));
             }
             'a' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(loc, sign("the Lesser Armory")));
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(loc, sign("the Lesser Armory")));
             }
             'b' => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddObject(loc, sign("the Greater Armory")));
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(loc, sign("the Greater Armory")));
             }
             '\n' => (),
             _ => {
-                game.post(Event::AddObject(loc, dirt()));
-                game.post(Event::AddMessage(Message {
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddMessage(Message {
                     topic: Topic::Error,
                     text: format!("Ignoring map char '{ch}'"),
                 }));

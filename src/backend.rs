@@ -11,6 +11,7 @@ mod primitives;
 mod tag;
 mod uniques;
 
+pub use event::Event;
 pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
@@ -18,7 +19,6 @@ pub use primitives::Size;
 
 use cell::Cell;
 use derive_more::Display;
-use event::Event;
 use level::Level;
 use object::Object;
 use old_pov::OldPoV;
@@ -56,7 +56,8 @@ pub enum Tile {
     NotVisible,
 }
 
-enum State {
+#[derive(Clone, Copy, Display)]
+pub enum State {
     Bumbling,
     KilledRhulad,
     WonGame,
@@ -110,37 +111,37 @@ impl Game {
             // 3) We're going to have to be able to persist the RNG. rand_pcg
             // supports serde so that would likely work. If not we could
             // create our own simple RNG.
-            rng: RefCell::new(SmallRng::seed_from_u64(100)), // TODO: use a random seed (be sure to log it)
+            rng: RefCell::new(SmallRng::seed_from_u64(100)),
         }
     }
 
-    pub fn start(&mut self) {
-        self.post(Event::NewGame);
-        self.post(Event::AddMessage(Message {
+    pub fn start(&self, events: &mut Vec<Event>) {
+        events.push(Event::NewGame);
+        events.push(Event::AddMessage(Message {
             topic: Topic::NonGamePlay,
             text: String::from("Welcome to 1k-deaths!"),
         }));
-        self.post(Event::AddMessage(Message {
+        events.push(Event::AddMessage(Message {
             topic: Topic::NonGamePlay,
             text: String::from("Are you the hero will will destroy the Crippled God's sword?"),
         }));
-        self.post(Event::AddMessage(Message {
+        events.push(Event::AddMessage(Message {
             topic: Topic::NonGamePlay,
             text: String::from(
                 "Use the arrow keys to move, 'x' to examine squares, and 'q' to quit.",
             ),
         }));
-        self.post(Event::AddMessage(Message {
+        events.push(Event::AddMessage(Message {
             topic: Topic::NonGamePlay,
             text: String::from("Use the escape key to stop examining."),
         }));
 
-        self.post(Event::NewLevel);
+        events.push(Event::NewLevel);
 
         // TODO: may want a SetAllTerrain variant to avoid a zillion events
         // TODO: or have NewLevel take a default terrain
         let map = include_str!("backend/maps/start.txt");
-        make::level(self, map);
+        make::level(self, map, events);
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
@@ -159,16 +160,16 @@ impl Game {
     // TODO: When ProbeMode is not Moving should support tab and shift-tab to move
     // to the next "interesting" cell where interesting might just be a cell
     // with a non-player Character.
-    pub fn probe_mode(&mut self, mode: ProbeMode) {
+    pub fn probe_mode(&self, mode: ProbeMode, events: &mut Vec<Event>) {
         if self.mode != mode {
-            self.post(Event::ChangeProbe(mode));
+            events.push(Event::ChangeProbe(mode));
         }
     }
 
     /// Do something with an adjacent cell, this can be move into it, attack
     /// an enemy there, start a dialog with a friendly character, open a door,
     /// etc.
-    pub fn probe(&mut self, dx: i32, dy: i32) {
+    pub fn probe(&self, dx: i32, dy: i32, events: &mut Vec<Event>) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
         match self.mode {
@@ -176,25 +177,25 @@ impl Game {
                 let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
                 if let Some(cell) = self.level.cells.get(&new_loc) {
                     if let Some(mesg) = self.impassible_terrain(cell) {
-                        if !self.interact_with_terrain(&new_loc) {
-                            self.post(Event::AddMessage(mesg));
+                        if !self.interact_with_terrain(&new_loc, events) {
+                            events.push(Event::AddMessage(mesg));
                         }
                     } else if cell.contains(&Tag::Character) {
-                        self.interact_with_char(&new_loc);
+                        self.interact_with_char(&new_loc, events);
                     } else if cell.contains(&Tag::ClosedDoor) {
-                        self.post(Event::ChangeObject(
+                        events.push(Event::ChangeObject(
                             new_loc,
                             Tag::ClosedDoor,
                             make::open_door(),
                         ));
                     } else {
-                        self.post(Event::PlayerMoved(new_loc));
+                        events.push(Event::PlayerMoved(new_loc));
                     }
                 }
             }
             ProbeMode::Examine(loc) => {
                 let new_loc = Point::new(loc.x + dx, loc.y + dy);
-                if self.pov.visible(&self.level.player, &self.level, &new_loc) {
+                if self.pov.visible(&new_loc) {
                     let cell = self.level.cells.get(&new_loc).unwrap();
                     let descs: Vec<String> = cell
                         .iter()
@@ -203,32 +204,31 @@ impl Game {
                         .collect();
                     let descs = descs.join(", and ");
                     let text = format!("You see {descs}.");
-                    self.post(Event::AddMessage(Message {
+                    events.push(Event::AddMessage(Message {
                         topic: Topic::NonGamePlay,
                         text,
                     }));
-                    self.post(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
+                    events.push(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
                 } else if self.old_pov.get(&new_loc).is_some() {
                     let text = "You can no longer see there.".to_string();
-                    self.post(Event::AddMessage(Message {
+                    events.push(Event::AddMessage(Message {
                         topic: Topic::NonGamePlay,
                         text,
                     }));
-                    self.post(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
+                    events.push(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
                 };
             }
         };
     }
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
-    /// Otherwise return None. This is mutable because state objects like Level merely set
-    /// a dirty flag when events are posted and may need to refresh here.
-    pub fn tile(&mut self, loc: &Point) -> Tile {
+    /// Otherwise return None.
+    pub fn tile(&self, loc: &Point) -> Tile {
         let focus = match self.mode {
             ProbeMode::Moving => false,
             ProbeMode::Examine(eloc) => *loc == eloc,
         };
-        let tile = if self.pov.visible(&self.level.player, &self.level, loc) {
+        let tile = if self.pov.visible(loc) {
             if let Some(cell) = self.level.cells.get(loc) {
                 let (bg, fg, symbol) = cell.to_bg_fg_symbol();
                 Tile::Visible {
@@ -247,24 +247,26 @@ impl Game {
             }
         };
 
-        // Update the old PoV with the current PoV (this is a fast operation
-        // if the current PoV hasn't changed). TODO: though this (and level's
-        // edition check) will be called a lot. If they show up in profiling
-        // we could add some sort of lock-like object to ensure that that is
-        // done before the UI starts calling the tile method).
-        self.old_pov.update(&self.level, &self.pov);
-
         tile
+    }
+
+    // In order to ensure that games are replayable mutation should only happen
+    // because of an event. To help ensure that this should be the only public
+    // mutable Game method.
+    pub fn post(&mut self, events: Vec<Event>) {
+        for event in events {
+            self.internal_post(event);
+        }
+
+        self.old_pov.update(&self.level, &self.pov);
+        self.pov.refresh(&self.level.player, &self.level);
     }
 }
 
 impl Game {
-    fn post(&mut self, event: Event) {
+    // This should only be called by post_events.
+    fn internal_post(&mut self, event: Event) {
         self.stream.push(event.clone());
-
-        if let Event::PlayerMoved(new_loc) = event {
-            self.interact_post_move(&new_loc);
-        }
 
         if !self.handled_game_event(&event) {
             // This is the type state pattern: as events are posted new state
@@ -281,6 +283,17 @@ impl Game {
                 pov: &self.pov,
             };
             self.old_pov.posted(&game2, &event);
+        }
+
+        if let Event::PlayerMoved(new_loc) = event {
+            // Icky recursion: when we do stuff like move into a square
+            // we want to immediately take various actions, like printing
+            // "You splash through the water".
+            let mut events = Vec::new();
+            self.interact_post_move(&new_loc, &mut events);
+            for child in events {
+                self.internal_post(child);
+            }
         }
     }
 
@@ -299,8 +312,6 @@ impl Game {
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             if let Some(cell) = self.level.cells.get(&new_loc) {
-                // TODO: this isn't quite right: we should check to see
-                // if the Doorman can move into the terrain
                 if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
                     return Some(new_loc);
                 }
@@ -316,6 +327,10 @@ impl Game {
 
     fn handled_game_event(&mut self, event: &Event) -> bool {
         match event {
+            Event::StateChanged(state) => {
+                self.state = *state;
+                true
+            }
             Event::AddMessage(message) => {
                 if let Topic::Error = message.topic {
                     // TODO: do we really want to do this?
@@ -351,7 +366,7 @@ impl Game {
         }
     }
 
-    fn interact_with_terrain(&mut self, loc: &Point) -> bool {
+    fn interact_with_terrain(&self, loc: &Point, events: &mut Vec<Event>) -> bool {
         if !matches!(self.state, State::WonGame) {
             if let Some(cell) = self.level.cells.get(loc) {
                 let obj = cell.get(&Tag::Terrain);
@@ -363,11 +378,11 @@ impl Game {
                             Topic::NonGamePlay,
                             "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
                         );
-                        self.post(Event::AddMessage(mesg));
+                        events.push(Event::AddMessage(mesg));
 
                         let mesg = Message::new(Topic::NonGamePlay, "You have won the game!!");
-                        self.post(Event::AddMessage(mesg));
-                        self.state = State::WonGame;
+                        events.push(Event::AddMessage(mesg));
+                        events.push(Event::StateChanged(State::WonGame));
                         return true;
                     }
                 }
@@ -376,20 +391,19 @@ impl Game {
         false
     }
 
-    fn interact_with_char(&mut self, loc: &Point) {
+    fn interact_with_char(&self, loc: &Point, events: &mut Vec<Event>) {
         if let Some(cell) = self.level.cells.get(loc) {
             let obj = cell.get(&Tag::Character);
             match obj.unique() {
-                Some(Unique::Doorman) => uniques::interact_with_doorman(self, loc),
-                Some(Unique::Rhulad) => uniques::interact_with_rhulad(self, loc),
-                Some(Unique::Spectator) => uniques::interact_with_spectator(self),
+                Some(Unique::Doorman) => uniques::interact_with_doorman(self, loc, events),
+                Some(Unique::Rhulad) => uniques::interact_with_rhulad(self, loc, events),
+                Some(Unique::Spectator) => uniques::interact_with_spectator(self, events),
                 None => (), // Character but not a unique one, TODO: usually will want to attack it
             }
         }
     }
 
-    fn interact_post_move(&mut self, new_loc: &Point) {
-        let mut events = Vec::new();
+    fn interact_post_move(&self, new_loc: &Point, events: &mut Vec<Event>) {
         if let Some(cell) = self.level.cells.get(new_loc) {
             let terrain = cell.terrain();
             if let Some((Liquid::Water, false)) = terrain.liquid() {
@@ -408,9 +422,6 @@ impl Game {
             if cell.contains(&Tag::Portable) {
                 events.push(Event::AddToInventory(*new_loc));
             }
-        }
-        for evt in events {
-            self.post(evt);
         }
     }
 
