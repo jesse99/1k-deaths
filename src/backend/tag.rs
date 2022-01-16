@@ -109,6 +109,9 @@ impl Tag {
     pub fn is_sign(&self) -> bool {
         matches!(self, Tag::Sign)
     }
+    pub fn is_emp_sword(&self) -> bool {
+        matches!(self, Tag::EmpSword)
+    }
     pub fn is_closed_door(&self) -> bool {
         matches!(self, Tag::ClosedDoor)
     }

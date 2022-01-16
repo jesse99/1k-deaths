@@ -30,6 +30,10 @@ impl Object {
         self.tags.iter().find_map(|tag| tag.as_unique())
     }
 
+    pub fn emp_sword(&self) -> bool {
+        self.tags.iter().any(|tag| tag.is_emp_sword())
+    }
+
     pub fn inventory(&self) -> Option<&Vec<Object>> {
         self.tags.iter().find_map(|tag| tag.as_inventory())
     }
@@ -72,6 +76,10 @@ impl Object {
 
     pub fn terrain(&self) -> bool {
         self.tags.iter().any(|tag| tag.is_terrain())
+    }
+
+    pub fn tree(&self) -> bool {
+        self.tags.iter().any(|tag| tag.is_tree())
     }
 
     pub fn wall(&self) -> bool {

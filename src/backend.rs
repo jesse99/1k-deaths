@@ -157,9 +157,11 @@ impl Game {
                 let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
                 if let Some(cell) = self.level.cells.get(&new_loc) {
                     if let Some(mesg) = self.impassible_terrain(cell) {
-                        self.post(Event::AddMessage(mesg));
+                        if !self.interact_with_terrain(&new_loc) {
+                            self.post(Event::AddMessage(mesg));
+                        }
                     } else if cell.contains(&Tag::Character) {
-                        self.interact_pre_move(&new_loc);
+                        self.interact_with_char(&new_loc);
                     } else if cell.contains(&Tag::ClosedDoor) {
                         self.post(Event::ChangeObject(
                             new_loc,
@@ -362,7 +364,29 @@ impl Game {
         self.post(Event::AddToInventory(*loc));
     }
 
-    fn interact_pre_move(&mut self, loc: &Point) {
+    fn interact_with_terrain(&mut self, loc: &Point) -> bool {
+        if let Some(cell) = self.level.cells.get(loc) {
+            let obj = cell.get(&Tag::Terrain);
+            if let Some((Liquid::Vitr, _)) = obj.liquid() {
+                let cell = self.level.cells.get(&self.level.player).unwrap();
+                let obj = cell.get(&Tag::Player);
+                if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
+                    let mesg = Message::new(
+                        Topic::NonGamePlay,
+                        "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
+                    );
+                    self.post(Event::AddMessage(mesg));
+
+                    let mesg = Message::new(Topic::NonGamePlay, "You have won the game!!");
+                    self.post(Event::AddMessage(mesg));
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn interact_with_char(&mut self, loc: &Point) {
         if let Some(cell) = self.level.cells.get(loc) {
             let obj = cell.get(&Tag::Character);
             match obj.unique() {
@@ -404,6 +428,11 @@ impl Game {
         let obj = cell.terrain();
         if obj.wall() {
             Some(Message::new(Topic::NonGamePlay, "You bump into the wall."))
+        } else if obj.tree() {
+            Some(Message::new(
+                Topic::NonGamePlay,
+                "The tree's are too thick to travel through.",
+            ))
         } else if obj.door().is_some() {
             // if the door is open then the player will open it once he
             // moves into it. TODO: later we may want a key (aka Binding) check.
