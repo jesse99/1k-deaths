@@ -77,8 +77,13 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns\
 	- http://aturon.github.io/\
 \'95\'a0Generate the level from a text file:\
-	- replace NonGamePlay with Annoucement and ImportantAnnoucement\
-	- use a uniques module?\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 	- use a uniques module\
+	- ony public mutable game methof should be post\
+		- probe would have to return list of events\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 	- replace NonGamePlay with Announcement and Important\cf3 Announcement\
+		or Normal and Important? maybe get rid of Item too\cf3 \
 	- later file could include a symbol mapping, i.e. M=Metal Door\
 \'95 Log event posting, at info?\
 \'95 Would be great if could guarantee that mutation only happened in response to an event\
@@ -139,7 +144,30 @@ player can also use an inventory item against an object\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\i0\b \cf3 \
-Step 6 - It's alive! Alive!\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 Step 5 - Saving/Loading\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf3 \'95\'a0Add support for persistence\
+	- just persist event stream\
+	- would it be better to use sqlite for persistence? how would that help?\
+	- on startup load the saved game (if present)\
+	- would be nice to have an option to skip loads or load a different file\
+	- should state objects save a checksum to verify that loads work?\
+	- would be cool to optionally update UI on load\
+	   maybe hit a key to terminate loading the stream\
+\'95 Panics should do a save (use Drop trait)\
+\'95 Support a config file?\
+	- log level\
+	- log path\
+	- key bindings\
+	- topic colors\
+	- auto-pickup options\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f2\b \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 Step 6 - It's alive! Alive!\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Add character stats, should be object tags\
@@ -162,23 +190,6 @@ Step 6 - It's alive! Alive!\
 	- also add a health bar for the player\
 	- and maybe targeted and near by NPCs\
 \'95 Should be a wizard command to get combat details\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 \
-Step 5 - Saving/Loading\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Add support for persistence\
-	- just persist event stream\
-	- would it be better to use sqlite for persistence? how would that help?\
-	- should state objects save a checksum to verify that loads work?\
-	- would be cool to optionally update UI on load\
-	   maybe hit a key to terminate loading the stream\
-\'95 Errors, and maybe warnings, should save off event stream.\
-\'95 Support a config file?\
-	- log level\
-	- log path\
-	- key bindings\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
