@@ -70,24 +70,16 @@ max_width = 150\
 \f2\b \cf3 Step 7 - Interaction\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf3 \'95 Review rust notes\
-\'95\'a0Look at these:\
+\f1\b0 \cf3 \'95\'a0Look at these:\
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- https://github.com/mre/idiomatic-rust\
-	- https://github.com/rust-unofficial/patterns\
+	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
 \'95\'a0Generate the level from a text file:\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf3 	- only public mutable game methof should be post\
-		- probe would have to return list of events\
-		- reserve events space when starting the game\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf3 	- replace NonGamePlay with Announcement and Important\cf3 Announcement\
+	- replace NonGamePlay with Announcement and Important\cf3 Announcement\
 		or Normal and Important? maybe get rid of Item too\
 \cf3 	- later file could include a symbol mapping, i.e. M=Metal Door\
 \'95 Log event posting, at info?\
-\'95 Would be great if could guarantee that mutation only happened in response to an event\
-	- maybe type state?\
 \'95 Add action objects\
 	- this is where the logic is, typically a dual dispatch sort of thing\
 	- for the player this either posts event(s) or writes a non-game message\
@@ -101,6 +93,9 @@ max_width = 150\
 	- would need a default square (eg stone wall)\
 	- characters can extend the level doing stuff like digging through stone walls\
 	- add a pick axe and test this\
+		You chip away at the wall\
+		You break through the wall\
+		You do no damage\
 	\
 enum ObjectTag\
 	Weapon\
@@ -156,7 +151,7 @@ player can also use an inventory item against an object\
 	- should state objects save a checksum to verify that loads work?\
 	- would be cool to optionally update UI on load\
 	   maybe hit a key to terminate loading the stream\
-\'95 Panics should do a save (use Drop trait)\
+\'95 Panics should do a save (use Drop trait, probably on Game)\
 \'95 Support a config file?\
 	- log level\
 	- log path\
@@ -179,8 +174,7 @@ player can also use an inventory item against an object\
 	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
 \f2\b \
 
-\f1\b0 \'95 May want to add a backend/primitives module\
-\'95 Support combat\
+\f1\b0 \'95 Support combat\
 	- for now this can be unarmed combat\
 	- should be tags for this\
 \'95 Support death\

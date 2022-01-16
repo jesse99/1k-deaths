@@ -6,8 +6,11 @@ pub enum Topic {
     Error,
     /// Player did something with an item.
     Item,
-    /// Something that doesn't affect the game, e.g. bumping into a wall.
-    NonGamePlay, // TODO: might want to change this to Announcement and add an ImportantAnnouncement
+    /// An un-important message. Typically something that doesn't affect
+    /// game play, e.g. bumping into a wall.
+    Normal,
+    /// A significant announcement.
+    Important,
     NPCSpeaks,
     // /// NPC was damaged (but not by the player).
     // NpcIsDamaged, // TODO: might want to have a separate Topic for player allies

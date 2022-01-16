@@ -44,7 +44,7 @@ pub fn interact_with_doorman(game: &Game, loc: &Point, events: &mut Vec<Event>) 
 
 pub fn interact_with_rhulad(_game: &Game, loc: &Point, events: &mut Vec<Event>) {
     let mesg = Message::new(
-        Topic::NonGamePlay,
+        Topic::Important,
         "After an epic battle you kill the Emperor!",
     );
     events.push(Event::AddMessage(mesg));

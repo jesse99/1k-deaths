@@ -118,21 +118,21 @@ impl Game {
     pub fn start(&self, events: &mut Vec<Event>) {
         events.push(Event::NewGame);
         events.push(Event::AddMessage(Message {
-            topic: Topic::NonGamePlay,
+            topic: Topic::Normal,
             text: String::from("Welcome to 1k-deaths!"),
         }));
         events.push(Event::AddMessage(Message {
-            topic: Topic::NonGamePlay,
+            topic: Topic::Normal,
             text: String::from("Are you the hero will will destroy the Crippled God's sword?"),
         }));
         events.push(Event::AddMessage(Message {
-            topic: Topic::NonGamePlay,
+            topic: Topic::Normal,
             text: String::from(
                 "Use the arrow keys to move, 'x' to examine squares, and 'q' to quit.",
             ),
         }));
         events.push(Event::AddMessage(Message {
-            topic: Topic::NonGamePlay,
+            topic: Topic::Normal,
             text: String::from("Use the escape key to stop examining."),
         }));
 
@@ -205,14 +205,14 @@ impl Game {
                     let descs = descs.join(", and ");
                     let text = format!("You see {descs}.");
                     events.push(Event::AddMessage(Message {
-                        topic: Topic::NonGamePlay,
+                        topic: Topic::Normal,
                         text,
                     }));
                     events.push(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
                 } else if self.old_pov.get(&new_loc).is_some() {
                     let text = "You can no longer see there.".to_string();
                     events.push(Event::AddMessage(Message {
-                        topic: Topic::NonGamePlay,
+                        topic: Topic::Normal,
                         text,
                     }));
                     events.push(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
@@ -375,12 +375,12 @@ impl Game {
                     let obj = cell.get(&Tag::Player);
                     if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
                         let mesg = Message::new(
-                            Topic::NonGamePlay,
+                            Topic::Important,
                             "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
                         );
                         events.push(Event::AddMessage(mesg));
 
-                        let mesg = Message::new(Topic::NonGamePlay, "You have won the game!!");
+                        let mesg = Message::new(Topic::Important, "You have won the game!!");
                         events.push(Event::AddMessage(mesg));
                         events.push(Event::StateChanged(State::WonGame));
                         return true;
@@ -407,14 +407,14 @@ impl Game {
         if let Some(cell) = self.level.cells.get(new_loc) {
             let terrain = cell.terrain();
             if let Some((Liquid::Water, false)) = terrain.liquid() {
-                let mesg = Message::new(Topic::NonGamePlay, "You splash through the water.");
+                let mesg = Message::new(Topic::Normal, "You splash through the water.");
                 events.push(Event::AddMessage(mesg));
             }
             if cell.contains(&Tag::Sign) {
                 let obj = cell.get(&Tag::Sign);
                 let text = obj.sign().unwrap();
                 let mesg = Message {
-                    topic: Topic::NonGamePlay,
+                    topic: Topic::Normal,
                     text: format!("You see a sign {text}."),
                 };
                 events.push(Event::AddMessage(mesg));
@@ -428,10 +428,10 @@ impl Game {
     fn impassible_terrain(&self, cell: &Cell) -> Option<Message> {
         let obj = cell.terrain();
         if obj.wall() {
-            Some(Message::new(Topic::NonGamePlay, "You bump into the wall."))
+            Some(Message::new(Topic::Normal, "You bump into the wall."))
         } else if obj.tree() {
             Some(Message::new(
-                Topic::NonGamePlay,
+                Topic::Normal,
                 "The tree's are too thick to travel through.",
             ))
         } else if obj.door().is_some() {
@@ -442,15 +442,12 @@ impl Game {
             match liquid {
                 Liquid::Water => {
                     if deep {
-                        Some(Message::new(Topic::NonGamePlay, "The water is too deep."))
+                        Some(Message::new(Topic::Normal, "The water is too deep."))
                     } else {
                         None
                     }
                 }
-                Liquid::Vitr => Some(Message::new(
-                    Topic::NonGamePlay,
-                    "Do you have a death wish?",
-                )),
+                Liquid::Vitr => Some(Message::new(Topic::Normal, "Do you have a death wish?")),
             }
         } else {
             None
