@@ -50,18 +50,16 @@ impl Object {
     }
 
     pub fn sign(&self) -> Option<&String> {
-        // This one is a little tricky because we need to make sure that the
-        // object is actually a sign.
         if self.tags.iter().any(|tag| tag.is_sign()) {
-            self.tags.iter().find_map(|tag| tag.as_name()) // this should always work
+            Some(&self.description)
         } else {
             None
         }
     }
 
-    pub fn ground(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_ground())
-    }
+    // pub fn ground(&self) -> bool {
+    //     self.tags.iter().any(|tag| tag.is_ground())
+    // }
 
     /// Returns (Liquid, deep) (or None if there's no liquid).
     pub fn liquid(&self) -> Option<(Liquid, bool)> {

@@ -68,7 +68,7 @@ pub struct Game {
     pov: PoV,
     old_pov: OldPoV,
     mode: ProbeMode,
-    pub rng: RefCell<SmallRng>,
+    rng: RefCell<SmallRng>,
 }
 
 mod details {
@@ -156,21 +156,18 @@ impl Game {
             ProbeMode::Moving => {
                 let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
                 if let Some(cell) = self.level.cells.get(&new_loc) {
-                    match self.probe_cell(cell) {
-                        Probe::Move(Some(msg)) => {
-                            self.post(Event::AddMessage(msg));
-                            self.post(Event::PlayerMoved(new_loc));
-                            self.attempt_pickup(&new_loc);
-                        }
-                        Probe::Move(None) => {
-                            self.post(Event::PlayerMoved(new_loc));
-                            self.attempt_pickup(&new_loc);
-                        }
-                        Probe::Change(tag, obj) => {
-                            self.post(Event::ChangeObject(new_loc, tag, obj))
-                        }
-                        Probe::Failed(mesg) => self.post(Event::AddMessage(mesg)),
-                        Probe::NoOp => {}
+                    if let Some(mesg) = self.impassible_terrain(cell) {
+                        self.post(Event::AddMessage(mesg));
+                    } else if cell.contains(&Tag::Character) {
+                        // TODO: interact with it
+                    } else if cell.contains(&Tag::ClosedDoor) {
+                        self.post(Event::ChangeObject(
+                            new_loc,
+                            Tag::ClosedDoor,
+                            make::open_door(),
+                        ));
+                    } else {
+                        self.post(Event::PlayerMoved(new_loc));
                     }
                 }
             }
@@ -244,6 +241,10 @@ impl Game {
     fn post(&mut self, event: Event) {
         self.stream.push(event.clone());
 
+        if let Event::PlayerMoved(new_loc) = event {
+            self.interact_post_move(&new_loc);
+        }
+
         if !self.handled_game_event(&event) {
             // This is the type state pattern: as events are posted new state
             // objects are updated and upcoming state objects can safely reference
@@ -299,75 +300,56 @@ impl Game {
         }
     }
 
-    fn attempt_pickup(&mut self, new_loc: &Point) {
-        let new_cell = self.level.cells.get_mut(new_loc).unwrap();
-        if new_cell.contains(&Tag::Portable) {
-            self.post(Event::AddToInventory(*new_loc));
+    fn interact_post_move(&mut self, new_loc: &Point) {
+        let mut events = Vec::new();
+        if let Some(cell) = self.level.cells.get(new_loc) {
+            let terrain = cell.terrain();
+            if let Some((Liquid::Water, false)) = terrain.liquid() {
+                let mesg = Message::new(Topic::NonGamePlay, "You splash through the water.");
+                events.push(Event::AddMessage(mesg));
+            }
+            if cell.contains(&Tag::Sign) {
+                let obj = cell.get(&Tag::Sign);
+                let text = obj.sign().unwrap();
+                let mesg = Message {
+                    topic: Topic::NonGamePlay,
+                    text: format!("You see a sign {text}."),
+                };
+                events.push(Event::AddMessage(mesg));
+            }
+            if cell.contains(&Tag::Portable) {
+                events.push(Event::AddToInventory(*new_loc));
+            }
+        }
+        for evt in events {
+            self.post(evt);
         }
     }
 
-    fn probe_cell(&self, cell: &Cell) -> Probe {
-        for obj in cell.iter().rev() {
-            let p = self.probe_obj(obj);
-            match p {
-                Probe::Move(_) => return p,
-                Probe::Change(_, _) => return p,
-                Probe::Failed(_) => return p,
-                Probe::NoOp => (),
-            }
-        }
-        panic!("Probe found nothing to do");
-    }
-
-    fn probe_obj(&self, obj: &Object) -> Probe {
-        if obj.character() {
-            Probe::Failed(Message::new(Topic::NonGamePlay, "There is somebody there."))
-        } else if let Some(open) = obj.door() {
-            if open {
-                Probe::Move(None)
-            } else {
-                Probe::Change(Tag::ClosedDoor, make::open_door())
-            }
+    fn impassible_terrain(&self, cell: &Cell) -> Option<Message> {
+        let obj = cell.terrain();
+        if obj.wall() {
+            Some(Message::new(Topic::NonGamePlay, "You bump into the wall."))
+        } else if obj.door().is_some() {
+            // if the door is open then the player will open it once he
+            // moves into it. TODO: later we may want a key (aka Binding) check.
+            None
         } else if let Some((liquid, deep)) = obj.liquid() {
             match liquid {
                 Liquid::Water => {
                     if deep {
-                        Probe::Failed(Message::new(Topic::NonGamePlay, "The water is too deep."))
+                        Some(Message::new(Topic::NonGamePlay, "The water is too deep."))
                     } else {
-                        Probe::Move(Some(Message::new(
-                            Topic::NonGamePlay,
-                            "You splash through the water.",
-                        )))
+                        None
                     }
                 }
-                Liquid::Vitr => Probe::Failed(Message::new(
+                Liquid::Vitr => Some(Message::new(
                     Topic::NonGamePlay,
                     "Do you have a death wish?",
                 )),
             }
-        } else if obj.wall() {
-            Probe::Failed(Message::new(Topic::NonGamePlay, "You bump into the wall."))
-        } else if let Some(text) = obj.sign() {
-            // info!(self.logger, "moved"; "obj" => ?obj);
-            Probe::Move(Some(Message {
-                // TODO: we should check the terrain to see if it is something we can move through
-                // Probably need to return something like Probe::Message and then somehow flatten
-                // the return values.
-                topic: Topic::NonGamePlay,
-                text: format!("You see a sign {text}."),
-            }))
-        } else if obj.ground() {
-            Probe::Move(None)
         } else {
-            Probe::NoOp
+            None
         }
     }
-}
-
-enum Probe {
-    Move(Option<Message>),
-    Change(Tag, Object),
-    Failed(Message),
-    NoOp,
-    // TODO: attack, etc
 }
