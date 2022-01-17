@@ -1,7 +1,36 @@
 use super::{Color, Object, Tag};
 use std::fmt::{self, Formatter};
+use std::ops::{Deref, DerefMut};
 
-/// Levels are composed of Cell's and cells contain Object's.
+// Bit of machinery that allows us to call Cell::invariant after clients
+// modify the interior bits with Cell::get_mut.
+pub struct DerefObj<'a> {
+    cell: &'a mut Cell,
+    index: usize,
+}
+
+// We don't directly use this but DerefMut requires that it be defined.
+impl Deref for DerefObj<'_> {
+    type Target = Object;
+
+    fn deref(&self) -> &Self::Target {
+        &self.cell.objects[self.index]
+    }
+}
+
+impl DerefMut for DerefObj<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.cell.objects[self.index]
+    }
+}
+
+impl Drop for DerefObj<'_> {
+    fn drop(&mut self) {
+        self.cell.invariant();
+    }
+}
+
+/// Levels are composed of Object's and cells contain Object's.
 pub struct Cell {
     objects: Vec<Object>,
 }
@@ -48,9 +77,9 @@ impl Cell {
         }
     }
 
-    pub fn get_mut(&mut self, tag: &Tag) -> &mut Object {
+    pub fn get_mut(&mut self, tag: &Tag) -> DerefObj<'_> {
         if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
-            &mut self.objects[index]
+            DerefObj { cell: self, index }
         } else {
             panic!("failed to find tag {}", tag);
         }

@@ -365,9 +365,8 @@ impl Game {
                 };
 
                 let cell = &mut self.level.get_mut(&self.level.player());
-                let obj = cell.get_mut(&Tag::Player);
-                let inv = obj.inventory_mut().unwrap();
-                inv.push(item);
+                let mut obj = cell.get_mut(&Tag::Player);
+                obj.pick_up(item);
                 true
             }
             _ => false,

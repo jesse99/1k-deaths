@@ -49,8 +49,16 @@ impl Object {
         self.tags.iter().find_map(|tag| tag.as_inventory())
     }
 
-    pub fn inventory_mut(&mut self) -> Option<&mut Vec<Object>> {
-        self.tags.iter_mut().find_map(|tag| tag.as_mut_inventory())
+    // We use this instead of inventory_mut to make it easier to call
+    // invariant.
+    pub fn pick_up(&mut self, item: Object) {
+        let inv = self
+            .tags
+            .iter_mut()
+            .find_map(|tag| tag.as_mut_inventory())
+            .unwrap();
+        inv.push(item);
+        self.invariant();
     }
 
     /// Returns open or closed (or None if there is no door).
