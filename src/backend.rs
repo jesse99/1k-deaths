@@ -190,7 +190,7 @@ impl Game {
             ProbeMode::Moving => {
                 let player = self.level.player();
                 let new_loc = Point::new(player.x + dx, player.y + dy);
-                let cell = &self.level.get(&new_loc); // TODO: can't get a new Cell with this in scope
+                let cell = &self.level.get(&new_loc);
                 if let Some(mesg) = self.impassible_terrain(cell) {
                     self.interact_with_impassible(&new_loc, mesg, events);
                 } else if cell.contains(&Tag::Character) {
@@ -264,7 +264,7 @@ impl Game {
         }
 
         self.old_pov.update(&self.level, &self.pov);
-        self.pov.refresh(&self.level.player(), &self.level);
+        self.pov.refresh(&self.level.player(), &mut self.level);
     }
 }
 
@@ -374,28 +374,87 @@ impl Game {
         }
     }
 
-    fn is_vitr(&self, loc: &Point) -> bool {
+    fn player_has(&self, tag: &Tag) -> bool {
+        let cell = self.level.get(&self.level.player());
+        let obj = cell.get(&Tag::Player);
+        obj.inventory().unwrap().iter().any(|item| item.has(tag))
+    }
+
+    fn interact_virt_and_emp_sword(&self, events: &mut Vec<Event>) {
+        let mesg = Message::new(
+            Topic::Important,
+            "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
+        );
+        events.push(Event::AddMessage(mesg));
+
+        let mesg = Message::new(Topic::Important, "You have won the game!!");
+        events.push(Event::AddMessage(mesg));
+        events.push(Event::StateChanged(State::WonGame));
+    }
+
+    fn damage_wall(&self, loc: &Point, scaled_damage: i32, events: &mut Vec<Event>) {
+        assert!(scaled_damage > 0);
         let cell = self.level.get(loc);
-        let obj = cell.get(&Tag::Terrain);
-        matches!(obj.liquid(), Some((Liquid::Vitr, _)))
+        let obj = cell.get(&Tag::Wall);
+        let (current, max) = obj.durability().unwrap();
+        let damage = max / scaled_damage;
+
+        if damage < current {
+            let mesg = Message::new(
+                Topic::Normal,
+                "You chip away at the wall with your pick-axe.", // TODO: probably should have slightly different text for wooden walls (if we ever add them)
+            );
+            events.push(Event::AddMessage(mesg));
+
+            info!("original object: {obj:?}");
+            let mut obj = obj.clone();
+            info!("cloned object: {obj:?}");
+            obj.replace(Tag::Durability {
+                current: current - damage,
+                max,
+            });
+            info!("replaced object: {obj:?}");
+            events.push(Event::ChangeObject(*loc, Tag::Wall, obj));
+        } else {
+            let mesg = Message::new(Topic::Important, "You destroy the wall!");
+            events.push(Event::AddMessage(mesg));
+
+            events.push(Event::DestroyObject(*loc, Tag::Wall));
+        }
+    }
+
+    fn interact_pickaxe_and_wall(&self, loc: &Point, events: &mut Vec<Event>) {
+        let cell = self.level.get(loc);
+        let obj = cell.get(&Tag::Wall);
+        match obj.material() {
+            Some(Material::Wood) => self.damage_wall(loc, 3, events),
+            Some(Material::Stone) => self.damage_wall(loc, 6, events),
+            Some(Material::Metal) => {
+                let mesg = Message::new(
+                    Topic::Normal,
+                    "Your pick-axe bounces off the metal wall doing no damage.",
+                );
+                events.push(Event::AddMessage(mesg));
+            }
+            None => panic!("Walls should always have a Material"),
+        }
     }
 
     fn interact_with_terrain(&self, loc: &Point, events: &mut Vec<Event>) -> bool {
-        if !matches!(self.state, State::WonGame) && self.is_vitr(loc) {
-            let cell = self.level.get(&self.level.player());
-            let obj = cell.get(&Tag::Player);
-            if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
-                let mesg = Message::new(
-                    Topic::Important,
-                    "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
-                );
-                events.push(Event::AddMessage(mesg));
+        let cell = self.level.get(loc);
+        let obj = cell.get(&Tag::Terrain);
+        if self.player_has(&Tag::EmpSword)
+            && !matches!(self.state, State::WonGame)
+            && matches!(obj.liquid(), Some((Liquid::Vitr, _)))
+        {
+            self.interact_virt_and_emp_sword(events);
+            return true;
+        }
 
-                let mesg = Message::new(Topic::Important, "You have won the game!!");
-                events.push(Event::AddMessage(mesg));
-                events.push(Event::StateChanged(State::WonGame));
-                return true;
-            }
+        if self.player_has(&Tag::PickAxe) && obj.wall() {
+            // TODO: pick-axe's should also work against doors
+            self.interact_pickaxe_and_wall(loc, events);
+            return true;
         }
         false
     }

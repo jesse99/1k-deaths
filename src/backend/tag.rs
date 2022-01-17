@@ -45,6 +45,9 @@ pub enum Tag {
     /// The object is something that can be picked up and placed into a
     /// Character's inventory.
     Portable,
+    /// Can be used to dig through wood or stone structures (i.e. doors and
+    /// walls). Ineffective against metal.
+    PickAxe,
     /// Description will have the sign's message.
     Sign,
     EmpSword, // TODO: do we want UniqueNPC and UniqueItem?
@@ -205,6 +208,7 @@ impl fmt::Display for Tag {
             Tag::Inventory(_) => write!(f, "Inventory"),
             Tag::Portable => write!(f, "Portable"),
             Tag::EmpSword => write!(f, "EmpSword"),
+            Tag::PickAxe => write!(f, "PickAxe"),
             Tag::Sign => write!(f, "Sign"),
             Tag::ClosedDoor => write!(f, "ClosedDoor"),
             Tag::Ground => write!(f, "Ground"),

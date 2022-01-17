@@ -32,18 +32,6 @@ impl Cell {
         self.invariant();
     }
 
-    // /// Used for things like mutating terrain.
-    // pub fn replace(&mut self, index: usize, object: Object) {
-    //     self.objects[index] = object;
-    //     self.invariant();
-    // }
-
-    // pub fn remove(&mut self, index: usize) -> Object {
-    //     let obj = self.objects.remove(index);
-    //     self.invariant();
-    //     obj
-    // }
-
     pub fn terrain(&self) -> &Object {
         &self.objects[0]
     }

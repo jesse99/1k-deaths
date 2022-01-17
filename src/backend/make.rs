@@ -45,6 +45,10 @@ pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
                 events.push(Event::AddObject(loc, dirt()));
                 events.push(Event::AddObject(loc, weak_sword(game)));
             }
+            'p' => {
+                events.push(Event::AddObject(loc, dirt()));
+                events.push(Event::AddObject(loc, pick_axe()));
+            }
             'S' => {
                 events.push(Event::AddObject(loc, dirt()));
                 events.push(Event::AddObject(loc, mighty_sword()));
@@ -81,6 +85,16 @@ pub fn dirt() -> Object {
         symbol: '.',
         color: Color::LightSlateGray,
         description: String::from("a patch of dirt"),
+    }
+}
+
+pub fn rubble() -> Object {
+    Object {
+        dname: String::from("rubble"),
+        tags: ground_tags(Color::Black),
+        symbol: '…',
+        color: Color::Chocolate,
+        description: String::from("a destroyed wall"),
     }
 }
 
@@ -218,7 +232,7 @@ pub fn weak_sword(game: &Game) -> Object {
     ];
     let sword = swords.iter().choose(&mut *game.rng()).unwrap();
     Object {
-        dname: String::from("weak_sword"),
+        dname: String::from("weak sword"),
         tags: weak_sword_tags(sword.0),
         symbol: 's',
         color: Color::Silver,
@@ -228,11 +242,21 @@ pub fn weak_sword(game: &Game) -> Object {
 
 pub fn mighty_sword() -> Object {
     Object {
-        dname: String::from("mighty_sword"),
+        dname: String::from("mighty sword"),
         tags: mighty_sword_tags(),
         symbol: 'S',
         color: Color::Silver,
         description: "the Sword of Impending Doom".to_string(),
+    }
+}
+
+pub fn pick_axe() -> Object {
+    Object {
+        dname: String::from("pick-axe"),
+        tags: pick_axe_tags(),
+        symbol: 'p',
+        color: Color::Tan,
+        description: "a pick-axe".to_string(),
     }
 }
 
@@ -337,6 +361,14 @@ fn mighty_sword_tags() -> Vec<Tag> {
     ]
 }
 
+fn pick_axe_tags() -> Vec<Tag> {
+    vec![
+        Tag::Name(String::from("a pick-axe")),
+        Tag::PickAxe,
+        Tag::Portable,
+    ]
+}
+
 fn emp_sword_tags() -> Vec<Tag> {
     vec![
         Tag::Name(String::from("Sword of the Crippled God")),
@@ -351,8 +383,8 @@ fn sign_tags() -> Vec<Tag> {
 
 fn to_durability(material: Material) -> i32 {
     match material {
-        Material::Wood => 100,
-        Material::Stone => 1000,
-        Material::Metal => 10000,
+        Material::Wood => 10,
+        Material::Stone => 100,
+        Material::Metal => 1000,
     }
 }

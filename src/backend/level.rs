@@ -1,3 +1,4 @@
+use super::make;
 use super::{Cell, Event, Object, Point, Tag};
 use fnv::FnvHashMap;
 
@@ -8,6 +9,8 @@ pub struct Level {
 }
 
 impl Level {
+    /// The default object is used if the player (or an NPC) somehow goes
+    /// outside the current level (e.g. by digging through a wall).
     pub fn new(default: Object) -> Level {
         Level {
             player: Point::origin(),
@@ -29,6 +32,11 @@ impl Level {
         self.cells.get_mut(loc).unwrap()
     }
 
+    /// Should not normally be used.
+    pub fn try_get(&self, loc: &Point) -> Option<&Cell> {
+        self.cells.get(loc)
+    }
+
     pub fn posted(&mut self, event: &Event) {
         match event {
             Event::NewLevel => {
@@ -46,8 +54,7 @@ impl Level {
                 cell.replace(tag, obj.clone());
             }
             Event::DestroyObject(loc, tag) => {
-                let cell = self.cells.get_mut(loc).unwrap();
-                cell.remove(tag);
+                self.destroy_object(loc, tag);
             }
             Event::PlayerMoved(loc) => {
                 let cell = self.cells.get_mut(&self.player).unwrap();
@@ -66,6 +73,25 @@ impl Level {
             }
             _ => (),
         };
+    }
+
+    fn destroy_object(&mut self, loc: &Point, tag: &Tag) {
+        let cell = self.cells.get_mut(loc).unwrap();
+        let obj = cell.get(tag);
+        if obj.has(&Tag::Terrain) {
+            // Terrain cannot be destroyed but has to be mutated into something
+            // else.
+            if obj.wall() {
+                cell.replace(&Tag::Terrain, make::rubble());
+            } else {
+                error!("Need to better handle destroying {tag}"); // Doors, trees, etc
+                cell.replace(&Tag::Terrain, make::dirt());
+            }
+        } else {
+            // If it's just a normal object or character we can just nuke
+            // the object.
+            cell.remove(tag);
+        }
     }
 
     // Ideally we would have get_mut and get create a new default cell for

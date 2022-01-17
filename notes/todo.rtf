@@ -75,15 +75,34 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
-\'95 Levels should be unbounded\
-	- would need a default square (eg stone wall)\
-	- characters can extend the level doing stuff like digging through stone walls\
-	- add a pick axe and test this\
-		You chip away at the wall\
-		You break through the wall\
-		You do no damage\
-	\
-enum ObjectTag\
+\'95 Double check that cell invariants are actually called (and remove the todo)\
+\'95 Make sure invariants run after events are all posted\
+\'95\'a0Instead of panicing try to write an error message\
+\'95 Should we have a table for (Tag, Tag) -> interaction_handler?\
+	- could put this into an interactions module (rename the uniques module)\
+	(Player, Portable)
+\f3\i \
+
+\f1\i0 	(Player, Doorman)\
+	(Player, Rhulad)\
+	(Player, Spectator)\
+	(Player, Liquid)          
+\f3\i do we need pre and post-move tables?\
+	
+\f1\i0 (Player, Sign)\
+	(Player, Tree)\
+	(Key, Door)                 
+\f3\i probably want a separate table for tags the player has
+\f1\i0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 	(EmpSword, Liquid)   
+\f3\i \cf3 handler would have to return false if not vitr
+\f1\i0 \cf3 \
+	(PickAxe, Wall)          
+\f3\i \cf3 or maybe optional if filter
+\f1\i0 \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 enum ObjectTag\
 	Weapon\
 	MinDamage(i32)\
 	MaxDamage(i32)\

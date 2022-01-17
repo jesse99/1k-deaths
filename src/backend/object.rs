@@ -1,4 +1,4 @@
-use super::{Color, Liquid, Tag, Unique};
+use super::{Color, Liquid, Material, Tag, Unique};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
 
@@ -18,6 +18,17 @@ pub struct Object {
 
 // Tag accessors
 impl Object {
+    pub fn replace(&mut self, tag: Tag) {
+        let i = to_index(&tag);
+        let index = self
+            .tags
+            .iter()
+            .position(|candidate| to_index(candidate) == i)
+            .unwrap();
+        self.tags[index] = tag;
+        self.invariant();
+    }
+
     pub fn character(&self) -> bool {
         self.tags.iter().any(|tag| tag.is_character())
     }
@@ -30,9 +41,9 @@ impl Object {
         self.tags.iter().find_map(|tag| tag.as_unique())
     }
 
-    pub fn emp_sword(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_emp_sword())
-    }
+    // pub fn emp_sword(&self) -> bool {
+    //     self.tags.iter().any(|tag| tag.is_emp_sword())
+    // }
 
     pub fn inventory(&self) -> Option<&Vec<Object>> {
         self.tags.iter().find_map(|tag| tag.as_inventory())
@@ -95,9 +106,9 @@ impl Object {
         self.tags.iter().find_map(|tag| tag.as_durability())
     }
 
-    // pub fn material(&self) -> Option<Material> {
-    //     self.tags.iter().find_map(|tag| tag.as_material())
-    // }
+    pub fn material(&self) -> Option<Material> {
+        self.tags.iter().find_map(|tag| tag.as_material())
+    }
 
     pub fn name(&self) -> Option<&String> {
         self.tags.iter().find_map(|tag| tag.as_name())
@@ -221,18 +232,19 @@ fn to_index(tag: &Tag) -> i32 {
         Tag::Portable => 5,
         Tag::Sign => 6,
         Tag::EmpSword => 7,
+        Tag::PickAxe => 8,
 
-        Tag::ClosedDoor => 8,
-        Tag::Ground => 9,
-        Tag::Liquid { liquid: _, deep: _ } => 10,
-        Tag::OpenDoor => 11,
-        Tag::Terrain => 12,
-        Tag::Tree => 13,
-        Tag::Wall => 14,
+        Tag::ClosedDoor => 9,
+        Tag::Ground => 10,
+        Tag::Liquid { liquid: _, deep: _ } => 11,
+        Tag::OpenDoor => 12,
+        Tag::Terrain => 13,
+        Tag::Tree => 14,
+        Tag::Wall => 15,
 
-        Tag::Background(_bg) => 15,
-        Tag::Durability { current: _, max: _ } => 16,
-        Tag::Material(_material) => 17,
-        Tag::Name(_name) => 18,
+        Tag::Background(_bg) => 16,
+        Tag::Durability { current: _, max: _ } => 17,
+        Tag::Material(_material) => 18,
+        Tag::Name(_name) => 19,
     }
 }

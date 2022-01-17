@@ -63,7 +63,7 @@ impl PoV {
         self.visible.contains(loc)
     }
 
-    pub fn refresh(&mut self, origin: &Point, level: &Level) {
+    pub fn refresh(&mut self, origin: &Point, level: &mut Level) {
         if self.dirty {
             self.do_refresh(origin, level);
             self.edition = self.edition.wrapping_add(1);
@@ -71,18 +71,25 @@ impl PoV {
         }
     }
 
-    fn do_refresh(&mut self, origin: &Point, level: &Level) {
+    // Level is mutable so that we can create a Cell if one isn't already there.
+    fn do_refresh(&mut self, origin: &Point, level: &mut Level) {
         self.visible.clear();
 
+        let mut new_locs = Vec::new();
         let mut view = FoV {
             start: *origin,
             radius: 15, // TODO: do better with this
             visible_tile: |loc| {
-                self.visible.insert(loc);
+                new_locs.push(loc);
             },
-            blocks_los: { |loc| blocks_los(level.get(&loc)) },
+            blocks_los: { |loc| blocks_los(level.try_get(&loc)) },
         };
         view.visit();
+
+        for loc in new_locs {
+            self.visible.insert(loc);
+            let _ = level.get_mut(&loc); // make sure there is a cell there
+        }
     }
 }
 
@@ -94,6 +101,9 @@ fn obj_blocks_los(obj: &Object) -> bool {
     }
 }
 
-fn blocks_los(cell: &Cell) -> bool {
-    cell.iter().any(obj_blocks_los)
+fn blocks_los(cell: Option<&Cell>) -> bool {
+    match cell {
+        Some(cell) => cell.iter().any(obj_blocks_los),
+        None => true,
+    }
 }
