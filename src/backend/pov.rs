@@ -80,10 +80,7 @@ impl PoV {
             visible_tile: |loc| {
                 self.visible.insert(loc);
             },
-            blocks_los: |loc| match level.cells.get(&loc) {
-                Some(cell) => blocks_los(cell),
-                None => true,
-            },
+            blocks_los: { |loc| blocks_los(level.get(&loc)) },
         };
         view.visit();
     }

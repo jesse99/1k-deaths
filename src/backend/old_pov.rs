@@ -32,10 +32,9 @@ impl OldPoV {
     pub fn update(&mut self, level: &Level, pov: &PoV) {
         if pov.edition() != self.edition {
             for loc in pov.locations() {
-                if let Some(cell) = level.cells.get(loc) {
-                    let (_, _, symbol) = cell.to_bg_fg_symbol();
-                    self.old.insert(*loc, symbol);
-                }
+                let cell = level.get(loc);
+                let (_, _, symbol) = cell.to_bg_fg_symbol();
+                self.old.insert(*loc, symbol);
             }
             self.edition = pov.edition();
         }

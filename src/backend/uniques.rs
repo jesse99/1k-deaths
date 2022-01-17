@@ -24,7 +24,7 @@ pub fn interact_with_spectator(game: &Game, events: &mut Vec<Event>) {
 }
 
 pub fn interact_with_doorman(game: &Game, loc: &Point, events: &mut Vec<Event>) {
-    let cell = game.level.cells.get(&game.level.player).unwrap();
+    let cell = game.level.get(&game.level.player());
     let obj = cell.get(&Tag::Character);
     match obj.inventory() {
         Some(items) if items.iter().any(|obj| obj.description.contains("Doom")) => {

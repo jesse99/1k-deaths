@@ -97,7 +97,7 @@ impl Game {
         Game {
             stream: Vec::new(),
             messages: Vec::new(),
-            level: Level::new(),
+            level: Level::new(make::stone_wall()),
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             mode: ProbeMode::Moving,
@@ -118,21 +118,21 @@ impl Game {
     pub fn start(&self, events: &mut Vec<Event>) {
         events.push(Event::NewGame);
         events.push(Event::AddMessage(Message {
-            topic: Topic::Normal,
+            topic: Topic::Important,
             text: String::from("Welcome to 1k-deaths!"),
         }));
         events.push(Event::AddMessage(Message {
-            topic: Topic::Normal,
+            topic: Topic::Important,
             text: String::from("Are you the hero will will destroy the Crippled God's sword?"),
         }));
         events.push(Event::AddMessage(Message {
-            topic: Topic::Normal,
+            topic: Topic::Important,
             text: String::from(
                 "Use the arrow keys to move, 'x' to examine squares, and 'q' to quit.",
             ),
         }));
         events.push(Event::AddMessage(Message {
-            topic: Topic::Normal,
+            topic: Topic::Important,
             text: String::from("Use the escape key to stop examining."),
         }));
 
@@ -154,7 +154,7 @@ impl Game {
     }
 
     pub fn player(&self) -> Point {
-        self.level.player
+        self.level.player()
     }
 
     // TODO: When ProbeMode is not Moving should support tab and shift-tab to move
@@ -166,6 +166,20 @@ impl Game {
         }
     }
 
+    fn interact_with_impassible(&self, loc: &Point, mesg: Message, events: &mut Vec<Event>) {
+        if !self.interact_with_terrain(loc, events) {
+            events.push(Event::AddMessage(mesg));
+        }
+    }
+
+    fn interact_with_closed_door(&self, loc: &Point, events: &mut Vec<Event>) {
+        events.push(Event::ChangeObject(
+            *loc,
+            Tag::ClosedDoor,
+            make::open_door(),
+        ));
+    }
+
     /// Do something with an adjacent cell, this can be move into it, attack
     /// an enemy there, start a dialog with a friendly character, open a door,
     /// etc.
@@ -174,29 +188,23 @@ impl Game {
         // TODO: maybe something fine grained, like only need to update messages
         match self.mode {
             ProbeMode::Moving => {
-                let new_loc = Point::new(self.level.player.x + dx, self.level.player.y + dy);
-                if let Some(cell) = self.level.cells.get(&new_loc) {
-                    if let Some(mesg) = self.impassible_terrain(cell) {
-                        if !self.interact_with_terrain(&new_loc, events) {
-                            events.push(Event::AddMessage(mesg));
-                        }
-                    } else if cell.contains(&Tag::Character) {
-                        self.interact_with_char(&new_loc, events);
-                    } else if cell.contains(&Tag::ClosedDoor) {
-                        events.push(Event::ChangeObject(
-                            new_loc,
-                            Tag::ClosedDoor,
-                            make::open_door(),
-                        ));
-                    } else {
-                        events.push(Event::PlayerMoved(new_loc));
-                    }
+                let player = self.level.player();
+                let new_loc = Point::new(player.x + dx, player.y + dy);
+                let cell = &self.level.get(&new_loc); // TODO: can't get a new Cell with this in scope
+                if let Some(mesg) = self.impassible_terrain(cell) {
+                    self.interact_with_impassible(&new_loc, mesg, events);
+                } else if cell.contains(&Tag::Character) {
+                    self.interact_with_char(&new_loc, events);
+                } else if cell.contains(&Tag::ClosedDoor) {
+                    self.interact_with_closed_door(&new_loc, events);
+                } else {
+                    events.push(Event::PlayerMoved(new_loc));
                 }
             }
             ProbeMode::Examine(loc) => {
                 let new_loc = Point::new(loc.x + dx, loc.y + dy);
                 if self.pov.visible(&new_loc) {
-                    let cell = self.level.cells.get(&new_loc).unwrap();
+                    let cell = self.level.get(&new_loc);
                     let descs: Vec<String> = cell
                         .iter()
                         .rev()
@@ -229,16 +237,13 @@ impl Game {
             ProbeMode::Examine(eloc) => *loc == eloc,
         };
         let tile = if self.pov.visible(loc) {
-            if let Some(cell) = self.level.cells.get(loc) {
-                let (bg, fg, symbol) = cell.to_bg_fg_symbol();
-                Tile::Visible {
-                    bg,
-                    fg,
-                    symbol,
-                    focus,
-                }
-            } else {
-                Tile::NotVisible // completely outside the level (tho want to hide this fact from the UI)
+            let cell = self.level.get(loc);
+            let (bg, fg, symbol) = cell.to_bg_fg_symbol();
+            Tile::Visible {
+                bg,
+                fg,
+                symbol,
+                focus,
             }
         } else {
             match self.old_pov.get(loc) {
@@ -259,7 +264,7 @@ impl Game {
         }
 
         self.old_pov.update(&self.level, &self.pov);
-        self.pov.refresh(&self.level.player, &self.level);
+        self.pov.refresh(&self.level.player(), &self.level);
     }
 }
 
@@ -312,10 +317,9 @@ impl Game {
         deltas.shuffle(&mut *self.rng());
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            if let Some(cell) = self.level.cells.get(&new_loc) {
-                if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
-                    return Some(new_loc);
-                }
+            let cell = &self.level.get(&new_loc);
+            if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
+                return Some(new_loc);
             }
         }
         None
@@ -348,16 +352,19 @@ impl Game {
                 true
             }
             Event::AddToInventory(loc) => {
-                let cell = self.level.cells.get_mut(loc).unwrap();
-                let item = cell.remove(&Tag::Portable);
-                let name = item.name().unwrap();
-                let mesg = Message {
-                    topic: Topic::Normal,
-                    text: format!("You pick up the {name}."),
+                let item = {
+                    let cell = &mut self.level.get_mut(loc);
+                    let item = cell.remove(&Tag::Portable);
+                    let name = item.name().unwrap();
+                    let mesg = Message {
+                        topic: Topic::Normal,
+                        text: format!("You pick up the {name}."),
+                    };
+                    self.messages.push(mesg);
+                    item
                 };
-                self.messages.push(mesg);
 
-                let cell = self.level.cells.get_mut(&self.level.player).unwrap();
+                let cell = &mut self.level.get_mut(&self.level.player());
                 let obj = cell.get_mut(&Tag::Player);
                 let inv = obj.inventory_mut().unwrap();
                 inv.push(item);
@@ -367,62 +374,61 @@ impl Game {
         }
     }
 
-    fn interact_with_terrain(&self, loc: &Point, events: &mut Vec<Event>) -> bool {
-        if !matches!(self.state, State::WonGame) {
-            if let Some(cell) = self.level.cells.get(loc) {
-                let obj = cell.get(&Tag::Terrain);
-                if let Some((Liquid::Vitr, _)) = obj.liquid() {
-                    let cell = self.level.cells.get(&self.level.player).unwrap();
-                    let obj = cell.get(&Tag::Player);
-                    if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
-                        let mesg = Message::new(
-                            Topic::Important,
-                            "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
-                        );
-                        events.push(Event::AddMessage(mesg));
+    fn is_vitr(&self, loc: &Point) -> bool {
+        let cell = self.level.get(loc);
+        let obj = cell.get(&Tag::Terrain);
+        matches!(obj.liquid(), Some((Liquid::Vitr, _)))
+    }
 
-                        let mesg = Message::new(Topic::Important, "You have won the game!!");
-                        events.push(Event::AddMessage(mesg));
-                        events.push(Event::StateChanged(State::WonGame));
-                        return true;
-                    }
-                }
+    fn interact_with_terrain(&self, loc: &Point, events: &mut Vec<Event>) -> bool {
+        if !matches!(self.state, State::WonGame) && self.is_vitr(loc) {
+            let cell = self.level.get(&self.level.player());
+            let obj = cell.get(&Tag::Player);
+            if obj.inventory().unwrap().iter().any(|item| item.emp_sword()) {
+                let mesg = Message::new(
+                    Topic::Important,
+                    "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
+                );
+                events.push(Event::AddMessage(mesg));
+
+                let mesg = Message::new(Topic::Important, "You have won the game!!");
+                events.push(Event::AddMessage(mesg));
+                events.push(Event::StateChanged(State::WonGame));
+                return true;
             }
         }
         false
     }
 
     fn interact_with_char(&self, loc: &Point, events: &mut Vec<Event>) {
-        if let Some(cell) = self.level.cells.get(loc) {
-            let obj = cell.get(&Tag::Character);
-            match obj.unique() {
-                Some(Unique::Doorman) => uniques::interact_with_doorman(self, loc, events),
-                Some(Unique::Rhulad) => uniques::interact_with_rhulad(self, loc, events),
-                Some(Unique::Spectator) => uniques::interact_with_spectator(self, events),
-                None => (), // Character but not a unique one, TODO: usually will want to attack it
-            }
+        let cell = self.level.get(loc);
+        let obj = cell.get(&Tag::Character);
+        match obj.unique() {
+            Some(Unique::Doorman) => uniques::interact_with_doorman(self, loc, events),
+            Some(Unique::Rhulad) => uniques::interact_with_rhulad(self, loc, events),
+            Some(Unique::Spectator) => uniques::interact_with_spectator(self, events),
+            None => (), // Character but not a unique one, TODO: usually will want to attack it
         }
     }
 
     fn interact_post_move(&self, new_loc: &Point, events: &mut Vec<Event>) {
-        if let Some(cell) = self.level.cells.get(new_loc) {
-            let terrain = cell.terrain();
-            if let Some((Liquid::Water, false)) = terrain.liquid() {
-                let mesg = Message::new(Topic::Normal, "You splash through the water.");
-                events.push(Event::AddMessage(mesg));
-            }
-            if cell.contains(&Tag::Sign) {
-                let obj = cell.get(&Tag::Sign);
-                let text = obj.sign().unwrap();
-                let mesg = Message {
-                    topic: Topic::Normal,
-                    text: format!("You see a sign {text}."),
-                };
-                events.push(Event::AddMessage(mesg));
-            }
-            if cell.contains(&Tag::Portable) {
-                events.push(Event::AddToInventory(*new_loc));
-            }
+        let cell = self.level.get(new_loc);
+        let terrain = cell.terrain();
+        if let Some((Liquid::Water, false)) = terrain.liquid() {
+            let mesg = Message::new(Topic::Normal, "You splash through the water.");
+            events.push(Event::AddMessage(mesg));
+        }
+        if cell.contains(&Tag::Sign) {
+            let obj = cell.get(&Tag::Sign);
+            let text = obj.sign().unwrap();
+            let mesg = Message {
+                topic: Topic::Normal,
+                text: format!("You see a sign {text}."),
+            };
+            events.push(Event::AddMessage(mesg));
+        }
+        if cell.contains(&Tag::Portable) {
+            events.push(Event::AddToInventory(*new_loc));
         }
     }
 
