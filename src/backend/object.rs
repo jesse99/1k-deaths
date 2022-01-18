@@ -1,4 +1,4 @@
-use super::{Color, Liquid, Material, Tag, Unique};
+use super::{Color, Material, Tag, Unique};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
 
@@ -18,12 +18,16 @@ pub struct Object {
 
 // Tag accessors
 impl Object {
+    pub fn iter(&self) -> std::slice::Iter<Tag> {
+        self.tags.iter()
+    }
+
     pub fn replace(&mut self, tag: Tag) {
-        let i = to_index(&tag);
+        let i = tag.to_index();
         let index = self
             .tags
             .iter()
-            .position(|candidate| to_index(candidate) == i)
+            .position(|candidate| candidate.to_index() == i)
             .unwrap();
         self.tags[index] = tag;
         self.invariant();
@@ -88,9 +92,16 @@ impl Object {
     //     self.tags.iter().any(|tag| tag.is_ground())
     // }
 
-    /// Returns (Liquid, deep) (or None if there's no liquid).
-    pub fn liquid(&self) -> Option<(Liquid, bool)> {
-        self.tags.iter().find_map(|tag| tag.as_liquid())
+    // pub fn is_shallow_water(&self) -> bool {
+    //     self.tags.iter().any(|tag| tag.is_shallow_water())
+    // }
+
+    pub fn is_deep_water(&self) -> bool {
+        self.tags.iter().any(|tag| tag.is_deep_water())
+    }
+
+    pub fn is_vitr(&self) -> bool {
+        self.tags.iter().any(|tag| tag.is_vitr())
     }
 
     pub fn terrain(&self) -> bool {
@@ -125,10 +136,10 @@ impl Object {
     /// This uses to_index so it will consider tags like Material(Stone) and
     /// Material(Metal) as equal.
     pub fn has(&self, tag: &Tag) -> bool {
-        let index = to_index(tag);
+        let index = tag.to_index();
         self.tags
             .iter()
-            .any(|candidate| to_index(candidate) == index)
+            .any(|candidate| candidate.to_index() == index)
     }
 
     pub fn to_bg_color(&self) -> Color {
@@ -203,7 +214,7 @@ impl Object {
 
         let mut indexes = FnvHashSet::default();
         for tag in &self.tags {
-            let index = to_index(tag);
+            let index = tag.to_index();
             assert!(
                 !indexes.contains(&index),
                 "'{}' has duplicate tags: {self}",
@@ -225,34 +236,5 @@ impl fmt::Debug for Object {
         let tags: Vec<String> = self.tags.iter().map(|tag| format!("{tag}")).collect();
         let tags = tags.join(", ");
         write!(f, "dname: {} tags: {}", self.dname, tags)
-    }
-}
-
-// TODO: Could use enum_index instead although that does require that variant
-// values implement the Default trait.
-fn to_index(tag: &Tag) -> i32 {
-    match tag {
-        Tag::Character => 1,
-        Tag::Player => 2,
-        Tag::Unique(_) => 3,
-        Tag::Inventory(_) => 4,
-
-        Tag::Portable => 5,
-        Tag::Sign => 6,
-        Tag::EmpSword => 7,
-        Tag::PickAxe => 8,
-
-        Tag::ClosedDoor => 9,
-        Tag::Ground => 10,
-        Tag::Liquid { liquid: _, deep: _ } => 11,
-        Tag::OpenDoor => 12,
-        Tag::Terrain => 13,
-        Tag::Tree => 14,
-        Tag::Wall => 15,
-
-        Tag::Background(_bg) => 16,
-        Tag::Durability { current: _, max: _ } => 17,
-        Tag::Material(_material) => 18,
-        Tag::Name(_name) => 19,
     }
 }

@@ -13,12 +13,6 @@ pub enum Material {
 }
 
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
-pub enum Liquid {
-    Water,
-    Vitr,
-}
-
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Unique {
     /// Blocks the way to Rhulad.
     Doorman,
@@ -60,11 +54,12 @@ pub enum Tag {
     /// Each level will have one of these. Will also have the Character tag.
     /// Grass, dirt, etc. Will have a Terrain tag,
     Ground,
-    /// Water, lava, vitr etc. Will have a Terrain tag,
-    Liquid {
-        liquid: Liquid,
-        deep: bool,
-    },
+    /// Will have a Terrain tag,
+    ShallowWater,
+    /// Will have a Terrain tag,
+    DeepWater,
+    /// Will have a Terrain tag,
+    Vitr,
     /// Normally also has a terrain tag. This will also share tags with
     /// ClosedDoor so that they can be preserved as doors transition from
     /// open to closed.
@@ -121,8 +116,14 @@ impl Tag {
     pub fn is_ground(&self) -> bool {
         matches!(self, Tag::Ground)
     }
-    pub fn is_liquid(&self) -> bool {
-        matches!(self, Tag::Liquid { liquid: _, deep: _ })
+    pub fn is_shallow_water(&self) -> bool {
+        matches!(self, Tag::ShallowWater)
+    }
+    pub fn is_deep_water(&self) -> bool {
+        matches!(self, Tag::DeepWater)
+    }
+    pub fn is_vitr(&self) -> bool {
+        matches!(self, Tag::Vitr)
     }
     pub fn is_open_door(&self) -> bool {
         matches!(self, Tag::OpenDoor)
@@ -167,12 +168,12 @@ impl Tag {
             _ => None,
         }
     }
-    pub fn as_liquid(&self) -> Option<(Liquid, bool)> {
-        match *self {
-            Tag::Liquid { liquid, deep } => Some((liquid, deep)),
-            _ => None,
-        }
-    }
+    // pub fn as_liquid(&self) -> Option<(Liquid, bool)> {
+    //     match *self {
+    //         Tag::Liquid { liquid, deep } => Some((liquid, deep)),
+    //         _ => None,
+    //     }
+    // }
     pub fn as_background(&self) -> Option<Color> {
         match *self {
             Tag::Background(result) => Some(result),
@@ -197,6 +198,37 @@ impl Tag {
             _ => None,
         }
     }
+
+    // TODO: Could use enum_index instead although that does require that variant
+    // values implement the Default trait.
+    pub fn to_index(&self) -> i32 {
+        match self {
+            Tag::Character => 1,
+            Tag::Player => 2,
+            Tag::Unique(_) => 3,
+            Tag::Inventory(_) => 4,
+
+            Tag::Portable => 5,
+            Tag::Sign => 6,
+            Tag::EmpSword => 7,
+            Tag::PickAxe => 8,
+
+            Tag::ClosedDoor => 9,
+            Tag::Ground => 10,
+            Tag::ShallowWater => 11,
+            Tag::DeepWater => 12,
+            Tag::Vitr => 13,
+            Tag::OpenDoor => 14,
+            Tag::Terrain => 15,
+            Tag::Tree => 16,
+            Tag::Wall => 17,
+
+            Tag::Background(_bg) => 18,
+            Tag::Durability { current: _, max: _ } => 19,
+            Tag::Material(_material) => 20,
+            Tag::Name(_name) => 21,
+        }
+    }
 }
 
 impl fmt::Display for Tag {
@@ -212,7 +244,9 @@ impl fmt::Display for Tag {
             Tag::Sign => write!(f, "Sign"),
             Tag::ClosedDoor => write!(f, "ClosedDoor"),
             Tag::Ground => write!(f, "Ground"),
-            Tag::Liquid { liquid, deep } => write!(f, "Liquid({liquid}, {deep}"),
+            Tag::ShallowWater => write!(f, "ShallowWater"),
+            Tag::DeepWater => write!(f, "DeepWater"),
+            Tag::Vitr => write!(f, "Vitr"),
             Tag::OpenDoor => write!(f, "OpenDoor"),
             Tag::Terrain => write!(f, "Terrain"),
             Tag::Tree => write!(f, "Tree"),

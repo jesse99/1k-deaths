@@ -1,4 +1,4 @@
-use super::{Color, Event, Game, Liquid, Material, Message, Object, Point, Tag, Topic, Unique};
+use super::{Color, Event, Game, Material, Message, Object, Point, Tag, Topic, Unique};
 use rand::prelude::*;
 
 pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
@@ -266,10 +266,7 @@ fn ground_tags(bg: Color) -> Vec<Tag> {
 
 fn shallow_water_tags() -> Vec<Tag> {
     vec![
-        Tag::Liquid {
-            liquid: Liquid::Water,
-            deep: false,
-        },
+        Tag::ShallowWater,
         Tag::Background(Color::LightBlue),
         Tag::Terrain,
     ]
@@ -277,23 +274,13 @@ fn shallow_water_tags() -> Vec<Tag> {
 
 fn deep_water_tags() -> Vec<Tag> {
     vec![
-        Tag::Liquid {
-            liquid: Liquid::Water,
-            deep: true,
-        },
+        Tag::DeepWater,
         Tag::Background(Color::LightBlue),
         Tag::Terrain,
     ]
 }
 fn vitr_tags() -> Vec<Tag> {
-    vec![
-        Tag::Liquid {
-            liquid: Liquid::Vitr,
-            deep: true,
-        },
-        Tag::Background(Color::Black),
-        Tag::Terrain,
-    ]
+    vec![Tag::Vitr, Tag::Background(Color::Black), Tag::Terrain]
 }
 
 fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {

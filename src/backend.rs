@@ -1,6 +1,7 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod cell;
 mod event;
+mod interactions;
 mod level;
 mod make;
 mod message;
@@ -19,6 +20,7 @@ pub use primitives::Size;
 
 use cell::Cell;
 use derive_more::Display;
+use interactions::Interactions;
 use level::Level;
 use object::Object;
 use old_pov::OldPoV;
@@ -27,7 +29,7 @@ use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
-use tag::{Liquid, Material, Tag, Unique};
+use tag::{Material, Tag, Unique};
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -73,6 +75,7 @@ pub struct Game {
     // is added to the stream the posted method is called for each of these.
     messages: Vec<Message>,
     level: Level,
+    interactions: Interactions,
     pov: PoV,
     old_pov: OldPoV,
     mode: ProbeMode,
@@ -98,6 +101,7 @@ impl Game {
             stream: Vec::new(),
             messages: Vec::new(),
             level: Level::new(make::stone_wall()),
+            interactions: Interactions::new(),
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             mode: ProbeMode::Moving,
@@ -442,9 +446,7 @@ impl Game {
     fn interact_with_terrain(&self, loc: &Point, events: &mut Vec<Event>) -> bool {
         let cell = self.level.get(loc);
         let obj = cell.get(&Tag::Terrain);
-        if self.player_has(&Tag::EmpSword)
-            && !matches!(self.state, State::WonGame)
-            && matches!(obj.liquid(), Some((Liquid::Vitr, _)))
+        if self.player_has(&Tag::EmpSword) && !matches!(self.state, State::WonGame) && obj.is_vitr()
         {
             self.interact_virt_and_emp_sword(events);
             return true;
@@ -471,22 +473,11 @@ impl Game {
 
     fn interact_post_move(&self, new_loc: &Point, events: &mut Vec<Event>) {
         let cell = self.level.get(new_loc);
-        let terrain = cell.terrain();
-        if let Some((Liquid::Water, false)) = terrain.liquid() {
-            let mesg = Message::new(Topic::Normal, "You splash through the water.");
-            events.push(Event::AddMessage(mesg));
-        }
-        if cell.contains(&Tag::Sign) {
-            let obj = cell.get(&Tag::Sign);
-            let text = obj.sign().unwrap();
-            let mesg = Message {
-                topic: Topic::Normal,
-                text: format!("You see a sign {text}."),
-            };
-            events.push(Event::AddMessage(mesg));
-        }
-        if cell.contains(&Tag::Portable) {
-            events.push(Event::AddToInventory(*new_loc));
+        for obj in cell.iter().rev() {
+            for tag in obj.iter() {
+                self.interactions
+                    .post_move(&Tag::Player, tag, self, new_loc, events)
+            }
         }
     }
 
@@ -503,17 +494,10 @@ impl Game {
             // if the door is open then the player will open it once he
             // moves into it. TODO: later we may want a key (aka Binding) check.
             None
-        } else if let Some((liquid, deep)) = obj.liquid() {
-            match liquid {
-                Liquid::Water => {
-                    if deep {
-                        Some(Message::new(Topic::Normal, "The water is too deep."))
-                    } else {
-                        None
-                    }
-                }
-                Liquid::Vitr => Some(Message::new(Topic::Normal, "Do you have a death wish?")),
-            }
+        } else if obj.is_deep_water() {
+            Some(Message::new(Topic::Normal, "The water is too deep."))
+        } else if obj.is_vitr() {
+            Some(Message::new(Topic::Normal, "Do you have a death wish?"))
         } else {
             None
         }
