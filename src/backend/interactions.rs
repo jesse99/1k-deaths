@@ -2,11 +2,57 @@
 //! Characters and between items. It's structured as a lookup table of
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
 use super::make;
-use super::{Event, Game, Material, Message, Point, State, Tag, Topic};
+use super::{Cell, Event, Game, Material, Message, Point, State, Tag, Topic};
 use fnv::FnvHashMap;
 use rand::prelude::*;
 
 // ---- Helpers ------------------------------------------------------------
+fn impassible_terrain_tag(tag: &Tag) -> Option<Message> {
+    match tag {
+        Tag::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
+        Tag::Tree => Some(Message::new(
+            Topic::Failed,
+            "The tree's are too thick to travel through.",
+        )),
+        Tag::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
+        Tag::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
+        _ => None,
+    }
+}
+
+fn impassible_terrain(cell: &Cell) -> Option<Message> {
+    let obj = cell.terrain();
+    for tag in obj.iter() {
+        let mesg = impassible_terrain_tag(tag);
+        if mesg.is_some() {
+            return mesg;
+        }
+    }
+    None
+}
+
+fn find_empty_cell(game: &Game, loc: &Point) -> Option<Point> {
+    let mut deltas = vec![
+        (-1, -1),
+        (-1, 1),
+        (-1, 0),
+        (1, -1),
+        (1, 1),
+        (1, 0),
+        (0, -1),
+        (0, 1),
+    ];
+    deltas.shuffle(&mut *game.rng());
+    for delta in deltas {
+        let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+        let cell = &game.level.get(&new_loc);
+        if !cell.contains(&Tag::Character) && impassible_terrain(cell).is_none() {
+            return Some(new_loc);
+        }
+    }
+    None
+}
+
 fn damage_wall(game: &Game, loc: &Point, scaled_damage: i32, events: &mut Vec<Event>) {
     assert!(scaled_damage > 0);
     let cell = game.level.get(loc);
@@ -102,7 +148,7 @@ fn player_vs_doorman(
             let mesg = Message::new(Topic::NPCSpeaks, "Ahh, a new champion for the Emperor!");
             events.push(Event::AddMessage(mesg));
 
-            if let Some(to_loc) = game.find_empty_cell(new_loc) {
+            if let Some(to_loc) = find_empty_cell(game, new_loc) {
                 events.push(Event::NPCMoved(*new_loc, to_loc));
             }
         }
@@ -120,7 +166,7 @@ fn player_vs_deep_water(
     _new_loc: &Point,
     events: &mut Vec<Event>,
 ) -> bool {
-    let mesg = Message::new(Topic::Failed, "The water is too deep.");
+    let mesg = impassible_terrain_tag(&Tag::DeepWater).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
@@ -198,7 +244,7 @@ fn player_vs_tree(
     _new_loc: &Point,
     events: &mut Vec<Event>,
 ) -> bool {
-    let mesg = Message::new(Topic::Failed, "The tree's are too thick to travel through.");
+    let mesg = impassible_terrain_tag(&Tag::Tree).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
@@ -209,7 +255,7 @@ fn player_vs_vitr(
     _new_loc: &Point,
     events: &mut Vec<Event>,
 ) -> bool {
-    let mesg = Message::new(Topic::Failed, "Do you have a death wish?");
+    let mesg = impassible_terrain_tag(&Tag::Vitr).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
@@ -220,7 +266,7 @@ fn player_vs_wall(
     _new_loc: &Point,
     events: &mut Vec<Event>,
 ) -> bool {
-    let mesg = Message::new(Topic::Failed, "You bump into the wall.");
+    let mesg = impassible_terrain_tag(&Tag::Wall).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }

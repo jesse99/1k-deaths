@@ -285,28 +285,6 @@ impl Game {
         }
     }
 
-    fn find_empty_cell(&self, loc: &Point) -> Option<Point> {
-        let mut deltas = vec![
-            (-1, -1),
-            (-1, 1),
-            (-1, 0),
-            (1, -1),
-            (1, 1),
-            (1, 0),
-            (0, -1),
-            (0, 1),
-        ];
-        deltas.shuffle(&mut *self.rng());
-        for delta in deltas {
-            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let cell = &self.level.get(&new_loc);
-            if !cell.contains(&Tag::Character) && !self.impassible_terrain(&new_loc, cell) {
-                return Some(new_loc);
-            }
-        }
-        None
-    }
-
     // We're using a RefCell to avoid taking too many mutable Game references.
     fn rng(&self) -> RefMut<'_, dyn RngCore> {
         self.rng.borrow_mut()
@@ -407,25 +385,5 @@ impl Game {
                 self.interactions.post_move(tag, self, new_loc, events)
             }
         }
-    }
-
-    fn impassible_terrain(&self, new_loc: &Point, cell: &Cell) -> bool {
-        let mut events = Vec::new();
-        let player_loc = self.level.player();
-        let obj = cell.terrain();
-        for tag1 in obj.iter() {
-            if self.interactions.pre_move(
-                &Tag::Player,
-                tag1,
-                self,
-                &player_loc,
-                new_loc,
-                &mut events,
-            ) {
-                // TODO: really what we should do here is check to see if events has a Failed message
-                return true;
-            }
-        }
-        false
     }
 }
