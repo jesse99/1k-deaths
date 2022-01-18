@@ -354,6 +354,7 @@ impl Game {
         false
     }
 
+    // Player attempting to interact with an adjacent cell.
     fn interact_pre_move(
         &self,
         player_loc: &Point,
@@ -378,6 +379,7 @@ impl Game {
         false
     }
 
+    // Player interacting with a cell he has just moved into.
     fn interact_post_move(&self, new_loc: &Point, events: &mut Vec<Event>) {
         let cell = self.level.get(new_loc);
         for obj in cell.iter().rev() {

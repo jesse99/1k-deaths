@@ -67,7 +67,7 @@ max_width = 150\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf3 Step 7 - Interaction\
+\f2\b \cf3 Step 5 - Saving/Loading\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Look at these:\
@@ -75,75 +75,7 @@ max_width = 150\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
-\'95 Should we have a table for (Tag, Tag) -> interaction_handler?\
-	- could put this into an interactions module (rename the uniques module)\
-	(Player, Portable)
-\f3\i \cf3 \
-
-\f1\i0 \cf3 	(Player, Doorman)\
-	(Player, Rhulad)\
-	(Player, Spectator)\
-	(Player, Liquid)          
-\f3\i \cf3 do we need pre and post-move tables?\
-	
-\f1\i0 \cf3 (Player, Sign)\
-	(Player, Tree)\
-	(Key, Door)                 
-\f3\i \cf3 probably want a separate table for tags the player has
-\f1\i0 \cf3 \
-	(EmpSword, Liquid)   
-\f3\i \cf3 handler would have to return false if not vitr
-\f1\i0 \cf3 \
-	(PickAxe, Wall)          
-\f3\i \cf3 or maybe optional if filter\
-	
-\f1\i0 \cf3 \
-enum ObjectTag\
-	Weapon\
-	MinDamage(i32)\
-	MaxDamage(i32)\
-	Range(i32)          
-\f3\i \cf3 ranged weapon, spell, etc
-\f1\i0 \cf3 \
-	Brand(element)\
-	\
-	Inventory([Objects]),   
-\f3\i \cf3 or ids?
-\f1\i0 \cf3 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f3\i \cf3 	
-\f1\i0 \cf3 Binding(String) 
-\f3\i \cf3 used to associate objects, eg a key and a door
-\f1\i0 \cf3 	\
-	Fountain(type)   
-\f3\i \cf3 water or blood\
-	
-\f1\i0 \cf3 Key                    
-\f3\i \cf3 keys should have a binding\
-	Chest(contents) has a binding if a key is required
-\f1\i0 \cf3 \
-	
-\f3\i \cf3 	
-\f1\i0 \cf3 \
-
-\f3\i \cf3 stuff like munitions will transition terrain, eg to rubble\
-\
-player moving does an implicit action against objects there\
-	attempt to open door\
-	melee enemy\
-	talk to friendly\
-	drink from fountain\
-player can also use an inventory item against an object\
-	uses range of inventory item\
-	normally at least current and adjacent squares\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f2\i0\b \cf3 \
-Step 5 - Saving/Loading\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Add support for persistence\
+\'95\'a0Add support for persistence\
 	- just persist event stream\
 	- would it be better to use sqlite for persistence? how would that help?\
 	- on startup load the saved game (if present)\
@@ -184,6 +116,35 @@ Step 6 - It's alive! Alive!\
 	- also add a health bar for the player\
 	- and maybe targeted and near by NPCs\
 \'95 Should be a wizard command to get combat details\
+	- maybe also to peek at cells\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f3\i \cf3 	
+\f1\i0 \cf3 \
+enum ObjectTag\
+	Weapon\
+	MinDamage(i32)\
+	MaxDamage(i32)\
+	Range(i32)          
+\f3\i \cf3 ranged weapon, spell, etc
+\f1\i0 \cf3 \
+	Brand(element)\
+	\
+	Inventory([Objects]),   
+\f3\i \cf3 or ids?
+\f1\i0 \cf3 \
+
+\f3\i \cf3 	
+\f1\i0 \cf3 Binding(String) 
+\f3\i \cf3 used to associate objects, eg a key and a door
+\f1\i0 \cf3 	\
+	Fountain(type)   
+\f3\i \cf3 water or blood\
+	
+\f1\i0 \cf3 Key                    
+\f3\i \cf3 keys should have a binding\
+	Chest(contents) has a binding if a key is required
+\f1\i0 \cf3 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
