@@ -10,7 +10,6 @@ mod old_pov;
 mod pov;
 mod primitives;
 mod tag;
-mod uniques;
 
 pub use event::Event;
 pub use message::{Message, Topic};
