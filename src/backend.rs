@@ -29,7 +29,7 @@ use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
-use tag::{Material, Tag, Unique};
+use tag::{Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -170,20 +170,6 @@ impl Game {
         }
     }
 
-    fn interact_with_impassible(&self, loc: &Point, mesg: Message, events: &mut Vec<Event>) {
-        if !self.interact_with_terrain(loc, events) {
-            events.push(Event::AddMessage(mesg));
-        }
-    }
-
-    fn interact_with_closed_door(&self, loc: &Point, events: &mut Vec<Event>) {
-        events.push(Event::ChangeObject(
-            *loc,
-            Tag::ClosedDoor,
-            make::open_door(),
-        ));
-    }
-
     /// Do something with an adjacent cell, this can be move into it, attack
     /// an enemy there, start a dialog with a friendly character, open a door,
     /// etc.
@@ -194,14 +180,7 @@ impl Game {
             ProbeMode::Moving => {
                 let player = self.level.player();
                 let new_loc = Point::new(player.x + dx, player.y + dy);
-                let cell = &self.level.get(&new_loc);
-                if let Some(mesg) = self.impassible_terrain(cell) {
-                    self.interact_with_impassible(&new_loc, mesg, events);
-                } else if cell.contains(&Tag::Character) {
-                    self.interact_with_char(&new_loc, events);
-                } else if cell.contains(&Tag::ClosedDoor) {
-                    self.interact_with_closed_door(&new_loc, events);
-                } else {
+                if !self.interact_pre_move(&player, &new_loc, events) {
                     events.push(Event::PlayerMoved(new_loc));
                 }
             }
@@ -322,7 +301,7 @@ impl Game {
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             let cell = &self.level.get(&new_loc);
-            if !cell.contains(&Tag::Character) && self.impassible_terrain(cell).is_none() {
+            if !cell.contains(&Tag::Character) && !self.impassible_terrain(&new_loc, cell) {
                 return Some(new_loc);
             }
         }
@@ -377,129 +356,77 @@ impl Game {
         }
     }
 
-    fn player_has(&self, tag: &Tag) -> bool {
-        let cell = self.level.get(&self.level.player());
-        let obj = cell.get(&Tag::Player);
-        obj.inventory().unwrap().iter().any(|item| item.has(tag))
-    }
-
-    fn interact_virt_and_emp_sword(&self, events: &mut Vec<Event>) {
-        let mesg = Message::new(
-            Topic::Important,
-            "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
-        );
-        events.push(Event::AddMessage(mesg));
-
-        let mesg = Message::new(Topic::Important, "You have won the game!!");
-        events.push(Event::AddMessage(mesg));
-        events.push(Event::StateChanged(State::WonGame));
-    }
-
-    fn damage_wall(&self, loc: &Point, scaled_damage: i32, events: &mut Vec<Event>) {
-        assert!(scaled_damage > 0);
-        let cell = self.level.get(loc);
-        let obj = cell.get(&Tag::Wall);
-        let (current, max) = obj.durability().unwrap();
-        let damage = max / scaled_damage;
-
-        if damage < current {
-            let mesg = Message::new(
-                Topic::Normal,
-                "You chip away at the wall with your pick-axe.", // TODO: probably should have slightly different text for wooden walls (if we ever add them)
-            );
-            events.push(Event::AddMessage(mesg));
-
-            info!("original object: {obj:?}");
-            let mut obj = obj.clone();
-            info!("cloned object: {obj:?}");
-            obj.replace(Tag::Durability {
-                current: current - damage,
-                max,
-            });
-            info!("replaced object: {obj:?}");
-            events.push(Event::ChangeObject(*loc, Tag::Wall, obj));
-        } else {
-            let mesg = Message::new(Topic::Important, "You destroy the wall!");
-            events.push(Event::AddMessage(mesg));
-
-            events.push(Event::DestroyObject(*loc, Tag::Wall));
-        }
-    }
-
-    fn interact_pickaxe_and_wall(&self, loc: &Point, events: &mut Vec<Event>) {
-        let cell = self.level.get(loc);
-        let obj = cell.get(&Tag::Wall);
-        match obj.material() {
-            Some(Material::Wood) => self.damage_wall(loc, 3, events),
-            Some(Material::Stone) => self.damage_wall(loc, 6, events),
-            Some(Material::Metal) => {
-                let mesg = Message::new(
-                    Topic::Normal,
-                    "Your pick-axe bounces off the metal wall doing no damage.",
-                );
-                events.push(Event::AddMessage(mesg));
+    fn interact_pre_move_with_tag(
+        &self,
+        tag0: &Tag,
+        player_loc: &Point,
+        new_loc: &Point,
+        events: &mut Vec<Event>,
+    ) -> bool {
+        let cell1 = self.level.get(new_loc);
+        for obj1 in cell1.iter().rev() {
+            for tag1 in obj1.iter() {
+                if self
+                    .interactions
+                    .pre_move(tag0, tag1, self, player_loc, new_loc, events)
+                {
+                    return true;
+                }
             }
-            None => panic!("Walls should always have a Material"),
-        }
-    }
-
-    fn interact_with_terrain(&self, loc: &Point, events: &mut Vec<Event>) -> bool {
-        let cell = self.level.get(loc);
-        let obj = cell.get(&Tag::Terrain);
-        if self.player_has(&Tag::EmpSword) && !matches!(self.state, State::WonGame) && obj.is_vitr()
-        {
-            self.interact_virt_and_emp_sword(events);
-            return true;
-        }
-
-        if self.player_has(&Tag::PickAxe) && obj.wall() {
-            // TODO: pick-axe's should also work against doors
-            self.interact_pickaxe_and_wall(loc, events);
-            return true;
         }
         false
     }
 
-    fn interact_with_char(&self, loc: &Point, events: &mut Vec<Event>) {
-        let cell = self.level.get(loc);
-        let obj = cell.get(&Tag::Character);
-        match obj.unique() {
-            Some(Unique::Doorman) => uniques::interact_with_doorman(self, loc, events),
-            Some(Unique::Rhulad) => uniques::interact_with_rhulad(self, loc, events),
-            Some(Unique::Spectator) => uniques::interact_with_spectator(self, events),
-            None => (), // Character but not a unique one, TODO: usually will want to attack it
+    fn interact_pre_move(
+        &self,
+        player_loc: &Point,
+        new_loc: &Point,
+        events: &mut Vec<Event>,
+    ) -> bool {
+        // First see if an inventory item can interact with the new cell.
+        let cell = self.level.get(player_loc);
+        let obj = cell.get(&Tag::Player);
+        let inv = obj.inventory().unwrap();
+        for obj in inv.iter() {
+            for tag0 in obj.iter() {
+                if self.interact_pre_move_with_tag(tag0, player_loc, new_loc, events) {
+                    return true;
+                }
+            }
         }
+        // Failing that see if the player itself can interact with the cell.
+        if self.interact_pre_move_with_tag(&Tag::Player, player_loc, new_loc, events) {
+            return true;
+        }
+        false
     }
 
     fn interact_post_move(&self, new_loc: &Point, events: &mut Vec<Event>) {
         let cell = self.level.get(new_loc);
         for obj in cell.iter().rev() {
             for tag in obj.iter() {
-                self.interactions
-                    .post_move(&Tag::Player, tag, self, new_loc, events)
+                self.interactions.post_move(tag, self, new_loc, events)
             }
         }
     }
 
-    fn impassible_terrain(&self, cell: &Cell) -> Option<Message> {
+    fn impassible_terrain(&self, new_loc: &Point, cell: &Cell) -> bool {
+        let mut events = Vec::new();
+        let player_loc = self.level.player();
         let obj = cell.terrain();
-        if obj.wall() {
-            Some(Message::new(Topic::Normal, "You bump into the wall."))
-        } else if obj.tree() {
-            Some(Message::new(
-                Topic::Normal,
-                "The tree's are too thick to travel through.",
-            ))
-        } else if obj.door().is_some() {
-            // if the door is open then the player will open it once he
-            // moves into it. TODO: later we may want a key (aka Binding) check.
-            None
-        } else if obj.is_deep_water() {
-            Some(Message::new(Topic::Normal, "The water is too deep."))
-        } else if obj.is_vitr() {
-            Some(Message::new(Topic::Normal, "Do you have a death wish?"))
-        } else {
-            None
+        for tag1 in obj.iter() {
+            if self.interactions.pre_move(
+                &Tag::Player,
+                tag1,
+                self,
+                &player_loc,
+                new_loc,
+                &mut events,
+            ) {
+                // TODO: really what we should do here is check to see if events has a Failed message
+                return true;
+            }
         }
+        false
     }
 }

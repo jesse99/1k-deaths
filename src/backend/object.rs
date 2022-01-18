@@ -1,4 +1,4 @@
-use super::{Color, Material, Tag, Unique};
+use super::{Color, Material, Tag};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
 
@@ -41,14 +41,6 @@ impl Object {
         self.tags.iter().any(|tag| tag.is_player())
     }
 
-    pub fn unique(&self) -> Option<Unique> {
-        self.tags.iter().find_map(|tag| tag.as_unique())
-    }
-
-    // pub fn emp_sword(&self) -> bool {
-    //     self.tags.iter().any(|tag| tag.is_emp_sword())
-    // }
-
     pub fn inventory(&self) -> Option<&Vec<Object>> {
         self.tags.iter().find_map(|tag| tag.as_inventory())
     }
@@ -88,28 +80,8 @@ impl Object {
         }
     }
 
-    // pub fn ground(&self) -> bool {
-    //     self.tags.iter().any(|tag| tag.is_ground())
-    // }
-
-    // pub fn is_shallow_water(&self) -> bool {
-    //     self.tags.iter().any(|tag| tag.is_shallow_water())
-    // }
-
-    pub fn is_deep_water(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_deep_water())
-    }
-
-    pub fn is_vitr(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_vitr())
-    }
-
     pub fn terrain(&self) -> bool {
         self.tags.iter().any(|tag| tag.is_terrain())
-    }
-
-    pub fn tree(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_tree())
     }
 
     pub fn wall(&self) -> bool {

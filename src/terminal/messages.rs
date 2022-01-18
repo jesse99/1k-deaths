@@ -39,6 +39,7 @@ fn to_fore_color(topic: Topic) -> Color {
     match topic {
         Topic::Error => Color::Red,
         Topic::Normal => Color::Black,
+        Topic::Failed => Color::Red,
         Topic::Important => Color::Blue,
         Topic::NPCSpeaks => Color::Coral,
     }

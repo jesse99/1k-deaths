@@ -1,4 +1,4 @@
-use super::{Color, Event, Game, Material, Message, Object, Point, Tag, Topic, Unique};
+use super::{Color, Event, Game, Material, Message, Object, Point, Tag, Topic};
 use rand::prelude::*;
 
 pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
@@ -22,24 +22,15 @@ pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
             }
             'D' => {
                 events.push(Event::AddObject(loc, dirt()));
-                events.push(Event::AddObject(
-                    loc,
-                    unique(Unique::Doorman, 'D', Color::Green),
-                ));
+                events.push(Event::AddObject(loc, doorman()));
             }
             'o' => {
                 events.push(Event::AddObject(loc, dirt()));
-                events.push(Event::AddObject(
-                    loc,
-                    unique(Unique::Spectator, 'o', Color::Plum),
-                ));
+                events.push(Event::AddObject(loc, spectator()));
             }
             'R' => {
                 events.push(Event::AddObject(loc, dirt()));
-                events.push(Event::AddObject(
-                    loc,
-                    unique(Unique::Rhulad, 'R', Color::Red),
-                ));
+                events.push(Event::AddObject(loc, rhulad()));
             }
             's' => {
                 events.push(Event::AddObject(loc, dirt()));
@@ -178,18 +169,33 @@ pub fn vitr() -> Object {
     }
 }
 
-fn unique(unique: Unique, symbol: char, color: Color) -> Object {
-    let description = match unique {
-        Unique::Doorman => "a royal guard".to_string(),
-        Unique::Rhulad => "the Emperor of a Thousand Deaths".to_string(),
-        Unique::Spectator => "a spectator".to_string(),
-    };
+fn doorman() -> Object {
     Object {
-        dname: format!("{unique}"),
-        tags: unique_tags(unique),
-        symbol,
-        color,
-        description,
+        dname: "doorman".to_string(),
+        tags: npc_tags("Doorman", Tag::Doorman),
+        symbol: 'D',
+        color: Color::Green,
+        description: "a royal guard".to_string(),
+    }
+}
+
+fn rhulad() -> Object {
+    Object {
+        dname: "rhulad".to_string(),
+        tags: npc_tags("Rhulad", Tag::Rhulad),
+        symbol: 'R',
+        color: Color::Red,
+        description: "the Emperor of a Thousand Deaths".to_string(),
+    }
+}
+
+fn spectator() -> Object {
+    Object {
+        dname: "spectator".to_string(),
+        tags: npc_tags("Spectator", Tag::Spectator),
+        symbol: 'o',
+        color: Color::Plum,
+        description: "a spectator".to_string(),
     }
 }
 
@@ -315,12 +321,12 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
     ]
 }
 
-fn unique_tags(name: Unique) -> Vec<Tag> {
+fn npc_tags(name: &str, tag: Tag) -> Vec<Tag> {
     vec![
         Tag::Character,
         // Tag::Inventory(Vec::new()),
-        Tag::Name(format!("{name}")),
-        Tag::Unique(name),
+        Tag::Name(name.to_string()),
+        tag,
     ]
 }
 
@@ -370,7 +376,7 @@ fn sign_tags() -> Vec<Tag> {
 
 fn to_durability(material: Material) -> i32 {
     match material {
-        Material::Wood => 10,
+        // Material::Wood => 10,
         Material::Stone => 100,
         Material::Metal => 1000,
     }

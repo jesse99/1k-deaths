@@ -4,20 +4,11 @@ use std::fmt::{self, Formatter};
 
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
-#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Material {
-    Wood,
+    // Wood,
     Stone,
     Metal,
-}
-
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
-pub enum Unique {
-    /// Blocks the way to Rhulad.
-    Doorman,
-    Rhulad,
-    Spectator,
 }
 
 /// Object state and properties consist of a list of these tags. Objects can
@@ -31,8 +22,9 @@ pub enum Tag {
     Character,
     /// Will also have Character and Inventory tags.
     Player,
-    /// NPC with special behavior, e.g. dialog.
-    Unique(Unique),
+    Doorman,
+    Rhulad,
+    Spectator,
     /// Objects that a Character has picked up.
     Inventory(Vec<Object>),
 
@@ -89,7 +81,6 @@ pub enum Tag {
     Name(String),
 }
 
-#[allow(dead_code)]
 impl Tag {
     pub fn is_character(&self) -> bool {
         matches!(self, Tag::Character)
@@ -98,32 +89,14 @@ impl Tag {
     pub fn is_player(&self) -> bool {
         matches!(self, Tag::Player)
     }
-    pub fn is_inventory(&self) -> bool {
-        matches!(self, Tag::Inventory(_))
-    }
     pub fn is_portable(&self) -> bool {
         matches!(self, Tag::Portable)
     }
     pub fn is_sign(&self) -> bool {
         matches!(self, Tag::Sign)
     }
-    pub fn is_emp_sword(&self) -> bool {
-        matches!(self, Tag::EmpSword)
-    }
     pub fn is_closed_door(&self) -> bool {
         matches!(self, Tag::ClosedDoor)
-    }
-    pub fn is_ground(&self) -> bool {
-        matches!(self, Tag::Ground)
-    }
-    pub fn is_shallow_water(&self) -> bool {
-        matches!(self, Tag::ShallowWater)
-    }
-    pub fn is_deep_water(&self) -> bool {
-        matches!(self, Tag::DeepWater)
-    }
-    pub fn is_vitr(&self) -> bool {
-        matches!(self, Tag::Vitr)
     }
     pub fn is_open_door(&self) -> bool {
         matches!(self, Tag::OpenDoor)
@@ -131,31 +104,10 @@ impl Tag {
     pub fn is_terrain(&self) -> bool {
         matches!(self, Tag::Terrain)
     }
-    pub fn is_tree(&self) -> bool {
-        matches!(self, Tag::Tree)
-    }
     pub fn is_wall(&self) -> bool {
         matches!(self, Tag::Wall)
     }
-    pub fn is_background(&self) -> bool {
-        matches!(self, Tag::Background(_))
-    }
-    pub fn is_durability(&self) -> bool {
-        matches!(self, Tag::Durability { current: _, max: _ })
-    }
-    pub fn is_material(&self) -> bool {
-        matches!(self, Tag::Material(_))
-    }
-    pub fn is_name(&self) -> bool {
-        matches!(self, Tag::Name(_))
-    }
 
-    pub fn as_unique(&self) -> Option<Unique> {
-        match *self {
-            Tag::Unique(result) => Some(result),
-            _ => None,
-        }
-    }
     pub fn as_inventory(&self) -> Option<&Vec<Object>> {
         match self {
             Tag::Inventory(result) => Some(result),
@@ -168,12 +120,6 @@ impl Tag {
             _ => None,
         }
     }
-    // pub fn as_liquid(&self) -> Option<(Liquid, bool)> {
-    //     match *self {
-    //         Tag::Liquid { liquid, deep } => Some((liquid, deep)),
-    //         _ => None,
-    //     }
-    // }
     pub fn as_background(&self) -> Option<Color> {
         match *self {
             Tag::Background(result) => Some(result),
@@ -205,28 +151,30 @@ impl Tag {
         match self {
             Tag::Character => 1,
             Tag::Player => 2,
-            Tag::Unique(_) => 3,
-            Tag::Inventory(_) => 4,
+            Tag::Doorman => 3,
+            Tag::Rhulad => 4,
+            Tag::Spectator => 5,
+            Tag::Inventory(_) => 6,
 
-            Tag::Portable => 5,
-            Tag::Sign => 6,
-            Tag::EmpSword => 7,
-            Tag::PickAxe => 8,
+            Tag::Portable => 7,
+            Tag::Sign => 8,
+            Tag::EmpSword => 9,
+            Tag::PickAxe => 10,
 
-            Tag::ClosedDoor => 9,
-            Tag::Ground => 10,
-            Tag::ShallowWater => 11,
-            Tag::DeepWater => 12,
-            Tag::Vitr => 13,
-            Tag::OpenDoor => 14,
-            Tag::Terrain => 15,
-            Tag::Tree => 16,
-            Tag::Wall => 17,
+            Tag::ClosedDoor => 11,
+            Tag::Ground => 12,
+            Tag::ShallowWater => 13,
+            Tag::DeepWater => 14,
+            Tag::Vitr => 15,
+            Tag::OpenDoor => 16,
+            Tag::Terrain => 17,
+            Tag::Tree => 18,
+            Tag::Wall => 19,
 
-            Tag::Background(_bg) => 18,
-            Tag::Durability { current: _, max: _ } => 19,
-            Tag::Material(_material) => 20,
-            Tag::Name(_name) => 21,
+            Tag::Background(_bg) => 20,
+            Tag::Durability { current: _, max: _ } => 21,
+            Tag::Material(_material) => 22,
+            Tag::Name(_name) => 23,
         }
     }
 }
@@ -236,7 +184,9 @@ impl fmt::Display for Tag {
         match self {
             Tag::Character => write!(f, "Character"),
             Tag::Player => write!(f, "Player"),
-            Tag::Unique(name) => write!(f, "Unique({name})"),
+            Tag::Doorman => write!(f, "Doorman"),
+            Tag::Rhulad => write!(f, "Rhulad"),
+            Tag::Spectator => write!(f, "Spectator"),
             Tag::Inventory(_) => write!(f, "Inventory"),
             Tag::Portable => write!(f, "Portable"),
             Tag::EmpSword => write!(f, "EmpSword"),
