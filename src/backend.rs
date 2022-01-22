@@ -7,6 +7,7 @@ mod make;
 mod message;
 mod object;
 mod old_pov;
+mod persistence;
 mod pov;
 mod primitives;
 mod tag;
@@ -33,7 +34,7 @@ use tag::{Material, Tag};
 const MAX_MESSAGES: usize = 1000;
 
 /// This changes the behavior of the movement keys associated with the player.
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ProbeMode {
     /// Move the player to empty cells (or attempt to interact with an object at that cell).
     Moving,
@@ -57,7 +58,7 @@ pub enum Tile {
     NotVisible,
 }
 
-#[derive(Clone, Copy, Debug, Display)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
 pub enum State {
     Bumbling,
     KilledRhulad,

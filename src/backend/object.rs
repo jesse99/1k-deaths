@@ -6,7 +6,7 @@ use std::fmt::{self, Formatter};
 /// in arbitrary ways (e.g. in theory a cobra could be both a Character and a
 /// wieldable Weapon). But note that it's the Action objects that encapsulate
 /// behavior.
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
     pub dname: String,

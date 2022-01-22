@@ -3,7 +3,7 @@ use std::fmt::{self, Formatter};
 
 /// These are the "facts" associated with a particular game. All game state
 /// should be able to be re-constructed from the event stream.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Event {
     AddMessage(Message),
     NewGame,

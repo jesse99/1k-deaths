@@ -1,7 +1,7 @@
 use std::fmt::{self, Formatter};
 
 /// Represents a point in cartesian space, typically a location within a level.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
     pub y: i32,

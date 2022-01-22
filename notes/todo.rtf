@@ -77,12 +77,13 @@ max_width = 150\
 	- http://aturon.github.io/\
 \'95\'a0Add support for persistence\
 	- just persist event stream\
+	- get rid of the tests in main\
 	- would it be better to use sqlite for persistence? how would that help?\
 	- on startup load the saved game (if present)\
 	- would be nice to have an option to skip loads or load a different file\
 	- should state objects save a checksum to verify that loads work?\
 	- would be cool to optionally update UI on load\
-	   maybe hit a key to terminate loading the stream\
+	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
 \'95 Panics should do a save (use Drop trait, probably on Game)\
 \'95 Support a config file?\
 	- log level\

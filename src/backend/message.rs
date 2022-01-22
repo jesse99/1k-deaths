@@ -1,6 +1,6 @@
 use derive_more::Display;
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Topic {
     /// An operation could not be completed.
     Error,
@@ -40,7 +40,7 @@ pub enum Topic {
     // Warning,
 }
 
-#[derive(Clone, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
 #[display(fmt = "{} {}", topic, text)]
 pub struct Message {
     pub topic: Topic,

@@ -4,7 +4,7 @@ use std::fmt::{self, Formatter};
 
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Material {
     // Wood,
     Stone,
@@ -14,7 +14,7 @@ pub enum Material {
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
 /// concept because those classes can be combined.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when
     /// players try to move into them. Will also have a Name tag. May have
