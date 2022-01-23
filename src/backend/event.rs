@@ -16,6 +16,7 @@ pub enum Event {
     ChangeProbe(ProbeMode),
     PlayerMoved(Point),
     NPCMoved(Point, Point),
+    // Note that new variants MUST be added at the end (or saved games will break).
 }
 
 impl fmt::Display for Event {

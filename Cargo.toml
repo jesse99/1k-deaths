@@ -6,15 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rmp = "0.8.10"
-rmp-serde = "1.0.0"
-rmpv = "1.0.0"
-
+byteorder = "1.4.3"     # byte-swapping library
 chrono = "0.4.19"	    # datetime library
 derive_more = "0.99.17" # helper to derive traits like Display for structs and enums
 fnv = "1.0.7"	        # custom hasher that is much more performant for small keys
 log = "0.4.14" 	        # logging facade
-rand = { version = "0.8.4", features = ["small_rng"] }	# random numbers
+postcard = {version = "0.7.3", features = ["use-std"]}  # binary backend for serde
+rand = {version = "0.8.4", features = ["small_rng"]}	# random numbers
 serde = "1.0.133"	    # serialization framework
 serde_derive = "1.0.133"# serde derive macros
 simplelog = "0.11.2" 	# logging to a file

@@ -1,35 +1,43 @@
-// There are a couple different goals we have for persistence:
-// 1) In so far as possible, old games should be forward compatible with new code.
-// 2) We need to be able to append new events onto an existing file as the user plays the
-// game.
-// 3) We're storing the full history of the game so these files could get large. Therefore
-// an efficient binary format seems like a good idea.
+// There are a bunch of different serde backends and I have looked at quite a few but none
+// of them are perfect for us. In order of importance we have these goals:
+// 1) In so far as possible, old games should be forward compatible with new code. In
+// particular we're going to be constantly adding new Enum variants so that cannot break
+// old saved games.
+// 2) We want to be able to append events onto existing saved games. There are ways around
+// this but they don't seem like good ideas, e.g. we could simply not save until the player
+// quits (but there can be a *lot* of events) or we could save snapshots to individual
+// files (but then we'd have to manage all those lame files).
+// 3) Because we're storing the full history of the game we want an efficient format.
+// https://github.com/djkoloski/rust_serialization_benchmark has some good info on the
+// relative file sizes for different backends, but none of them seem to do really well here.
 //
-// There are different backends for serde but none of them are exactly what we want:
-// 1) The primary issue here is that we will want to add new events without breaking saved
-// games, ideally by adding events anywhere in the enum. bincode supports adding new variants
-// but only at the end. ciborium and MessagePack (aka rmp) allows them to be added anywhere.
-// 2) The serde way to append seems to be to use serialize_seq with a None argument for
-// size and then call serialize_element for each new element. bincode doesn't support the
-// None argument. ciborium doesn't even have an implementation for this. rmp does support
-// it however we'd have to keep the sequence serializer open for the entire game and I was
-// not able to figure out a good way to save it off into a field (sticking this into a worker
-// thread is another option but communicating errors back and forth seems like a pita).
-// 3) All of these binary formats should be fine for performance.
+// Here's a breakdown on what I have found with the different backends:
+//          size  enums      notes
+// postcard 211K  at end     only works with vectors and slices which is annoying and potentially a bit slow
+// rmp      942K  anywhere   nice to work with but file sizes are huge (tho they would compress very well)
+// bincode        at end
+// ciborium       anywhere   Serializer isn't public and into_writer takes the writer so seems really awkward to use
+// speedy                    errors trying to use derive macros: could not find `private` in `speedy
 //
-// So the main sticking point here is appending events. Currently we simply write a u32
-// (u8 might be better) to indicate that events follow and then write out a Vec<Event>.
-// Bit lame but simple and should work fine in practice.
+// rmp does support serialize_seq with a None size which, in theory, would allow us to
+// nicely handle append. However we'd have to keep the sequence serializer instance alive
+// for the entire game and I was not able to figure out a good way to save it off into a
+// field (sticking this into a worker thread is another option but communicating errors
+// back and forth seems like a pita). bincode, ciborium, and postcard don't support
+// serialize_seq (either they don't support it at all or not with the None option).
+//
+// borsh, nachricht, prost, and maybe rkyv are also options but, based on the benchmark
+// link above they are unlikely to be better than postcard.
 use super::Event;
-use rmp_serde::decode::Error::{InvalidDataRead, InvalidMarkerRead};
-use rmp_serde::Serializer as RmpSerializer;
-use serde::ser::Serializer;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use postcard::from_bytes;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
 use std::fmt::{self};
 use std::fs::{File, OpenOptions};
-use std::io::ErrorKind;
+use std::io::Read;
+use std::io::Write;
 use std::path::Path;
 
 #[cfg(test)]
@@ -87,50 +95,62 @@ impl fmt::Display for Header {
     }
 }
 
+fn write_len(file: &mut File, len: usize) -> Result<(), Box<dyn Error>> {
+    let mut bytes = Vec::new();
+    bytes.write_u32::<LittleEndian>(len as u32)?;
+    file.write_all(&bytes)?;
+    Ok(())
+}
+
+fn read_len(file: &mut File) -> Result<usize, Box<dyn Error>> {
+    let mut bytes = vec![0u8; 4];
+    file.read_exact(&mut bytes)?;
+    let mut cursor = std::io::Cursor::new(bytes);
+    let len = cursor.read_u32::<LittleEndian>()?;
+    Ok(len as usize)
+}
+
 // TODO: We might also want to save the entire game state (maybe in a separate file).
-// Loading that could be quite a bit faster than loading and replaying events.
-fn new_with_header(path: &str, header: Header) -> Result<RmpSerializer<File>, Box<dyn Error>> {
+// Loading that could be quite a bit faster than loading and replaying events. That would
+// also isolate us from logic changes that could hose replay.
+fn new_with_header(path: &str, header: Header) -> Result<File, Box<dyn Error>> {
     let path = Path::new(path);
-    let file = File::create(&path)?;
+    let mut file = File::create(&path)?;
 
-    let mut serializer = rmp_serde::encode::Serializer::new(file);
-    header.serialize(&mut serializer)?;
+    let bytes: Vec<u8> = postcard::to_stdvec(&header)?;
+    write_len(&mut file, bytes.len())?;
+    file.write_all(&bytes)?;
 
-    Ok(serializer)
+    Ok(file)
 }
 
 /// Create a brand new saved game at path (overwriting any existing game).
-pub fn new_game(path: &str) -> Result<RmpSerializer<File>, Box<dyn Error>> {
+pub fn new_game(path: &str) -> Result<File, Box<dyn Error>> {
     let header = Header::new();
     new_with_header(path, header)
 }
 
 /// Append onto an existing game (which must exist).
-pub fn open_game(path: &str) -> Result<RmpSerializer<File>, Box<dyn Error>> {
+pub fn open_game(path: &str) -> Result<File, Box<dyn Error>> {
     let file = OpenOptions::new().append(true).open(path)?;
-    let serializer = rmp_serde::encode::Serializer::new(file);
-    Ok(serializer)
+    Ok(file)
 }
 
-pub fn append_game(
-    serializer: &mut RmpSerializer<File>,
-    events: &[Event],
-) -> Result<(), Box<dyn Error>> {
-    // The count indicates that events follow. This is kind of nice because it's difficult
-    // to distinguish between eof and a truncated file. It also allows us to do a basic
-    // sanity check on load.
-    let count = events.len() as u32;
-    serializer.serialize_u32(count)?;
-    events.serialize(serializer)?;
+pub fn append_game(file: &mut File, events: &[Event]) -> Result<(), Box<dyn Error>> {
+    let bytes: Vec<u8> = postcard::to_stdvec(events)?; // TODO: compress events?
+    write_len(file, bytes.len())?;
+    file.write_all(&bytes)?;
     Ok(())
 }
 
 pub fn load_game(path: &str) -> Result<Vec<Event>, Box<dyn Error>> {
     let path = Path::new(path);
-    let file = File::open(&path)?;
-    let mut de = rmp_serde::decode::Deserializer::new(file);
+    let mut file = File::open(&path)?;
 
-    let header = Header::deserialize(&mut de)?;
+    let len = read_len(&mut file)?;
+    let mut bytes = vec![0u8; len];
+    file.read_exact(&mut bytes)?;
+    let header: Header = from_bytes(&bytes)?;
     if header.major_version != MAJOR_VERSION {
         return Err(Box::new(BadVersionError {
             major: header.major_version,
@@ -139,17 +159,10 @@ pub fn load_game(path: &str) -> Result<Vec<Event>, Box<dyn Error>> {
     info!("loaded file, {header}");
 
     let mut events = Vec::new();
-    loop {
-        let len = match u32::deserialize(&mut de) {
-            Ok(l) => l,
-            // Because we write out the count marker we should never get eof errors.
-            Err(InvalidMarkerRead(err)) if matches!(err.kind(), ErrorKind::UnexpectedEof) => break,
-            Err(InvalidDataRead(err)) if matches!(err.kind(), ErrorKind::UnexpectedEof) => break,
-            Err(err) => return Err(Box::new(err)),
-        };
-
-        let mut chunk = Vec::<Event>::deserialize(&mut de)?;
-        assert_eq!(len as usize, chunk.len()); // TODO: this is either a corrupted file or a logic error so arguably we should define a new Error for this
+    while let Ok(len) = read_len(&mut file) {
+        let mut bytes = vec![0u8; len];
+        file.read_exact(&mut bytes)?;
+        let mut chunk: Vec<Event> = from_bytes(&bytes)?;
         events.append(&mut chunk);
     }
 

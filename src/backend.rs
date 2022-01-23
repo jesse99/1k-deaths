@@ -28,7 +28,7 @@ use pov::PoV;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
-use rmp_serde::Serializer as RmpSerializer;
+// use rmp_serde::Serializer as RmpSerializer;
 use std::cell::{RefCell, RefMut};
 use std::fs::File;
 use std::path::Path;
@@ -86,7 +86,7 @@ pub struct Game {
     mode: ProbeMode,
     rng: RefCell<SmallRng>,
     state: State,
-    serializer: Option<RmpSerializer<File>>,
+    file: Option<File>,
 }
 
 mod details {
@@ -110,7 +110,7 @@ impl Game {
 
         let mut messages = Vec::new();
         let path = "saved.game";
-        let mut serializer = None;
+        let mut file = None;
         if Path::new(path).is_file() {
             info!("loading file");
             match persistence::load_game(path) {
@@ -125,7 +125,7 @@ impl Game {
             };
 
             if !events.is_empty() {
-                serializer = match persistence::open_game(path) {
+                file = match persistence::open_game(path) {
                     Ok(se) => Some(se),
                     Err(err) => {
                         messages.push(Message::new(
@@ -140,8 +140,8 @@ impl Game {
 
         // If there is no saved game or there was an error loading it create a file for a
         // brand new game.
-        if serializer.is_none() {
-            serializer = match persistence::new_game(path) {
+        if file.is_none() {
+            file = match persistence::new_game(path) {
                 Ok(se) => Some(se),
                 Err(err) => {
                     messages.push(Message::new(
@@ -164,7 +164,7 @@ impl Game {
                 old_pov: OldPoV::new(),
                 mode: ProbeMode::Moving,
                 state: State::Bumbling,
-                serializer,
+                file,
 
                 // TODO:
                 // 1) Use a random seed. Be sure to log this and also allow for
@@ -368,7 +368,7 @@ impl Game {
     }
 
     fn append_stream(&mut self) {
-        if let Some(se) = &mut self.serializer {
+        if let Some(se) = &mut self.file {
             if let Err(err) = persistence::append_game(se, &self.stream) {
                 self.messages.push(Message::new(
                     Topic::Error,
