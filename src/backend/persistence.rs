@@ -114,7 +114,7 @@ pub fn open_game(path: &str) -> Result<RmpSerializer<File>, Box<dyn Error>> {
 
 pub fn append_game(
     serializer: &mut RmpSerializer<File>,
-    events: Vec<Event>,
+    events: &Vec<Event>,
 ) -> Result<(), Box<dyn Error>> {
     // The count indicates that events follow. This is kind of nice because it's difficult
     // to distinguish between eof and a truncated file. It also allows us to do a basic
@@ -175,8 +175,8 @@ mod tests {
         {
             // save, close
             let mut serializer = new_game(&path).unwrap();
-            append_game(&mut serializer, events1.clone()).unwrap();
-            append_game(&mut serializer, events2.clone()).unwrap();
+            append_game(&mut serializer, &events1).unwrap();
+            append_game(&mut serializer, &events2).unwrap();
         }
 
         // load
@@ -205,8 +205,8 @@ mod tests {
         {
             // save, close
             let mut serializer = new_game(&path).unwrap();
-            append_game(&mut serializer, events1.clone()).unwrap();
-            append_game(&mut serializer, events2.clone()).unwrap();
+            append_game(&mut serializer, &events1).unwrap();
+            append_game(&mut serializer, &events2).unwrap();
         }
 
         {
@@ -223,7 +223,7 @@ mod tests {
         {
             // open, close
             let mut serializer = open_game(&path).unwrap();
-            append_game(&mut serializer, events3.clone()).unwrap();
+            append_game(&mut serializer, &events3).unwrap();
         }
 
         // load 2
@@ -267,7 +267,7 @@ mod tests {
 
             let mut serializer = new_with_header(&path, header).unwrap();
             let events1 = vec![Event::NewGame, Event::NewLevel];
-            append_game(&mut serializer, events1.clone()).unwrap();
+            append_game(&mut serializer, &events1).unwrap();
         }
 
         let err = load_game(&path).unwrap_err();

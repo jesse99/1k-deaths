@@ -28,10 +28,14 @@ use pov::PoV;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
+use rmp_serde::Serializer as RmpSerializer;
 use std::cell::{RefCell, RefMut};
+use std::fs::File;
+use std::path::Path;
 use tag::{Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
+const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
 /// This changes the behavior of the movement keys associated with the player.
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
@@ -69,6 +73,7 @@ pub enum State {
 pub struct Game {
     // This is the canonical state of the game.
     stream: Vec<Event>,
+    posting: bool,
 
     // These are synthesized state objects that store state based on the event stream
     // to make it easier to write the backend logic and render the UI. When a new event
@@ -81,6 +86,7 @@ pub struct Game {
     mode: ProbeMode,
     rng: RefCell<SmallRng>,
     state: State,
+    serializer: Option<RmpSerializer<File>>,
 }
 
 mod details {
@@ -96,30 +102,88 @@ mod details {
 }
 
 impl Game {
-    pub fn new() -> Game {
-        Game {
-            stream: Vec::new(),
-            messages: Vec::new(),
-            level: Level::new(make::stone_wall()),
-            interactions: Interactions::new(),
-            pov: PoV::new(),
-            old_pov: OldPoV::new(),
-            mode: ProbeMode::Moving,
-            state: State::Bumbling,
+    /// Begins a new game session. If possible this will load an existing game and return
+    /// the event stream associated with it for replay'ing. Otherwise a new game will be
+    /// started.
+    pub fn new() -> (Game, Vec<Event>) {
+        let mut events = Vec::new();
 
-            // TODO:
-            // 1) Use a random seed. Be sure to log this and also allow for
-            // specifying the seed (probably via a command line option).
-            // 2) SmallRng is not guaranteed to be portable so results may
-            // not be reproducible between platforms.
-            // 3) We're going to have to be able to persist the RNG. rand_pcg
-            // supports serde so that would likely work. If not we could
-            // create our own simple RNG.
-            rng: RefCell::new(SmallRng::seed_from_u64(100)),
+        let mut messages = Vec::new();
+        let path = "saved.game";
+        let mut serializer = None;
+        if Path::new(path).is_file() {
+            info!("loading file");
+            match persistence::load_game(path) {
+                Ok(e) => events = e,
+                Err(err) => {
+                    info!("loading file had err: {err}");
+                    messages.push(Message::new(
+                        Topic::Error,
+                        &format!("Couldn't open {path} for reading: {err}"),
+                    ));
+                }
+            };
+
+            if !events.is_empty() {
+                serializer = match persistence::open_game(path) {
+                    Ok(se) => Some(se),
+                    Err(err) => {
+                        messages.push(Message::new(
+                            Topic::Error,
+                            &format!("Couldn't open {path} for appending: {err}"),
+                        ));
+                        None
+                    }
+                };
+            }
         }
+
+        // If there is no saved game or there was an error loading it create a file for a
+        // brand new game.
+        if serializer.is_none() {
+            serializer = match persistence::new_game(path) {
+                Ok(se) => Some(se),
+                Err(err) => {
+                    messages.push(Message::new(
+                        Topic::Error,
+                        &format!("Couldn't open {path} for writing: {err}"),
+                    ));
+                    None
+                }
+            };
+        }
+
+        (
+            Game {
+                stream: Vec::new(),
+                posting: false,
+                messages,
+                level: Level::new(make::stone_wall()),
+                interactions: Interactions::new(),
+                pov: PoV::new(),
+                old_pov: OldPoV::new(),
+                mode: ProbeMode::Moving,
+                state: State::Bumbling,
+                serializer,
+
+                // TODO:
+                // 1) Use a random seed. Be sure to log this and also allow for
+                // specifying the seed (probably via a command line option).
+                // 2) SmallRng is not guaranteed to be portable so results may
+                // not be reproducible between platforms.
+                // 3) We're going to have to be able to persist the RNG. rand_pcg
+                // supports serde so that would likely work. If not we could
+                // create our own simple RNG.
+                rng: RefCell::new(SmallRng::seed_from_u64(100)),
+            },
+            events,
+        )
     }
 
-    pub fn start(&self, events: &mut Vec<Event>) {
+    /// Should be called if new returned no events.
+    pub fn new_game(&self, events: &mut Vec<Event>) {
+        events.reserve(1000); // TODO: probably should tune this
+
         events.push(Event::NewGame);
         events.push(Event::AddMessage(Message {
             topic: Topic::Important,
@@ -242,48 +306,80 @@ impl Game {
     // because of an event. To help ensure that this should be the only public
     // mutable Game method.
     pub fn post(&mut self, events: Vec<Event>) {
+        // This is bad because it messes up replay: if it is allowed then an event will
+        // post a new event X both of which will be persisted. Then on replay the event
+        // will post X but X will have been also saved so X is done twice.
+        assert!(
+            !self.posting,
+            "Cannot post an event in response to an event"
+        );
+
+        self.posting = true;
         for event in events {
             self.internal_post(event);
         }
 
         self.old_pov.update(&self.level, &self.pov);
         self.pov.refresh(&self.level.player(), &mut self.level);
+        self.posting = false;
     }
 }
 
 impl Game {
-    // This should only be called by post_events.
+    // This should only be called by the post method.
     fn internal_post(&mut self, event: Event) {
         debug!("processing {event:?}"); // TODO: may want to nuke this once we start saving games
         self.stream.push(event.clone());
 
-        if !self.handled_game_event(&event) {
-            // This is the type state pattern: as events are posted new state
-            // objects are updated and upcoming state objects can safely reference
-            // them. To enforce this at compile time Game1, Game2, etc objects
-            // are used to provide views into Game.
-            self.level.posted(&event);
-
-            let game1 = details::Game1 { level: &self.level };
-            self.pov.posted(&game1, &event);
-
-            let game2 = details::Game2 {
-                level: &self.level,
-                pov: &self.pov,
-            };
-            self.old_pov.posted(&game2, &event);
+        if self.stream.len() >= MAX_QUEUED_EVENTS {
+            self.append_stream();
         }
 
-        if let Event::PlayerMoved(new_loc) = event {
-            // Icky recursion: when we do stuff like move into a square
-            // we want to immediately take various actions, like printing
-            // "You splash through the water".
-            let mut events = Vec::new();
-            self.interact_post_move(&new_loc, &mut events);
-            for child in events {
-                self.internal_post(child);
+        let mut events = Vec::new();
+        events.push(event);
+
+        while !events.is_empty() {
+            let event = events.remove(0); // icky remove from front but the vector shouldn't be very large...
+
+            if !self.handled_game_event(&event) {
+                // This is the type state pattern: as events are posted new state
+                // objects are updated and upcoming state objects can safely reference
+                // them. To enforce this at compile time Game1, Game2, etc objects
+                // are used to provide views into Game.
+                self.level.posted(&event);
+
+                let game1 = details::Game1 { level: &self.level };
+                self.pov.posted(&game1, &event);
+
+                let game2 = details::Game2 {
+                    level: &self.level,
+                    pov: &self.pov,
+                };
+                self.old_pov.posted(&game2, &event);
+            }
+
+            if let Event::PlayerMoved(new_loc) = event {
+                // Icky recursion: when we do stuff like move into a square
+                // we want to immediately take various actions, like printing
+                // "You splash through the water".
+                self.interact_post_move(&new_loc, &mut events);
             }
         }
+    }
+
+    fn append_stream(&mut self) {
+        if let Some(se) = &mut self.serializer {
+            if let Err(err) = persistence::append_game(se, &self.stream) {
+                self.messages.push(Message::new(
+                    Topic::Error,
+                    &format!("Couldn't save game: {err}"),
+                ));
+            }
+        }
+        // If we can't save there's not much we can do other than clear. (Still worthwhile
+        // appending onto the stream because we may want a wizard command to show the last
+        // few events).
+        self.stream.clear();
     }
 
     // We're using a RefCell to avoid taking too many mutable Game references.
@@ -388,5 +484,11 @@ impl Game {
                 self.interactions.post_move(tag, self, new_loc, events)
             }
         }
+    }
+}
+
+impl Drop for Game {
+    fn drop(&mut self) {
+        self.append_stream();
     }
 }

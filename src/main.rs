@@ -35,9 +35,10 @@ fn main() {
         env!("CARGO_PKG_VERSION")
     );
 
-    let mut game = Game::new();
-    let mut events = Vec::with_capacity(1000); // TODO: probably should tune this
-    game.start(&mut events);
+    let (mut game, mut events) = Game::new();
+    if events.is_empty() {
+        game.new_game(&mut events);
+    }
     game.post(events);
     let mut terminal = terminal::Terminal::new(game);
     terminal.run();

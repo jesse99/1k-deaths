@@ -76,15 +76,20 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
 \'95\'a0Add support for persistence\
-	- just persist event stream\
-	- get rid of the tests in main\
-	- would it be better to use sqlite for persistence? how would that help?\
-	- on startup load the saved game (if present)\
+	- test what happens if there is a file error on startup\
+	- rmp is not compressing at all\
+		` try to find that compative web site\
+		` should we try that cib package? compare sizes to doorman\
+		` or just add a note?\
+	- panics should do a save\
+		` can do this via a Drop trait\
+		` would have to either clone the event so that it can be pushed\
+		` or add an inner panic handler\
 	- would be nice to have an option to skip loads or load a different file\
 	- should state objects save a checksum to verify that loads work?\
 	- would be cool to optionally update UI on load\
 	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
-\'95 Panics should do a save (use Drop trait, probably on Game)\
+	- get rid of the tests in main\
 \'95 Support a config file?\
 	- log level\
 	- log path\

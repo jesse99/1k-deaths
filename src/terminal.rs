@@ -13,7 +13,7 @@ use std::process;
 use termion::input::TermRead; // for keys trait
 use termion::raw::IntoRawMode;
 
-const NUM_MESSAGES: i32 = 4;
+const NUM_MESSAGES: i32 = 5;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum GameState {
