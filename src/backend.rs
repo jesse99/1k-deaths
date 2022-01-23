@@ -112,7 +112,7 @@ impl Game {
         let path = "saved.game";
         let mut file = None;
         if Path::new(path).is_file() {
-            info!("loading file");
+            info!("loading {path}");
             match persistence::load_game(path) {
                 Ok(e) => events = e,
                 Err(err) => {
@@ -125,6 +125,7 @@ impl Game {
             };
 
             if !events.is_empty() {
+                info!("opening {path}");
                 file = match persistence::open_game(path) {
                     Ok(se) => Some(se),
                     Err(err) => {
@@ -141,6 +142,7 @@ impl Game {
         // If there is no saved game or there was an error loading it create a file for a
         // brand new game.
         if file.is_none() {
+            info!("new {path}");
             file = match persistence::new_game(path) {
                 Ok(se) => Some(se),
                 Err(err) => {
@@ -185,6 +187,7 @@ impl Game {
         events.reserve(1000); // TODO: probably should tune this
 
         events.push(Event::NewGame);
+        events.push(Event::BeginConstructLevel);
         events.push(Event::AddMessage(Message {
             topic: Topic::Important,
             text: String::from("Welcome to 1k-deaths!"),
@@ -204,12 +207,11 @@ impl Game {
             text: String::from("Use the escape key to stop examining."),
         }));
 
-        events.push(Event::NewLevel);
-
         // TODO: may want a SetAllTerrain variant to avoid a zillion events
         // TODO: or have NewLevel take a default terrain
         let map = include_str!("backend/maps/start.txt");
         make::level(self, map, events);
+        events.push(Event::EndConstructLevel);
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
@@ -305,7 +307,7 @@ impl Game {
     // In order to ensure that games are replayable mutation should only happen
     // because of an event. To help ensure that this should be the only public
     // mutable Game method.
-    pub fn post(&mut self, events: Vec<Event>) {
+    pub fn post(&mut self, events: Vec<Event>, replay: bool) {
         // This is bad because it messes up replay: if it is allowed then an event will
         // post a new event X both of which will be persisted. Then on replay the event
         // will post X but X will have been also saved so X is done twice.
@@ -316,7 +318,7 @@ impl Game {
 
         self.posting = true;
         for event in events {
-            self.internal_post(event);
+            self.internal_post(event, replay);
         }
 
         self.old_pov.update(&self.level, &self.pov);
@@ -327,14 +329,15 @@ impl Game {
 
 impl Game {
     // This should only be called by the post method.
-    fn internal_post(&mut self, event: Event) {
+    fn internal_post(&mut self, event: Event, replay: bool) {
         debug!("processing {event:?}"); // TODO: may want to nuke this once we start saving games
-        self.stream.push(event.clone());
+        if !replay {
+            self.stream.push(event.clone());
 
-        if self.stream.len() >= MAX_QUEUED_EVENTS {
-            self.append_stream();
+            if self.stream.len() >= MAX_QUEUED_EVENTS {
+                self.append_stream();
+            }
         }
-
         let mut events = Vec::new();
         events.push(event);
 

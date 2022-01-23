@@ -3,7 +3,7 @@ mod color;
 mod map;
 mod messages;
 
-use super::backend::{Game, Point, ProbeMode, Size};
+use super::backend::{Event, Game, Point, ProbeMode, Size};
 use map::MapView;
 use messages::MessagesView;
 use std::io::{stdin, stdout, Write};
@@ -26,10 +26,11 @@ pub struct Terminal {
 
     map: MapView,
     messages: MessagesView,
+    replay: Vec<Event>,
 }
 
 impl Terminal {
-    pub fn new(game: Game) -> Terminal {
+    pub fn new(game: Game, replay: Vec<Event>) -> Terminal {
         let stdout = stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -57,6 +58,7 @@ impl Terminal {
                 origin: Point::new(0, height - NUM_MESSAGES),
                 size: Size::new(width, NUM_MESSAGES),
             },
+            replay,
         }
     }
 
@@ -65,14 +67,32 @@ impl Terminal {
         let stdin = stdin.lock();
         let mut key_iter = stdin.keys();
         let mut state = GameState::Running;
+
+        if let Some(i) = self
+            .replay
+            .iter()
+            .position(|e| matches!(e, Event::EndConstructLevel))
+        {
+            // We don't want to replay setting the level up.
+            let tail = self.replay.split_off(i + 1);
+            let head = core::mem::replace(&mut self.replay, tail);
+            self.game.post(head, true);
+        }
         while state != GameState::Exiting {
-            self.render();
-            if let Some(c) = key_iter.next() {
-                let c = c.unwrap();
-                // debug!("input key {:?}", c);
-                state = self.handle_input(c);
+            if !self.replay.is_empty() {
+                let e = self.replay.remove(0);
+                self.game.post(vec![e], true);
+                self.render(); // TODO: probably should skip render while inside BeginConstructLevel
+                std::thread::sleep(std::time::Duration::from_millis(25));
             } else {
-                panic!("Couldn't read the next key");
+                self.render();
+                if let Some(c) = key_iter.next() {
+                    let c = c.unwrap();
+                    // debug!("input key {:?}", c);
+                    state = self.handle_input(c);
+                } else {
+                    panic!("Couldn't read the next key");
+                }
             }
         }
     }
@@ -105,7 +125,7 @@ impl Terminal {
                 .probe_mode(ProbeMode::Examine(self.game.player()), &mut events),
             _ => (),
         };
-        self.game.post(events);
+        self.game.post(events, false);
         GameState::Running
     }
 }

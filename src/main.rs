@@ -34,8 +34,9 @@ fn main() {
     let (mut game, mut events) = Game::new();
     if events.is_empty() {
         game.new_game(&mut events);
+        game.post(events, false);
+        events = Vec::new();
     }
-    game.post(events);
-    let mut terminal = terminal::Terminal::new(game);
+    let mut terminal = terminal::Terminal::new(game, events);
     terminal.run();
 }

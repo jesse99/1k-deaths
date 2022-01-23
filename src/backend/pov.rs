@@ -28,7 +28,8 @@ impl PoV {
     pub fn posted(&mut self, _game: &Game1, event: &Event) {
         match event {
             Event::NewGame => self.dirty = true,
-            Event::NewLevel => self.dirty = true,
+            Event::BeginConstructLevel => self.dirty = true,
+            Event::EndConstructLevel => self.dirty = true,
             Event::AddObject(_loc, new_obj) => {
                 if !self.dirty && obj_blocks_los(new_obj) {
                     self.dirty = true;
@@ -87,8 +88,9 @@ impl PoV {
         view.visit();
 
         for loc in new_locs {
-            self.visible.insert(loc);
-            let _ = level.get_mut(&loc); // make sure there is a cell there
+            if level.ensure_cell(&loc) {
+                self.visible.insert(loc);
+            }
         }
     }
 }

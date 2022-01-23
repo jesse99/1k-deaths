@@ -76,19 +76,19 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
 \'95\'a0Add support for persistence\
-	- test what happens if there is a file error on startup\
-	- rmp is not compressing at all\
-		` try to find that compative web site\
-		` should we try that cib package? compare sizes to doorman\
-		` or just add a note?\
-	- panics should do a save\
-		` can do this via a Drop trait\
-		` would have to either clone the event so that it can be pushed\
-		` or add an inner panic handler\
-	- would be nice to have an option to skip loads or load a different file\
-	- should state objects save a checksum to verify that loads work?\
+	- do a commit and a push\
 	- would be cool to optionally update UI on load\
+		might want a swappable table for key to command\
+		\'91 \'91    toggle suspend replay\
+		esc stop GUI refresh\
+		+     speed up refresh (maybe with a warning if it\'92s alreay at max)\
+		       not sure if this involves a sleep or posting more than one event, or both\
+		-      slow down refresh\
+		s      single step?\
 	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
+	- would be nice to have an option to skip loads or load a different file\
+		` also --no-refresh\
+	- should state objects save a checksum to verify that loads work?\
 	- get rid of the tests in main\
 \'95 Support a config file?\
 	- log level\

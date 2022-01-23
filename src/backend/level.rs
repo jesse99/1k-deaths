@@ -6,6 +6,7 @@ pub struct Level {
     player: Point,
     default: Object,
     cells: FnvHashMap<Point, Cell>,
+    constructing: bool,
 }
 
 impl Level {
@@ -16,6 +17,7 @@ impl Level {
             player: Point::origin(),
             default,
             cells: FnvHashMap::default(),
+            constructing: true,
         }
     }
 
@@ -32,6 +34,16 @@ impl Level {
         self.cells.get_mut(loc).unwrap()
     }
 
+    // This should only be called by the pov code.
+    pub fn ensure_cell(&mut self, loc: &Point) -> bool {
+        if self.constructing {
+            self.cells.contains_key(loc)
+        } else {
+            self.ensure_neighbors(loc);
+            true
+        }
+    }
+
     /// Should not normally be used.
     pub fn try_get(&self, loc: &Point) -> Option<&Cell> {
         self.cells.get(loc)
@@ -39,8 +51,12 @@ impl Level {
 
     pub fn posted(&mut self, event: &Event) {
         match event {
-            Event::NewLevel => {
+            Event::BeginConstructLevel => {
                 self.cells = FnvHashMap::default();
+                self.constructing = true;
+            }
+            Event::EndConstructLevel => {
+                self.constructing = false;
             }
             Event::AddObject(loc, obj) => {
                 if obj.player() {
@@ -109,23 +125,25 @@ impl Level {
     // neighbors. This is for something like being able to move into a wall
     // (or something like deep shadow).
     fn ensure_neighbors(&mut self, loc: &Point) {
-        let deltas = vec![
-            (-1, -1),
-            (-1, 1),
-            (-1, 0),
-            (1, -1),
-            (1, 1),
-            (1, 0),
-            (0, -1),
-            (0, 1),
-        ];
-        for delta in deltas {
-            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let _ = self.cells.entry(new_loc).or_insert_with(|| {
-                let mut cell = Cell::new();
-                cell.append(self.default.clone());
-                cell
-            });
+        if !self.constructing {
+            let deltas = vec![
+                (-1, -1),
+                (-1, 1),
+                (-1, 0),
+                (1, -1),
+                (1, 1),
+                (1, 0),
+                (0, -1),
+                (0, 1),
+            ];
+            for delta in deltas {
+                let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+                let _ = self.cells.entry(new_loc).or_insert_with(|| {
+                    let mut cell = Cell::new();
+                    cell.append(self.default.clone());
+                    cell
+                });
+            }
         }
     }
 }

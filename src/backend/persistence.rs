@@ -179,7 +179,7 @@ mod tests {
         let path = format!("/tmp/saved-{}.game", line!()); // tests are run concurrently so we need to ensure paths are unique
         let _ = fs::remove_file(&path);
 
-        let events1 = vec![Event::NewGame, Event::NewLevel];
+        let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
         let events2 = vec![
             Event::PlayerMoved(Point::new(1, 2)),
             Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
@@ -208,7 +208,7 @@ mod tests {
         let path = format!("/tmp/saved-{}.game", line!());
         let _ = fs::remove_file(&path);
 
-        let events1 = vec![Event::NewGame, Event::NewLevel];
+        let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
         let events2 = vec![
             Event::PlayerMoved(Point::new(1, 2)),
             Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
@@ -234,7 +234,7 @@ mod tests {
         }
 
         {
-            // open, close
+            // open, append, close
             let mut serializer = open_game(&path).unwrap();
             append_game(&mut serializer, &events3).unwrap();
         }
@@ -279,7 +279,7 @@ mod tests {
             header.major_version = MAJOR_VERSION - 1;
 
             let mut serializer = new_with_header(&path, header).unwrap();
-            let events1 = vec![Event::NewGame, Event::NewLevel];
+            let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
             append_game(&mut serializer, &events1).unwrap();
         }
 
