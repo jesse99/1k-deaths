@@ -114,7 +114,7 @@ pub fn open_game(path: &str) -> Result<RmpSerializer<File>, Box<dyn Error>> {
 
 pub fn append_game(
     serializer: &mut RmpSerializer<File>,
-    events: &Vec<Event>,
+    events: &[Event],
 ) -> Result<(), Box<dyn Error>> {
     // The count indicates that events follow. This is kind of nice because it's difficult
     // to distinguish between eof and a truncated file. It also allows us to do a basic

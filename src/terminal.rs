@@ -6,7 +6,6 @@ mod messages;
 use super::backend::{Game, Point, ProbeMode, Size};
 use map::MapView;
 use messages::MessagesView;
-// use slog::Logger;
 use std::io::{stdin, stdout, Write};
 use std::panic;
 use std::process;
