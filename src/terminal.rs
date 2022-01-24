@@ -2,10 +2,12 @@
 mod color;
 mod map;
 mod messages;
+mod modes;
 
-use super::backend::{Event, Game, Point, ProbeMode, Size};
+use super::backend::{Command, Event, Game, Point, Size};
 use map::MapView;
 use messages::MessagesView;
+use modes::{Action, CommandTable};
 use std::io::{stdin, stdout, Write};
 use std::panic;
 use std::process;
@@ -27,6 +29,8 @@ pub struct Terminal {
     map: MapView,
     messages: MessagesView,
     replay: Vec<Event>,
+    mode: CommandTable,
+    examined: Option<Point>,
 }
 
 impl Terminal {
@@ -59,6 +63,8 @@ impl Terminal {
                 size: Size::new(width, NUM_MESSAGES),
             },
             replay,
+            mode: modes::move_mode(),
+            examined: None,
         }
     }
 
@@ -98,35 +104,41 @@ impl Terminal {
     }
 
     fn render(&mut self) {
-        self.map.render(&mut self.stdout, &mut self.game);
+        self.map
+            .render(&mut self.stdout, &mut self.game, self.examined);
         self.messages.render(&mut self.stdout, &self.game);
         self.stdout.flush().unwrap();
     }
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
         let mut events = Vec::new();
-        match key {
-            termion::event::Key::Esc => self.game.probe_mode(ProbeMode::Moving, &mut events),
-            termion::event::Key::Left => self.game.probe(-1, 0, &mut events),
-            termion::event::Key::Right => self.game.probe(1, 0, &mut events),
-            termion::event::Key::Up => self.game.probe(0, -1, &mut events),
-            termion::event::Key::Down => self.game.probe(0, 1, &mut events),
-            termion::event::Key::Char('1') => self.game.probe(-1, 1, &mut events),
-            termion::event::Key::Char('2') => self.game.probe(0, 1, &mut events),
-            termion::event::Key::Char('3') => self.game.probe(1, 1, &mut events),
-            termion::event::Key::Char('4') => self.game.probe(-1, 0, &mut events),
-            termion::event::Key::Char('6') => self.game.probe(1, 0, &mut events),
-            termion::event::Key::Char('7') => self.game.probe(-1, -1, &mut events),
-            termion::event::Key::Char('8') => self.game.probe(0, -1, &mut events),
-            termion::event::Key::Char('9') => self.game.probe(1, -1, &mut events),
-            termion::event::Key::Char('q') => return GameState::Exiting,
-            termion::event::Key::Char('x') => self
-                .game
-                .probe_mode(ProbeMode::Examine(self.game.player()), &mut events),
-            _ => (),
-        };
-        self.game.post(events, false);
-        GameState::Running
+        match self.mode.get(&key) {
+            Some(handler) => {
+                let action = handler(self);
+                match action {
+                    Action::Command(command) => {
+                        if let Command::Examine(loc) = command {
+                            self.examined = Some(loc);
+                        }
+                        self.game.command(command, &mut events);
+                        self.game.post(events, false);
+                        GameState::Running
+                    }
+                    Action::Examine => {
+                        self.mode = modes::examine_mode();
+                        self.examined = Some(self.game.player());
+                        GameState::Running
+                    }
+                    Action::ExitMode => {
+                        self.mode = modes::move_mode();
+                        self.examined = None;
+                        GameState::Running
+                    }
+                    Action::Quit => GameState::Exiting,
+                }
+            }
+            None => GameState::Running, // TODO: beep?
+        }
     }
 }
 

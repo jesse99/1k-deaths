@@ -80,6 +80,9 @@ work\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
 \'95\'a0Add support for persistence\
+	- examine mode should support tab and shift tab\
+		- focus on a cell in PoV with a non-player Character\
+		- sort by distance from player and select the Character next in line\
 	- would be cool to optionally update UI on load\
 		might want a swappable table for key to command\
 		\'91 \'91    toggle suspend/replay\
@@ -91,6 +94,10 @@ work\
 		a      abort replay (this should be debug only)\
 	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
 	- would be nice to have help for the current mode\
+		` can we ensure that there is help for every key in a mode?\
+		` maybe just assert that command and help table keys match\
+		` tho this might be a bit more complex because we\'92ll want to do something \
+		  with layout and with header text\
 	- would be nice to have an option to skip loads or load a different file\
 		` also --no-refresh\
 	- should state objects save a checksum to verify that loads work?\
@@ -101,6 +108,7 @@ work\
 	- key bindings\
 	- topic colors\
 	- auto-pickup options\
+\'95 Rename State::Bumbling\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \

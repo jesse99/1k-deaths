@@ -9,7 +9,7 @@ pub struct MapView {
 }
 
 impl MapView {
-    pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game) {
+    pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game, examined: Option<Point>) {
         let start_loc = Point::new(
             game.player().x - self.size.width / 2,
             game.player().y - self.size.height / 2,
@@ -20,18 +20,14 @@ impl MapView {
                 let h = (self.origin.x + x + 1) as u16; // termion is 1-based
                 let v = (self.origin.y + y + 1) as u16;
                 let tile = game.tile(&pt);
-                let (bg, fg, symbol, focused) = match tile {
+                let (bg, fg, symbol) = match tile {
                     Tile::Visible {
                         bg: b,
                         fg: f,
                         symbol: s,
-                        focus: o,
-                    } => (b, f, s, o), // TODO: use black if there is a character or item?
-                    Tile::Stale {
-                        symbol: s,
-                        focus: o,
-                    } => (Color::LightGrey, Color::DarkGray, s, o),
-                    Tile::NotVisible => (Color::Black, Color::Black, ' ', false),
+                    } => (b, f, s), // TODO: use black if there is a character or item?
+                    Tile::Stale(s) => (Color::LightGrey, Color::DarkGray, s),
+                    Tile::NotVisible => (Color::Black, Color::Black, ' '),
                 };
                 let _ = write!(
                     stdout,
@@ -40,6 +36,7 @@ impl MapView {
                     termion::color::Bg(color::to_termion(bg)),
                     termion::color::Fg(color::to_termion(fg))
                 );
+                let focused = examined.map_or(false, |loc| loc == pt);
                 if focused {
                     let _ = write!(stdout, "{}", termion::style::Invert);
                 }

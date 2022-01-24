@@ -28,7 +28,6 @@ use pov::PoV;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
-// use rmp_serde::Serializer as RmpSerializer;
 use std::cell::{RefCell, RefMut};
 use std::fs::File;
 use std::path::Path;
@@ -37,27 +36,22 @@ use tag::{Material, Tag};
 const MAX_MESSAGES: usize = 1000;
 const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
-/// This changes the behavior of the movement keys associated with the player.
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
-pub enum ProbeMode {
+#[derive(Clone, Copy, Debug)]
+pub enum Command {
     /// Move the player to empty cells (or attempt to interact with an object at that cell).
-    Moving,
-    /// Print descriptions for objects at the cell.
+    /// dx and dy must be 0, +1, or -1.
+    Move { dx: i32, dy: i32 },
+    /// Print descriptions for objects at the cell. Note that any cell can be examined but
+    /// cells that are not in the player's PoV will have either an unhelpful description or
+    /// a stale description.
     Examine(Point),
-    // TODO: need something like Focus or Target to allow the user to select a cell/character
-    // for stuff like ranged attacks
 }
 
 pub enum Tile {
     /// player can see this
-    Visible {
-        bg: Color,
-        fg: Color,
-        symbol: char,
-        focus: bool,
-    },
+    Visible { bg: Color, fg: Color, symbol: char },
     /// player can't see this but has in the past, note that this may not reflect the current state
-    Stale { symbol: char, focus: bool },
+    Stale(char),
     /// player has never seen this location (and it may not exist)
     NotVisible,
 }
@@ -83,7 +77,6 @@ pub struct Game {
     interactions: Interactions,
     pov: PoV,
     old_pov: OldPoV,
-    mode: ProbeMode,
     rng: RefCell<SmallRng>,
     state: State,
     file: Option<File>,
@@ -164,7 +157,6 @@ impl Game {
                 interactions: Interactions::new(),
                 pov: PoV::new(),
                 old_pov: OldPoV::new(),
-                mode: ProbeMode::Moving,
                 state: State::Bumbling,
                 file,
 
@@ -227,31 +219,21 @@ impl Game {
         self.level.player()
     }
 
-    // TODO: When ProbeMode is not Moving should support tab and shift-tab to move
-    // to the next "interesting" cell where interesting might just be a cell
-    // with a non-player Character.
-    pub fn probe_mode(&self, mode: ProbeMode, events: &mut Vec<Event>) {
-        if self.mode != mode {
-            events.push(Event::ChangeProbe(mode));
-        }
-    }
-
-    /// Do something with an adjacent cell, this can be move into it, attack
-    /// an enemy there, start a dialog with a friendly character, open a door,
-    /// etc.
-    pub fn probe(&self, dx: i32, dy: i32, events: &mut Vec<Event>) {
+    pub fn command(&self, command: Command, events: &mut Vec<Event>) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
-        match self.mode {
-            ProbeMode::Moving => {
+        match command {
+            Command::Move { dx, dy } => {
+                assert!(dx >= -1 && dx <= 1);
+                assert!(dy >= -1 && dy <= 1);
+                assert!(dx != 0 || dy != 0); // TODO: should this be a short rest?
                 let player = self.level.player();
                 let new_loc = Point::new(player.x + dx, player.y + dy);
                 if !self.interact_pre_move(&player, &new_loc, events) {
                     events.push(Event::PlayerMoved(new_loc));
                 }
             }
-            ProbeMode::Examine(loc) => {
-                let new_loc = Point::new(loc.x + dx, loc.y + dy);
+            Command::Examine(new_loc) => {
                 if self.pov.visible(&new_loc) {
                     let cell = self.level.get(&new_loc);
                     let descs: Vec<String> = cell
@@ -265,38 +247,27 @@ impl Game {
                         topic: Topic::Normal,
                         text,
                     }));
-                    events.push(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
                 } else if self.old_pov.get(&new_loc).is_some() {
                     let text = "You can no longer see there.".to_string();
                     events.push(Event::AddMessage(Message {
                         topic: Topic::Normal,
                         text,
                     }));
-                    events.push(Event::ChangeProbe(ProbeMode::Examine(new_loc)));
                 };
             }
-        };
+        }
     }
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
     /// Otherwise return None.
     pub fn tile(&self, loc: &Point) -> Tile {
-        let focus = match self.mode {
-            ProbeMode::Moving => false,
-            ProbeMode::Examine(eloc) => *loc == eloc,
-        };
         let tile = if self.pov.visible(loc) {
             let cell = self.level.get(loc);
             let (bg, fg, symbol) = cell.to_bg_fg_symbol();
-            Tile::Visible {
-                bg,
-                fg,
-                symbol,
-                focus,
-            }
+            Tile::Visible { bg, fg, symbol }
         } else {
             match self.old_pov.get(loc) {
-                Some(symbol) => Tile::Stale { symbol, focus },
+                Some(symbol) => Tile::Stale(symbol),
                 None => Tile::NotVisible, // not visible and never seen
             }
         };
@@ -405,10 +376,6 @@ impl Game {
                 while self.messages.len() > MAX_MESSAGES {
                     self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
                 }
-                true
-            }
-            Event::ChangeProbe(mode) => {
-                self.mode = *mode;
                 true
             }
             Event::AddToInventory(loc) => {

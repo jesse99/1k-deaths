@@ -45,7 +45,7 @@ use super::{Message, Point, Topic};
 #[cfg(test)]
 use std::fs;
 
-const MAJOR_VERSION: u8 = 1;
+const MAJOR_VERSION: u8 = 2;
 const MINOR_VERSION: u8 = 0;
 
 #[derive(Debug, Clone)]
