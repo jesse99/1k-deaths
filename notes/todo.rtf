@@ -65,6 +65,10 @@ Open in External App extension\
 had a rustfmt.tml file:\
 max_width = 150\
 \
+clean\
+walk\
+work\
+\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 Step 5 - Saving/Loading\
@@ -76,16 +80,17 @@ max_width = 150\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
 \'95\'a0Add support for persistence\
-	- do a commit and a push\
 	- would be cool to optionally update UI on load\
 		might want a swappable table for key to command\
-		\'91 \'91    toggle suspend replay\
+		\'91 \'91    toggle suspend/replay\
 		esc stop GUI refresh\
-		+     speed up refresh (maybe with a warning if it\'92s alreay at max)\
+		+     speed up refresh (maybe with a warning if it\'92s already at max, or beep?)\
 		       not sure if this involves a sleep or posting more than one event, or both\
-		-      slow down refresh\
-		s      single step?\
+		-      slow down refresh, maybe step by 20%?\
+		s      single step, could do this when suspended (via space)\
+		a      abort replay (this should be debug only)\
 	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
+	- would be nice to have help for the current mode\
 	- would be nice to have an option to skip loads or load a different file\
 		` also --no-refresh\
 	- should state objects save a checksum to verify that loads work?\
