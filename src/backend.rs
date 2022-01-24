@@ -68,7 +68,6 @@ pub struct Game {
     // This is the canonical state of the game.
     stream: Vec<Event>,
     posting: bool,
-
     // These are synthesized state objects that store state based on the event stream
     // to make it easier to write the backend logic and render the UI. When a new event
     // is added to the stream the posted method is called for each of these.
@@ -190,9 +189,7 @@ impl Game {
         }));
         events.push(Event::AddMessage(Message {
             topic: Topic::Important,
-            text: String::from(
-                "Use the arrow keys to move, 'x' to examine squares, and 'q' to quit.",
-            ),
+            text: String::from("Use the arrow keys to move, 'x' to examine squares, and 'q' to quit."),
         }));
         events.push(Event::AddMessage(Message {
             topic: Topic::Important,
@@ -236,11 +233,7 @@ impl Game {
             Command::Examine(new_loc) => {
                 if self.pov.visible(&new_loc) {
                     let cell = self.level.get(&new_loc);
-                    let descs: Vec<String> = cell
-                        .iter()
-                        .rev()
-                        .map(|obj| obj.description.clone())
-                        .collect();
+                    let descs: Vec<String> = cell.iter().rev().map(|obj| obj.description.clone()).collect();
                     let descs = descs.join(", and ");
                     let text = format!("You see {descs}.");
                     events.push(Event::AddMessage(Message {
@@ -282,10 +275,7 @@ impl Game {
         // This is bad because it messes up replay: if it is allowed then an event will
         // post a new event X both of which will be persisted. Then on replay the event
         // will post X but X will have been also saved so X is done twice.
-        assert!(
-            !self.posting,
-            "Cannot post an event in response to an event"
-        );
+        assert!(!self.posting, "Cannot post an event in response to an event");
 
         self.posting = true;
         for event in events {
@@ -344,10 +334,8 @@ impl Game {
     fn append_stream(&mut self) {
         if let Some(se) = &mut self.file {
             if let Err(err) = persistence::append_game(se, &self.stream) {
-                self.messages.push(Message::new(
-                    Topic::Error,
-                    &format!("Couldn't save game: {err}"),
-                ));
+                self.messages
+                    .push(Message::new(Topic::Error, &format!("Couldn't save game: {err}")));
             }
         }
         // If we can't save there's not much we can do other than clear. (Still worthwhile
@@ -420,14 +408,8 @@ impl Game {
         }
         false
     }
-
     // Player attempting to interact with an adjacent cell.
-    fn interact_pre_move(
-        &self,
-        player_loc: &Point,
-        new_loc: &Point,
-        events: &mut Vec<Event>,
-    ) -> bool {
+    fn interact_pre_move(&self, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
         // First see if an inventory item can interact with the new cell.
         let cell = self.level.get(player_loc);
         let obj = cell.get(&Tag::Player);

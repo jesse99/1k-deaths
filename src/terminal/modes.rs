@@ -82,29 +82,14 @@ pub fn examine_mode() -> CommandTable {
     mode.insert(Key::Right, Box::new(|terminal| examine(terminal, 1, 0)));
     mode.insert(Key::Up, Box::new(|terminal| examine(terminal, 0, -1)));
     mode.insert(Key::Down, Box::new(|terminal| examine(terminal, 0, 1)));
-    mode.insert(
-        Key::Char('1'),
-        Box::new(|terminal| examine(terminal, -1, 1)),
-    );
+    mode.insert(Key::Char('1'), Box::new(|terminal| examine(terminal, -1, 1)));
     mode.insert(Key::Char('2'), Box::new(|terminal| examine(terminal, 0, 1)));
     mode.insert(Key::Char('3'), Box::new(|terminal| examine(terminal, 1, 1)));
-    mode.insert(
-        Key::Char('4'),
-        Box::new(|terminal| examine(terminal, -1, 0)),
-    );
+    mode.insert(Key::Char('4'), Box::new(|terminal| examine(terminal, -1, 0)));
     mode.insert(Key::Char('6'), Box::new(|terminal| examine(terminal, 1, 0)));
-    mode.insert(
-        Key::Char('7'),
-        Box::new(|terminal| examine(terminal, -1, -1)),
-    );
-    mode.insert(
-        Key::Char('8'),
-        Box::new(|terminal| examine(terminal, 0, -1)),
-    );
-    mode.insert(
-        Key::Char('9'),
-        Box::new(|terminal| examine(terminal, 1, -1)),
-    );
+    mode.insert(Key::Char('7'), Box::new(|terminal| examine(terminal, -1, -1)));
+    mode.insert(Key::Char('8'), Box::new(|terminal| examine(terminal, 0, -1)));
+    mode.insert(Key::Char('9'), Box::new(|terminal| examine(terminal, 1, -1)));
     mode.insert(Key::Char('q'), Box::new(|_terminal| Action::Quit));
     mode.insert(Key::Esc, Box::new(|_terminal| Action::ExitMode));
 
