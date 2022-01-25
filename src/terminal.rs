@@ -74,11 +74,7 @@ impl Terminal {
         let mut key_iter = stdin.keys();
         let mut state = GameState::Running;
 
-        if let Some(i) = self
-            .replay
-            .iter()
-            .position(|e| matches!(e, Event::EndConstructLevel))
-        {
+        if let Some(i) = self.replay.iter().position(|e| matches!(e, Event::EndConstructLevel)) {
             // We don't want to replay setting the level up.
             let tail = self.replay.split_off(i + 1);
             let head = core::mem::replace(&mut self.replay, tail);
@@ -104,14 +100,12 @@ impl Terminal {
     }
 
     fn render(&mut self) {
-        self.map
-            .render(&mut self.stdout, &mut self.game, self.examined);
+        self.map.render(&mut self.stdout, &mut self.game, self.examined);
         self.messages.render(&mut self.stdout, &self.game);
         self.stdout.flush().unwrap();
     }
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
-        let mut events = Vec::new();
         match self.mode.get(&key) {
             Some(handler) => {
                 let action = handler(self);
@@ -120,6 +114,7 @@ impl Terminal {
                         if let Command::Examine(loc) = command {
                             self.examined = Some(loc);
                         }
+                        let mut events = Vec::new();
                         self.game.command(command, &mut events);
                         self.game.post(events, false);
                         GameState::Running
@@ -127,6 +122,14 @@ impl Terminal {
                     Action::Examine => {
                         self.mode = modes::examine_mode();
                         self.examined = Some(self.game.player());
+                        GameState::Running
+                    }
+                    Action::TargetNext => {
+                        self.tab_target(1);
+                        GameState::Running
+                    }
+                    Action::TargetPrev => {
+                        self.tab_target(-1);
                         GameState::Running
                     }
                     Action::ExitMode => {
@@ -137,7 +140,21 @@ impl Terminal {
                     Action::Quit => GameState::Exiting,
                 }
             }
-            None => GameState::Running, // TODO: beep?
+            None => {
+                debug!("player pressed {key:?}"); // TODO: beep?
+                GameState::Running
+            }
+        }
+    }
+
+    fn tab_target(&mut self, delta: i32) {
+        let old_loc = self.examined.unwrap();
+        if let Some(loc) = self.game.target_next(&old_loc, delta) {
+            self.examined = Some(loc);
+
+            let mut events = Vec::new();
+            self.game.command(Command::Examine(loc), &mut events);
+            self.game.post(events, false);
         }
     }
 }

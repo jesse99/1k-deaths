@@ -268,6 +268,55 @@ impl Game {
         tile
     }
 
+    pub fn target_next(&self, old_loc: &Point, delta: i32) -> Option<Point> {
+        // Find the cells with Characters in the player's PoV.
+        let mut chars = Vec::new();
+        for &loc in self.pov.locations() {
+            let cell = self.level.get(&loc);
+            if cell.contains(&Tag::Character) {
+                chars.push(loc);
+            }
+        }
+
+        // Sort those cells by distance from the player.
+        let p = self.player();
+        chars.sort_by_key(|a| a.distance2(&p));
+
+        // Find the Character closest to old_loc.
+        let mut index = 0;
+        let mut dist = i32::MAX;
+        for (i, loc) in chars.iter().enumerate() {
+            let d = loc.distance2(old_loc);
+            if d < dist {
+                index = i;
+                dist = d;
+            }
+        }
+
+        // Find the next Character to examine accounting for lame unsized math.
+        if delta > 0 {
+            if index < chars.len() && chars[index] != *old_loc {
+                // we don't want to apply delta in this case
+                assert_eq!(delta, 1);
+            } else if index + (delta as usize) < chars.len() {
+                index += delta as usize;
+            } else {
+                index = 0;
+            }
+        } else if (-delta as usize) <= index {
+            index -= -delta as usize;
+        } else {
+            index = chars.len() - 1;
+        }
+
+        if index < chars.len() {
+            Some(chars[index])
+        } else {
+            // We'll only land here in the unusual case of the player not able to see himself.
+            None
+        }
+    }
+
     // In order to ensure that games are replayable mutation should only happen
     // because of an event. To help ensure that this should be the only public
     // mutable Game method.

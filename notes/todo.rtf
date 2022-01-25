@@ -62,13 +62,6 @@ fn\cf5  \cf6 valid_response\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
 \f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \
 Open in External App extension\
 \
-had a rustfmt.tml file:\
-max_width = 150\
-\
-clean\
-walk\
-work\
-\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 Step 5 - Saving/Loading\
@@ -82,9 +75,10 @@ work\
 \'95\'a0Add support for persistence\
 	- examine mode should support tab and shift tab\
 		- focus on a cell in PoV with a non-player Character\
-		- sort by distance from player and select the Character next in line\
-	- would be cool to optionally update UI on load\
-		might want a swappable table for key to command\
+		- sort by distance from player (include player)\
+		- find the Character closest to focus\
+		- select the next Character\
+	- add a mode to control replay\
 		\'91 \'91    toggle suspend/replay\
 		esc stop GUI refresh\
 		+     speed up refresh (maybe with a warning if it\'92s already at max, or beep?)\
@@ -93,15 +87,14 @@ work\
 		s      single step, could do this when suspended (via space)\
 		a      abort replay (this should be debug only)\
 	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
+	- add some sort of \'97no-refresh option?\
+	- would be nice to have an option to skip loads or load a different file\
 	- would be nice to have help for the current mode\
 		` can we ensure that there is help for every key in a mode?\
 		` maybe just assert that command and help table keys match\
 		` tho this might be a bit more complex because we\'92ll want to do something \
 		  with layout and with header text\
-	- would be nice to have an option to skip loads or load a different file\
-		` also --no-refresh\
 	- should state objects save a checksum to verify that loads work?\
-	- get rid of the tests in main\
 \'95 Support a config file?\
 	- log level\
 	- log path\
@@ -109,6 +102,7 @@ work\
 	- topic colors\
 	- auto-pickup options\
 \'95 Rename State::Bumbling\
+\'95\'a0Examine should probably say something different for never seen cells\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 \
@@ -228,6 +222,9 @@ Step 11 - Simple game\
 \f1\b0 \cf3 	- crazy 3: often see things that aren't there, including seeing things that are there as something else\
 	- crazy 4: make random movements, miss messages (getting hit, walking into walls)\
 	- crazy 5: can't use potions or scrolls\
+\'95 Could support mouse clicks\
+	- move to clicked spot\
+	- maybe examine if modifier held down\
 \'95 Add a weapon or two that'll allow you to kill Rhulad\
 \'95 Add a vitr lake\
 	- description should say that it is eating away at the ground\

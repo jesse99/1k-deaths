@@ -6,6 +6,8 @@ use termion::event::Key;
 pub enum Action {
     Command(Command),
     Examine,
+    TargetNext,
+    TargetPrev,
     ExitMode,
     Quit,
 }
@@ -91,6 +93,8 @@ pub fn examine_mode() -> CommandTable {
     mode.insert(Key::Char('8'), Box::new(|terminal| examine(terminal, 0, -1)));
     mode.insert(Key::Char('9'), Box::new(|terminal| examine(terminal, 1, -1)));
     mode.insert(Key::Char('q'), Box::new(|_terminal| Action::Quit));
+    mode.insert(Key::Char('\t'), Box::new(|_terminal| Action::TargetNext));
+    mode.insert(Key::BackTab, Box::new(|_terminal| Action::TargetPrev));
     mode.insert(Key::Esc, Box::new(|_terminal| Action::ExitMode));
 
     mode
