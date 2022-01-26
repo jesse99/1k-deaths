@@ -143,6 +143,7 @@ pub fn append_game(file: &mut File, events: &[Event]) -> Result<(), Box<dyn Erro
     Ok(())
 }
 
+// TODO: Would be a lot better to return these a chunk at a time.
 pub fn load_game(path: &str) -> Result<Vec<Event>, Box<dyn Error>> {
     let path = Path::new(path);
     let mut file = File::open(&path)?;

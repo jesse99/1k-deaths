@@ -72,21 +72,11 @@ Open in External App extension\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
+\'95 For replay need to disallow using rng\
+	- also posting events\
+	- probably want to use some version of type state\
+	- maybe Replay and Game objects\
 \'95\'a0Add support for persistence\
-	- examine mode should support tab and shift tab\
-		- focus on a cell in PoV with a non-player Character\
-		- sort by distance from player (include player)\
-		- find the Character closest to focus\
-		- select the next Character\
-	- add a mode to control replay\
-		\'91 \'91    toggle suspend/replay\
-		esc stop GUI refresh\
-		+     speed up refresh (maybe with a warning if it\'92s already at max, or beep?)\
-		       not sure if this involves a sleep or posting more than one event, or both\
-		-      slow down refresh, maybe step by 20%?\
-		s      single step, could do this when suspended (via space)\
-		a      abort replay (this should be debug only)\
-	   maybe hit a key to terminate loading the stream (or to slow down/speed up/single step)\
 	- add some sort of \'97no-refresh option?\
 	- would be nice to have an option to skip loads or load a different file\
 	- would be nice to have help for the current mode\
@@ -95,6 +85,9 @@ Open in External App extension\
 		` tho this might be a bit more complex because we\'92ll want to do something \
 		  with layout and with header text\
 	- should state objects save a checksum to verify that loads work?\
+\'95\'a0Think about how seeds should be handled\
+	- for replay\
+	- on startup\
 \'95 Support a config file?\
 	- log level\
 	- log path\

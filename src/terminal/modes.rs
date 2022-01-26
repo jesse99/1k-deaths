@@ -9,6 +9,11 @@ pub enum Action {
     TargetNext,
     TargetPrev,
     ExitMode,
+    ToggleReplay,
+    StepReplay,
+    SpeedUpReplay,
+    SlowDownReplay,
+    SkipReplay,
     Quit,
 }
 
@@ -96,6 +101,18 @@ pub fn examine_mode() -> CommandTable {
     mode.insert(Key::Char('\t'), Box::new(|_terminal| Action::TargetNext));
     mode.insert(Key::BackTab, Box::new(|_terminal| Action::TargetPrev));
     mode.insert(Key::Esc, Box::new(|_terminal| Action::ExitMode));
+
+    mode
+}
+
+pub fn replay_mode() -> CommandTable {
+    let mut mode: CommandTable = FnvHashMap::default();
+
+    mode.insert(Key::Char(' '), Box::new(|_terminal| Action::ToggleReplay));
+    mode.insert(Key::Char('s'), Box::new(|_terminal| Action::StepReplay));
+    mode.insert(Key::Char('+'), Box::new(|_terminal| Action::SpeedUpReplay));
+    mode.insert(Key::Char('-'), Box::new(|_terminal| Action::SlowDownReplay));
+    mode.insert(Key::Esc, Box::new(|_terminal| Action::SkipReplay));
 
     mode
 }

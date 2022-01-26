@@ -14,12 +14,23 @@ use std::process;
 use termion::input::TermRead; // for keys trait
 use termion::raw::IntoRawMode;
 
+use std::sync::mpsc::channel;
+// use std::sync::mpsc::TryRecvError;
+use std::thread;
+// use std::time::{Duration, Instant};
+
 const NUM_MESSAGES: i32 = 5;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum GameState {
     Running,
     Exiting,
+}
+
+enum Replaying {
+    Replay,
+    Suspend,
+    SingleStep,
 }
 
 pub struct Terminal {
@@ -29,6 +40,8 @@ pub struct Terminal {
     map: MapView,
     messages: MessagesView,
     replay: Vec<Event>,
+    replaying: Replaying,
+    replay_delay: u64, // ms
     mode: CommandTable,
     examined: Option<Point>,
 }
@@ -63,38 +76,60 @@ impl Terminal {
                 size: Size::new(width, NUM_MESSAGES),
             },
             replay,
+            replay_delay: 30,
+            replaying: Replaying::Replay,
             mode: modes::move_mode(),
             examined: None,
         }
     }
 
     pub fn run(&mut self) {
-        let stdin = stdin();
-        let stdin = stdin.lock();
-        let mut key_iter = stdin.keys();
         let mut state = GameState::Running;
+
+        let (send, recv) = channel();
+        thread::spawn(move || {
+            let stdin = stdin();
+            let stdin = stdin.lock();
+            let mut key_iter = stdin.keys();
+
+            loop {
+                if let Some(c) = key_iter.next() {
+                    let c = c.unwrap();
+                    // debug!("input key {:?}", c);
+                    send.send(c).unwrap();
+                } else {
+                    panic!("Couldn't read the next key");
+                }
+            }
+        });
 
         if let Some(i) = self.replay.iter().position(|e| matches!(e, Event::EndConstructLevel)) {
             // We don't want to replay setting the level up.
             let tail = self.replay.split_off(i + 1);
             let head = core::mem::replace(&mut self.replay, tail);
             self.game.post(head, true);
+            self.mode = modes::replay_mode();
         }
         while state != GameState::Exiting {
             if !self.replay.is_empty() {
-                let e = self.replay.remove(0);
-                self.game.post(vec![e], true);
-                self.render(); // TODO: probably should skip render while inside BeginConstructLevel
-                std::thread::sleep(std::time::Duration::from_millis(25));
-            } else {
-                self.render();
-                if let Some(c) = key_iter.next() {
-                    let c = c.unwrap();
-                    // debug!("input key {:?}", c);
-                    state = self.handle_input(c);
-                } else {
-                    panic!("Couldn't read the next key");
+                if let Replaying::Replay = self.replaying {
+                    let e = self.replay.remove(0);
+                    self.game.post(vec![e], true);
+                    if self.replay.is_empty() {
+                        self.mode = modes::move_mode();
+                    }
                 }
+            }
+
+            self.render();
+            if let Replaying::Replay = self.replaying {
+                let duration = std::time::Duration::from_millis(self.replay_delay);
+                if let Ok(c) = recv.recv_timeout(duration) {
+                    state = self.handle_input(c);
+                }
+            } else {
+                let c = recv.recv().unwrap();
+                state = self.handle_input(c);
             }
         }
     }
@@ -106,6 +141,8 @@ impl Terminal {
     }
 
     fn handle_input(&mut self, key: termion::event::Key) -> GameState {
+        const REPLAY_DELTA: u64 = 20;
+
         match self.mode.get(&key) {
             Some(handler) => {
                 let action = handler(self);
@@ -130,6 +167,44 @@ impl Terminal {
                     }
                     Action::TargetPrev => {
                         self.tab_target(-1);
+                        GameState::Running
+                    }
+                    Action::ToggleReplay => {
+                        if let Replaying::Replay = self.replaying {
+                            self.replaying = Replaying::Suspend;
+                        } else {
+                            self.replaying = Replaying::Replay;
+                        }
+                        GameState::Running
+                    }
+                    Action::StepReplay => {
+                        self.replaying = Replaying::SingleStep;
+                        let e = self.replay.remove(0);
+                        self.game.post(vec![e], true);
+                        GameState::Running
+                    }
+                    Action::SpeedUpReplay => {
+                        if self.replay_delay > REPLAY_DELTA {
+                            self.replay_delay -= REPLAY_DELTA;
+                        } else {
+                            self.replay_delay = 0;
+                        }
+                        GameState::Running
+                    }
+                    Action::SlowDownReplay => {
+                        self.replay_delay += REPLAY_DELTA;
+                        GameState::Running
+                    }
+                    Action::SkipReplay => {
+                        // This will skip UI updates so the player can start playing ASAP.
+                        // TODO: It would also be nice to have something like AbortReplay
+                        // so that the user can use only part of the saved events. However
+                        // this is tricky to do because we'd need to somehow truncate the
+                        // saved file. The way to do this is probably to write the replayed
+                        // events to a temp file and swap the two files if the user aborts.
+                        let events = std::mem::take(&mut self.replay);
+                        self.game.post(events, true);
+                        self.mode = modes::move_mode();
                         GameState::Running
                     }
                     Action::ExitMode => {
