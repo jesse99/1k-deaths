@@ -1,17 +1,17 @@
-use super::{Command, Game, InputAction, Point, RenderContext, Window};
+use super::{Command, Game, InputAction, Mode, Point, RenderContext};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
-type KeyHandler = fn(&mut ExamineWindow, &mut Game) -> InputAction;
+type KeyHandler = fn(&mut ExamineMode, &mut Game) -> InputAction;
 type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
-pub struct ExamineWindow {
+pub struct ExamineMode {
     examined: Point,
     commands: CommandTable,
 }
 
-impl ExamineWindow {
-    pub fn window(examined: Point) -> Box<dyn Window> {
+impl ExamineMode {
+    pub fn window(examined: Point) -> Box<dyn Mode> {
         let mut commands: CommandTable = FnvHashMap::default();
         commands.insert(Key::Left, Box::new(|s, game| s.do_examine(game, -1, 0)));
         commands.insert(Key::Right, Box::new(|s, game| s.do_examine(game, 1, 0)));
@@ -30,11 +30,11 @@ impl ExamineWindow {
         commands.insert(Key::BackTab, Box::new(|s, game| s.do_tab_target(game, -1)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
 
-        Box::new(ExamineWindow { examined, commands })
+        Box::new(ExamineMode { examined, commands })
     }
 }
 
-impl Window for ExamineWindow {
+impl Mode for ExamineMode {
     fn render(&self, context: &mut RenderContext) -> bool {
         context.examined = Some(self.examined);
         false
@@ -48,7 +48,7 @@ impl Window for ExamineWindow {
     }
 }
 
-impl ExamineWindow {
+impl ExamineMode {
     fn do_examine(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
         let mut events = Vec::new();
         self.examined = Point::new(self.examined.x + dx, self.examined.y + dy);

@@ -1,22 +1,23 @@
 //! Rendering and UI using termion terminal module.
 mod color;
-mod examine_window;
-mod main_window;
+mod examine_mode;
+mod main_mode;
 mod map_view;
 mod messages_view;
+mod mode;
 mod modes;
 mod text;
 mod ui;
-mod window;
 
 // TODO: I think we can do better with these. Some are here only for sub-modules (which can
 // pull them in with somewhat longer paths). May also be able to leverage the pub modifiers.
 // See https://doc.rust-lang.org/stable/rust-by-example/mod/visibility.html
 // Backend could do similar things.
 use super::backend::{Command, Event, Game, Point, Size};
-use main_window::MainWindow;
+use main_mode::MainMode;
 use map_view::MapView;
 use messages_view::MessagesView;
+use mode::{InputAction, Mode, RenderContext};
 use std::io::{stdin, stdout, Write};
 use std::panic;
 use std::process;
@@ -25,7 +26,6 @@ use std::thread;
 use termion::input::TermRead; // for keys trait
 use termion::raw::IntoRawMode;
 use ui::UI;
-use window::{InputAction, RenderContext, Window};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum GameState {

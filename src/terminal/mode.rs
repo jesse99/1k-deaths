@@ -1,5 +1,3 @@
-//! Trait used to render views and process user input. There are different window instances
-//! for things like the main view and help screens.
 use super::{Game, Point};
 use std::io::Write;
 
@@ -12,12 +10,14 @@ pub struct RenderContext<'a> {
 pub enum InputAction {
     UpdatedGame,
     Quit,
-    Push(Box<dyn Window>),
+    Push(Box<dyn Mode>),
     Pop,
     NotHandled,
 }
 
-pub trait Window {
+/// Modes are arranged in a stack and user input is directed to the topmost mode. Rendering
+/// is also handled by modes although they may delegate rendering to a lower layer mode.
+pub trait Mode {
     /// Windows are stacked in layers and will always handle input but may defer rendering
     /// to a lower layer. if a window does render it should return true, otherwise it
     /// should return false (and possibly augment context).

@@ -1,20 +1,20 @@
-use super::{Command, Game, InputAction, MapView, MessagesView, Point, RenderContext, Size, Window};
+use super::{Command, Game, InputAction, MapView, MessagesView, Mode, Point, RenderContext, Size};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
 const NUM_MESSAGES: i32 = 5;
 
-type KeyHandler = fn(&mut MainWindow, &mut Game) -> InputAction;
+type KeyHandler = fn(&mut MainMode, &mut Game) -> InputAction;
 type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
-pub struct MainWindow {
+pub struct MainMode {
     map: MapView,
     messages: MessagesView,
     commands: CommandTable,
 }
 
-impl MainWindow {
-    pub fn window(width: i32, height: i32) -> Box<dyn Window> {
+impl MainMode {
+    pub fn window(width: i32, height: i32) -> Box<dyn Mode> {
         let mut commands: CommandTable = FnvHashMap::default();
         commands.insert(Key::Left, Box::new(|s, game| s.do_move(game, -1, 0)));
         commands.insert(Key::Right, Box::new(|s, game| s.do_move(game, 1, 0)));
@@ -32,7 +32,7 @@ impl MainWindow {
         commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
 
-        Box::new(MainWindow {
+        Box::new(MainMode {
             map: MapView {
                 origin: Point::new(0, 0),
                 size: Size::new(width, height - NUM_MESSAGES),
@@ -46,7 +46,7 @@ impl MainWindow {
     }
 }
 
-impl Window for MainWindow {
+impl Mode for MainMode {
     fn render(&self, context: &mut RenderContext) -> bool {
         self.map.render(context.stdout, context.game, context.examined); // TODO: views should probably take context
         self.messages.render(context.stdout, context.game);
@@ -61,10 +61,10 @@ impl Window for MainWindow {
     }
 }
 
-impl MainWindow {
+impl MainMode {
     fn do_examine(&mut self, game: &mut Game) -> InputAction {
         let loc = game.player();
-        let window = super::examine_window::ExamineWindow::window(loc);
+        let window = super::examine_mode::ExamineMode::window(loc);
         InputAction::Push(window)
     }
 

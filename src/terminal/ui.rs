@@ -1,13 +1,13 @@
-use super::{Game, GameState, InputAction, MainWindow, RenderContext, Window};
+use super::{Game, GameState, InputAction, MainMode, Mode, RenderContext};
 use std::io::Write;
 
 pub struct UI {
-    windows: Vec<Box<dyn Window>>,
+    windows: Vec<Box<dyn Mode>>,
 }
 
 impl UI {
     pub fn new(width: i32, height: i32) -> UI {
-        let windows = vec![MainWindow::window(width, height)];
+        let windows = vec![MainMode::window(width, height)];
         UI { windows }
     }
 
