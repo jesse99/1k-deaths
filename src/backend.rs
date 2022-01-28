@@ -340,7 +340,10 @@ impl Game {
 impl Game {
     // This should only be called by the post method.
     fn internal_post(&mut self, event: Event, replay: bool) {
-        debug!("processing {event:?}"); // TODO: may want to nuke this once we start saving games
+        // It'd be slicker to use a different Game type when replaying. This would prevent
+        // us, at compile time, from touching fields like stream or rng. In practice however
+        // this isn't much of an issue because the bulk of the code is already prevented
+        // from doing bad things by the Game1, Game2, etc structs.
         if !replay {
             self.stream.push(event.clone());
 

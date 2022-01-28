@@ -72,18 +72,42 @@ Open in External App extension\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
-\'95 For replay need to disallow using rng\
-	- also posting events\
-	- probably want to use some version of type state\
-	- maybe Replay and Game objects\
-\'95\'a0Add support for persistence\
-	- add some sort of \'97no-refresh option?\
-	- would be nice to have an option to skip loads or load a different file\
-	- would be nice to have help for the current mode\
-		` can we ensure that there is help for every key in a mode?\
-		` maybe just assert that command and help table keys match\
-		` tho this might be a bit more complex because we\'92ll want to do something \
+\'95 Work on UI:\
+	- get replay working again\
+	- get events window working, maybe not event scrolling yet\
+	- get main window help working\
+	- get help looking nicer\
+	- get examine window help working\
+	- get text window help working\
+\'95 Can use Self inside of enum methods instead of the enum name\
+	- kinda nice for long enums\
+\'95 With traits can use `impl T` instead of Box<dyn T>\
+\'95 Work on a generic message view:\
+	- should support scrolling\
+	- maybe support find\
+	- add a wizard command to view event stream, maybe control-E\
+	- support at least some of the different less commands\
+	- add a command and view for message history\
+\'95\'a0Would be nice to have help for the current mode\
+	- maybe mode should encapsulate (optional views), commands, and help\
+		` could just assert that command keys match help keys\
+		` one way to enable this is to have help be generated with the aid of a template engine\
+		` then could use the template to help format and a dict for the command help\
+	- might need to have a stack of modes\
+		` eg game, messages, messages help\
+	- some sort of formatting support would be nice, at least bold\
+		possibly also underline and color\
+		could possibly do this with enums or maybe a macro\
+	- can we ensure that there is help for every key in a mode?\
+	- maybe just assert that command and help table keys match\
+	- tho this might be a bit more complex because we\'92ll want to do something \
 		  with layout and with header text\
+\'95\'a0Add some command line options:\
+	\'97new-game   always start a new game\
+	\'97load=PATH  load the game file at the path\
+	\'97seed=N       use this RNG seed, how does that interact with replay?\
+	\'97log-level=L  info, debug, etc (be sure to have decent help and validation)\
+	\'97lof-path=P   not sure we need this one\
 	- should state objects save a checksum to verify that loads work?\
 \'95\'a0Think about how seeds should be handled\
 	- for replay\

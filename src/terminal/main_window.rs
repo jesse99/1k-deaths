@@ -1,0 +1,85 @@
+use super::{Command, Game, InputAction, MapView, MessagesView, Point, RenderContext, Size, Window};
+use fnv::FnvHashMap;
+use termion::event::Key;
+
+const NUM_MESSAGES: i32 = 5;
+
+type KeyHandler = fn(&mut MainWindow, &mut Game) -> InputAction;
+type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
+
+pub struct MainWindow {
+    map: MapView,
+    messages: MessagesView,
+    commands: CommandTable,
+}
+
+impl MainWindow {
+    pub fn window(width: i32, height: i32) -> Box<dyn Window> {
+        let mut commands: CommandTable = FnvHashMap::default();
+        commands.insert(Key::Left, Box::new(|s, game| s.do_move(game, -1, 0)));
+        commands.insert(Key::Right, Box::new(|s, game| s.do_move(game, 1, 0)));
+        commands.insert(Key::Up, Box::new(|s, game| s.do_move(game, 0, -1)));
+        commands.insert(Key::Down, Box::new(|s, game| s.do_move(game, 0, 1)));
+        commands.insert(Key::Char('1'), Box::new(|s, game| s.do_move(game, -1, 1)));
+        commands.insert(Key::Char('2'), Box::new(|s, game| s.do_move(game, 0, 1)));
+        commands.insert(Key::Char('3'), Box::new(|s, game| s.do_move(game, 1, 1)));
+        commands.insert(Key::Char('4'), Box::new(|s, game| s.do_move(game, -1, 0)));
+        commands.insert(Key::Char('6'), Box::new(|s, game| s.do_move(game, 1, 0)));
+        commands.insert(Key::Char('7'), Box::new(|s, game| s.do_move(game, -1, -1)));
+        commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
+        commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
+        commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
+        commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
+        commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
+
+        Box::new(MainWindow {
+            map: MapView {
+                origin: Point::new(0, 0),
+                size: Size::new(width, height - NUM_MESSAGES),
+            },
+            messages: MessagesView {
+                origin: Point::new(0, height - NUM_MESSAGES),
+                size: Size::new(width, NUM_MESSAGES),
+            },
+            commands,
+        })
+    }
+}
+
+impl Window for MainWindow {
+    fn render(&self, context: &mut RenderContext) -> bool {
+        self.map.render(context.stdout, context.game, context.examined); // TODO: views should probably take context
+        self.messages.render(context.stdout, context.game);
+        true
+    }
+
+    fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction {
+        match self.commands.get(&key).cloned() {
+            Some(handler) => handler(self, game),
+            None => InputAction::NotHandled,
+        }
+    }
+}
+
+impl MainWindow {
+    fn do_examine(&mut self, game: &mut Game) -> InputAction {
+        let loc = game.player();
+        let window = super::examine_window::ExamineWindow::window(loc);
+        InputAction::Push(window)
+    }
+
+    fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
+        let mut events = Vec::new();
+        game.command(Command::Move { dx, dy }, &mut events);
+        game.post(events, false);
+        InputAction::UpdatedGame
+    }
+
+    fn do_quit(&mut self, _game: &mut Game) -> InputAction {
+        InputAction::Quit
+    }
+
+    fn do_show_events(&mut self, _game: &mut Game) -> InputAction {
+        InputAction::UpdatedGame
+    }
+}
