@@ -9,9 +9,10 @@ mod text;
 mod ui;
 mod window;
 
-// TODO: I think we can do better with these. SOme are here only for sub-modules (which can
+// TODO: I think we can do better with these. Some are here only for sub-modules (which can
 // pull them in with somewhat longer paths). May also be able to leverage the pub modifiers.
 // See https://doc.rust-lang.org/stable/rust-by-example/mod/visibility.html
+// Backend could do similar things.
 use super::backend::{Command, Event, Game, Point, Size};
 use main_window::MainWindow;
 use map_view::MapView;
