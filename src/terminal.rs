@@ -5,7 +5,6 @@ mod main_mode;
 mod map_view;
 mod messages_view;
 mod mode;
-mod modes;
 mod replay_mode;
 mod text;
 mod ui;
