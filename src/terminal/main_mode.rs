@@ -14,7 +14,7 @@ pub struct MainMode {
 }
 
 impl MainMode {
-    pub fn window(width: i32, height: i32) -> Box<dyn Mode> {
+    pub fn create(width: i32, height: i32) -> Box<dyn Mode> {
         let mut commands: CommandTable = FnvHashMap::default();
         commands.insert(Key::Left, Box::new(|s, game| s.do_move(game, -1, 0)));
         commands.insert(Key::Right, Box::new(|s, game| s.do_move(game, 1, 0)));
@@ -53,6 +53,10 @@ impl Mode for MainMode {
         true
     }
 
+    fn input_timeout_ms(&self) -> Option<i32> {
+        None
+    }
+
     fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction {
         match self.commands.get(&key).cloned() {
             Some(handler) => handler(self, game),
@@ -64,7 +68,7 @@ impl Mode for MainMode {
 impl MainMode {
     fn do_examine(&mut self, game: &mut Game) -> InputAction {
         let loc = game.player();
-        let window = super::examine_mode::ExamineMode::window(loc);
+        let window = super::examine_mode::ExamineMode::create(loc);
         InputAction::Push(window)
     }
 

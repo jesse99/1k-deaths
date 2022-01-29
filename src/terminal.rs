@@ -6,6 +6,7 @@ mod map_view;
 mod messages_view;
 mod mode;
 mod modes;
+mod replay_mode;
 mod text;
 mod ui;
 
@@ -18,12 +19,9 @@ use main_mode::MainMode;
 use map_view::MapView;
 use messages_view::MessagesView;
 use mode::{InputAction, Mode, RenderContext};
-use std::io::{stdin, stdout, Write};
-use std::panic;
+use replay_mode::ReplayMode;
+use std::io::{stdout, Write};
 use std::process;
-use std::sync::mpsc::channel;
-use std::thread;
-use termion::input::TermRead; // for keys trait
 use termion::raw::IntoRawMode;
 use ui::UI;
 
@@ -34,23 +32,14 @@ pub enum GameState {
     Exiting,
 }
 
-// enum Replaying {
-//     Replay,
-//     Suspend,
-//     SingleStep,
-// }
-
 pub struct Terminal {
     ui: UI,
     game: Game,
     stdout: Box<dyn Write>,
-    // replay: Vec<Event>,
-    // replaying: Replaying,
-    // replay_delay: u64, // ms
 }
 
 impl Terminal {
-    pub fn new(game: Game, _replay: Vec<Event>) -> Terminal {
+    pub fn new(mut game: Game, replay: Vec<Event>) -> Terminal {
         let stdout = stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -68,73 +57,24 @@ impl Terminal {
         info!("terminal size is {} x {}", width, height);
 
         Terminal {
-            ui: UI::new(width, height),
+            ui: UI::new(width, height, &mut game, replay),
             game,
             stdout: Box::new(stdout),
-            // replay,
-            // replay_delay: 30,
-            // replaying: Replaying::Replay,
         }
     }
 
     pub fn run(&mut self) {
         let mut state = GameState::Running;
 
-        let (send, recv) = channel();
-        thread::spawn(move || {
-            let stdin = stdin();
-            let stdin = stdin.lock();
-            let mut key_iter = stdin.keys();
-
-            loop {
-                if let Some(c) = key_iter.next() {
-                    let c = c.unwrap();
-                    // debug!("input key {:?}", c);
-                    send.send(c).unwrap();
-                } else {
-                    panic!("Couldn't read the next key");
-                }
-            }
-        });
-
-        // if let Some(i) = self.replay.iter().position(|e| matches!(e, Event::EndConstructLevel)) {
-        //     // We don't want to replay setting the level up.
-        //     let tail = self.replay.split_off(i + 1);
-        //     let head = core::mem::replace(&mut self.replay, tail);
-        //     self.game.post(head, true);
-        //     self.mode = modes::replay_mode();
-        // }
         while state != GameState::Exiting {
-            // if !self.replay.is_empty() {
-            //     if let Replaying::Replay = self.replaying {
-            //         let e = self.replay.remove(0);
-            //         self.game.post(vec![e], true);
-            //         if self.replay.is_empty() {
-            //             self.mode = modes::main_mode();
-            //         }
-            //     }
-            // }
-
             self.render();
-            // if let Replaying::Replay = self.replaying {
-            //     let duration = std::time::Duration::from_millis(self.replay_delay);
-            //     if let Ok(c) = recv.recv_timeout(duration) {
-            //         state = self.handle_input(c);
-            //     }
-            // } else {
-            let c = recv.recv().unwrap();
-            state = self.handle_input(c);
-            // }
+            state = self.ui.handle_input(&mut self.game);
         }
     }
 
     fn render(&mut self) {
         self.ui.render(&mut self.stdout, &mut self.game);
         self.stdout.flush().unwrap();
-    }
-
-    fn handle_input(&mut self, key: termion::event::Key) -> GameState {
-        self.ui.handle_input(&mut self.game, key)
     }
 }
 

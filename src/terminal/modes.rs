@@ -26,18 +26,6 @@
 //     Action::Command(Command::Examine(Point::new(old.x + dx, old.y + dy)))
 // }
 
-// pub fn replay_mode() -> CommandTable {
-//     let mut mode: CommandTable = FnvHashMap::default();
-
-//     mode.insert(Key::Char(' '), Box::new(|_terminal| Action::ToggleReplay));
-//     mode.insert(Key::Char('s'), Box::new(|_terminal| Action::StepReplay));
-//     mode.insert(Key::Char('+'), Box::new(|_terminal| Action::SpeedUpReplay));
-//     mode.insert(Key::Char('-'), Box::new(|_terminal| Action::SlowDownReplay));
-//     mode.insert(Key::Esc, Box::new(|_terminal| Action::SkipReplay));
-
-//     mode
-// }
-
 // pub fn text_mode() -> CommandTable {
 //     let mut mode: CommandTable = FnvHashMap::default();
 

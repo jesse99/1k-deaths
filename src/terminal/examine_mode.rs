@@ -11,7 +11,7 @@ pub struct ExamineMode {
 }
 
 impl ExamineMode {
-    pub fn window(examined: Point) -> Box<dyn Mode> {
+    pub fn create(examined: Point) -> Box<dyn Mode> {
         let mut commands: CommandTable = FnvHashMap::default();
         commands.insert(Key::Left, Box::new(|s, game| s.do_examine(game, -1, 0)));
         commands.insert(Key::Right, Box::new(|s, game| s.do_examine(game, 1, 0)));
@@ -38,6 +38,10 @@ impl Mode for ExamineMode {
     fn render(&self, context: &mut RenderContext) -> bool {
         context.examined = Some(self.examined);
         false
+    }
+
+    fn input_timeout_ms(&self) -> Option<i32> {
+        None
     }
 
     fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction {

@@ -23,5 +23,10 @@ pub trait Mode {
     /// should return false (and possibly augment context).
     fn render(&self, context: &mut RenderContext) -> bool;
 
+    /// Normally this will return None so we'll block forever waiting for the player to
+    /// press a key. But ReplayMode will set this to a smaller value so that Terminal can
+    /// render the game without waiting for the player.
+    fn input_timeout_ms(&self) -> Option<i32>;
+
     fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction;
 }
