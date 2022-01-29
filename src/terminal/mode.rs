@@ -1,4 +1,4 @@
-use super::{Game, Point};
+use crate::backend::{Game, Point};
 use std::io::Write;
 use termion::event::Key;
 

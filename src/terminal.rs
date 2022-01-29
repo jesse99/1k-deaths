@@ -9,23 +9,14 @@ mod replay_mode;
 mod text;
 mod ui;
 
-// TODO: I think we can do better with these. Some are here only for sub-modules (which can
-// pull them in with somewhat longer paths). May also be able to leverage the pub modifiers.
-// See https://doc.rust-lang.org/stable/rust-by-example/mod/visibility.html
-// Backend could do similar things.
-use super::backend::{Command, Event, Game, Point, Size};
-use main_mode::MainMode;
-use map_view::MapView;
-use messages_view::MessagesView;
-use mode::{InputAction, Mode, RenderContext};
-use replay_mode::ReplayMode;
+use super::backend::{Event, Game};
 use std::io::{self, Write};
 use std::process;
 use termion::raw::IntoRawMode;
 use ui::UI;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub enum GameState {
+enum GameState {
     // TODO: do we really need this?
     Running,
     Exiting,

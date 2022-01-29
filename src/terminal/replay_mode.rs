@@ -1,4 +1,5 @@
-use super::{Event, Game, InputAction, Mode, RenderContext};
+use super::mode::{InputAction, Mode, RenderContext};
+use super::{Event, Game};
 use fnv::FnvHashMap;
 use termion::event::Key;
 

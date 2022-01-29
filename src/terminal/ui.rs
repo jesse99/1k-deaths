@@ -1,8 +1,10 @@
-use super::{Event, Game, GameState, InputAction, MainMode, Mode, RenderContext, ReplayMode};
+use super::main_mode::MainMode;
+use super::mode::{InputAction, Mode, RenderContext};
+use super::replay_mode::ReplayMode;
+use super::{Event, Game, GameState};
 use std::io::{self, Write};
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
-// use std::thread::JoinHandle;
 use termion::event::Key;
 use termion::input::TermRead; // for keys trait
 
@@ -64,7 +66,7 @@ impl UI {
         }
     }
 
-    pub fn handle_input(&mut self, game: &mut Game) -> GameState {
+    pub(super) fn handle_input(&mut self, game: &mut Game) -> GameState {
         let key = self.get_key();
         let mode = self.modes.last_mut().unwrap();
         match mode.handle_input(game, key) {

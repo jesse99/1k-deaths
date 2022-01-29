@@ -1,4 +1,5 @@
-use super::{Command, Game, InputAction, Mode, Point, RenderContext};
+use super::mode::{InputAction, Mode, RenderContext};
+use crate::backend::{Command, Game, Point};
 use fnv::FnvHashMap;
 use termion::event::Key;
 

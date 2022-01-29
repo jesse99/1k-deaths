@@ -1,4 +1,7 @@
-use super::{Command, Game, InputAction, MapView, MessagesView, Mode, Point, RenderContext, Size};
+use super::map_view::MapView;
+use super::messages_view::MessagesView;
+use super::mode::{InputAction, Mode, RenderContext};
+use crate::backend::{Command, Game, Point, Size};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
