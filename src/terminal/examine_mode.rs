@@ -44,7 +44,7 @@ impl Mode for ExamineMode {
         None
     }
 
-    fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction {
+    fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
         match self.commands.get(&key).cloned() {
             Some(handler) => handler(self, game),
             None => InputAction::NotHandled,

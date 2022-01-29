@@ -1,6 +1,6 @@
-use super::color;
 use crate::backend::{Color, Game, Point, Size, Tile};
 use std::io::Write;
+use termion::{color, cursor, style};
 
 /// Responsible for drawing the level, i.e. the terrain, characters, items, etc.
 pub struct MapView {
@@ -32,17 +32,17 @@ impl MapView {
                 let _ = write!(
                     stdout,
                     "{}{}{}",
-                    termion::cursor::Goto(h, v),
-                    termion::color::Bg(color::to_termion(bg)),
-                    termion::color::Fg(color::to_termion(fg))
+                    cursor::Goto(h, v),
+                    color::Bg(super::color::to_termion(bg)),
+                    color::Fg(super::color::to_termion(fg))
                 );
                 let focused = examined.map_or(false, |loc| loc == pt);
                 if focused {
-                    let _ = write!(stdout, "{}", termion::style::Invert);
+                    let _ = write!(stdout, "{}", style::Invert);
                 }
                 let _ = write!(stdout, "{}", symbol);
                 if focused {
-                    let _ = write!(stdout, "{}", termion::style::Reset);
+                    let _ = write!(stdout, "{}", style::Reset);
                 }
             }
         }

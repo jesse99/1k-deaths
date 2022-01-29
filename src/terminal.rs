@@ -19,7 +19,7 @@ use map_view::MapView;
 use messages_view::MessagesView;
 use mode::{InputAction, Mode, RenderContext};
 use replay_mode::ReplayMode;
-use std::io::{stdout, Write};
+use std::io::{self, Write};
 use std::process;
 use termion::raw::IntoRawMode;
 use ui::UI;
@@ -39,7 +39,7 @@ pub struct Terminal {
 
 impl Terminal {
     pub fn new(mut game: Game, replay: Vec<Event>) -> Terminal {
-        let stdout = stdout();
+        let stdout = io::stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
             stdout,

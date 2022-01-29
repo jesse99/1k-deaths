@@ -1,5 +1,6 @@
 use super::{Game, Point};
 use std::io::Write;
+use termion::event::Key;
 
 pub struct RenderContext<'a> {
     pub stdout: &'a mut Box<dyn Write>,
@@ -28,5 +29,5 @@ pub trait Mode {
     /// render the game without waiting for the player.
     fn input_timeout_ms(&self) -> Option<i32>;
 
-    fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction;
+    fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction;
 }

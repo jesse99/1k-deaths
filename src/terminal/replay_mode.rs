@@ -59,8 +59,8 @@ impl Mode for ReplayMode {
         }
     }
 
-    fn handle_input(&mut self, game: &mut Game, key: termion::event::Key) -> InputAction {
-        if key == termion::event::Key::Null {
+    fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
+        if key == Key::Null {
             let e = self.replay.remove(0);
             game.post(vec![e], true);
             if self.replay.is_empty() {

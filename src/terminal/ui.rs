@@ -1,21 +1,22 @@
 use super::{Event, Game, GameState, InputAction, MainMode, Mode, RenderContext, ReplayMode};
-use std::io::{stdin, Write};
+use std::io::{self, Write};
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
 // use std::thread::JoinHandle;
+use termion::event::Key;
 use termion::input::TermRead; // for keys trait
 
 pub struct UI {
     modes: Vec<Box<dyn Mode>>,
     // thread: JoinHandle<()>,
-    recv: Receiver<termion::event::Key>,
+    recv: Receiver<Key>,
 }
 
 impl UI {
     pub fn new(width: i32, height: i32, game: &mut Game, replay: Vec<Event>) -> UI {
         let (send, recv) = mpsc::channel();
         let _ = thread::spawn(move || {
-            let stdin = stdin();
+            let stdin = io::stdin();
             let stdin = stdin.lock();
             let mut key_iter = stdin.keys();
 
@@ -51,12 +52,12 @@ impl UI {
         panic!("No modes rendered!")
     }
 
-    fn get_key(&self) -> termion::event::Key {
+    fn get_key(&self) -> Key {
         if let Some(ms) = self.modes.last().unwrap().input_timeout_ms() {
             let duration = std::time::Duration::from_millis(ms as u64);
             match self.recv.recv_timeout(duration) {
                 Ok(key) => key,
-                Err(_) => termion::event::Key::Null, // bit of a hack
+                Err(_) => Key::Null, // bit of a hack
             }
         } else {
             self.recv.recv().unwrap()
