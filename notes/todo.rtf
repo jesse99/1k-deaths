@@ -73,8 +73,8 @@ Open in External App extension\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
 \'95 Work on UI:\
-	- probably should not use paths with termion, e.g. termion::event::Key\
-	- get events window working, maybe not event scrolling yet\
+	- support at least some of the different less commands\
+	- should we bundle modes and views into one module?\
 	- get main window help working\
 	- get help looking nicer\
 	- get examine window help working\
@@ -82,11 +82,9 @@ Open in External App extension\
 \'95 Can use Self inside of enum methods instead of the enum name\
 	- kinda nice for long enums\
 \'95 With traits can use `impl T` instead of Box<dyn T>\
+	- but only in fn arg and fn returns\
 \'95 Work on a generic message view:\
-	- should support scrolling\
 	- maybe support find\
-	- add a wizard command to view event stream, maybe control-E\
-	- support at least some of the different less commands\
 	- add a command and view for message history\
 \'95\'a0Would be nice to have help for the current mode\
 	- maybe mode should encapsulate (optional views), commands, and help\

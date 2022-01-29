@@ -1,7 +1,9 @@
 use super::map_view::MapView;
 use super::messages_view::MessagesView;
 use super::mode::{InputAction, Mode, RenderContext};
-use crate::backend::{Command, Game, Point, Size};
+use super::text_mode::TextMode;
+use super::text_view::{Line, TextRun};
+use crate::backend::{Color, Command, Game, Point, Size};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
@@ -86,7 +88,18 @@ impl MainMode {
         InputAction::Quit
     }
 
-    fn do_show_events(&mut self, _game: &mut Game) -> InputAction {
-        InputAction::UpdatedGame
+    fn do_show_events(&mut self, game: &mut Game) -> InputAction {
+        // TODO: Should we load saved events? Do we even want this mode?
+        let lines = self.get_events(game);
+        InputAction::Push(TextMode::create_at_bottom(lines))
+    }
+
+    fn get_events(&mut self, game: &mut Game) -> Vec<Line> {
+        let mut lines = Vec::new();
+        for e in game.events() {
+            let line = vec![TextRun::Color(Color::White), TextRun::Text(e)];
+            lines.push(line);
+        }
+        lines
     }
 }

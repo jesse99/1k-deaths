@@ -212,6 +212,11 @@ impl Game {
         }
     }
 
+    // TODO: this should be wizard config only
+    pub fn events(&self) -> Vec<String> {
+        self.stream.iter().map(|e| format!("{:?}", e)).collect()
+    }
+
     pub fn player(&self) -> Point {
         self.level.player()
     }

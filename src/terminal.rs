@@ -6,7 +6,8 @@ mod map_view;
 mod messages_view;
 mod mode;
 mod replay_mode;
-mod text;
+mod text_mode;
+mod text_view;
 mod ui;
 
 use super::backend::{Event, Game};
@@ -17,7 +18,6 @@ use ui::UI;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum GameState {
-    // TODO: do we really need this?
     Running,
     Exiting,
 }
@@ -58,7 +58,7 @@ impl Terminal {
 
         while state != GameState::Exiting {
             self.render();
-            state = self.ui.handle_input(&mut self.game);
+            state = self.ui.handle_input(&mut self.stdout, &mut self.game);
         }
     }
 
