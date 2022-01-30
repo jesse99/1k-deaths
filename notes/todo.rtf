@@ -55,13 +55,7 @@ fn\cf5  \cf6 valid_response\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 there\'92s a matches! macro that\'92ll return true if an expr matches a pattern
-\f0\fs34 \cf5 \expnd0\expndtw0\kerning0
-\
-
 \f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \
-Open in External App extension\
-\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf3 Step 5 - Saving/Loading\
@@ -72,9 +66,13 @@ Open in External App extension\
 	- https://github.com/mre/idiomatic-rust\
 	- https://github.com/rust-unofficial/patterns  \
 	- http://aturon.github.io/\
+\'95\'a0Move the help parsing code into a help module.\
+\'95\'a0Add more help:\
+	- main mode\
+	- replay mode\
+	- text mode\
+\'95 Text view should clear empty rows\
 \'95 Work on UI:\
-	- support at least some of the different less commands\
-	- should we bundle modes and views into one module?\
 	- get main window help working\
 	- get help looking nicer\
 	- get examine window help working\
@@ -83,23 +81,8 @@ Open in External App extension\
 	- kinda nice for long enums\
 \'95 With traits can use `impl T` instead of Box<dyn T>\
 	- but only in fn arg and fn returns\
-\'95 Work on a generic message view:\
-	- maybe support find\
-	- add a command and view for message history\
-\'95\'a0Would be nice to have help for the current mode\
-	- maybe mode should encapsulate (optional views), commands, and help\
-		` could just assert that command keys match help keys\
-		` one way to enable this is to have help be generated with the aid of a template engine\
-		` then could use the template to help format and a dict for the command help\
-	- might need to have a stack of modes\
-		` eg game, messages, messages help\
-	- some sort of formatting support would be nice, at least bold\
-		possibly also underline and color\
-		could possibly do this with enums or maybe a macro\
-	- can we ensure that there is help for every key in a mode?\
-	- maybe just assert that command and help table keys match\
-	- tho this might be a bit more complex because we\'92ll want to do something \
-		  with layout and with header text\
+\'95 Add a way to view messages\
+	- be sure to color code these\
 \'95\'a0Add some command line options:\
 	\'97new-game   always start a new game\
 	\'97load=PATH  load the game file at the path\

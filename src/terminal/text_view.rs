@@ -2,6 +2,7 @@ use super::color;
 use crate::backend::{Color, Point, Size};
 use std::io::Write;
 
+#[derive(Debug)]
 pub enum TextRun {
     Text(String),
     Color(Color),
