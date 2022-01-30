@@ -12,7 +12,7 @@ use backend::Game;
 use clap::{ArgEnum, Parser};
 use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[repr(usize)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
@@ -33,8 +33,8 @@ struct Args {
     new_game: bool,
 
     /// path to saved file
-    #[clap(long, parse(from_os_str), value_name = "PATH")]
-    load: Option<PathBuf>,
+    #[clap(long, value_name = "PATH")]
+    load: Option<String>,
 
     /// fixed random number seed (defaults to random)
     #[clap(long, value_name = "N")]
@@ -70,11 +70,11 @@ fn main() {
         env!("CARGO_PKG_VERSION")
     );
 
-    let path = "saved.game";
-    let (game, events) = if Path::new(path).is_file() && !options.new_game {
-        Game::old_game(path)
-    } else {
-        (Game::new_game(path), Vec::new())
+    let (game, events) = match options.load {
+        Some(path) if options.new_game => (Game::new_game(&path), Vec::new()),
+        Some(path) => Game::old_game(&path),
+        None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game"),
+        None => (Game::new_game("saved.game"), Vec::new()),
     };
 
     let mut terminal = terminal::Terminal::new(game, events);

@@ -194,12 +194,16 @@ impl Game {
             };
         }
 
-        // If there is no saved game or there was an error loading it create a file for a
-        // brand new game.
         if file.is_some() {
             (Game::new(messages, file), events)
         } else {
-            (Game::new_game(path), Vec::new())
+            let mut game = Game::new_game(path);
+
+            events.clear();
+            events.extend(messages.into_iter().map(Event::AddMessage));
+            game.post(events, false);
+
+            (game, Vec::new())
         }
     }
 
