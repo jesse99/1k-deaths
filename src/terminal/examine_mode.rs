@@ -67,39 +67,19 @@ impl ExamineMode {
 
     fn do_help(&mut self, _game: &mut Game) -> InputAction {
         let help = r#"Move the focus to examine the contents of a cell.
-The focus is drawn with reversed colors and can be
-moved using the normal movement keys:
+The focus is drawn with reversed colors.
 
-[[left-arrow]] or [[4]]
-move west
-
-[[right-arrow]] or [[6]]
-move east
-
-[[up-arrow]] or [[8]]
-move north
-
-[[down-arrow]] or [[2]]
-move south
-
-[[7]]
-move north-west
-
-[[9]]
-move north-east
-
-[[1]]
-move south-west
-
-[[3]]
-move south-east
+The focus can be moved with the usual keys:
+[[7]] [[8]] [[9]]                  [[up-arrow]]
+[[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
+[[1]] [[2]] [[3]]                 [[down-arrow]]
 
 [[tab]] can be used to select the next character.
 [[shift-tab]] can be used to select the previous character.
 [[?]] show this help.
-[[q]] will quit the command.
+[[q]] save and quit.
 [[escape]] exits examine mode."#;
-        validate_help(help, self.commands.keys());
+        validate_help("examine", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
         InputAction::Push(TextMode::create_at_top(lines))

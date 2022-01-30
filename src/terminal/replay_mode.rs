@@ -1,4 +1,6 @@
+use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
+use super::text_mode::TextMode;
 use super::{Event, Game};
 use fnv::FnvHashMap;
 use termion::event::Key;
@@ -35,6 +37,7 @@ impl ReplayMode {
         commands.insert(Key::Char('s'), Box::new(|s, game| s.do_step(game)));
         commands.insert(Key::Char('+'), Box::new(|s, game| s.do_speed_up(game)));
         commands.insert(Key::Char('-'), Box::new(|s, game| s.do_slow_down(game)));
+        commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_skip(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
 
@@ -79,34 +82,24 @@ impl Mode for ReplayMode {
 }
 
 impl ReplayMode {
-    fn do_toggle(&mut self, _game: &mut Game) -> InputAction {
-        if let Replaying::Running = self.replaying {
-            self.replaying = Replaying::Blocking;
-        } else {
-            self.replaying = Replaying::Running;
-        }
-        InputAction::UpdatedGame
+    fn do_help(&mut self, _game: &mut Game) -> InputAction {
+        let help = r#"Replaying a saved game.
+
+[[space]] toggles replay on and off.
+[[s]] single step replay.
+[[+]] speed up replay.
+[[-]] slow down replay.
+[[?]] show this help.
+[[q]] save and quit.
+[[escape]] exits replay mode."#;
+        validate_help("replay", help, self.commands.keys());
+
+        let lines = format_help(help, self.commands.keys());
+        InputAction::Push(TextMode::create_at_top(lines))
     }
 
-    fn do_step(&mut self, game: &mut Game) -> InputAction {
-        self.replaying = Replaying::SingleStep;
-        let e = self.replay.remove(0);
-        game.post(vec![e], true);
-        InputAction::UpdatedGame
-    }
-
-    fn do_speed_up(&mut self, _game: &mut Game) -> InputAction {
-        if self.timeout > REPLAY_DELTA {
-            self.timeout -= REPLAY_DELTA;
-        } else {
-            self.timeout = 0;
-        }
-        InputAction::UpdatedGame
-    }
-
-    fn do_slow_down(&mut self, _game: &mut Game) -> InputAction {
-        self.timeout += REPLAY_DELTA;
-        InputAction::UpdatedGame
+    fn do_quit(&mut self, _game: &mut Game) -> InputAction {
+        InputAction::Quit
     }
 
     fn do_skip(&mut self, game: &mut Game) -> InputAction {
@@ -121,7 +114,33 @@ impl ReplayMode {
         InputAction::Pop
     }
 
-    fn do_quit(&mut self, _game: &mut Game) -> InputAction {
-        InputAction::Quit
+    fn do_slow_down(&mut self, _game: &mut Game) -> InputAction {
+        self.timeout += REPLAY_DELTA;
+        InputAction::UpdatedGame
+    }
+
+    fn do_speed_up(&mut self, _game: &mut Game) -> InputAction {
+        if self.timeout > REPLAY_DELTA {
+            self.timeout -= REPLAY_DELTA;
+        } else {
+            self.timeout = 0;
+        }
+        InputAction::UpdatedGame
+    }
+
+    fn do_step(&mut self, game: &mut Game) -> InputAction {
+        self.replaying = Replaying::SingleStep;
+        let e = self.replay.remove(0);
+        game.post(vec![e], true);
+        InputAction::UpdatedGame
+    }
+
+    fn do_toggle(&mut self, _game: &mut Game) -> InputAction {
+        if let Replaying::Running = self.replaying {
+            self.replaying = Replaying::Blocking;
+        } else {
+            self.replaying = Replaying::Running;
+        }
+        InputAction::UpdatedGame
     }
 }

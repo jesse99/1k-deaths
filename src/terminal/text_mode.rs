@@ -1,3 +1,4 @@
+use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_view::{Line, TextView};
 use crate::backend::Game;
@@ -52,6 +53,7 @@ impl TextMode {
 
         // commands.insert(Key::Home, Box::new(|s, game| s.do_scroll_to_start(game)));
         // commands.insert(Key::End, Box::new(|s, game| s.do_scroll_to_end(game)));
+        commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
 
         // less supports other good stuff, most of which requires additional user input.
@@ -102,13 +104,38 @@ impl Mode for TextMode {
 }
 
 impl TextMode {
-    fn do_pop(&mut self, _game: &mut Game) -> InputAction {
-        InputAction::Pop
+    fn do_help(&mut self, _game: &mut Game) -> InputAction {
+        let help = r#"There are a number of keys that allow the screen to be scrolled.
+
+Scroll down by one full screen:
+[[space]] or [[f]] or [[control-f]] or [[control-v]]
+
+Scroll up by one full screen:
+[[b]] or [[control-b]]
+
+Scroll down by one line:
+[[down-arrow]] or [[return]] or [[d]] or [[e]] or [[j]]
+[[control-d]] or [[control-e]] or [[control-j]] or [[control-n]]
+
+Scroll up by one line:
+[[up-arrow]] or [[u]] or [[k]] or [[p]] or [[y]]
+[[control-u]] or [[control-k]] or [[control-p]] or [[control-y]]
+
+[[?]] show this help.
+[[escape]] exits this mode."#;
+        validate_help("text", help, self.commands.keys());
+
+        let lines = format_help(help, self.commands.keys());
+        InputAction::Push(TextMode::create_at_top(lines))
     }
 
     fn do_page(&mut self, _game: &mut Game, sign: i32) -> InputAction {
         self.text.scroll(sign * self.text.size().height);
         InputAction::UpdatedGame
+    }
+
+    fn do_pop(&mut self, _game: &mut Game) -> InputAction {
+        InputAction::Pop
     }
 
     fn do_scroll(&mut self, _game: &mut Game, delta: i32) -> InputAction {

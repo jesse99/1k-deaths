@@ -19,6 +19,7 @@ pub struct TextView {
     bg: Color,
 }
 
+// TODO: less shows a percentage...
 impl TextView {
     pub fn new(lines: Vec<Line>) -> TextView {
         let num_lines = lines.len();

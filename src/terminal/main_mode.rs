@@ -1,3 +1,4 @@
+use super::help::{format_help, validate_help};
 use super::map_view::MapView;
 use super::messages_view::MessagesView;
 use super::mode::{InputAction, Mode, RenderContext};
@@ -35,6 +36,7 @@ impl MainMode {
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
         commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
         commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
+        commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
 
         Box::new(MainMode {
@@ -75,6 +77,28 @@ impl MainMode {
         let loc = game.player();
         let window = super::examine_mode::ExamineMode::create(loc);
         InputAction::Push(window)
+    }
+
+    fn do_help(&mut self, _game: &mut Game) -> InputAction {
+        let help = r#"Help for the main game. Note that help is context sensitive,
+e.g. examine mode has its own set of commands and its own help screen.
+
+Movement is done using the numeric keypad or arrow keys:
+[[7]] [[8]] [[9]]                  [[up-arrow]]
+[[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
+[[1]] [[2]] [[3]]                 [[down-arrow]]
+
+[[x]] examine visible cells.
+[[?]] show this help.
+[[q]] save and quit
+
+Wizard mode commands:
+[[control-e]] show recent events
+"#;
+        validate_help("main", help, self.commands.keys());
+
+        let lines = format_help(help, self.commands.keys());
+        InputAction::Push(TextMode::create_at_top(lines))
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {

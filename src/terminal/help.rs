@@ -4,16 +4,16 @@ use fnv::FnvHashSet;
 use termion::event::Key;
 
 /// Asserts if the help text is missing a command.
-pub fn validate_help<'a>(help: &str, keys: impl Iterator<Item = &'a Key>) {
+pub fn validate_help<'a>(mode: &str, help: &str, keys: impl Iterator<Item = &'a Key>) {
     let mut errors = Vec::new();
     for key in keys {
         let label = key_to_label(*key);
         let pattern = format!("[[{label}]]");
         let count = help.matches(&pattern).count();
         if count == 0 {
-            errors.push(format!("{label} doesn't appear in examine's help"));
+            errors.push(format!("{label} doesn't appear in {mode}'s help"));
         } else if count > 1 {
-            errors.push(format!("{label} appears {count} times in examine's help"));
+            errors.push(format!("{label} appears {count} times in {mode}'s help"));
             // this is probably an error
         }
     }
@@ -67,6 +67,24 @@ struct SectionIterator {
 }
 
 const EOT: char = '\x04';
+
+fn key_to_label(key: Key) -> String {
+    match key {
+        Key::Char(' ') => "space".to_string(),
+        Key::Char('\n') => "return".to_string(),
+        Key::Char('\t') => "tab".to_string(),
+        Key::Char('?') => "?".to_string(),
+        Key::Char(c) => c.to_string(),
+        Key::Ctrl(c) => format!("control-{c}"),
+        Key::BackTab => "shift-tab".to_string(),
+        Key::Esc => "escape".to_string(),
+        Key::Left => "left-arrow".to_string(),
+        Key::Right => "right-arrow".to_string(),
+        Key::Up => "up-arrow".to_string(),
+        Key::Down => "down-arrow".to_string(),
+        _ => panic!("don't know how to format {key:?}"),
+    }
+}
 
 impl SectionIterator {
     fn new(text: &str) -> SectionIterator {
@@ -123,20 +141,5 @@ impl Iterator for SectionIterator {
         } else {
             None
         }
-    }
-}
-
-fn key_to_label(key: Key) -> String {
-    match key {
-        Key::Char('\t') => "tab".to_string(),
-        Key::Char('?') => "?".to_string(),
-        Key::Char(c) => c.to_string(),
-        Key::BackTab => "shift-tab".to_string(),
-        Key::Esc => "escape".to_string(),
-        Key::Left => "left-arrow".to_string(),
-        Key::Right => "right-arrow".to_string(),
-        Key::Up => "up-arrow".to_string(),
-        Key::Down => "down-arrow".to_string(),
-        _ => panic!("don't know how to format {key:?}"),
     }
 }
