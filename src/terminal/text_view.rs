@@ -51,7 +51,7 @@ impl TextView {
         } else {
             self.lines.len() - self.start
         };
-        let _ = write!(stdout, "{}", termion::color::Bg(color::to_termion(self.bg)),);
+        let _ = write!(stdout, "{}", termion::color::Bg(color::to_termion(self.bg)));
         for index in self.start..self.start + height {
             let mut h = (self.origin.x + 1) as u16; // termion is 1-based
             for run in self.lines[index].iter() {
@@ -60,9 +60,15 @@ impl TextView {
                 h = self.render_run(stdout, run, h, v);
             }
             if width > h as usize {
-                let padding = " ".repeat(width - (h as usize));
+                let padding = " ".repeat(width - (h as usize) + 1); // +1 because h is 1-based
                 let _ = write!(stdout, "{}{}", termion::cursor::Goto(h, v), padding);
             }
+            v += 1;
+        }
+        let _ = write!(stdout, "{}", termion::color::Bg(color::to_termion(self.bg)));
+        let padding = " ".repeat(width);
+        while (v as i32) <= self.size.height {
+            let _ = write!(stdout, "{}{}", termion::cursor::Goto(1, v), padding);
             v += 1;
         }
     }
