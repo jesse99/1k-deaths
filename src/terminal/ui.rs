@@ -10,7 +10,6 @@ use termion::input::TermRead; // for keys trait
 
 pub struct UI {
     modes: Vec<Box<dyn Mode>>,
-    // thread: JoinHandle<()>,
     recv: Receiver<Key>,
 }
 

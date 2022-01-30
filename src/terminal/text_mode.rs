@@ -1,7 +1,7 @@
 use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_view::{Line, TextView};
-use crate::backend::Game;
+use crate::backend::{Color, Game};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
@@ -14,8 +14,24 @@ pub struct TextMode {
     scroll_by: i32, // for u and d commands
 }
 
+pub struct TextModeBuilder {
+    at_top: bool,
+    bg: Color,
+}
+
+impl TextModeBuilder {
+    pub fn with_bg(mut self, color: Color) -> TextModeBuilder {
+        self.bg = color;
+        self
+    }
+
+    pub fn create(self, lines: Vec<Line>) -> Box<dyn Mode> {
+        Box::new(TextMode::create(lines, self.at_top, self.bg))
+    }
+}
+
 impl TextMode {
-    fn create(lines: Vec<Line>) -> TextMode {
+    fn create(lines: Vec<Line>, at_top: bool, bg: Color) -> TextMode {
         let mut commands: CommandTable = FnvHashMap::default();
 
         // Commands are a subset of those in less, see https://man7.org/linux/man-pages/man1/less.1.html.
@@ -67,21 +83,30 @@ impl TextMode {
         // v invoke an editor
         // s save the file to a path
 
+        let mut view = TextView::new(lines, bg);
+        if !at_top {
+            view.scroll_to_bottom();
+        }
+
         TextMode {
-            text: TextView::new(lines),
+            text: view,
             commands,
             scroll_by: 1,
         }
     }
 
-    pub fn create_at_top(lines: Vec<Line>) -> Box<dyn Mode> {
-        Box::new(TextMode::create(lines))
+    pub fn at_top() -> TextModeBuilder {
+        TextModeBuilder {
+            at_top: true,
+            bg: Color::Black,
+        }
     }
 
-    pub fn create_at_bottom(lines: Vec<Line>) -> Box<dyn Mode> {
-        let mut mode = TextMode::create(lines);
-        mode.text.scroll_to_bottom();
-        Box::new(mode)
+    pub fn at_bottom() -> TextModeBuilder {
+        TextModeBuilder {
+            at_top: false,
+            bg: Color::Black,
+        }
     }
 }
 
@@ -110,8 +135,7 @@ impl TextMode {
 Scroll down by one full screen:
 [[space]] or [[f]] or [[control-f]] or [[control-v]]
 
-Scroll up by one full screen:
-[[b]] or [[control-b]]
+[[b]] or [[control-b]] scroll up by one full screen.
 
 Scroll down by one line:
 [[down-arrow]] or [[return]] or [[d]] or [[e]] or [[j]]
@@ -126,7 +150,7 @@ Scroll up by one line:
         validate_help("text", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
-        InputAction::Push(TextMode::create_at_top(lines))
+        InputAction::Push(TextMode::at_top().create(lines))
     }
 
     fn do_page(&mut self, _game: &mut Game, sign: i32) -> InputAction {

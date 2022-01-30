@@ -82,7 +82,7 @@ The focus can be moved with the usual keys:
         validate_help("examine", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
-        InputAction::Push(TextMode::create_at_top(lines))
+        InputAction::Push(TextMode::at_top().create(lines))
     }
 
     fn do_pop(&mut self, _game: &mut Game) -> InputAction {

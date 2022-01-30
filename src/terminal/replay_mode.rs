@@ -93,7 +93,7 @@ impl ReplayMode {
         validate_help("replay", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
-        InputAction::Push(TextMode::create_at_top(lines))
+        InputAction::Push(TextMode::at_top().create(lines))
     }
 
     fn do_quit(&mut self, _game: &mut Game) -> InputAction {
@@ -120,8 +120,11 @@ impl ReplayMode {
     fn do_speed_up(&mut self, _game: &mut Game) -> InputAction {
         if self.timeout > REPLAY_DELTA {
             self.timeout -= REPLAY_DELTA;
-        } else {
+        } else if self.timeout > 0 {
             self.timeout = 0;
+        } else {
+            // This is not working (nor does it work when the raw stdout is used directly).
+            // let _ = io::stdout().write(b"\x07");
         }
         InputAction::UpdatedGame
     }

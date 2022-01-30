@@ -1,6 +1,6 @@
 use super::help::{format_help, validate_help};
 use super::map_view::MapView;
-use super::messages_view::MessagesView;
+use super::messages_view::{self, MessagesView};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
 use super::text_view::{Line, TextRun};
@@ -36,6 +36,9 @@ impl MainMode {
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
         commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
         commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
+
+        // We don't receive ctrl-m. We're using ctrl-p because that's what Crawl does.
+        commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
 
@@ -89,16 +92,17 @@ Movement is done using the numeric keypad or arrow keys:
 [[1]] [[2]] [[3]]                 [[down-arrow]]
 
 [[x]] examine visible cells.
+[[control-p]] show recent messages.
 [[?]] show this help.
 [[q]] save and quit
 
 Wizard mode commands:
-[[control-e]] show recent events
+[[control-e]] show recent events.
 "#;
         validate_help("main", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
-        InputAction::Push(TextMode::create_at_top(lines))
+        InputAction::Push(TextMode::at_top().create(lines))
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
@@ -113,17 +117,31 @@ Wizard mode commands:
     }
 
     fn do_show_events(&mut self, game: &mut Game) -> InputAction {
+        fn get_lines(game: &mut Game) -> Vec<Line> {
+            let mut lines = Vec::new();
+            for e in game.events() {
+                let line = vec![TextRun::Color(Color::White), TextRun::Text(e)];
+                lines.push(line);
+            }
+            lines
+        }
         // TODO: Should we load saved events? Do we even want this mode?
-        let lines = self.get_events(game);
-        InputAction::Push(TextMode::create_at_bottom(lines))
+        let lines = get_lines(game);
+        InputAction::Push(TextMode::at_bottom().create(lines))
     }
 
-    fn get_events(&mut self, game: &mut Game) -> Vec<Line> {
-        let mut lines = Vec::new();
-        for e in game.events() {
-            let line = vec![TextRun::Color(Color::White), TextRun::Text(e)];
-            lines.push(line);
+    fn do_show_messages(&mut self, game: &mut Game) -> InputAction {
+        fn get_lines(game: &mut Game) -> Vec<Line> {
+            let mut lines = Vec::new();
+            for message in game.recent_messages(usize::MAX) {
+                let fg = messages_view::to_fore_color(message.topic);
+                let line = vec![TextRun::Color(fg), TextRun::Text(message.text.clone())];
+                lines.push(line);
+            }
+            lines
         }
-        lines
+
+        let lines = get_lines(game);
+        InputAction::Push(TextMode::at_bottom().with_bg(Color::White).create(lines))
     }
 }

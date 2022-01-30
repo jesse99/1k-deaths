@@ -33,7 +33,7 @@ impl MessagesView {
     }
 }
 
-fn to_fore_color(topic: Topic) -> Color {
+pub fn to_fore_color(topic: Topic) -> Color {
     match topic {
         Topic::Error => Color::Red,
         Topic::Normal => Color::Black,

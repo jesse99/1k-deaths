@@ -21,7 +21,7 @@ pub struct TextView {
 
 // TODO: less shows a percentage...
 impl TextView {
-    pub fn new(lines: Vec<Line>) -> TextView {
+    pub fn new(lines: Vec<Line>, bg: Color) -> TextView {
         let num_lines = lines.len();
         let (width, height) = termion::terminal_size().expect("couldn't get terminal size");
         let start = if num_lines >= (height as usize) {
@@ -34,7 +34,7 @@ impl TextView {
             size: Size::new(width as i32, height as i32),
             lines,
             start,
-            bg: Color::Black,
+            bg,
         }
     }
 
