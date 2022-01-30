@@ -38,7 +38,7 @@ struct Args {
 
     /// fixed random number seed (defaults to random)
     #[clap(long, value_name = "N")]
-    seed: Option<u32>,
+    seed: Option<u64>,
 
     /// logging verbosity
     #[clap(long, arg_enum, value_name = "NAME", default_value_t = LoggingLevel::Info)]
@@ -70,11 +70,12 @@ fn main() {
         env!("CARGO_PKG_VERSION")
     );
 
+    let seed = options.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
     let (game, events) = match options.load {
-        Some(path) if options.new_game => (Game::new_game(&path), Vec::new()),
-        Some(path) => Game::old_game(&path),
-        None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game"),
-        None => (Game::new_game("saved.game"), Vec::new()),
+        Some(path) if options.new_game => (Game::new_game(&path, seed), Vec::new()),
+        Some(path) => Game::old_game(&path, seed),
+        None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game", seed),
+        None => (Game::new_game("saved.game", seed), Vec::new()),
     };
 
     let mut terminal = terminal::Terminal::new(game, events);

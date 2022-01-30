@@ -93,7 +93,8 @@ mod details {
 }
 
 impl Game {
-    fn new(messages: Vec<Message>, file: Option<File>) -> Game {
+    fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
+        info!("using seed {seed}");
         Game {
             stream: Vec::new(),
             posting: false,
@@ -106,19 +107,17 @@ impl Game {
             file,
 
             // TODO:
-            // 1) Use a random seed. Be sure to log this and also allow for
-            // specifying the seed (probably via a command line option).
-            // 2) SmallRng is not guaranteed to be portable so results may
+            // 1) SmallRng is not guaranteed to be portable so results may
             // not be reproducible between platforms.
-            // 3) We're going to have to be able to persist the RNG. rand_pcg
+            // 2) We're going to have to be able to persist the RNG. rand_pcg
             // supports serde so that would likely work. If not we could
             // create our own simple RNG.
-            rng: RefCell::new(SmallRng::seed_from_u64(100)),
+            rng: RefCell::new(SmallRng::seed_from_u64(seed)),
         }
     }
 
     /// Start a brand new game and save it to path.
-    pub fn new_game(path: &str) -> Game {
+    pub fn new_game(path: &str, seed: u64) -> Game {
         let mut messages = Vec::new();
 
         info!("new {path}");
@@ -153,7 +152,7 @@ impl Game {
 
         // TODO: may want a SetAllTerrain variant to avoid a zillion events
         // TODO: or have NewLevel take a default terrain
-        let mut game = Game::new(messages, file);
+        let mut game = Game::new(messages, seed, file);
         let map = include_str!("backend/maps/start.txt");
         make::level(&game, map, &mut events);
         events.push(Event::EndConstructLevel);
@@ -163,7 +162,7 @@ impl Game {
     }
 
     /// Load a saved game and return the events so that they can be replayed.
-    pub fn old_game(path: &str) -> (Game, Vec<Event>) {
+    pub fn old_game(path: &str, seed: u64) -> (Game, Vec<Event>) {
         let mut events = Vec::new();
 
         let mut messages = Vec::new();
@@ -195,9 +194,9 @@ impl Game {
         }
 
         if file.is_some() {
-            (Game::new(messages, file), events)
+            (Game::new(messages, seed, file), events)
         } else {
-            let mut game = Game::new_game(path);
+            let mut game = Game::new_game(path, seed);
 
             events.clear();
             events.extend(messages.into_iter().map(Event::AddMessage));
