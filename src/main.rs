@@ -12,7 +12,7 @@ use backend::Game;
 use clap::{ArgEnum, Parser};
 use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[repr(usize)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
@@ -50,7 +50,7 @@ struct Args {
 }
 
 fn main() {
-    let cli = Args::parse();
+    let options = Args::parse();
 
     let logging = ConfigBuilder::new()
         .set_target_level(LevelFilter::Off)
@@ -70,12 +70,13 @@ fn main() {
         env!("CARGO_PKG_VERSION")
     );
 
-    let (mut game, mut events) = Game::new();
-    if events.is_empty() {
-        game.new_game(&mut events);
-        game.post(events, false);
-        events = Vec::new();
-    }
+    let path = "saved.game";
+    let (game, events) = if Path::new(path).is_file() && !options.new_game {
+        Game::old_game(path)
+    } else {
+        (Game::new_game(path), Vec::new())
+    };
+
     let mut terminal = terminal::Terminal::new(game, events);
     terminal.run();
 }

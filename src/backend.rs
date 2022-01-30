@@ -30,7 +30,6 @@ use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
 use std::fs::File;
-use std::path::Path;
 use tag::{Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
@@ -94,87 +93,47 @@ mod details {
 }
 
 impl Game {
-    /// Begins a new game session. If possible this will load an existing game and return
-    /// the event stream associated with it for replay'ing. Otherwise a new game will be
-    /// started.
-    pub fn new() -> (Game, Vec<Event>) {
-        let mut events = Vec::new();
+    fn new(messages: Vec<Message>, file: Option<File>) -> Game {
+        Game {
+            stream: Vec::new(),
+            posting: false,
+            messages,
+            level: Level::new(make::stone_wall()),
+            interactions: Interactions::new(),
+            pov: PoV::new(),
+            old_pov: OldPoV::new(),
+            state: State::Bumbling,
+            file,
 
-        let mut messages = Vec::new();
-        let path = "saved.game";
-        let mut file = None;
-        if Path::new(path).is_file() {
-            info!("loading {path}");
-            match persistence::load_game(path) {
-                Ok(e) => events = e,
-                Err(err) => {
-                    info!("loading file had err: {err}");
-                    messages.push(Message::new(
-                        Topic::Error,
-                        &format!("Couldn't open {path} for reading: {err}"),
-                    ));
-                }
-            };
-
-            if !events.is_empty() {
-                info!("opening {path}");
-                file = match persistence::open_game(path) {
-                    Ok(se) => Some(se),
-                    Err(err) => {
-                        messages.push(Message::new(
-                            Topic::Error,
-                            &format!("Couldn't open {path} for appending: {err}"),
-                        ));
-                        None
-                    }
-                };
-            }
+            // TODO:
+            // 1) Use a random seed. Be sure to log this and also allow for
+            // specifying the seed (probably via a command line option).
+            // 2) SmallRng is not guaranteed to be portable so results may
+            // not be reproducible between platforms.
+            // 3) We're going to have to be able to persist the RNG. rand_pcg
+            // supports serde so that would likely work. If not we could
+            // create our own simple RNG.
+            rng: RefCell::new(SmallRng::seed_from_u64(100)),
         }
-
-        // If there is no saved game or there was an error loading it create a file for a
-        // brand new game.
-        if file.is_none() {
-            info!("new {path}");
-            file = match persistence::new_game(path) {
-                Ok(se) => Some(se),
-                Err(err) => {
-                    messages.push(Message::new(
-                        Topic::Error,
-                        &format!("Couldn't open {path} for writing: {err}"),
-                    ));
-                    None
-                }
-            };
-        }
-
-        (
-            Game {
-                stream: Vec::new(),
-                posting: false,
-                messages,
-                level: Level::new(make::stone_wall()),
-                interactions: Interactions::new(),
-                pov: PoV::new(),
-                old_pov: OldPoV::new(),
-                state: State::Bumbling,
-                file,
-
-                // TODO:
-                // 1) Use a random seed. Be sure to log this and also allow for
-                // specifying the seed (probably via a command line option).
-                // 2) SmallRng is not guaranteed to be portable so results may
-                // not be reproducible between platforms.
-                // 3) We're going to have to be able to persist the RNG. rand_pcg
-                // supports serde so that would likely work. If not we could
-                // create our own simple RNG.
-                rng: RefCell::new(SmallRng::seed_from_u64(100)),
-            },
-            events,
-        )
     }
 
-    /// Should be called if new returned no events.
-    pub fn new_game(&self, events: &mut Vec<Event>) {
+    /// Start a brand new game and save it to path.
+    pub fn new_game(path: &str) -> Game {
+        let mut messages = Vec::new();
+
+        info!("new {path}");
+        let file = match persistence::new_game(path) {
+            Ok(se) => Some(se),
+            Err(err) => {
+                messages.push(Message::new(
+                    Topic::Error,
+                    &format!("Couldn't open {path} for writing: {err}"),
+                ));
+                None
+            }
+        };
+
+        let mut events = Vec::new();
         events.reserve(1000); // TODO: probably should tune this
 
         events.push(Event::NewGame);
@@ -194,9 +153,54 @@ impl Game {
 
         // TODO: may want a SetAllTerrain variant to avoid a zillion events
         // TODO: or have NewLevel take a default terrain
+        let mut game = Game::new(messages, file);
         let map = include_str!("backend/maps/start.txt");
-        make::level(self, map, events);
+        make::level(&game, map, &mut events);
         events.push(Event::EndConstructLevel);
+
+        game.post(events, false);
+        game
+    }
+
+    /// Load a saved game and return the events so that they can be replayed.
+    pub fn old_game(path: &str) -> (Game, Vec<Event>) {
+        let mut events = Vec::new();
+
+        let mut messages = Vec::new();
+        let mut file = None;
+        info!("loading {path}");
+        match persistence::load_game(path) {
+            Ok(e) => events = e,
+            Err(err) => {
+                info!("loading file had err: {err}");
+                messages.push(Message::new(
+                    Topic::Error,
+                    &format!("Couldn't open {path} for reading: {err}"),
+                ));
+            }
+        };
+
+        if !events.is_empty() {
+            info!("opening {path}");
+            file = match persistence::open_game(path) {
+                Ok(se) => Some(se),
+                Err(err) => {
+                    messages.push(Message::new(
+                        Topic::Error,
+                        &format!("Couldn't open {path} for appending: {err}"),
+                    ));
+                    None
+                }
+            };
+        }
+
+        // If there is no saved game or there was an error loading it create a file for a
+        // brand new game.
+        if file.is_some() {
+            (Game::new(messages, file), events)
+        } else {
+            (Game::new_game(path), Vec::new())
+        }
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
