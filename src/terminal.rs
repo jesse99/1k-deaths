@@ -1,6 +1,7 @@
 //! Rendering and UI using termion terminal module.
 mod color;
 mod examine_mode;
+mod help;
 mod main_mode;
 mod map_view;
 mod messages_view;
