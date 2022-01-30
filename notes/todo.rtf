@@ -66,19 +66,14 @@ fn\cf5  \cf6 valid_response\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
-\'95 Add a way to view messages\
-	- be sure to color code these\
 \'95\'a0Add some command line options:\
 	\'97new-game   always start a new game\
 	\'97load=PATH  load the game file at the path\
 	\'97seed=N       use this RNG seed, how does that interact with replay?\
 	\'97log-level=L  info, debug, etc (be sure to have decent help and validation)\
-	\'97lof-path=P   not sure we need this one\
-	- should wizard mode be a command line option? be sure to fixup commands and help\
-	- should state objects save a checksum to verify that loads work?\
-\'95\'a0Think about how seeds should be handled\
-	- for replay\
-	- on startup\
+	\'97log-path=P   \
+	\'97wizard (or config option?)\
+\'95 Use Trace log level for events?	\
 \'95 Support a config file?\
 	- log level\
 	- log path\

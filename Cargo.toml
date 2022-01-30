@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 byteorder = "1.4.3"     # byte-swapping library
 chrono = "0.4.19"	    # datetime library
+clap = {version = "3.0.13", features = ["derive"]}      # command line parser
 derive_more = "0.99.17" # helper to derive traits like Display for structs and enums
 fnv = "1.0.7"	        # custom hasher that is much more performant for small keys
 log = "0.4.14" 	        # logging facade
