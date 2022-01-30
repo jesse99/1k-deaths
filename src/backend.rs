@@ -189,11 +189,7 @@ impl Game {
         }));
         events.push(Event::AddMessage(Message {
             topic: Topic::Important,
-            text: String::from("Use the arrow keys to move, 'x' to examine squares, and 'q' to quit."),
-        }));
-        events.push(Event::AddMessage(Message {
-            topic: Topic::Important,
-            text: String::from("Use the escape key to stop examining."),
+            text: String::from("Press the '?' key for help."),
         }));
 
         // TODO: may want a SetAllTerrain variant to avoid a zillion events

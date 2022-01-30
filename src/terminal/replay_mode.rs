@@ -44,7 +44,7 @@ impl ReplayMode {
         Box::new(ReplayMode {
             replay,
             replaying: Replaying::Running,
-            timeout: 30,
+            timeout: 20,
             commands,
         })
     }
@@ -64,14 +64,12 @@ impl Mode for ReplayMode {
     }
 
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
-        if key == Key::Null {
+        if self.replay.is_empty() {
+            InputAction::Pop
+        } else if key == Key::Null {
             let e = self.replay.remove(0);
             game.post(vec![e], true);
-            if self.replay.is_empty() {
-                InputAction::Pop
-            } else {
-                InputAction::UpdatedGame
-            }
+            InputAction::UpdatedGame
         } else {
             match self.commands.get(&key).cloned() {
                 Some(handler) => handler(self, game),
