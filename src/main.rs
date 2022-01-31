@@ -14,7 +14,6 @@ use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
 use std::path::Path;
 
-#[repr(usize)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
 pub enum LoggingLevel {
     // can't use simplelog::Level because it doesn't derive ArgEnum
@@ -49,27 +48,44 @@ struct Args {
     wizard: bool,
 }
 
-fn main() {
-    let options = Args::parse();
+fn to_filter(level: LoggingLevel) -> LevelFilter {
+    match level {
+        LoggingLevel::Error => LevelFilter::Error,
+        LoggingLevel::Warn => LevelFilter::Warn,
+        LoggingLevel::Info => LevelFilter::Info,
+        LoggingLevel::Debug => LevelFilter::Debug,
+        LoggingLevel::Trace => LevelFilter::Trace,
+    }
+}
 
+fn configure_logging(level: LevelFilter) {
     let logging = ConfigBuilder::new()
         .set_target_level(LevelFilter::Off)
         .set_thread_level(LevelFilter::Off)
         .set_location_level(LevelFilter::Off)
         .build();
-    CombinedLogger::init(vec![WriteLogger::new(
-        LevelFilter::Debug,
-        logging,
-        File::create("1k-deaths.log").unwrap(),
-    )])
-    .unwrap();
+    let file = File::create("1k-deaths.log").unwrap();
+    CombinedLogger::init(vec![WriteLogger::new(level, logging, file)]).unwrap();
+
     let local = chrono::Local::now();
     info!(
         "started up on {} with version {}",
         local.to_rfc2822(),
         env!("CARGO_PKG_VERSION")
     );
+}
 
+fn main() {
+    let options = Args::parse();
+    configure_logging(to_filter(options.log_level));
+
+    if options.wizard {
+        terminal::WIZARD_MODE.with(|w| {
+            *w.borrow_mut() = true;
+        })
+    }
+
+    // Timestamps are a poor seed but should be fine for our purposes.
     let seed = options.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
     let (game, events) = match options.load {
         Some(path) if options.new_game => (Game::new_game(&path, seed), Vec::new()),

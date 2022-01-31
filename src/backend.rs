@@ -215,7 +215,6 @@ impl Game {
         }
     }
 
-    // TODO: this should be wizard config only
     pub fn events(&self) -> Vec<String> {
         self.stream.iter().map(|e| format!("{:?}", e)).collect()
     }
@@ -336,6 +335,7 @@ impl Game {
 
         self.posting = true;
         for event in events {
+            trace!("posting {event}");
             self.internal_post(event, replay);
         }
 

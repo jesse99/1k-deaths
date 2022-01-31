@@ -12,10 +12,17 @@ mod text_view;
 mod ui;
 
 use super::backend::{Event, Game};
+use std::cell::RefCell;
 use std::io::{self, Write};
 use std::process;
 use termion::raw::IntoRawMode;
 use ui::UI;
+
+thread_local!(pub static WIZARD_MODE: RefCell<bool> = RefCell::new(false));
+
+pub fn wizard_mode() -> bool {
+    WIZARD_MODE.with(|w| *w.borrow())
+}
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum GameState {

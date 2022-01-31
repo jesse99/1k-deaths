@@ -67,21 +67,11 @@ fn\cf5  \cf6 valid_response\cf5 (\cf7 r\cf5 : \cf8 HttpResponse\cf5 ) \{\
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 \'95\'a0Add some command line options:\
-	\'97new-game   always start a new game\
-	\'97load=PATH  load the game file at the path\
-	\'97seed=N       use this RNG seed, how does that interact with replay?\
-	\'97log-level=L  info, debug, etc (be sure to have decent help and validation)\
-	\'97log-path=P   \
 	\'97wizard (or config option?)\
-\'95 Use Trace log level for events?\
+\'95\'a0Could cleanup some of the bigger match clauses with a local use enum name\
 \'95 Message::new should take the String argument	\
-\'95 Support a config file?\
-	- log level\
-	- log path\
-	- key bindings\
-	- topic colors\
-	- auto-pickup options\
 \'95 Rename State::Bumbling\
+\'95 Do we really need derive_more? Can\'92t we just use the Debug trait?\
 \'95\'a0Examine should probably say something different for never seen cells\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 

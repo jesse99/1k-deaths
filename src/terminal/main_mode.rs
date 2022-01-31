@@ -35,7 +35,9 @@ impl MainMode {
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
         commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
-        commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
+        if super::wizard_mode() {
+            commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
+        }
 
         // We don't receive ctrl-m. We're using ctrl-p because that's what Crawl does.
         commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
@@ -83,7 +85,7 @@ impl MainMode {
     }
 
     fn do_help(&mut self, _game: &mut Game) -> InputAction {
-        let help = r#"Help for the main game. Note that help is context sensitive,
+        let mut help = r#"Help for the main game. Note that help is context sensitive,
 e.g. examine mode has its own set of commands and its own help screen.
 
 Movement is done using the numeric keypad or arrow keys:
@@ -95,13 +97,18 @@ Movement is done using the numeric keypad or arrow keys:
 [[control-p]] show recent messages.
 [[?]] show this help.
 [[q]] save and quit
+"#
+        .to_string();
+        if super::wizard_mode() {
+            help += r#"
 
 Wizard mode commands:
 [[control-e]] show recent events.
 "#;
-        validate_help("main", help, self.commands.keys());
+        }
+        validate_help("main", &help, self.commands.keys());
 
-        let lines = format_help(help, self.commands.keys());
+        let lines = format_help(&help, self.commands.keys());
         InputAction::Push(TextMode::at_top().create(lines))
     }
 
