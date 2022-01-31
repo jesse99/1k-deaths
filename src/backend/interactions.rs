@@ -32,16 +32,7 @@ fn impassible_terrain(cell: &Cell) -> Option<Message> {
 }
 
 fn find_empty_cell(game: &Game, loc: &Point) -> Option<Point> {
-    let mut deltas = vec![
-        (-1, -1),
-        (-1, 1),
-        (-1, 0),
-        (1, -1),
-        (1, 1),
-        (1, 0),
-        (0, -1),
-        (0, 1),
-    ];
+    let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
     deltas.shuffle(&mut *game.rng());
     for delta in deltas {
         let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
@@ -82,12 +73,7 @@ fn damage_wall(game: &Game, loc: &Point, scaled_damage: i32, events: &mut Vec<Ev
 }
 
 // ---- Interaction handlers -----------------------------------------------
-fn emp_sword_vs_vitr(
-    game: &Game,
-    _player_loc: &Point,
-    _new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn emp_sword_vs_vitr(game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
     if !matches!(game.state, State::WonGame) {
         let mesg = Message::new(
             Topic::Important,
@@ -104,12 +90,7 @@ fn emp_sword_vs_vitr(
     }
 }
 
-fn pick_axe_vs_wall(
-    game: &Game,
-    _player_loc: &Point,
-    new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let cell = game.level.get(new_loc);
     let obj = cell.get(&Tag::Wall);
     match obj.material() {
@@ -128,19 +109,10 @@ fn pick_axe_vs_wall(
 }
 
 fn player_vs_closed_door(_game: &Game, loc: &Point, events: &mut Vec<Event>) {
-    events.push(Event::ChangeObject(
-        *loc,
-        Tag::ClosedDoor,
-        make::open_door(),
-    ));
+    events.push(Event::ChangeObject(*loc, Tag::ClosedDoor, make::open_door()));
 }
 
-fn player_vs_doorman(
-    game: &Game,
-    _player_loc: &Point,
-    new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn player_vs_doorman(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let cell = game.level.get(&game.level.player());
     let obj = cell.get(&Tag::Character);
     match obj.inventory() {
@@ -160,12 +132,7 @@ fn player_vs_doorman(
     true
 }
 
-fn player_vs_deep_water(
-    _game: &Game,
-    _player_loc: &Point,
-    _new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn player_vs_deep_water(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let mesg = impassible_terrain_tag(&Tag::DeepWater).unwrap();
     events.push(Event::AddMessage(mesg));
     true
@@ -175,16 +142,8 @@ fn player_vs_portable(_game: &Game, loc: &Point, events: &mut Vec<Event>) {
     events.push(Event::AddToInventory(*loc));
 }
 
-fn player_vs_rhulad(
-    _game: &Game,
-    player_loc: &Point,
-    new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
-    let mesg = Message::new(
-        Topic::Important,
-        "After an epic battle you kill the Emperor!",
-    );
+fn player_vs_rhulad(_game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
     events.push(Event::AddMessage(mesg));
 
     events.push(Event::DestroyObject(*new_loc, Tag::Character));
@@ -210,13 +169,8 @@ fn player_vs_sign(game: &Game, loc: &Point, events: &mut Vec<Event>) {
     events.push(Event::AddMessage(mesg));
 }
 
-fn player_vs_spectator(
-    game: &Game,
-    _player_loc: &Point,
-    _new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
-    let messages = if matches!(game.state, State::Bumbling) {
+fn player_vs_spectator(game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let messages = if matches!(game.state, State::Adventuring) {
         vec![
             "I hope you're prepared to die!",
             "The last champion only lasted thirty seconds.",
@@ -238,34 +192,19 @@ fn player_vs_spectator(
     true
 }
 
-fn player_vs_tree(
-    _game: &Game,
-    _player_loc: &Point,
-    _new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn player_vs_tree(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let mesg = impassible_terrain_tag(&Tag::Tree).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
 
-fn player_vs_vitr(
-    _game: &Game,
-    _player_loc: &Point,
-    _new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn player_vs_vitr(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let mesg = impassible_terrain_tag(&Tag::Vitr).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
 
-fn player_vs_wall(
-    _game: &Game,
-    _player_loc: &Point,
-    _new_loc: &Point,
-    events: &mut Vec<Event>,
-) -> bool {
+fn player_vs_wall(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let mesg = impassible_terrain_tag(&Tag::Wall).unwrap();
     events.push(Event::AddMessage(mesg));
     true
@@ -339,8 +278,7 @@ impl Interactions {
     }
 
     fn pre_ins(&mut self, tag0: Tag, tag1: Tag, handler: PreHandler) {
-        self.pre_table
-            .insert((tag0.to_index(), tag1.to_index()), handler);
+        self.pre_table.insert((tag0.to_index(), tag1.to_index()), handler);
     }
 
     fn post_ins(&mut self, tag1: Tag, handler: PostHandler) {

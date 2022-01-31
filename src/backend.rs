@@ -57,7 +57,7 @@ pub enum Tile {
 
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
 pub enum State {
-    Bumbling,
+    Adventuring,
     KilledRhulad,
     WonGame,
 }
@@ -103,7 +103,7 @@ impl Game {
             interactions: Interactions::new(),
             pov: PoV::new(),
             old_pov: OldPoV::new(),
-            state: State::Bumbling,
+            state: State::Adventuring,
             file,
 
             // TODO:
