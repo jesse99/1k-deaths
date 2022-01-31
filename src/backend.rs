@@ -253,7 +253,13 @@ impl Game {
                         topic: Topic::Normal,
                         text,
                     }));
-                };
+                } else {
+                    let text = "You've never seen there.".to_string();
+                    events.push(Event::AddMessage(Message {
+                        topic: Topic::Normal,
+                        text,
+                    }));
+                }
             }
         }
     }
