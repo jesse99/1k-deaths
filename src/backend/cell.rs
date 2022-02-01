@@ -2,34 +2,6 @@ use super::{Color, Object, Tag};
 use std::fmt::{self, Formatter};
 use std::ops::{Deref, DerefMut};
 
-// Bit of machinery that allows us to call Cell::invariant after clients
-// modify the interior bits with Cell::get_mut.
-pub struct DerefObj<'a> {
-    cell: &'a mut Cell,
-    index: usize,
-}
-
-// We don't directly use this but DerefMut requires that it be defined.
-impl Deref for DerefObj<'_> {
-    type Target = Object;
-
-    fn deref(&self) -> &Self::Target {
-        &self.cell.objects[self.index]
-    }
-}
-
-impl DerefMut for DerefObj<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.cell.objects[self.index]
-    }
-}
-
-impl Drop for DerefObj<'_> {
-    fn drop(&mut self) {
-        self.cell.invariant();
-    }
-}
-
 /// Levels are composed of Object's and cells contain Object's.
 pub struct Cell {
     objects: Vec<Object>,
@@ -37,9 +9,7 @@ pub struct Cell {
 
 impl Cell {
     pub fn new() -> Cell {
-        Cell {
-            objects: Vec::new(),
-        }
+        Cell { objects: Vec::new() }
     }
 
     pub fn to_bg_fg_symbol(&self) -> (Color, Color, char) {
@@ -47,10 +17,6 @@ impl Cell {
         let (fg, symbol) = self.objects.last().unwrap().to_fg_symbol();
         (bg, fg, symbol)
     }
-
-    // pub fn len(&self) -> usize {
-    //     self.objects.len()
-    // }
 
     pub fn iter(&self) -> std::slice::Iter<'_, Object> {
         self.objects.iter()
@@ -117,10 +83,7 @@ impl Cell {
         );
 
         let count = self.objects.iter().filter(|obj| obj.terrain()).count();
-        assert!(
-            count == 1,
-            "There must be only one terrain object in a Cell: {self}"
-        );
+        assert!(count == 1, "There must be only one terrain object in a Cell: {self}");
 
         let count = self.objects.iter().filter(|obj| obj.character()).count();
         assert!(
@@ -135,5 +98,33 @@ impl fmt::Display for Cell {
         let s: Vec<String> = self.objects.iter().map(|obj| format!("{obj}")).collect();
         let s = s.join(", ");
         write!(f, "[{s}]")
+    }
+}
+
+// Bit of machinery that allows us to call Cell::invariant after clients
+// modify the interior bits with Cell::get_mut.
+pub struct DerefObj<'a> {
+    cell: &'a mut Cell,
+    index: usize,
+}
+
+// We don't directly use this but DerefMut requires that it be defined.
+impl Deref for DerefObj<'_> {
+    type Target = Object;
+
+    fn deref(&self) -> &Self::Target {
+        &self.cell.objects[self.index]
+    }
+}
+
+impl DerefMut for DerefObj<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.cell.objects[self.index]
+    }
+}
+
+impl Drop for DerefObj<'_> {
+    fn drop(&mut self) {
+        self.cell.invariant();
     }
 }

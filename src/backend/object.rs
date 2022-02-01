@@ -48,11 +48,7 @@ impl Object {
     // We use this instead of inventory_mut to make it easier to call
     // invariant.
     pub fn pick_up(&mut self, item: Object) {
-        let inv = self
-            .tags
-            .iter_mut()
-            .find_map(|tag| tag.as_mut_inventory())
-            .unwrap();
+        let inv = self.tags.iter_mut().find_map(|tag| tag.as_mut_inventory()).unwrap();
         inv.push(item);
         self.invariant();
     }
@@ -109,9 +105,7 @@ impl Object {
     /// Material(Metal) as equal.
     pub fn has(&self, tag: &Tag) -> bool {
         let index = tag.to_index();
-        self.tags
-            .iter()
-            .any(|candidate| candidate.to_index() == index)
+        self.tags.iter().any(|candidate| candidate.to_index() == index)
     }
 
     pub fn to_bg_color(&self) -> Color {
@@ -130,68 +124,40 @@ impl Object {
 impl Object {
     #[cfg(debug_assertions)]
     pub fn invariant(&self) {
-        assert!(
-            !self.description.is_empty(),
-            "Must have a description: {self}"
-        );
+        assert!(!self.description.is_empty(), "Must have a description: {self}");
         if self.terrain() {
             assert!(
                 self.background().is_some(),
                 "Terrain objects must have a Background: {self}",
             );
-            assert!(
-                !self.character(),
-                "Terrain objects cannot also be Characters: {self}",
-            );
-            assert!(
-                !self.portable(),
-                "Terrain objects cannot be Portable: {self}",
-            );
+            assert!(!self.character(), "Terrain objects cannot also be Characters: {self}",);
+            assert!(!self.portable(), "Terrain objects cannot be Portable: {self}",);
         }
         if self.door().is_some() {
             if let Some((current, _max)) = self.durability() {
-                assert!(
-                    current > 0,
-                    "Destroyed doors should change to Ground: {self}"
-                );
+                assert!(current > 0, "Destroyed doors should change to Ground: {self}");
             }
         }
         if self.wall() {
             if let Some((current, _max)) = self.durability() {
-                assert!(
-                    current > 0,
-                    "Destroyed walls should change to Ground: {self}"
-                );
+                assert!(current > 0, "Destroyed walls should change to Ground: {self}");
             }
         }
         if self.character() {
-            assert!(
-                self.name().is_some(),
-                "Character's must have a name: {self}"
-            );
-            assert!(
-                !self.portable(),
-                "Character objects cannot be Portable: {self}",
-            );
+            assert!(self.name().is_some(), "Character's must have a name: {self}");
+            assert!(!self.portable(), "Character objects cannot be Portable: {self}",);
         }
         if self.player() {
             assert!(self.character(), "Player must be a Character: {self}")
         }
         if self.portable() {
-            assert!(
-                self.name().is_some(),
-                "Portable objects must have a Name: {self}"
-            )
+            assert!(self.name().is_some(), "Portable objects must have a Name: {self}")
         }
 
         let mut indexes = FnvHashSet::default();
         for tag in &self.tags {
             let index = tag.to_index();
-            assert!(
-                !indexes.contains(&index),
-                "'{}' has duplicate tags: {self}",
-                self.dname
-            );
+            assert!(!indexes.contains(&index), "'{}' has duplicate tags: {self}", self.dname);
             indexes.insert(index);
         }
     }

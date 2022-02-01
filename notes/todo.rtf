@@ -35,12 +35,21 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
+\'95 Work on a time system:\
+	- player actions (moving, opening doors, picking up items, talking) should take time\
+	- need a priority queue to keep track of who\'92s turn it is next\
+	- when popping off an object from queue advance time to that point\
+	- queue will need some sort of object reference\
+		` could be loc and tag (but what if someone kills a character before it can move?)\
+	- min action time should be 1s\
+	- 1s == 100 ticks\
+	- fuzz times by +/1 15%	\
+	- times should probably be represented with a newtype (ticks are i64)\
+	- look at some of the resources for time system info\
 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- maybe disposition enum, friendly, neutral, aggresive\
 	- these move either toward or away from the player\
-	- will need a simple time system (use i64, maybe with newtype idiom)\
-	- look at some of the resources for time system info\
 \'95\'a0Add an info view:\
 	- player stats\
 	- top N NPCs\
