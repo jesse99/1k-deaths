@@ -20,20 +20,24 @@ pub enum Tag {
     /// players try to move into them. Will also have a Name tag. May have
     /// an Inventory tag.
     Character,
+
     /// Will also have Character and Inventory tags.
     Player,
     Doorman,
     Rhulad,
     Spectator,
+
     /// Objects that a Character has picked up.
     Inventory(Vec<Object>),
 
     /// The object is something that can be picked up and placed into a
     /// Character's inventory.
     Portable,
+
     /// Can be used to dig through wood or stone structures (i.e. doors and
     /// walls). Ineffective against metal.
     PickAxe,
+
     /// Description will have the sign's message.
     Sign,
     EmpSword, // TODO: do we want UniqueNPC and UniqueItem?
@@ -43,40 +47,51 @@ pub enum Tag {
     /// If it has a Binding tag then it can only be opened by characters that
     /// have a matching Binding object in their inventory (i.e. a key).
     ClosedDoor,
+
     /// Each level will have one of these. Will also have the Character tag.
     /// Grass, dirt, etc. Will have a Terrain tag,
     Ground,
+
     /// Will have a Terrain tag,
     ShallowWater,
+
     /// Will have a Terrain tag,
     DeepWater,
+
     /// Will have a Terrain tag,
     Vitr,
+
     /// Normally also has a terrain tag. This will also share tags with
     /// ClosedDoor so that they can be preserved as doors transition from
     /// open to closed.
     OpenDoor,
+
     /// Used for objects that are the lowest layer in a Cell, e.g. grassy ground.
     /// Note that this can be used for unusual objects such as a ballista. Will
     /// have a Background tag.
     Terrain,
+
     /// Will have a terrain tag. TODO: may want Material and Durability but
     /// burnt trees should probably remain impassible
     Tree,
+
     /// Will have a terrain tag and normally Durability and Material tags.
     /// At zero durability the wall is broken through.
     Wall,
 
     /// Normally only used with Terrain.
     Background(Color),
+
     /// Typically at zero durability an object will change somehow, e.g. a
     /// door will become open or a character will die.
     Durability {
         current: i32,
         max: i32,
     },
+
     /// Used for some terrain objects, e.g. walls and doors.
     Material(Material),
+
     /// Characters and portable objects all have names.
     Name(String),
 }
