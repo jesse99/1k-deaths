@@ -35,6 +35,18 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
+\'95\'a0Use a parallel enum for tag ids:\
+	- TagId::Character\
+\'95 Work on objects/cells:\
+	- objects should have a unique id\
+		` use an ObjId newtype\
+		` or make make these newtype strings? would make debugging a lot nicer\
+		` possibly even fixed length, stack allocated strings \
+			(or base static string ref + counter)\
+			counter could be global to avoid lookup on allocation\
+	- objects should have an Option<Point>\
+	- Game should have id => Object map\
+	- Level should have Point => Vec<object id> map\
 \'95 Work on a time system:\
 	- player actions (moving, opening doors, picking up items, talking) should take time\
 	- need a priority queue to keep track of who\'92s turn it is next\
