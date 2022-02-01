@@ -1,5 +1,6 @@
 use super::make;
-use super::{Cell, Event, Object, Point, Tag};
+use super::tag::*;
+use super::{Cell, Event, Object, Point};
 use fnv::FnvHashMap;
 
 pub struct Level {
@@ -59,22 +60,22 @@ impl Level {
                 self.constructing = false;
             }
             Event::AddObject(loc, obj) => {
-                if obj.player() {
+                if obj.has(PLAYER_ID) {
                     self.player = *loc;
                 }
                 let cell = self.cells.entry(*loc).or_insert_with(Cell::new);
                 cell.append(obj.clone());
             }
-            Event::ChangeObject(loc, tag, obj) => {
+            Event::ChangeObject(loc, id, obj) => {
                 let cell = self.cells.get_mut(loc).unwrap();
-                cell.replace(tag, obj.clone());
+                cell.replace(*id, obj.clone());
             }
-            Event::DestroyObject(loc, tag) => {
-                self.destroy_object(loc, tag);
+            Event::DestroyObject(loc, id) => {
+                self.destroy_object(loc, *id);
             }
             Event::PlayerMoved(loc) => {
                 let cell = self.cells.get_mut(&self.player).unwrap();
-                let obj = cell.remove(&Tag::Player);
+                let obj = cell.remove(PLAYER_ID);
                 self.player = *loc;
                 let cell = self.cells.entry(self.player).or_insert_with(Cell::new);
                 cell.append(obj);
@@ -82,7 +83,7 @@ impl Level {
             }
             Event::NPCMoved(old, new) => {
                 let cell = self.cells.get_mut(old).unwrap();
-                let obj = cell.remove(&Tag::Character);
+                let obj = cell.remove(CHARACTER_ID);
                 let cell = self.cells.entry(*new).or_insert_with(Cell::new);
                 cell.append(obj);
                 self.ensure_neighbors(new);
@@ -91,22 +92,22 @@ impl Level {
         };
     }
 
-    fn destroy_object(&mut self, loc: &Point, tag: &Tag) {
+    fn destroy_object(&mut self, loc: &Point, id: u16) {
         let cell = self.cells.get_mut(loc).unwrap();
-        let obj = cell.get(tag);
-        if obj.has(&Tag::Terrain) {
+        let obj = cell.get(id);
+        if obj.has(TERRAIN_ID) {
             // Terrain cannot be destroyed but has to be mutated into something
             // else.
-            if obj.wall() {
-                cell.replace(&Tag::Terrain, make::rubble());
+            if obj.has(WALL_ID) {
+                cell.replace(TERRAIN_ID, make::rubble());
             } else {
-                error!("Need to better handle destroying {tag}"); // Doors, trees, etc
-                cell.replace(&Tag::Terrain, make::dirt());
+                error!("Need to better handle destroying {id}"); // Doors, trees, etc
+                cell.replace(TERRAIN_ID, make::dirt());
             }
         } else {
             // If it's just a normal object or character we can just nuke
             // the object.
-            cell.remove(tag);
+            cell.remove(id);
         }
     }
 
@@ -126,16 +127,7 @@ impl Level {
     // (or something like deep shadow).
     fn ensure_neighbors(&mut self, loc: &Point) {
         if !self.constructing {
-            let deltas = vec![
-                (-1, -1),
-                (-1, 1),
-                (-1, 0),
-                (1, -1),
-                (1, 1),
-                (1, 0),
-                (0, -1),
-                (0, 1),
-            ];
+            let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
             for delta in deltas {
                 let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
                 let _ = self.cells.entry(new_loc).or_insert_with(|| {

@@ -1,4 +1,4 @@
-use super::{Color, Event, Game, Material, Message, Object, Point, Tag, Topic};
+use super::{Color, Durability, Event, Game, Material, Message, Object, Point, Tag, Topic};
 use rand::prelude::*;
 
 pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
@@ -271,19 +271,11 @@ fn ground_tags(bg: Color) -> Vec<Tag> {
 }
 
 fn shallow_water_tags() -> Vec<Tag> {
-    vec![
-        Tag::ShallowWater,
-        Tag::Background(Color::LightBlue),
-        Tag::Terrain,
-    ]
+    vec![Tag::ShallowWater, Tag::Background(Color::LightBlue), Tag::Terrain]
 }
 
 fn deep_water_tags() -> Vec<Tag> {
-    vec![
-        Tag::DeepWater,
-        Tag::Background(Color::LightBlue),
-        Tag::Terrain,
-    ]
+    vec![Tag::DeepWater, Tag::Background(Color::LightBlue), Tag::Terrain]
 }
 fn vitr_tags() -> Vec<Tag> {
     vec![Tag::Vitr, Tag::Background(Color::Black), Tag::Terrain]
@@ -292,10 +284,10 @@ fn vitr_tags() -> Vec<Tag> {
 fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
     let durability = 5 * to_durability(material); // walls are quite a bit tougher than something like a door
     vec![
-        Tag::Durability {
+        Tag::Durability(Durability {
             current: durability,
             max: durability,
-        },
+        }),
         Tag::Material(material),
         Tag::Wall,
         Tag::Background(bg),
@@ -310,10 +302,10 @@ fn tree_tags() -> Vec<Tag> {
 fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
     let durability = to_durability(material);
     vec![
-        Tag::Durability {
+        Tag::Durability(Durability {
             current: durability,
             max: durability,
-        },
+        }),
         Tag::Material(material),
         if open { Tag::OpenDoor } else { Tag::ClosedDoor },
         Tag::Background(bg),
@@ -333,10 +325,7 @@ fn npc_tags(name: &str, tag: Tag) -> Vec<Tag> {
 fn player_tags() -> Vec<Tag> {
     vec![
         Tag::Character,
-        Tag::Durability {
-            current: 100,
-            max: 100,
-        },
+        Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Inventory(Vec::new()),
         Tag::Name(String::from("yourself")),
         Tag::Player,
@@ -348,18 +337,11 @@ fn weak_sword_tags(name: &str) -> Vec<Tag> {
 }
 
 fn mighty_sword_tags() -> Vec<Tag> {
-    vec![
-        Tag::Name(String::from("Sword of Impending Doom")),
-        Tag::Portable,
-    ]
+    vec![Tag::Name(String::from("Sword of Impending Doom")), Tag::Portable]
 }
 
 fn pick_axe_tags() -> Vec<Tag> {
-    vec![
-        Tag::Name(String::from("a pick-axe")),
-        Tag::PickAxe,
-        Tag::Portable,
-    ]
+    vec![Tag::Name(String::from("a pick-axe")), Tag::PickAxe, Tag::Portable]
 }
 
 fn emp_sword_tags() -> Vec<Tag> {

@@ -2,6 +2,8 @@
 //! Characters and between items. It's structured as a lookup table of
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
 use super::make;
+use super::object::TagValue;
+use super::tag::*;
 use super::{Cell, Event, Game, Material, Message, Point, State, Tag, Topic};
 use fnv::FnvHashMap;
 use rand::prelude::*;
@@ -37,7 +39,7 @@ fn find_empty_cell(game: &Game, loc: &Point) -> Option<Point> {
     for delta in deltas {
         let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
         let cell = &game.level.get(&new_loc);
-        if !cell.contains(&Tag::Character) && impassible_terrain(cell).is_none() {
+        if !cell.contains(CHARACTER_ID) && impassible_terrain(cell).is_none() {
             return Some(new_loc);
         }
     }
@@ -47,11 +49,11 @@ fn find_empty_cell(game: &Game, loc: &Point) -> Option<Point> {
 fn damage_wall(game: &Game, loc: &Point, scaled_damage: i32, events: &mut Vec<Event>) {
     assert!(scaled_damage > 0);
     let cell = game.level.get(loc);
-    let obj = cell.get(&Tag::Wall);
-    let (current, max) = obj.durability().unwrap();
-    let damage = max / scaled_damage;
+    let obj = cell.get(WALL_ID);
+    let durability: Durability = obj.value(DURABILITY_ID).unwrap();
+    let damage = durability.max / scaled_damage;
 
-    if damage < current {
+    if damage < durability.current {
         let mesg = Message::new(
             Topic::Normal,
             "You chip away at the wall with your pick-axe.", // TODO: probably should have slightly different text for wooden walls (if we ever add them)
@@ -59,16 +61,16 @@ fn damage_wall(game: &Game, loc: &Point, scaled_damage: i32, events: &mut Vec<Ev
         events.push(Event::AddMessage(mesg));
 
         let mut obj = obj.clone();
-        obj.replace(Tag::Durability {
-            current: current - damage,
-            max,
-        });
-        events.push(Event::ChangeObject(*loc, Tag::Wall, obj));
+        obj.replace(Tag::Durability(Durability {
+            current: durability.current - damage,
+            max: durability.max,
+        }));
+        events.push(Event::ChangeObject(*loc, WALL_ID, obj));
     } else {
         let mesg = Message::new(Topic::Important, "You destroy the wall!");
         events.push(Event::AddMessage(mesg));
 
-        events.push(Event::DestroyObject(*loc, Tag::Wall));
+        events.push(Event::DestroyObject(*loc, WALL_ID));
     }
 }
 
@@ -92,8 +94,9 @@ fn emp_sword_vs_vitr(game: &Game, _player_loc: &Point, _new_loc: &Point, events:
 
 fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let cell = game.level.get(new_loc);
-    let obj = cell.get(&Tag::Wall);
-    match obj.material() {
+    let obj = cell.get(WALL_ID);
+    let material: Option<Material> = obj.value(MATERIAL_ID);
+    match material {
         // Some(Material::Wood) => damage_wall(game, new_loc, 3, events),
         Some(Material::Stone) => damage_wall(game, new_loc, 6, events),
         Some(Material::Metal) => {
@@ -109,13 +112,13 @@ fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &
 }
 
 fn player_vs_closed_door(_game: &Game, loc: &Point, events: &mut Vec<Event>) {
-    events.push(Event::ChangeObject(*loc, Tag::ClosedDoor, make::open_door()));
+    events.push(Event::ChangeObject(*loc, CLOSED_DOOR_ID, make::open_door()));
 }
 
 fn player_vs_doorman(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
     let cell = game.level.get(&game.level.player());
-    let obj = cell.get(&Tag::Character);
-    match obj.inventory() {
+    let obj = cell.get(CHARACTER_ID);
+    match obj.as_ref(INVENTORY_ID) {
         Some(items) if items.iter().any(|obj| obj.description.contains("Doom")) => {
             let mesg = Message::new(Topic::NPCSpeaks, "Ahh, a new champion for the Emperor!");
             events.push(Event::AddMessage(mesg));
@@ -146,7 +149,7 @@ fn player_vs_rhulad(_game: &Game, player_loc: &Point, new_loc: &Point, events: &
     let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
     events.push(Event::AddMessage(mesg));
 
-    events.push(Event::DestroyObject(*new_loc, Tag::Character));
+    events.push(Event::DestroyObject(*new_loc, CHARACTER_ID));
     events.push(Event::AddObject(*player_loc, super::make::emp_sword()));
     events.push(Event::AddToInventory(*player_loc));
     events.push(Event::StateChanged(State::KilledRhulad));
@@ -160,11 +163,10 @@ fn player_vs_shallow_water(_game: &Game, _loc: &Point, events: &mut Vec<Event>) 
 
 fn player_vs_sign(game: &Game, loc: &Point, events: &mut Vec<Event>) {
     let cell = game.level.get(loc);
-    let obj = cell.get(&Tag::Sign);
-    let text = obj.sign().unwrap();
+    let obj = cell.get(SIGN_ID);
     let mesg = Message {
         topic: Topic::Normal,
-        text: format!("You see a sign {text}."),
+        text: format!("You see a sign {}.", obj.description),
     };
     events.push(Event::AddMessage(mesg));
 }
@@ -218,8 +220,8 @@ type PostHandler = fn(&Game, &Point, &mut Vec<Event>);
 // add support for pre-move handlers
 // do we need any other handlers? or maybe just comment missing ones?
 pub struct Interactions {
-    pre_table: FnvHashMap<(i32, i32), PreHandler>,
-    post_table: FnvHashMap<i32, PostHandler>,
+    pre_table: FnvHashMap<(u16, u16), PreHandler>,
+    post_table: FnvHashMap<u16, PostHandler>,
 }
 
 impl Interactions {
@@ -229,20 +231,20 @@ impl Interactions {
             post_table: FnvHashMap::default(),
         };
 
-        i.pre_ins(Tag::EmpSword, Tag::Vitr, emp_sword_vs_vitr);
-        i.pre_ins(Tag::PickAxe, Tag::Wall, pick_axe_vs_wall);
-        i.pre_ins(Tag::Player, Tag::DeepWater, player_vs_deep_water);
-        i.pre_ins(Tag::Player, Tag::Doorman, player_vs_doorman);
-        i.pre_ins(Tag::Player, Tag::Rhulad, player_vs_rhulad);
-        i.pre_ins(Tag::Player, Tag::Spectator, player_vs_spectator);
-        i.pre_ins(Tag::Player, Tag::Tree, player_vs_tree);
-        i.pre_ins(Tag::Player, Tag::Vitr, player_vs_vitr);
-        i.pre_ins(Tag::Player, Tag::Wall, player_vs_wall);
+        i.pre_ins(EMP_SWORD_ID, VITR_ID, emp_sword_vs_vitr);
+        i.pre_ins(PICK_AXE_ID, WALL_ID, pick_axe_vs_wall);
+        i.pre_ins(PLAYER_ID, DEEP_WATER_ID, player_vs_deep_water);
+        i.pre_ins(PLAYER_ID, DOORMAN_ID, player_vs_doorman);
+        i.pre_ins(PLAYER_ID, RHULAD_ID, player_vs_rhulad);
+        i.pre_ins(PLAYER_ID, SPECTATOR_ID, player_vs_spectator);
+        i.pre_ins(PLAYER_ID, TREE_ID, player_vs_tree);
+        i.pre_ins(PLAYER_ID, VITR_ID, player_vs_vitr);
+        i.pre_ins(PLAYER_ID, WALL_ID, player_vs_wall);
 
-        i.post_ins(Tag::ClosedDoor, player_vs_closed_door); // post moves are always (Player, X)
-        i.post_ins(Tag::Portable, player_vs_portable);
-        i.post_ins(Tag::ShallowWater, player_vs_shallow_water);
-        i.post_ins(Tag::Sign, player_vs_sign);
+        i.post_ins(CLOSED_DOOR_ID, player_vs_closed_door); // post moves are always (Player, X)
+        i.post_ins(PORTABLE_ID, player_vs_portable);
+        i.post_ins(SHALLOW_WATER_ID, player_vs_shallow_water);
+        i.post_ins(SIGN_ID, player_vs_sign);
 
         i
     }
@@ -260,7 +262,7 @@ impl Interactions {
         new_loc: &Point,
         events: &mut Vec<Event>,
     ) -> bool {
-        if let Some(handler) = self.pre_table.get(&(tag0.to_index(), tag1.to_index())) {
+        if let Some(handler) = self.pre_table.get(&(tag0.to_id(), tag1.to_id())) {
             handler(game, char_loc, new_loc, events)
         } else {
             false
@@ -272,16 +274,16 @@ impl Interactions {
     /// or an object (e.g. a Sign). Typically all interactible objects in
     /// the new cell are interacted with.
     pub fn post_move(&self, tag1: &Tag, game: &Game, loc: &Point, events: &mut Vec<Event>) {
-        if let Some(handler) = self.post_table.get(&tag1.to_index()) {
+        if let Some(handler) = self.post_table.get(&tag1.to_id()) {
             handler(game, loc, events);
         }
     }
 
-    fn pre_ins(&mut self, tag0: Tag, tag1: Tag, handler: PreHandler) {
-        self.pre_table.insert((tag0.to_index(), tag1.to_index()), handler);
+    fn pre_ins(&mut self, id0: u16, id1: u16, handler: PreHandler) {
+        self.pre_table.insert((id0, id1), handler);
     }
 
-    fn post_ins(&mut self, tag1: Tag, handler: PostHandler) {
-        self.post_table.insert(tag1.to_index(), handler);
+    fn post_ins(&mut self, id1: u16, handler: PostHandler) {
+        self.post_table.insert(id1, handler);
     }
 }

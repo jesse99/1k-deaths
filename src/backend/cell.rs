@@ -1,4 +1,5 @@
-use super::{Color, Object, Tag};
+use super::tag::*;
+use super::{Color, Object};
 use std::fmt::{self, Formatter};
 use std::ops::{Deref, DerefMut};
 
@@ -31,38 +32,38 @@ impl Cell {
         &self.objects[0]
     }
 
-    pub fn contains(&self, tag: &Tag) -> bool {
-        self.objects.iter().any(|obj| obj.has(tag))
+    pub fn contains(&self, id: u16) -> bool {
+        self.objects.iter().any(|obj| obj.has(id))
     }
 
-    pub fn get(&self, tag: &Tag) -> &Object {
-        if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
+    pub fn get(&self, id: u16) -> &Object {
+        if let Some(index) = self.objects.iter().position(|obj| obj.has(id)) {
             &self.objects[index]
         } else {
-            panic!("failed to find tag {}", tag);
+            panic!("failed to find id {}", id);
         }
     }
 
-    pub fn get_mut(&mut self, tag: &Tag) -> DerefObj<'_> {
-        if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
+    pub fn get_mut(&mut self, id: u16) -> DerefObj<'_> {
+        if let Some(index) = self.objects.iter().position(|obj| obj.has(id)) {
             DerefObj { cell: self, index }
         } else {
-            panic!("failed to find tag {}", tag);
+            panic!("failed to find id {}", id);
         }
     }
 
-    pub fn remove(&mut self, tag: &Tag) -> Object {
-        if let Some(index) = self.objects.iter().position(|obj| obj.has(tag)) {
+    pub fn remove(&mut self, id: u16) -> Object {
+        if let Some(index) = self.objects.iter().position(|obj| obj.has(id)) {
             let obj = self.objects.remove(index);
             self.invariant();
             obj
         } else {
-            panic!("failed to find tag {}", tag);
+            panic!("failed to find id {}", id);
         }
     }
 
-    pub fn replace(&mut self, tag: &Tag, new_obj: Object) {
-        let index = self.objects.iter().position(|obj| obj.has(tag)).unwrap();
+    pub fn replace(&mut self, id: u16, new_obj: Object) {
+        let index = self.objects.iter().position(|obj| obj.has(id)).unwrap();
         self.objects[index] = new_obj;
         self.invariant();
     }
@@ -78,14 +79,14 @@ impl Cell {
             "Cells must have at least a Terrain object: {self}"
         );
         assert!(
-            self.objects[0].terrain(),
+            self.objects[0].has(TERRAIN_ID),
             "First object in a Cell must be a Terrain object: {self}"
         );
 
-        let count = self.objects.iter().filter(|obj| obj.terrain()).count();
+        let count = self.objects.iter().filter(|obj| obj.has(TERRAIN_ID)).count();
         assert!(count == 1, "There must be only one terrain object in a Cell: {self}");
 
-        let count = self.objects.iter().filter(|obj| obj.character()).count();
+        let count = self.objects.iter().filter(|obj| obj.has(CHARACTER_ID)).count();
         assert!(
             count <= 1,
             "There cannot be more than one Character object in a Cell: {self}"

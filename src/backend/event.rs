@@ -1,4 +1,4 @@
-use super::{Message, Object, Point, State, Tag};
+use super::{Message, Object, Point, State};
 use std::fmt::{self, Formatter};
 
 /// These are the "facts" associated with a particular game. All game state
@@ -12,8 +12,8 @@ pub enum Event {
     EndConstructLevel,
     AddObject(Point, Object),
     AddToInventory(Point), // TODO: this will likely need to take a character id, and maybe an item id
-    ChangeObject(Point, Tag, Object),
-    DestroyObject(Point, Tag),
+    ChangeObject(Point, u16, Object),
+    DestroyObject(Point, u16),
     PlayerMoved(Point),
     NPCMoved(Point, Point),
     // Note that new variants MUST be added at the end (or saved games will break).
@@ -29,8 +29,8 @@ impl fmt::Display for Event {
             Event::EndConstructLevel => write!(f, "EndConstructLevel"),
             Event::AddObject(loc, obj) => write!(f, "AddObject({loc}, {obj})"),
             Event::AddToInventory(loc) => write!(f, "AddToInventory({loc})"),
-            Event::ChangeObject(loc, tag, obj) => write!(f, "ChangeObject({loc}, {tag}, {obj})"),
-            Event::DestroyObject(loc, tag) => write!(f, "DestroyObject({loc}, {tag})"),
+            Event::ChangeObject(loc, id, obj) => write!(f, "ChangeObject({loc}, {id}, {obj})"),
+            Event::DestroyObject(loc, id) => write!(f, "DestroyObject({loc}, {id})"),
             Event::PlayerMoved(loc) => write!(f, "PlayerMoved({loc})"),
             Event::NPCMoved(old, new) => write!(f, "NPCMoved({old}, {new})"),
         }

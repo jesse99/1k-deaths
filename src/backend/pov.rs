@@ -1,5 +1,6 @@
 use super::details::Game1;
 use super::primitives::FoV;
+use super::tag::*;
 use super::{Cell, Event, Level, Object, Point};
 use fnv::FnvHashSet;
 
@@ -96,10 +97,10 @@ impl PoV {
 }
 
 fn obj_blocks_los(obj: &Object) -> bool {
-    if let Some(false) = obj.door() {
+    if obj.has(CLOSED_DOOR_ID) {
         true
     } else {
-        obj.wall()
+        obj.has(WALL_ID)
     }
 }
 

@@ -22,7 +22,7 @@ use cell::Cell;
 use derive_more::Display;
 use interactions::Interactions;
 use level::Level;
-use object::Object;
+use object::{Object, TagValue};
 use old_pov::OldPoV;
 use pov::PoV;
 use rand::prelude::*;
@@ -30,7 +30,8 @@ use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
 use std::fs::File;
-use tag::{Material, Tag};
+use tag::*;
+use tag::{Durability, Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
 const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
@@ -286,7 +287,7 @@ impl Game {
         let mut chars = Vec::new();
         for &loc in self.pov.locations() {
             let cell = self.level.get(&loc);
-            if cell.contains(&Tag::Character) {
+            if cell.contains(CHARACTER_ID) {
                 chars.push(loc);
             }
         }
@@ -435,8 +436,8 @@ impl Game {
             Event::AddToInventory(loc) => {
                 let item = {
                     let cell = &mut self.level.get_mut(loc);
-                    let item = cell.remove(&Tag::Portable);
-                    let name = item.name().unwrap();
+                    let item = cell.remove(PORTABLE_ID);
+                    let name: String = item.value(NAME_ID).unwrap();
                     let mesg = Message {
                         topic: Topic::Normal,
                         text: format!("You pick up the {name}."),
@@ -446,7 +447,7 @@ impl Game {
                 };
 
                 let cell = &mut self.level.get_mut(&self.level.player());
-                let mut obj = cell.get_mut(&Tag::Player);
+                let mut obj = cell.get_mut(PLAYER_ID);
                 obj.pick_up(item);
                 true
             }
@@ -478,8 +479,8 @@ impl Game {
     fn interact_pre_move(&self, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
         // First see if an inventory item can interact with the new cell.
         let cell = self.level.get(player_loc);
-        let obj = cell.get(&Tag::Player);
-        let inv = obj.inventory().unwrap();
+        let obj = cell.get(PLAYER_ID);
+        let inv = obj.as_ref(INVENTORY_ID).unwrap();
         for obj in inv.iter() {
             for tag0 in obj.iter() {
                 if self.interact_pre_move_with_tag(tag0, player_loc, new_loc, events) {

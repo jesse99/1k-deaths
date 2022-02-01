@@ -1,3 +1,4 @@
+use super::tag::*;
 use super::{Color, Material, Tag};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
@@ -23,100 +24,118 @@ impl Object {
     }
 
     pub fn replace(&mut self, tag: Tag) {
-        let i = tag.to_index();
-        let index = self
-            .tags
-            .iter()
-            .position(|candidate| candidate.to_index() == i)
-            .unwrap();
+        let id = tag.to_id();
+        let index = self.tags.iter().position(|candidate| candidate.to_id() == id).unwrap();
         self.tags[index] = tag;
         self.invariant();
     }
 
-    pub fn character(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_character())
-    }
-
-    pub fn player(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_player())
-    }
-
-    pub fn inventory(&self) -> Option<&Vec<Object>> {
-        self.tags.iter().find_map(|tag| tag.as_inventory())
-    }
-
-    // We use this instead of inventory_mut to make it easier to call
-    // invariant.
+    // We use this instead of inventory_mut to make it easier to call the invariant.
     pub fn pick_up(&mut self, item: Object) {
-        let inv = self.tags.iter_mut().find_map(|tag| tag.as_mut_inventory()).unwrap();
+        let inv = self.as_mut_ref(INVENTORY_ID).unwrap();
         inv.push(item);
         self.invariant();
     }
 
-    /// Returns open or closed (or None if there is no door).
-    pub fn door(&self) -> Option<bool> {
-        if self.tags.iter().any(|tag| tag.is_open_door()) {
-            Some(true)
-        } else if self.tags.iter().any(|tag| tag.is_closed_door()) {
-            Some(false)
-        } else {
-            None
-        }
-    }
-
-    pub fn portable(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_portable())
-    }
-
-    pub fn sign(&self) -> Option<&String> {
-        if self.tags.iter().any(|tag| tag.is_sign()) {
-            Some(&self.description)
-        } else {
-            None
-        }
-    }
-
-    pub fn terrain(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_terrain())
-    }
-
-    pub fn wall(&self) -> bool {
-        self.tags.iter().any(|tag| tag.is_wall())
-    }
-
-    pub fn background(&self) -> Option<Color> {
-        self.tags.iter().find_map(|tag| tag.as_background())
-    }
-
-    /// Returns (current max) durability (or None).
-    pub fn durability(&self) -> Option<(i32, i32)> {
-        self.tags.iter().find_map(|tag| tag.as_durability())
-    }
-
-    pub fn material(&self) -> Option<Material> {
-        self.tags.iter().find_map(|tag| tag.as_material())
-    }
-
-    pub fn name(&self) -> Option<&String> {
-        self.tags.iter().find_map(|tag| tag.as_name())
-    }
-
     /// This uses to_index so it will consider tags like Material(Stone) and
     /// Material(Metal) as equal.
-    pub fn has(&self, tag: &Tag) -> bool {
-        let index = tag.to_index();
-        self.tags.iter().any(|candidate| candidate.to_index() == index)
+    pub fn has(&self, id: u16) -> bool {
+        self.tags.iter().any(|candidate| candidate.to_id() == id)
     }
 
     pub fn to_bg_color(&self) -> Color {
-        match self.background() {
-            Some(color) => color,
-            None => panic!("Expected a background tag"),
-        }
+        self.value(BACKGROUND_ID).expect("Expected a Background tag")
     }
 
     pub fn to_fg_symbol(&self) -> (Color, char) {
         (self.color, self.symbol)
+    }
+}
+
+pub trait TagValue<T> {
+    fn value(&self, id: u16) -> Option<T>;
+}
+
+impl TagValue<Color> for Object {
+    fn value(&self, id: u16) -> Option<Color> {
+        for candidate in self.tags.iter() {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Background(value) => return Some(*value),
+                    _ => panic!("{} tag doesn't have a Color", candidate),
+                }
+            }
+        }
+        None
+    }
+}
+
+impl TagValue<Durability> for Object {
+    fn value(&self, id: u16) -> Option<Durability> {
+        for candidate in self.tags.iter() {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Durability(value) => return Some(*value),
+                    _ => panic!("{} tag doesn't have a Durability", candidate),
+                }
+            }
+        }
+        None
+    }
+}
+
+impl TagValue<Material> for Object {
+    fn value(&self, id: u16) -> Option<Material> {
+        for candidate in self.tags.iter() {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Material(value) => return Some(*value),
+                    _ => panic!("{} tag doesn't have a Material", candidate),
+                }
+            }
+        }
+        None
+    }
+}
+
+impl TagValue<String> for Object {
+    fn value(&self, id: u16) -> Option<String> {
+        for candidate in self.tags.iter() {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Name(value) => return Some(value.clone()),
+                    _ => panic!("{} tag doesn't have a String", candidate),
+                }
+            }
+        }
+        None
+    }
+}
+
+impl Object {
+    // TODO: add a trait for these?
+    pub fn as_ref(&self, id: u16) -> Option<&Vec<Object>> {
+        for candidate in self.tags.iter() {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Inventory(value) => return Some(value),
+                    _ => panic!("{} tag doesn't have a Vec<Object>", candidate),
+                }
+            }
+        }
+        None
+    }
+
+    pub fn as_mut_ref(&mut self, id: u16) -> Option<&mut Vec<Object>> {
+        for candidate in self.tags.iter_mut() {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Inventory(value) => return Some(value),
+                    _ => panic!("{} tag doesn't have a Vec<Object>", candidate),
+                }
+            }
+        }
+        None
     }
 }
 
@@ -125,40 +144,49 @@ impl Object {
     #[cfg(debug_assertions)]
     pub fn invariant(&self) {
         assert!(!self.description.is_empty(), "Must have a description: {self}");
-        if self.terrain() {
+        if self.has(TERRAIN_ID) {
             assert!(
-                self.background().is_some(),
+                self.has(BACKGROUND_ID),
                 "Terrain objects must have a Background: {self}",
             );
-            assert!(!self.character(), "Terrain objects cannot also be Characters: {self}",);
-            assert!(!self.portable(), "Terrain objects cannot be Portable: {self}",);
+            assert!(
+                !self.has(CHARACTER_ID),
+                "Terrain objects cannot also be Characters: {self}",
+            );
+            assert!(!self.has(PORTABLE_ID), "Terrain objects cannot be Portable: {self}",);
         }
-        if self.door().is_some() {
-            if let Some((current, _max)) = self.durability() {
-                assert!(current > 0, "Destroyed doors should change to Ground: {self}");
+        if self.has(CLOSED_DOOR_ID) {
+            if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
+                assert!(
+                    durability.current > 0,
+                    "Destroyed doors should change to Ground: {self}"
+                );
             }
         }
-        if self.wall() {
-            if let Some((current, _max)) = self.durability() {
-                assert!(current > 0, "Destroyed walls should change to Ground: {self}");
+        if self.has(WALL_ID) {
+            if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
+                assert!(
+                    durability.current > 0,
+                    "Destroyed walls should change to Ground: {self}"
+                );
             }
         }
-        if self.character() {
-            assert!(self.name().is_some(), "Character's must have a name: {self}");
-            assert!(!self.portable(), "Character objects cannot be Portable: {self}",);
+        if self.has(CHARACTER_ID) {
+            assert!(self.has(NAME_ID), "Character's must have a name: {self}");
+            assert!(!self.has(PORTABLE_ID), "Character objects cannot be Portable: {self}",);
         }
-        if self.player() {
-            assert!(self.character(), "Player must be a Character: {self}")
+        if self.has(PLAYER_ID) {
+            assert!(self.has(CHARACTER_ID), "Player must be a Character: {self}")
         }
-        if self.portable() {
-            assert!(self.name().is_some(), "Portable objects must have a Name: {self}")
+        if self.has(PORTABLE_ID) {
+            assert!(self.has(NAME_ID), "Portable objects must have a Name: {self}")
         }
 
-        let mut indexes = FnvHashSet::default();
+        let mut ids = FnvHashSet::default();
         for tag in &self.tags {
-            let index = tag.to_index();
-            assert!(!indexes.contains(&index), "'{}' has duplicate tags: {self}", self.dname);
-            indexes.insert(index);
+            let id = tag.to_id();
+            assert!(!ids.contains(&id), "'{}' has duplicate tags: {self}", self.dname);
+            ids.insert(id);
         }
     }
 }

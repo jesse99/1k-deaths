@@ -11,6 +11,15 @@ pub enum Material {
     Metal,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Durability {
+    pub current: i32,
+    pub max: i32,
+}
+
+// TODO: generate this file (Display trait may require some sort of escape hatch)
+// TODO: could we make ids more meanigful? maybe with a parallel enum?
+
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
 /// concept because those classes can be combined.
@@ -84,10 +93,7 @@ pub enum Tag {
 
     /// Typically at zero durability an object will change somehow, e.g. a
     /// door will become open or a character will die.
-    Durability {
-        current: i32,
-        max: i32,
-    },
+    Durability(Durability),
 
     /// Used for some terrain objects, e.g. walls and doors.
     Material(Material),
@@ -96,100 +102,56 @@ pub enum Tag {
     Name(String),
 }
 
+pub const CHARACTER_ID: u16 = 0;
+pub const PLAYER_ID: u16 = 1;
+pub const DOORMAN_ID: u16 = 2;
+pub const RHULAD_ID: u16 = 3;
+pub const SPECTATOR_ID: u16 = 4;
+pub const INVENTORY_ID: u16 = 5;
+pub const PORTABLE_ID: u16 = 6;
+pub const PICK_AXE_ID: u16 = 7;
+pub const SIGN_ID: u16 = 8;
+pub const EMP_SWORD_ID: u16 = 9;
+pub const CLOSED_DOOR_ID: u16 = 10;
+pub const GROUND_ID: u16 = 11;
+pub const SHALLOW_WATER_ID: u16 = 12;
+pub const DEEP_WATER_ID: u16 = 13;
+pub const VITR_ID: u16 = 14;
+pub const OPEN_DOOR_ID: u16 = 15;
+pub const TERRAIN_ID: u16 = 16;
+pub const TREE_ID: u16 = 17;
+pub const WALL_ID: u16 = 18;
+pub const BACKGROUND_ID: u16 = 19;
+pub const DURABILITY_ID: u16 = 20;
+pub const MATERIAL_ID: u16 = 21;
+pub const NAME_ID: u16 = 22;
+
 impl Tag {
-    pub fn is_character(&self) -> bool {
-        matches!(self, Tag::Character)
-    }
-
-    pub fn is_player(&self) -> bool {
-        matches!(self, Tag::Player)
-    }
-    pub fn is_portable(&self) -> bool {
-        matches!(self, Tag::Portable)
-    }
-    pub fn is_sign(&self) -> bool {
-        matches!(self, Tag::Sign)
-    }
-    pub fn is_closed_door(&self) -> bool {
-        matches!(self, Tag::ClosedDoor)
-    }
-    pub fn is_open_door(&self) -> bool {
-        matches!(self, Tag::OpenDoor)
-    }
-    pub fn is_terrain(&self) -> bool {
-        matches!(self, Tag::Terrain)
-    }
-    pub fn is_wall(&self) -> bool {
-        matches!(self, Tag::Wall)
-    }
-
-    pub fn as_inventory(&self) -> Option<&Vec<Object>> {
+    pub fn to_id(&self) -> u16 {
         match self {
-            Tag::Inventory(result) => Some(result),
-            _ => None,
-        }
-    }
-    pub fn as_mut_inventory(&mut self) -> Option<&mut Vec<Object>> {
-        match self {
-            Tag::Inventory(result) => Some(result),
-            _ => None,
-        }
-    }
-    pub fn as_background(&self) -> Option<Color> {
-        match *self {
-            Tag::Background(result) => Some(result),
-            _ => None,
-        }
-    }
-    pub fn as_durability(&self) -> Option<(i32, i32)> {
-        match *self {
-            Tag::Durability { current, max } => Some((current, max)),
-            _ => None,
-        }
-    }
-    pub fn as_material(&self) -> Option<Material> {
-        match *self {
-            Tag::Material(result) => Some(result),
-            _ => None,
-        }
-    }
-    pub fn as_name(&self) -> Option<&String> {
-        match self {
-            Tag::Name(result) => Some(result),
-            _ => None,
-        }
-    }
-
-    // TODO: Could use enum_index instead although that does require that variant
-    // values implement the Default trait.
-    pub fn to_index(&self) -> i32 {
-        match self {
-            Tag::Character => 1,
-            Tag::Player => 2,
-            Tag::Doorman => 3,
-            Tag::Rhulad => 4,
-            Tag::Spectator => 5,
-            Tag::Inventory(_) => 6,
-
-            Tag::Portable => 7,
-            Tag::Sign => 8,
-            Tag::EmpSword => 9,
-            Tag::PickAxe => 10,
-
-            Tag::ClosedDoor => 11,
-            Tag::Ground => 12,
-            Tag::ShallowWater => 13,
-            Tag::DeepWater => 14,
-            Tag::Vitr => 15,
-            Tag::OpenDoor => 16,
-            Tag::Terrain => 17,
-            Tag::Tree => 18,
-            Tag::Wall => 19,
-
-            Tag::Background(_bg) => 20,
-            Tag::Durability { current: _, max: _ } => 21,
-            Tag::Material(_material) => 22,
-            Tag::Name(_name) => 23,
+            Tag::Character => CHARACTER_ID,
+            Tag::Player => PLAYER_ID,
+            Tag::Doorman => DOORMAN_ID,
+            Tag::Rhulad => RHULAD_ID,
+            Tag::Spectator => SPECTATOR_ID,
+            Tag::Inventory(_) => INVENTORY_ID,
+            Tag::Portable => PORTABLE_ID,
+            Tag::EmpSword => EMP_SWORD_ID,
+            Tag::PickAxe => PICK_AXE_ID,
+            Tag::Sign => SIGN_ID,
+            Tag::ClosedDoor => CLOSED_DOOR_ID,
+            Tag::Ground => GROUND_ID,
+            Tag::ShallowWater => SHALLOW_WATER_ID,
+            Tag::DeepWater => DEEP_WATER_ID,
+            Tag::Vitr => VITR_ID,
+            Tag::OpenDoor => OPEN_DOOR_ID,
+            Tag::Terrain => TERRAIN_ID,
+            Tag::Tree => TREE_ID,
+            Tag::Wall => WALL_ID,
+            Tag::Background(_) => BACKGROUND_ID,
+            Tag::Durability(_) => DURABILITY_ID,
+            Tag::Material(_) => MATERIAL_ID,
+            Tag::Name(_) => NAME_ID,
         }
     }
 }
@@ -217,7 +179,7 @@ impl fmt::Display for Tag {
             Tag::Tree => write!(f, "Tree"),
             Tag::Wall => write!(f, "Wall"),
             Tag::Background(color) => write!(f, "Background({color})"),
-            Tag::Durability { current, max } => write!(f, "Durability({current}, {max})"),
+            Tag::Durability(durability) => write!(f, "Durability({}, {})", durability.current, durability.max),
             Tag::Material(material) => write!(f, "Material({material})"),
             Tag::Name(text) => write!(f, "Name({text})"),
         }

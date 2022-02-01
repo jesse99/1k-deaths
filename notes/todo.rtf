@@ -41,11 +41,17 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- when popping off an object from queue advance time to that point\
 	- queue will need some sort of object reference\
 		` could be loc and tag (but what if someone kills a character before it can move?)\
+		` objects have a unique id\
+			could have a table somewhere that listens for AddObject and DestroyObject\
+	- change vitr so that it starts small and expands\
+		` vitr object wouldnn\'92t queue an action if all it\'92s neighbors are vitr\
+		` don\'92t grow into default cells\
 	- min action time should be 1s\
 	- 1s == 100 ticks\
 	- fuzz times by +/1 15%	\
 	- times should probably be represented with a newtype (ticks are i64)\
 	- look at some of the resources for time system info\
+\'95 Generate tag.rs\
 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- maybe disposition enum, friendly, neutral, aggresive\
