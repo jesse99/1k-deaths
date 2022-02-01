@@ -37,8 +37,6 @@ impl Object {
         self.invariant();
     }
 
-    /// This uses to_index so it will consider tags like Material(Stone) and
-    /// Material(Metal) as equal.
     pub fn has(&self, id: u16) -> bool {
         self.tags.iter().any(|candidate| candidate.to_id() == id)
     }

@@ -37,6 +37,10 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- http://aturon.github.io/\
 \'95\'a0Use a parallel enum for tag ids:\
 	- TagId::Character\
+	- for ease of use could have a use statement for each variant\
+		enum TagId:CharacterId\
+	- do we even care that tag id\'92s are meaningless?\
+		` maybe better to just make them a newtype u16\
 \'95 Work on objects/cells:\
 	- objects should have a unique id\
 		` use an ObjId newtype\
@@ -44,6 +48,8 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 		` possibly even fixed length, stack allocated strings \
 			(or base static string ref + counter)\
 			counter could be global to avoid lookup on allocation\
+	- get rid of dname (or at least make it a static string ref)\
+	- can description be a static string ref?\
 	- objects should have an Option<Point>\
 	- Game should have id => Object map\
 	- Level should have Point => Vec<object id> map\

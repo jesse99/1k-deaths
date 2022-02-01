@@ -217,7 +217,6 @@ type PreHandler = fn(&Game, &Point, &Point, &mut Vec<Event>) -> bool;
 type PostHandler = fn(&Game, &Point, &mut Vec<Event>);
 
 // TODO:
-// add support for pre-move handlers
 // do we need any other handlers? or maybe just comment missing ones?
 pub struct Interactions {
     pre_table: FnvHashMap<(u16, u16), PreHandler>,
