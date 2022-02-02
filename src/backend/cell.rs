@@ -32,11 +32,11 @@ impl Cell {
         &self.objects[0]
     }
 
-    pub fn contains(&self, id: u16) -> bool {
+    pub fn contains(&self, id: TagId) -> bool {
         self.objects.iter().any(|obj| obj.has(id))
     }
 
-    pub fn get(&self, id: u16) -> &Object {
+    pub fn get(&self, id: TagId) -> &Object {
         if let Some(index) = self.objects.iter().position(|obj| obj.has(id)) {
             &self.objects[index]
         } else {
@@ -44,7 +44,7 @@ impl Cell {
         }
     }
 
-    pub fn get_mut(&mut self, id: u16) -> DerefObj<'_> {
+    pub fn get_mut(&mut self, id: TagId) -> DerefObj<'_> {
         if let Some(index) = self.objects.iter().position(|obj| obj.has(id)) {
             DerefObj { cell: self, index }
         } else {
@@ -52,7 +52,7 @@ impl Cell {
         }
     }
 
-    pub fn remove(&mut self, id: u16) -> Object {
+    pub fn remove(&mut self, id: TagId) -> Object {
         if let Some(index) = self.objects.iter().position(|obj| obj.has(id)) {
             let obj = self.objects.remove(index);
             self.invariant();
@@ -62,7 +62,7 @@ impl Cell {
         }
     }
 
-    pub fn replace(&mut self, id: u16, new_obj: Object) {
+    pub fn replace(&mut self, id: TagId, new_obj: Object) {
         let index = self.objects.iter().position(|obj| obj.has(id)).unwrap();
         self.objects[index] = new_obj;
         self.invariant();

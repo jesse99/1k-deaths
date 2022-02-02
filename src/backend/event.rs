@@ -1,4 +1,4 @@
-use super::{Message, Object, Point, State};
+use super::{Message, Object, Point, State, TagId};
 use std::fmt::{self, Formatter};
 
 /// These are the "facts" associated with a particular game. All game state
@@ -12,8 +12,8 @@ pub enum Event {
     EndConstructLevel,
     AddObject(Point, Object),
     AddToInventory(Point), // TODO: this will likely need to take a character id, and maybe an item id
-    ChangeObject(Point, u16, Object),
-    DestroyObject(Point, u16),
+    ChangeObject(Point, TagId, Object),
+    DestroyObject(Point, TagId),
     PlayerMoved(Point),
     NPCMoved(Point, Point),
     // Note that new variants MUST be added at the end (or saved games will break).

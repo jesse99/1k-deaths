@@ -37,7 +37,7 @@ impl Object {
         self.invariant();
     }
 
-    pub fn has(&self, id: u16) -> bool {
+    pub fn has(&self, id: TagId) -> bool {
         self.tags.iter().any(|candidate| candidate.to_id() == id)
     }
 
@@ -51,11 +51,11 @@ impl Object {
 }
 
 pub trait TagValue<T> {
-    fn value(&self, id: u16) -> Option<T>;
+    fn value(&self, id: TagId) -> Option<T>;
 }
 
 impl TagValue<Color> for Object {
-    fn value(&self, id: u16) -> Option<Color> {
+    fn value(&self, id: TagId) -> Option<Color> {
         for candidate in self.tags.iter() {
             if candidate.to_id() == id {
                 match candidate {
@@ -69,7 +69,7 @@ impl TagValue<Color> for Object {
 }
 
 impl TagValue<Durability> for Object {
-    fn value(&self, id: u16) -> Option<Durability> {
+    fn value(&self, id: TagId) -> Option<Durability> {
         for candidate in self.tags.iter() {
             if candidate.to_id() == id {
                 match candidate {
@@ -83,7 +83,7 @@ impl TagValue<Durability> for Object {
 }
 
 impl TagValue<Material> for Object {
-    fn value(&self, id: u16) -> Option<Material> {
+    fn value(&self, id: TagId) -> Option<Material> {
         for candidate in self.tags.iter() {
             if candidate.to_id() == id {
                 match candidate {
@@ -97,7 +97,7 @@ impl TagValue<Material> for Object {
 }
 
 impl TagValue<String> for Object {
-    fn value(&self, id: u16) -> Option<String> {
+    fn value(&self, id: TagId) -> Option<String> {
         for candidate in self.tags.iter() {
             if candidate.to_id() == id {
                 match candidate {
@@ -112,7 +112,7 @@ impl TagValue<String> for Object {
 
 impl Object {
     // TODO: add a trait for these?
-    pub fn as_ref(&self, id: u16) -> Option<&Vec<Object>> {
+    pub fn as_ref(&self, id: TagId) -> Option<&Vec<Object>> {
         for candidate in self.tags.iter() {
             if candidate.to_id() == id {
                 match candidate {
@@ -124,7 +124,7 @@ impl Object {
         None
     }
 
-    pub fn as_mut_ref(&mut self, id: u16) -> Option<&mut Vec<Object>> {
+    pub fn as_mut_ref(&mut self, id: TagId) -> Option<&mut Vec<Object>> {
         for candidate in self.tags.iter_mut() {
             if candidate.to_id() == id {
                 match candidate {

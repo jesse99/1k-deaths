@@ -219,8 +219,8 @@ type PostHandler = fn(&Game, &Point, &mut Vec<Event>);
 // TODO:
 // do we need any other handlers? or maybe just comment missing ones?
 pub struct Interactions {
-    pre_table: FnvHashMap<(u16, u16), PreHandler>,
-    post_table: FnvHashMap<u16, PostHandler>,
+    pre_table: FnvHashMap<(TagId, TagId), PreHandler>,
+    post_table: FnvHashMap<TagId, PostHandler>,
 }
 
 impl Interactions {
@@ -278,11 +278,11 @@ impl Interactions {
         }
     }
 
-    fn pre_ins(&mut self, id0: u16, id1: u16, handler: PreHandler) {
+    fn pre_ins(&mut self, id0: TagId, id1: TagId, handler: PreHandler) {
         self.pre_table.insert((id0, id1), handler);
     }
 
-    fn post_ins(&mut self, id1: u16, handler: PostHandler) {
+    fn post_ins(&mut self, id1: TagId, handler: PostHandler) {
         self.post_table.insert(id1, handler);
     }
 }

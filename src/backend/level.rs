@@ -92,7 +92,7 @@ impl Level {
         };
     }
 
-    fn destroy_object(&mut self, loc: &Point, id: u16) {
+    fn destroy_object(&mut self, loc: &Point, id: TagId) {
         let cell = self.cells.get_mut(loc).unwrap();
         let obj = cell.get(id);
         if obj.has(TERRAIN_ID) {
