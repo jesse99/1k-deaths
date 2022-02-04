@@ -1,7 +1,7 @@
 use super::details::Game1;
 use super::primitives::FoV;
 use super::tag::*;
-use super::{Cell, Event, Level, Object, Point};
+use super::{Event, Game, ObjId, Object, Point};
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -36,7 +36,7 @@ impl PoV {
                     self.dirty = true;
                 }
             }
-            Event::ChangeObject(_loc, _tag, _new_obj) => {
+            Event::ReplaceObject(_loc, _old_oid, _new_oid) => {
                 // TODO: This is currently only used for terrain, e.g. to open
                 // a door. These changes will normally require dirtying the PoV
                 // so, in theory, we could be smarter about this (but note that
@@ -65,17 +65,19 @@ impl PoV {
         self.visible.contains(loc)
     }
 
-    pub fn refresh(&mut self, origin: &Point, level: &mut Level) {
-        if self.dirty {
-            self.do_refresh(origin, level);
-            self.edition = self.edition.wrapping_add(1);
-            self.dirty = false;
+    // This can't me an ordinary method or we run into all sorts of borrowing grief.
+    pub fn refresh(game: &mut Game) {
+        if game.pov.dirty {
+            let loc = game.player;
+            PoV::do_refresh(game, &loc);
+            game.pov.edition = game.pov.edition.wrapping_add(1);
+            game.pov.dirty = false;
         }
     }
 
-    // Level is mutable so that we can create a Cell if one isn't already there.
-    fn do_refresh(&mut self, origin: &Point, level: &mut Level) {
-        self.visible.clear();
+    // Game is mutable so that we can create a Cell if one isn't already there.
+    fn do_refresh(game: &mut Game, origin: &Point) {
+        game.pov.visible.clear();
 
         let mut new_locs = Vec::new();
         let mut view = FoV {
@@ -84,13 +86,13 @@ impl PoV {
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
-            blocks_los: { |loc| blocks_los(level.try_get(&loc)) },
+            blocks_los: { |loc| blocks_los(game.cell_iter(&loc)) },
         };
         view.visit();
 
         for loc in new_locs {
-            if level.ensure_cell(&loc) {
-                self.visible.insert(loc);
+            if game.ensure_cell(&loc) {
+                game.pov.visible.insert(loc);
             }
         }
     }
@@ -104,9 +106,13 @@ fn obj_blocks_los(obj: &Object) -> bool {
     }
 }
 
-fn blocks_los(cell: Option<&Cell>) -> bool {
-    match cell {
-        Some(cell) => cell.iter().any(obj_blocks_los),
-        None => true,
+fn blocks_los<'a>(objs: impl Iterator<Item = (ObjId, &'a Object)>) -> bool {
+    let mut count = 0;
+    for obj in objs {
+        if obj_blocks_los(obj.1) {
+            return true;
+        }
+        count += 1;
     }
+    count == 0 // non-existent cell
 }

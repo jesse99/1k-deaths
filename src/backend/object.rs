@@ -1,5 +1,5 @@
 use super::tag::*;
-use super::{Color, Material, Tag};
+use super::{Color, Material, ObjId, Tag};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
 
@@ -10,15 +10,35 @@ use std::fmt::{self, Formatter};
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
-    pub dname: String,
-    pub tags: Vec<Tag>,
-    pub symbol: char,
-    pub color: Color,
-    pub description: String,
+    dname: String,
+
+    tags: Vec<Tag>,
+    symbol: char,
+    color: Color,
+    description: String,
 }
 
-// Tag accessors
 impl Object {
+    pub fn new<S: Into<String>, T: Into<String>>(
+        dname: S,
+        tags: Vec<Tag>,
+        symbol: char,
+        color: Color,
+        description: T,
+    ) -> Object {
+        Object {
+            dname: dname.into(),
+            tags,
+            symbol,
+            color,
+            description: description.into(),
+        }
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
     pub fn iter(&self) -> std::slice::Iter<Tag> {
         self.tags.iter()
     }
@@ -30,12 +50,12 @@ impl Object {
         self.invariant();
     }
 
-    // We use this instead of inventory_mut to make it easier to call the invariant.
-    pub fn pick_up(&mut self, item: Object) {
-        let inv = self.as_mut_ref(INVENTORY_ID).unwrap();
-        inv.push(item);
-        self.invariant();
-    }
+    // We use this instead of as_mut_ref to make it easier to call the invariant.
+    // pub fn pick_up(&mut self, item: Object) {
+    //     let inv = self.as_mut_ref(INVENTORY_ID).unwrap();
+    //     inv.push(item);
+    //     self.invariant();
+    // }
 
     pub fn has(&self, id: TagId) -> bool {
         self.tags.iter().any(|candidate| candidate.to_id() == id)
@@ -112,24 +132,24 @@ impl TagValue<String> for Object {
 
 impl Object {
     // TODO: add a trait for these?
-    pub fn as_ref(&self, id: TagId) -> Option<&Vec<Object>> {
+    pub fn as_ref(&self, id: TagId) -> Option<&Vec<ObjId>> {
         for candidate in self.tags.iter() {
             if candidate.to_id() == id {
                 match candidate {
                     Tag::Inventory(value) => return Some(value),
-                    _ => panic!("{} tag doesn't have a Vec<Object>", candidate),
+                    _ => panic!("{} tag doesn't have a Vec<ObjId>", candidate),
                 }
             }
         }
         None
     }
 
-    pub fn as_mut_ref(&mut self, id: TagId) -> Option<&mut Vec<Object>> {
+    pub fn as_mut_ref(&mut self, id: TagId) -> Option<&mut Vec<ObjId>> {
         for candidate in self.tags.iter_mut() {
             if candidate.to_id() == id {
                 match candidate {
                     Tag::Inventory(value) => return Some(value),
-                    _ => panic!("{} tag doesn't have a Vec<Object>", candidate),
+                    _ => panic!("{} tag doesn't have a Vec<ObjId>", candidate),
                 }
             }
         }

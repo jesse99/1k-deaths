@@ -1,5 +1,5 @@
 use super::details::Game2;
-use super::{Event, Level, PoV, Point};
+use super::{Event, Game, Point};
 use fnv::FnvHashMap;
 
 /// Locations that were visible to a character. Note that PoV overrides
@@ -29,14 +29,15 @@ impl OldPoV {
         };
     }
 
-    pub fn update(&mut self, level: &Level, pov: &PoV) {
-        if pov.edition() != self.edition {
-            for loc in pov.locations() {
-                let cell = level.get(loc);
-                let (_, _, symbol) = cell.to_bg_fg_symbol();
-                self.old.insert(*loc, symbol);
+    // This can't me an ordinary method or we run into all sorts of borrowing grief.
+    pub fn update(game: &mut Game) {
+        if game.pov.edition() != game.old_pov.edition {
+            for loc in game.pov.locations() {
+                let (_, obj) = game.get_top(loc);
+                let (_, symbol) = obj.to_fg_symbol();
+                game.old_pov.old.insert(*loc, symbol);
             }
-            self.edition = pov.edition();
+            game.old_pov.edition = game.pov.edition();
         }
     }
 

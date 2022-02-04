@@ -70,163 +70,133 @@ pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
 }
 
 pub fn dirt() -> Object {
-    Object {
-        dname: String::from("dirt"),
-        tags: ground_tags(Color::Black),
-        symbol: '.',
-        color: Color::LightSlateGray,
-        description: String::from("a patch of dirt"),
-    }
+    Object::new(
+        "dirt",
+        ground_tags(Color::Black),
+        '.',
+        Color::LightSlateGray,
+        "a patch of dirt",
+    )
 }
 
 pub fn rubble() -> Object {
-    Object {
-        dname: String::from("rubble"),
-        tags: ground_tags(Color::Black),
-        symbol: '…',
-        color: Color::Chocolate,
-        description: String::from("a destroyed wall"),
-    }
+    Object::new(
+        "rubble",
+        ground_tags(Color::Black),
+        '…',
+        Color::Chocolate,
+        "a destroyed wall",
+    )
 }
 
 pub fn stone_wall() -> Object {
-    Object {
-        dname: String::from("stone wall"),
-        tags: wall_tags(Color::Black, Material::Stone),
-        symbol: '#',
-        color: Color::Chocolate,
-        description: String::from("a stone wall"),
-    }
+    Object::new(
+        "stone wall",
+        wall_tags(Color::Black, Material::Stone),
+        '#',
+        Color::Chocolate,
+        "a stone wall",
+    )
 }
 
 pub fn metal_wall() -> Object {
-    Object {
-        dname: String::from("metal wall"),
-        tags: wall_tags(Color::Black, Material::Metal),
-        symbol: '#',
-        color: Color::Silver,
-        description: String::from("a metal wall"),
-    }
+    Object::new(
+        "metal wall",
+        wall_tags(Color::Black, Material::Metal),
+        '#',
+        Color::Silver,
+        "a metal wall",
+    )
 }
 
 pub fn tree() -> Object {
-    Object {
-        dname: String::from("tree"),
-        tags: tree_tags(),
-        symbol: 'T',
-        color: Color::ForestGreen,
-        description: String::from("a tree"),
-    }
+    Object::new("tree", tree_tags(), 'T', Color::ForestGreen, "a tree")
 }
 
 pub fn closed_door() -> Object {
-    Object {
-        dname: String::from("closed door"),
-        tags: door_tags(Color::Black, Material::Stone, false),
-        symbol: '+',
-        color: Color::Yellow,
-        description: String::from("a closed door"),
-    }
+    Object::new(
+        "closed door",
+        door_tags(Color::Black, Material::Stone, false),
+        '+',
+        Color::Yellow,
+        "a closed door",
+    )
 }
 
 pub fn open_door() -> Object {
-    Object {
-        dname: String::from("open door"),
-        tags: door_tags(Color::Black, Material::Stone, true),
-        symbol: '-',
-        color: Color::Yellow,
-        description: String::from("an open door"),
-    }
+    Object::new(
+        "open door",
+        door_tags(Color::Black, Material::Stone, true),
+        '-',
+        Color::Yellow,
+        "an open door",
+    )
 }
 
 pub fn shallow_water() -> Object {
-    Object {
-        dname: String::from("shallow water"),
-        tags: shallow_water_tags(),
-        symbol: '~',
-        color: Color::Blue,
-        description: String::from("shallow water"),
-    }
+    Object::new("shallow water", shallow_water_tags(), '~', Color::Blue, "shallow water")
 }
 
 pub fn deep_water() -> Object {
-    Object {
-        dname: String::from("deep water"),
-        tags: deep_water_tags(),
-        symbol: 'W',
-        color: Color::Blue,
-        description: String::from("deep water"),
-    }
+    Object::new("deep water", deep_water_tags(), 'W', Color::Blue, "deep water")
 }
 
 pub fn vitr() -> Object {
-    Object {
-        dname: String::from("vitr"),
-        tags: vitr_tags(),
-        symbol: 'V',
-        color: Color::Gold,
-        description: String::from("a pool of chaotic acid"),
-    }
+    Object::new("vitr", vitr_tags(), 'V', Color::Gold, "a pool of chaotic acid")
 }
 
 fn doorman() -> Object {
-    Object {
-        dname: "doorman".to_string(),
-        tags: npc_tags("Doorman", Tag::Doorman),
-        symbol: 'D',
-        color: Color::Green,
-        description: "a royal guard".to_string(),
-    }
+    Object::new(
+        "doorman",
+        npc_tags("Doorman", Tag::Doorman),
+        'D',
+        Color::Green,
+        "a royal guard",
+    )
 }
 
 fn rhulad() -> Object {
-    Object {
-        dname: "rhulad".to_string(),
-        tags: npc_tags("Rhulad", Tag::Rhulad),
-        symbol: 'R',
-        color: Color::Red,
-        description: "the Emperor of a Thousand Deaths".to_string(),
-    }
+    Object::new(
+        "rhulad",
+        npc_tags("Rhulad", Tag::Rhulad),
+        'R',
+        Color::Red,
+        "the Emperor of a Thousand Deaths",
+    )
 }
 
 fn spectator() -> Object {
-    Object {
-        dname: "spectator".to_string(),
-        tags: npc_tags("Spectator", Tag::Spectator),
-        symbol: 'o',
-        color: Color::Plum,
-        description: "a spectator".to_string(),
-    }
+    Object::new(
+        "spectator",
+        npc_tags("Spectator", Tag::Spectator),
+        'o',
+        Color::Plum,
+        "a spectator",
+    )
 }
 
 fn player() -> Object {
-    Object {
-        dname: String::from("player"),
-        tags: player_tags(),
-        symbol: '@',
-        color: Color::Blue,
-        description: String::from("yourself"),
-    }
+    Object::new("player", player_tags(), '@', Color::Blue, "yourself")
 }
 
 pub fn sign(text: &str) -> Object {
-    Object {
-        dname: String::from("sign"),
-        tags: sign_tags(),
-        symbol: 'i',
-        color: Color::Pink,
-        description: format!("a sign that says '{text}'"),
-    }
+    Object::new(
+        "sign",
+        sign_tags(),
+        'i',
+        Color::Pink,
+        format!("a sign that says '{text}'"),
+    )
 }
 
 pub fn emp_sword() -> Object {
-    Object {
-        dname: String::from("emp sword"),
-        tags: emp_sword_tags(),
-        symbol: 'C',
-        color: Color::Silver,
-        description: "the Sword of the Crippled God".to_string(),
-    }
+    Object::new(
+        "emp sword",
+        emp_sword_tags(),
+        'C',
+        Color::Silver,
+        "the Sword of the Crippled God",
+    )
 }
 
 pub fn weak_sword(game: &Game) -> Object {
@@ -237,33 +207,21 @@ pub fn weak_sword(game: &Game) -> Object {
         ("dagger", "a pointy dagger"),
     ];
     let sword = swords.iter().choose(&mut *game.rng()).unwrap();
-    Object {
-        dname: String::from("weak sword"),
-        tags: weak_sword_tags(sword.0),
-        symbol: 's',
-        color: Color::Silver,
-        description: sword.1.to_string(),
-    }
+    Object::new("weak sword", weak_sword_tags(sword.0), 's', Color::Silver, sword.1)
 }
 
 pub fn mighty_sword() -> Object {
-    Object {
-        dname: String::from("mighty sword"),
-        tags: mighty_sword_tags(),
-        symbol: 'S',
-        color: Color::Silver,
-        description: "the Sword of Impending Doom".to_string(),
-    }
+    Object::new(
+        "mighty sword",
+        mighty_sword_tags(),
+        'S',
+        Color::Silver,
+        "the Sword of Impending Doom",
+    )
 }
 
 pub fn pick_axe() -> Object {
-    Object {
-        dname: String::from("pick-axe"),
-        tags: pick_axe_tags(),
-        symbol: 'p',
-        color: Color::Tan,
-        description: "a pick-axe".to_string(),
-    }
+    Object::new("pick-axe", pick_axe_tags(), 'p', Color::Tan, "a pick-axe")
 }
 
 fn ground_tags(bg: Color) -> Vec<Tag> {

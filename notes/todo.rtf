@@ -35,25 +35,46 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
-\'95\'a0Use a parallel enum for tag ids:\
-	- TagId::Character\
-	- for ease of use could have a use statement for each variant\
-		enum TagId:CharacterId\
-	- do we even care that tag id\'92s are meaningless?  \
-		` maybe better to just make them a newtype u16\
 \'95 Work on objects/cells:\
+	- get this working again\
+		` compiling\
+		` unit tests\
+		` running\
+		` loading\
+	- change up get functions\
+		` should return default if missing\
+		` id 1 should be for default\
+		` get_mut would insert a new object\
+		` should be able to get rid of ensure_cell (probably mut game ref too)\
+		` note that this does mean returned oids can change\
+		` fixup invariant\
+	- do a commit (may not want to push quite yet)\
+		` motivation is to add oids (at a minimum time system will need this)\
 	- objects should have a unique id\
 		` use an ObjId newtype\
 		` or make make these newtype strings? would make debugging a lot nicer\
 		` possibly even fixed length, stack allocated strings \
-			(or base static string ref + counter)\
+			(or base static string ref + counter)  \
 			counter could be global to avoid lookup on allocation\
+	- nuke level module\
 	- get rid of dname (or at least make it a static string ref)\
 	- can description be a static string ref?\
 	- objects should have an Option<Point>\
-	- Game should have id => Object map\
-	- Level should have Point => Vec<object id> map\
-	- should inventory be a Vec<id>?\
+	- be sure to have game invariant checks\
+		` cell oids exist\
+		` oids are in level (or inventory tags)\
+		` oids have to be in one and only one place\
+		` will need some sort of \'97invariants option\
+		` old cell invariants\
+\'95 Can we make the mutable Game methods private for child modules?\
+	- maybe the way to go is to have a logic module\
+	- only public method is to process event(s)\
+	- has private game mutators\
+	- logic sub-modules could then use those mutators\
+\'95 Could move some of the backend game logic into a helper module\
+\'95 Can\'92t we do `for x in &v` instead of `for x in v.iter()`?\
+\'95 Can import variants using\
+	use EnumType::*;\
 \'95 Work on a time system:\
 	- player actions (moving, opening doors, picking up items, talking) should take time\
 	- need a priority queue to keep track of who\'92s turn it is next\
@@ -210,10 +231,16 @@ Step 11 - Simple game\
 \
 Step 12 - Levels\
 
-\f1\b0 \cf3 \'95 Need a default level, maybe shadow\
-	- bottom could have a portal into chaos\
-	- chaos portal should move? makes sense for it to be chaotic...\
+\f1\b0 \cf3 \'95 Might want to start in the Imperial Warren\
+	- could have sand traps\
+	- roughly circular\
+	- pretty high chance that move outwards does nothing\
+	- lower chance that you fall back towards the center\
+\'95 Shadow warren should use deep shadow instead of walls\
+	- can move into it but cant PoV goes to zero\
+	- so can\'92t see NPCs (tho they should be able to see player)\
 \'95 Will need to add a chaos branch\
+	- chaos portal should move? makes sense for it to be chaotic...\
 	- levels should be re-generated each time enter them\
 	- levels should slowly mutate?\
 	- at the bottom should be a vitr lake\

@@ -1,4 +1,4 @@
-use super::{Color, Object};
+use super::{Color, ObjId};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
@@ -37,7 +37,7 @@ pub enum Tag {
     Spectator,
 
     /// Objects that a Character has picked up.
-    Inventory(Vec<Object>),
+    Inventory(Vec<ObjId>),
 
     /// The object is something that can be picked up and placed into a
     /// Character's inventory.

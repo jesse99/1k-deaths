@@ -10,6 +10,9 @@ pub struct Level {
     constructing: bool,
 }
 
+// TODO:
+// move Level into Game
+// should be able to get rid of those internal events
 impl Level {
     /// The default object is used if the player (or an NPC) somehow goes
     /// outside the current level (e.g. by digging through a wall).
@@ -26,7 +29,7 @@ impl Level {
         self.player
     }
 
-    pub fn get(&self, loc: &Point) -> &Cell {
+    pub fn get(&self, loc: &Point, tag: TagId) -> Option<(ObjId, &Object)> {
         self.cells.get(loc).unwrap()
     }
 
@@ -101,7 +104,7 @@ impl Level {
             if obj.has(WALL_ID) {
                 cell.replace(TERRAIN_ID, make::rubble());
             } else {
-                error!("Need to better handle destroying {id}"); // Doors, trees, etc
+                error!("Need to better handle destroying TagId {id}"); // Doors, trees, etc
                 cell.replace(TERRAIN_ID, make::dirt());
             }
         } else {
