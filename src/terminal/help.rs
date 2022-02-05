@@ -69,19 +69,20 @@ struct SectionIterator {
 const EOT: char = '\x04';
 
 fn key_to_label(key: Key) -> String {
+    use Key::*;
     match key {
-        Key::Char(' ') => "space".to_string(),
-        Key::Char('\n') => "return".to_string(),
-        Key::Char('\t') => "tab".to_string(),
-        Key::Char('?') => "?".to_string(),
-        Key::Char(c) => c.to_string(),
-        Key::Ctrl(c) => format!("control-{c}"),
-        Key::BackTab => "shift-tab".to_string(),
-        Key::Esc => "escape".to_string(),
-        Key::Left => "left-arrow".to_string(),
-        Key::Right => "right-arrow".to_string(),
-        Key::Up => "up-arrow".to_string(),
-        Key::Down => "down-arrow".to_string(),
+        Char(' ') => "space".to_string(),
+        Char('\n') => "return".to_string(),
+        Char('\t') => "tab".to_string(),
+        Char('?') => "?".to_string(),
+        Char(c) => c.to_string(),
+        Ctrl(c) => format!("control-{c}"),
+        BackTab => "shift-tab".to_string(),
+        Esc => "escape".to_string(),
+        Left => "left-arrow".to_string(),
+        Right => "right-arrow".to_string(),
+        Up => "up-arrow".to_string(),
+        Down => "down-arrow".to_string(),
         _ => panic!("don't know how to format {key:?}"),
     }
 }

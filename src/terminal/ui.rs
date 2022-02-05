@@ -70,21 +70,22 @@ impl UI {
     }
 
     pub(super) fn handle_input(&mut self, stdout: &mut Box<dyn Write>, game: &mut Game) -> GameState {
+        use InputAction::*;
         let key = self.get_key();
         let mode = self.modes.last_mut().unwrap();
         match mode.handle_input(game, key) {
-            InputAction::UpdatedGame => (),
-            InputAction::Quit => return GameState::Exiting,
-            InputAction::Push(mode) => {
+            UpdatedGame => (),
+            Quit => return GameState::Exiting,
+            Push(mode) => {
                 self.modes.push(mode);
                 self.clear(stdout);
             }
-            InputAction::Pop => {
+            Pop => {
                 let _ = self.modes.pop();
                 assert!(!self.modes.is_empty());
                 self.clear(stdout);
             }
-            InputAction::NotHandled => {
+            NotHandled => {
                 debug!("player pressed {key:?}"); // TODO: beep?
             }
         }

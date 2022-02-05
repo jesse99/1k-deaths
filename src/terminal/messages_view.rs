@@ -34,11 +34,12 @@ impl MessagesView {
 }
 
 pub fn to_fore_color(topic: Topic) -> Color {
+    use Topic::*;
     match topic {
-        Topic::Error => Color::Red,
-        Topic::Normal => Color::Black,
-        Topic::Failed => Color::Red,
-        Topic::Important => Color::Blue,
-        Topic::NPCSpeaks => Color::Coral,
+        Error => Color::Red,
+        Normal => Color::Black,
+        Failed => Color::Red,
+        Important => Color::Blue,
+        NPCSpeaks => Color::Coral,
     }
 }
