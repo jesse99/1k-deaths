@@ -84,8 +84,9 @@ pub struct Game {
     messages: Vec<Message>,     // messages shown to the player
     interactions: Interactions, // double dispatch action tables, e.g. player vs door
 
-    pov: PoV,        // locations that the player can currently see
-    old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
+    pov: PoV,         // locations that the player can currently see
+    old_pov: OldPoV,  // locations that the user has seen in the past (this will often be stale data)
+    invariants: bool, // if true then expensive checks are enabled
 }
 
 // Public API.
@@ -308,6 +309,11 @@ impl Game {
             None
         }
     }
+
+    // This does not affect game state at all so it's OK that it's mutable.
+    pub fn set_invariants(&mut self, enable: bool) {
+        self.invariants = enable;
+    }
 }
 
 // Backend methods. Note that mutable methods should only be in the events module.
@@ -340,6 +346,7 @@ impl Game {
 
             pov: PoV::new(),
             old_pov: OldPoV::new(),
+            invariants: false,
         }
     }
 
@@ -474,22 +481,74 @@ impl Game {
 
 // Debugging support
 impl Game {
+    #[cfg(debug_assertions)]
     fn invariant(&self) {
         if self.constructing {
             return;
         }
 
-        // First we'll check global constraints.
+        // Check what we can that isn't very expensive to do.
         let obj = self.objects.get(&ObjId(0)).expect("oid 0 should always exist");
         assert!(obj.has(PLAYER_ID), "oid 0 should be the player not {obj}");
 
-        let obj = self.objects.get(&ObjId(1)); // TODO: enable these checks
+        let obj = self.objects.get(&ObjId(1));
         assert!(
             obj.is_none(),
             "oid 1 should be the default object, not {}",
             obj.unwrap()
         );
 
+        let oids = self.cells.get(&self.player).expect("player should be on the map");
+        assert!(
+            oids.iter().any(|oid| self.objects.get(oid).unwrap().has(PLAYER_ID)),
+            "player isn't at {}",
+            self.player
+        );
+
+        if self.invariants {
+            self.expensive_invariants();
+        } else {
+            self.cheap_invariants(&self.player);
+        }
+    }
+
+    // This only checks invariants at one cell. Not ideal but it does give us some coverage
+    // of the level without being really expensive.
+    #[cfg(debug_assertions)]
+    fn cheap_invariants(&self, loc: &Point) {
+        let oids = self.cells.get(loc).expect("cell at {loc} should exist");
+        assert!(
+            !oids.is_empty(),
+            "cell at {loc} is empty (should have at least a terrain object)"
+        );
+
+        for (i, oid) in oids.iter().enumerate() {
+            let obj = self.objects.get(oid).expect("oid {oid} at {loc} is not in objects");
+
+            if i == 0 {
+                assert!(
+                    obj.has(TERRAIN_ID),
+                    "cell at {loc} has {obj} for the first object instead of a terrain object"
+                );
+            } else {
+                assert!(
+                    !obj.has(TERRAIN_ID),
+                    "cell at {loc} has {obj} which isn't at the bottom"
+                );
+            }
+
+            if i < oids.len() - 1 {
+                assert!(!obj.has(CHARACTER_ID), "cell at {loc} has {obj} which isn't at the top");
+            }
+
+            obj.invariant();
+        }
+    }
+
+    // This checks every cell and every object so it is pretty slow.
+    #[cfg(debug_assertions)]
+    fn expensive_invariants(&self) {
+        // First we'll check global constraints.
         let mut all_oids = FnvHashSet::default();
         for (loc, oids) in &self.cells {
             for oid in oids {
@@ -511,12 +570,6 @@ impl Game {
             all_oids.len(),
             self.objects.len(),
             "all objects should be used somewhere"
-        );
-        let oids = self.cells.get(&self.player).expect("player should be on the map");
-        assert!(
-            oids.iter().any(|oid| self.objects.get(oid).unwrap().has(PLAYER_ID)),
-            "player isn't at {}",
-            self.player
         );
 
         // Then we'll verify that the objects in a cell are legit.

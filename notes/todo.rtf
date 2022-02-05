@@ -36,22 +36,10 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 \'95 Work on objects/cells:\
-	- get rid of dname (or at least make it a static string ref)\
-	- can description be a static string ref?\
-	- objects should have an Option<Point>\
 	- be sure to have game invariant checks\
-		` cell oids exist\
-		` oids are in level (or inventory tags)\
-		` oids have to be in one and only one place\
 		` will need some sort of \'97invariants option\
 		` old cell invariants\
 		` may want a wizard method to enable these\
-\'95 Can we make the mutable Game methods private for child modules?\
-	- maybe the way to go is to have a logic module\
-	- only public method is to process event(s)\
-	- has private game mutators\
-	- logic sub-modules could then use those mutators\
-\'95 Could move some of the backend game logic into a helper module\
 \'95 Can\'92t we do `for x in &v` instead of `for x in v.iter()`?\
 \'95 Can import variants using\
 	use EnumType::*;\

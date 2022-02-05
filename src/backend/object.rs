@@ -10,7 +10,7 @@ use std::fmt::{self, Formatter};
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
-    dname: String,
+    dname: String, // these could be `&'static str` but for Deserialize
 
     tags: Vec<Tag>,
     symbol: char,
