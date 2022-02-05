@@ -91,9 +91,7 @@ impl PoV {
         view.visit();
 
         for loc in new_locs {
-            if game.ensure_cell(&loc) {
-                game.pov.visible.insert(loc);
-            }
+            game.pov.visible.insert(loc);
         }
     }
 }

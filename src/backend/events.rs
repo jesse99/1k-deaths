@@ -195,7 +195,6 @@ impl Game {
 
                 let cell = self.cells.entry(new).or_insert_with(Vec::new);
                 cell.push(oid);
-                self.ensure_neighbors(&new);
                 Some(event)
             }
             Event::PlayerMoved(loc) => {
@@ -209,7 +208,6 @@ impl Game {
                 let cell = self.cells.entry(self.player).or_insert_with(Vec::new);
                 cell.push(oid);
 
-                self.ensure_neighbors(&loc);
                 Some(event)
             }
             Event::ReplaceObject(loc, old_oid, obj) => {
@@ -217,7 +215,6 @@ impl Game {
 
                 let oids = self.cells.get_mut(&loc).unwrap();
                 let index = oids.iter().position(|id| *id == old_oid).unwrap();
-                info!("removing {} with id {old_oid}", self.objects.get(&old_oid).unwrap());
                 oids[index] = new_oid;
 
                 self.objects.remove(&old_oid);
@@ -232,7 +229,6 @@ impl Game {
 
     fn create_player(&mut self, loc: &Point, obj: Object) -> ObjId {
         let oid = ObjId(0);
-        info!("creating new {obj} with id {oid}");
         self.objects.insert(oid, obj);
 
         let oids = self.cells.entry(*loc).or_insert_with(Vec::new);
@@ -243,7 +239,6 @@ impl Game {
     // This does not update cells (the object may go elsewhere).
     fn create_object(&mut self, obj: Object) -> ObjId {
         let oid = ObjId(self.next_id);
-        info!("creating new {obj} with id {oid}");
         self.next_id += 1;
         self.objects.insert(oid, obj);
         oid
@@ -253,7 +248,6 @@ impl Game {
         let oids = self.cells.get_mut(loc).unwrap();
         let index = oids.iter().position(|id| *id == old_oid).unwrap();
         let obj = self.objects.get(&old_oid).unwrap();
-        info!("destroying {obj} with id {old_oid}");
         if obj.has(TERRAIN_ID) {
             // Terrain cannot be destroyed but has to be mutated into something else.
             let new_obj = if obj.has(WALL_ID) {
@@ -263,10 +257,14 @@ impl Game {
                 make::dirt()
             };
             let new_oid = ObjId(self.next_id);
-            info!("creating new {new_obj} with id {new_oid}");
             self.next_id += 1;
             self.objects.insert(new_oid, new_obj);
             oids[index] = new_oid;
+
+            // The player may now be able to see through this cell so we need to ensure
+            // that cells around it exist now. TODO: probably should have a LOS changed
+            // check.
+            self.ensure_neighbors(loc);
         } else {
             // If it's just a normal object or character we can just nuke the object.
             oids.remove(index);
@@ -274,43 +272,16 @@ impl Game {
         self.objects.remove(&old_oid);
     }
 
-    // This should only be called by the pov code.
-    fn ensure_cell(&mut self, loc: &Point) -> bool {
-        if self.constructing {
-            self.cells.contains_key(loc)
-        } else {
-            self.ensure_neighbors(loc);
-            true
-        }
-    }
-
-    // Ideally we would have get_mut and get create a new default cell for
-    // the given location. That's easy for get_mut but get would require
-    // interior mutability. Also easy..until you start handing out references
-    // as get wants to do. We could do that too but then clients have a really
-    // annoying constraint: they cannot call get if code anywhere in the call
-    // chain has an outstanding cell reference (because get requires that a
-    // new mutable reference be taken).
-    //
-    // So what we do instead is ensure that:
-    // 1) When we modify a cell (via get_mut) that all the neighbors are
-    // present. This case is for something like destroying a wall.
-    // 2) When a character moves we ensure that the new location has all
-    // neighbors. This is for something like being able to move into a wall
-    // (or something like deep shadow).
     fn ensure_neighbors(&mut self, loc: &Point) {
-        if !self.constructing {
-            let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
-            for delta in deltas {
-                let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-                let _ = self.cells.entry(new_loc).or_insert_with(|| {
-                    let oid = ObjId(self.next_id);
-                    info!("creating new {} with id {oid}", self.default);
-                    self.next_id += 1;
-                    self.objects.insert(oid, self.default.clone());
-                    vec![oid]
-                });
-            }
+        let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            let _ = self.cells.entry(new_loc).or_insert_with(|| {
+                let oid = ObjId(self.next_id);
+                self.next_id += 1;
+                self.objects.insert(oid, self.default.clone());
+                vec![oid]
+            });
         }
     }
 }

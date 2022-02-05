@@ -178,7 +178,7 @@ impl Game {
             file,
             state: State::Adventuring,
             posting: false,
-            next_id: 1,
+            next_id: 2,
 
             // TODO:
             // 1) SmallRng is not guaranteed to be portable so results may
@@ -310,67 +310,69 @@ impl Game {
     }
 
     fn has(&self, loc: &Point, tag: TagId) -> bool {
-        let oids = self
-            .cells
-            .get(loc)
-            .expect("get methods should only be called for valid locations");
-        for oid in oids.iter() {
-            let obj = self
-                .objects
-                .get(oid)
-                .expect("All objects in the level should still exist");
-            if obj.has(tag) {
-                return true;
+        if let Some(oids) = self.cells.get(loc) {
+            for oid in oids.iter() {
+                let obj = self
+                    .objects
+                    .get(oid)
+                    .expect("All objects in the level should still exist");
+                if obj.has(tag) {
+                    return true;
+                }
             }
         }
-        false
+        self.default.has(tag)
     }
 
     fn get(&self, loc: &Point, tag: TagId) -> Option<(ObjId, &Object)> {
-        let oids = self
-            .cells
-            .get(loc)
-            .expect("get methods should only be called for valid locations");
-        for oid in oids.iter().rev() {
-            let obj = self
-                .objects
-                .get(oid)
-                .expect("All objects in the level should still exist");
-            if obj.has(tag) {
-                return Some((*oid, obj));
+        if let Some(oids) = self.cells.get(loc) {
+            for oid in oids.iter().rev() {
+                let obj = self
+                    .objects
+                    .get(oid)
+                    .expect("All objects in the level should still exist");
+                if obj.has(tag) {
+                    return Some((*oid, obj));
+                }
             }
         }
-        None
+        if self.default.has(tag) {
+            // Note that if this cell is converted into a real cell the oid will change.
+            // I don't think that this will be a problem in practice...
+            Some((ObjId(1), &self.default))
+        } else {
+            None
+        }
     }
 
     /// Typically this will be a terrain object.
     fn get_bottom(&self, loc: &Point) -> (ObjId, &Object) {
-        let oids = self
-            .cells
-            .get(loc)
-            .expect("get methods should only be called for valid locations");
-        let oid = oids
-            .first()
-            .expect("cells should always have at least a terrain object");
-        let obj = self
-            .objects
-            .get(oid)
-            .expect("All objects in the level should still exist");
-        (*oid, obj)
+        if let Some(oids) = self.cells.get(loc) {
+            let oid = oids
+                .first()
+                .expect("cells should always have at least a terrain object");
+            let obj = self
+                .objects
+                .get(oid)
+                .expect("All objects in the level should still exist");
+            (*oid, obj)
+        } else {
+            (ObjId(1), &self.default)
+        }
     }
 
     /// Character, item, door, or if all else fails terrain.
     fn get_top(&self, loc: &Point) -> (ObjId, &Object) {
-        let oids = self
-            .cells
-            .get(loc)
-            .expect("get methods should only be called for valid locations");
-        let oid = oids.last().expect("cells should always have at least a terrain object");
-        let obj = self
-            .objects
-            .get(oid)
-            .expect("All objects in the level should still exist");
-        (*oid, obj)
+        if let Some(oids) = self.cells.get(loc) {
+            let oid = oids.last().expect("cells should always have at least a terrain object");
+            let obj = self
+                .objects
+                .get(oid)
+                .expect("All objects in the level should still exist");
+            (*oid, obj)
+        } else {
+            (ObjId(1), &self.default)
+        }
     }
 
     /// Iterates over the objects at loc starting with the topmost object.
@@ -558,12 +560,12 @@ impl Game {
         let obj = self.objects.get(&ObjId(0)).expect("oid 0 should always exist");
         assert!(obj.has(PLAYER_ID), "oid 0 should be the player not {obj}");
 
-        // let obj = self.objects.get(&ObjId(1));   // TODO: enable these checks
-        // assert!(
-        //     obj.is_none(),
-        //     "oid 1 should be the default object, not {}",
-        //     obj.unwrap()
-        // );
+        let obj = self.objects.get(&ObjId(1)); // TODO: enable these checks
+        assert!(
+            obj.is_none(),
+            "oid 1 should be the default object, not {}",
+            obj.unwrap()
+        );
 
         let mut all_oids = FnvHashSet::default();
         for (loc, oids) in &self.cells {

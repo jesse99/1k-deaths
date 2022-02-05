@@ -36,20 +36,8 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 \'95 Work on objects/cells:\
-	- get this working again\
-		` compiling\
-		` unit tests\
-		` running\
-		` loading\
 	- could rename internal_post\
 	- do a better job organizing the top-level Game methods\
-	- change up get functions\
-		` should return default if missing\
-		` id 1 should be for default\
-		` get_mut would insert a new object\
-		` should be able to get rid of ensure_cell (probably mut game ref too)\
-		` note that this does mean returned oids can change\
-		` fixup invariant\
 	- do a commit (may not want to push quite yet)\
 		` motivation is to add oids (at a minimum time system will need this)\
 	- objects should have a unique id\
@@ -68,6 +56,7 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 		` oids have to be in one and only one place\
 		` will need some sort of \'97invariants option\
 		` old cell invariants\
+		` may want a wizard method to enable these\
 \'95 Can we make the mutable Game methods private for child modules?\
 	- maybe the way to go is to have a logic module\
 	- only public method is to process event(s)\
