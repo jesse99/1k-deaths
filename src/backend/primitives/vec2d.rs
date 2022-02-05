@@ -116,7 +116,7 @@ mod tests {
 
         let mut locs = Vec::new();
         let mut values = Vec::new();
-        for (loc, ch) in &v {
+        for (loc, ch) in v.iter() {
             locs.push(loc);
             values.push(*ch);
         }
