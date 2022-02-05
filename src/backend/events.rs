@@ -37,7 +37,7 @@ impl Game {
             .cells
             .get(loc)
             .expect("get methods should only be called for valid locations");
-        for oid in oids.iter() {
+        for oid in oids {
             let obj = self
                 .objects
                 .get_mut(oid)

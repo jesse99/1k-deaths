@@ -51,10 +51,7 @@ impl<T: Clone> Vec2d<T> {
 
     #[cfg(test)] // for now this is only used within unit tests
     pub fn iter(&self) -> Vec2dIter<T> {
-        Vec2dIter {
-            index: 0,
-            vector: self,
-        }
+        Vec2dIter { index: 0, vector: self }
     }
 
     // More elegant to use a mutable iterator here but that requires an unsafe block, see https://users.rust-lang.org/t/implementing-an-iterator-of-mutable-references/8671
@@ -119,19 +116,14 @@ mod tests {
 
         let mut locs = Vec::new();
         let mut values = Vec::new();
-        for (loc, ch) in v.iter() {
+        for (loc, ch) in &v {
             locs.push(loc);
             values.push(*ch);
         }
 
         assert_eq!(
             locs,
-            vec![
-                Point::new(0, 0),
-                Point::new(1, 0),
-                Point::new(0, 1),
-                Point::new(1, 1)
-            ]
+            vec![Point::new(0, 0), Point::new(1, 0), Point::new(0, 1), Point::new(1, 1)]
         );
         assert_eq!(values, vec!['.', 'a', 'b', 'c']);
     }

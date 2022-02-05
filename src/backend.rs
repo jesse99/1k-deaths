@@ -354,7 +354,7 @@ impl Game {
 
     fn has(&self, loc: &Point, tag: TagId) -> bool {
         if let Some(oids) = self.cells.get(loc) {
-            for oid in oids.iter() {
+            for oid in oids {
                 let obj = self
                     .objects
                     .get(oid)

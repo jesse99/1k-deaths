@@ -76,7 +76,7 @@ pub trait TagValue<T> {
 
 impl TagValue<Color> for Object {
     fn value(&self, id: TagId) -> Option<Color> {
-        for candidate in self.tags.iter() {
+        for candidate in &self.tags {
             if candidate.to_id() == id {
                 match candidate {
                     Tag::Background(value) => return Some(*value),
@@ -90,7 +90,7 @@ impl TagValue<Color> for Object {
 
 impl TagValue<Durability> for Object {
     fn value(&self, id: TagId) -> Option<Durability> {
-        for candidate in self.tags.iter() {
+        for candidate in &self.tags {
             if candidate.to_id() == id {
                 match candidate {
                     Tag::Durability(value) => return Some(*value),
@@ -104,7 +104,7 @@ impl TagValue<Durability> for Object {
 
 impl TagValue<Material> for Object {
     fn value(&self, id: TagId) -> Option<Material> {
-        for candidate in self.tags.iter() {
+        for candidate in &self.tags {
             if candidate.to_id() == id {
                 match candidate {
                     Tag::Material(value) => return Some(*value),
@@ -118,7 +118,7 @@ impl TagValue<Material> for Object {
 
 impl TagValue<String> for Object {
     fn value(&self, id: TagId) -> Option<String> {
-        for candidate in self.tags.iter() {
+        for candidate in &self.tags {
             if candidate.to_id() == id {
                 match candidate {
                     Tag::Name(value) => return Some(value.clone()),
