@@ -271,6 +271,7 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
     ]
 }
 
+// TODO: Once we get rid of the doorman add CanOpenDoor.
 fn npc_tags(name: &str, tag: Tag) -> Vec<Tag> {
     vec![
         Tag::Character,
@@ -286,6 +287,7 @@ fn player_tags() -> Vec<Tag> {
         Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Inventory(Vec::new()),
         Tag::Name(String::from("yourself")),
+        Tag::CanOpenDoor,
         Tag::Player,
     ]
 }

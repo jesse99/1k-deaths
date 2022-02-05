@@ -9,7 +9,7 @@ use fnv::FnvHashMap;
 use rand::prelude::*;
 
 // ---- struct Interaction -------------------------------------------------
-type PreHandler = fn(&Game, &Point, &Point, &mut Vec<Event>) -> bool;
+type PreHandler = fn(&Game, &Point, &Point, &mut Vec<Event>) -> bool; // true == no move
 type PostHandler = fn(&Game, &Point, &mut Vec<Event>);
 
 // TODO:
@@ -35,9 +35,9 @@ impl Interactions {
         i.pre_ins(PLAYER_ID, TREE_ID, player_vs_tree);
         i.pre_ins(PLAYER_ID, VITR_ID, player_vs_vitr);
         i.pre_ins(PLAYER_ID, WALL_ID, player_vs_wall);
+        i.pre_ins(PLAYER_ID, CLOSED_DOOR_ID, player_vs_closed_door);
 
-        i.post_ins(CLOSED_DOOR_ID, player_vs_closed_door); // post moves are always (Player, X)
-        i.post_ins(PORTABLE_ID, player_vs_portable);
+        i.post_ins(PORTABLE_ID, player_vs_portable); // post moves are always (Player, X)
         i.post_ins(SHALLOW_WATER_ID, player_vs_shallow_water);
         i.post_ins(SIGN_ID, player_vs_sign);
 
@@ -84,7 +84,7 @@ impl Interactions {
 }
 
 // ---- Helpers ------------------------------------------------------------
-fn impassible_terrain_tag(tag: &Tag) -> Option<Message> {
+fn impassible_terrain_tag(ch: &Object, tag: &Tag) -> Option<Message> {
     match tag {
         Tag::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
         Tag::Tree => Some(Message::new(
@@ -93,13 +93,14 @@ fn impassible_terrain_tag(tag: &Tag) -> Option<Message> {
         )),
         Tag::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
         Tag::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
+        Tag::ClosedDoor if !ch.has(CAN_OPEN_DOOR_ID) => Some(Message::new(Topic::Failed, "You fail to open the door.")),
         _ => None,
     }
 }
 
-fn impassible_terrain(obj: &Object) -> Option<Message> {
-    for tag in obj.iter() {
-        let mesg = impassible_terrain_tag(tag);
+fn impassible_terrain(ch: &Object, terrain: &Object) -> Option<Message> {
+    for tag in terrain.iter() {
+        let mesg = impassible_terrain_tag(ch, tag);
         if mesg.is_some() {
             return mesg;
         }
@@ -107,7 +108,7 @@ fn impassible_terrain(obj: &Object) -> Option<Message> {
     None
 }
 
-fn find_empty_cell(game: &Game, loc: &Point) -> Option<Point> {
+fn find_empty_cell(game: &Game, ch: &Object, loc: &Point) -> Option<Point> {
     let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
     deltas.shuffle(&mut *game.rng());
     for delta in deltas {
@@ -115,7 +116,7 @@ fn find_empty_cell(game: &Game, loc: &Point) -> Option<Point> {
         let character = &game.get(&new_loc, CHARACTER_ID);
         if character.is_none() {
             let (_, terrain) = game.get_bottom(&new_loc);
-            if impassible_terrain(terrain).is_none() {
+            if impassible_terrain(ch, terrain).is_none() {
                 return Some(new_loc);
             }
         }
@@ -186,11 +187,6 @@ fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &
     true
 }
 
-fn player_vs_closed_door(game: &Game, loc: &Point, events: &mut Vec<Event>) {
-    let (oid, _) = game.get(loc, CLOSED_DOOR_ID).unwrap();
-    events.push(Event::ReplaceObject(*loc, oid, make::open_door()));
-}
-
 fn player_vs_doorman(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
     if game
         .player_inv_iter()
@@ -199,7 +195,8 @@ fn player_vs_doorman(game: &Game, _player_loc: &Point, new_loc: &Point, events: 
         let mesg = Message::new(Topic::NPCSpeaks, "Ahh, a new champion for the Emperor!");
         events.push(Event::AddMessage(mesg));
 
-        if let Some(to_loc) = find_empty_cell(game, new_loc) {
+        let doorman = game.get(new_loc, CHARACTER_ID).unwrap().1;
+        if let Some(to_loc) = find_empty_cell(game, doorman, new_loc) {
             events.push(Event::NPCMoved(*new_loc, to_loc));
         }
     } else {
@@ -209,8 +206,9 @@ fn player_vs_doorman(game: &Game, _player_loc: &Point, new_loc: &Point, events: 
     true
 }
 
-fn player_vs_deep_water(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let mesg = impassible_terrain_tag(&Tag::DeepWater).unwrap();
+fn player_vs_deep_water(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let mesg = impassible_terrain_tag(player, &Tag::DeepWater).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
@@ -268,20 +266,36 @@ fn player_vs_spectator(game: &Game, _player_loc: &Point, _new_loc: &Point, event
     true
 }
 
-fn player_vs_tree(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let mesg = impassible_terrain_tag(&Tag::Tree).unwrap();
+fn player_vs_tree(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let mesg = impassible_terrain_tag(player, &Tag::Tree).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
 
-fn player_vs_vitr(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let mesg = impassible_terrain_tag(&Tag::Vitr).unwrap();
+fn player_vs_vitr(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let mesg = impassible_terrain_tag(player, &Tag::Vitr).unwrap();
     events.push(Event::AddMessage(mesg));
     true
 }
 
-fn player_vs_wall(_game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let mesg = impassible_terrain_tag(&Tag::Wall).unwrap();
+fn player_vs_wall(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let mesg = impassible_terrain_tag(player, &Tag::Wall).unwrap();
     events.push(Event::AddMessage(mesg));
     true
+}
+
+fn player_vs_closed_door(game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let terrain = game.get_bottom(new_loc).1;
+    if let Some(mesg) = impassible_terrain(player, terrain) {
+        events.push(Event::AddMessage(mesg));
+        true
+    } else {
+        let (oid, _) = game.get(new_loc, CLOSED_DOOR_ID).unwrap();
+        events.push(Event::ReplaceObject(*new_loc, oid, make::open_door()));
+        false
+    }
 }

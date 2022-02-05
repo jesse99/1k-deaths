@@ -18,7 +18,6 @@ pub struct Durability {
 }
 
 // TODO: generate this file (Display trait may require some sort of escape hatch)
-// TODO: could we make ids more meanigful? maybe with a parallel enum?
 
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
@@ -30,7 +29,7 @@ pub enum Tag {
     /// an Inventory tag.
     Character,
 
-    /// Will also have Character and Inventory tags.
+    /// Will also have Character and Inventory tags. Might have a CanOpenDoor tag.
     Player,
     Doorman,
     Rhulad,
@@ -38,6 +37,8 @@ pub enum Tag {
 
     /// Objects that a Character has picked up.
     Inventory(Vec<ObjId>),
+
+    CanOpenDoor,
 
     /// The object is something that can be picked up and placed into a
     /// Character's inventory.
@@ -130,6 +131,7 @@ pub const BACKGROUND_ID: TagId = TagId(19);
 pub const DURABILITY_ID: TagId = TagId(20);
 pub const MATERIAL_ID: TagId = TagId(21);
 pub const NAME_ID: TagId = TagId(22);
+pub const CAN_OPEN_DOOR_ID: TagId = TagId(23);
 
 impl Tag {
     pub fn to_id(&self) -> TagId {
@@ -157,6 +159,7 @@ impl Tag {
             Tag::Durability(_) => DURABILITY_ID,
             Tag::Material(_) => MATERIAL_ID,
             Tag::Name(_) => NAME_ID,
+            Tag::CanOpenDoor => CAN_OPEN_DOOR_ID,
         }
     }
 }
@@ -187,6 +190,7 @@ impl fmt::Display for Tag {
             Tag::Durability(durability) => write!(f, "Durability({}, {})", durability.current, durability.max),
             Tag::Material(material) => write!(f, "Material({material})"),
             Tag::Name(text) => write!(f, "Name({text})"),
+            Tag::CanOpenDoor => write!(f, "CanOpenDoor"),
         }
     }
 }
