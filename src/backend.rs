@@ -311,7 +311,9 @@ impl Game {
     }
 
     // This does not affect game state at all so it's OK that it's mutable.
+    #[cfg(debug_assertions)]
     pub fn set_invariants(&mut self, enable: bool) {
+        // TODO: might want a wizard command to enable these
         self.invariants = enable;
     }
 }

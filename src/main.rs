@@ -46,6 +46,11 @@ struct Args {
     /// enable special developer commands
     #[clap(long)]
     wizard: bool,
+
+    /// enable slow debug checks
+    #[cfg(debug_assertions)]
+    #[clap(long)]
+    invariants: bool,
 }
 
 fn to_filter(level: LoggingLevel) -> LevelFilter {
@@ -75,6 +80,13 @@ fn configure_logging(level: LevelFilter) {
     );
 }
 
+#[cfg(debug_assertions)]
+fn configure_invariants(args: &Args, game: &mut Game) {
+    if args.invariants {
+        game.set_invariants(true);
+    }
+}
+
 fn main() {
     let options = Args::parse();
     configure_logging(to_filter(options.log_level));
@@ -87,12 +99,14 @@ fn main() {
 
     // Timestamps are a poor seed but should be fine for our purposes.
     let seed = options.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
-    let (game, events) = match options.load {
-        Some(path) if options.new_game => (Game::new_game(&path, seed), Vec::new()),
-        Some(path) => Game::old_game(&path, seed),
+    let (mut game, events) = match options.load {
+        Some(ref path) if options.new_game => (Game::new_game(path, seed), Vec::new()),
+        Some(ref path) => Game::old_game(path, seed),
         None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game", seed),
         None => (Game::new_game("saved.game", seed), Vec::new()),
     };
+
+    configure_invariants(&options, &mut game);
 
     let mut terminal = terminal::Terminal::new(game, events);
     terminal.run();
