@@ -33,8 +33,11 @@ use tag::{Durability, Material, Tag};
 
 const MAX_MESSAGES: usize = 1000;
 
+// TODO: These numbers are not very intelligible. If that becomes an issue we could use
+// a newtype string (e.g. "wall 97") or a simple struct with a static string ref and a
+// counter.
 #[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct ObjId(u64); // TODO: probably want something more intelligible
+pub struct ObjId(u64);
 
 #[derive(Clone, Copy, Debug)]
 pub enum Command {
@@ -73,7 +76,7 @@ pub struct Game {
     rng: RefCell<SmallRng>,
 
     player: Point,
-    default: Object, // object to insert when querying for a non-existent cell (can happen for stuff like digging)
+    default: Object, // object to use for a non-existent cell (can happen if a wall is destroyed)
     objects: FnvHashMap<ObjId, Object>, // all existing objects are here
     cells: FnvHashMap<Point, Vec<ObjId>>, // objects within each cell on the map
     constructing: bool, // level is in the process of being constructed

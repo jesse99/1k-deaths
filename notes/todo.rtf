@@ -36,16 +36,6 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 \'95 Work on objects/cells:\
-	- do a better job organizing the top-level Game methods\
-	- do a commit (may not want to push quite yet)\
-		` motivation is to add oids (at a minimum time system will need this)\
-	- objects should have a unique id\
-		` use an ObjId newtype\
-		` or make make these newtype strings? would make debugging a lot nicer\
-		` possibly even fixed length, stack allocated strings \
-			(or base static string ref + counter)  \
-			counter could be global to avoid lookup on allocation\
-	- nuke level module\
 	- get rid of dname (or at least make it a static string ref)\
 	- can description be a static string ref?\
 	- objects should have an Option<Point>\
