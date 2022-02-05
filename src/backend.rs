@@ -85,123 +85,8 @@ pub struct Game {
     old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
 }
 
-mod details {
-    use super::{FnvHashMap, ObjId, Object, PoV, Point};
-
-    /// View into game after posting an event to Level.
-    pub struct Game1<'a> {
-        pub objects: &'a FnvHashMap<ObjId, Object>,
-        pub cells: &'a FnvHashMap<Point, Vec<ObjId>>,
-    }
-
-    pub struct Game2<'a> {
-        pub objects: &'a FnvHashMap<ObjId, Object>,
-        pub cells: &'a FnvHashMap<Point, Vec<ObjId>>,
-        pub pov: &'a PoV,
-    }
-}
-
-struct CellIterator<'a> {
-    game: &'a Game,
-    oids: Option<&'a Vec<ObjId>>,
-    index: i32,
-}
-
-impl<'a> CellIterator<'a> {
-    fn new(game: &'a Game, loc: &Point) -> CellIterator<'a> {
-        let oids = game.cells.get(loc);
-        CellIterator {
-            game,
-            oids,
-            index: oids.map(|list| list.len() as i32).unwrap_or(-1),
-        }
-    }
-}
-
-impl<'a> Iterator for CellIterator<'a> {
-    type Item = (ObjId, &'a Object);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(oids) = self.oids {
-            self.index -= 1;
-            if self.index >= 0 {
-                let index = self.index as usize;
-                let oid = oids[index];
-                Some((oid, self.game.objects.get(&oid).unwrap()))
-            } else {
-                None // finished iteration
-            }
-        } else {
-            None // nothing at the loc
-        }
-    }
-}
-
-struct InventoryIterator<'a> {
-    game: &'a Game,
-    oids: &'a Vec<ObjId>,
-    index: i32,
-}
-
-impl<'a> InventoryIterator<'a> {
-    fn new(game: &'a Game, loc: &Point) -> InventoryIterator<'a> {
-        let (_, inv) = game.get(loc, INVENTORY_ID).unwrap();
-        let oids = inv.as_ref(INVENTORY_ID).unwrap();
-        InventoryIterator {
-            game,
-            oids,
-            index: oids.len() as i32,
-        }
-    }
-}
-
-impl<'a> Iterator for InventoryIterator<'a> {
-    type Item = (ObjId, &'a Object);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.index -= 1; // no real need to iterate in reverse order but it is consistent with CellIterator
-        if self.index >= 0 {
-            let index = self.index as usize;
-            let oid = self.oids[index];
-            Some((oid, self.game.objects.get(&oid).unwrap()))
-        } else {
-            None // finished iteration
-        }
-    }
-}
-
+// Public API.
 impl Game {
-    fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
-        info!("using seed {seed}");
-        Game {
-            stream: Vec::new(),
-            file,
-            state: State::Adventuring,
-            posting: false,
-            next_id: 2,
-
-            // TODO:
-            // 1) SmallRng is not guaranteed to be portable so results may
-            // not be reproducible between platforms.
-            // 2) We're going to have to be able to persist the RNG. rand_pcg
-            // supports serde so that would likely work. If not we could
-            // create our own simple RNG.
-            rng: RefCell::new(SmallRng::seed_from_u64(seed)),
-
-            player: Point::origin(),
-            objects: FnvHashMap::default(),
-            cells: FnvHashMap::default(),
-            default: make::stone_wall(),
-            constructing: true,
-
-            messages,
-            interactions: Interactions::new(),
-
-            pov: PoV::new(),
-            old_pov: OldPoV::new(),
-        }
-    }
-
     /// Start a brand new game and save it to path.
     pub fn new_game(path: &str, seed: u64) -> Game {
         let mut messages = Vec::new();
@@ -307,81 +192,6 @@ impl Game {
 
     pub fn player(&self) -> Point {
         self.player
-    }
-
-    fn has(&self, loc: &Point, tag: TagId) -> bool {
-        if let Some(oids) = self.cells.get(loc) {
-            for oid in oids.iter() {
-                let obj = self
-                    .objects
-                    .get(oid)
-                    .expect("All objects in the level should still exist");
-                if obj.has(tag) {
-                    return true;
-                }
-            }
-        }
-        self.default.has(tag)
-    }
-
-    fn get(&self, loc: &Point, tag: TagId) -> Option<(ObjId, &Object)> {
-        if let Some(oids) = self.cells.get(loc) {
-            for oid in oids.iter().rev() {
-                let obj = self
-                    .objects
-                    .get(oid)
-                    .expect("All objects in the level should still exist");
-                if obj.has(tag) {
-                    return Some((*oid, obj));
-                }
-            }
-        }
-        if self.default.has(tag) {
-            // Note that if this cell is converted into a real cell the oid will change.
-            // I don't think that this will be a problem in practice...
-            Some((ObjId(1), &self.default))
-        } else {
-            None
-        }
-    }
-
-    /// Typically this will be a terrain object.
-    fn get_bottom(&self, loc: &Point) -> (ObjId, &Object) {
-        if let Some(oids) = self.cells.get(loc) {
-            let oid = oids
-                .first()
-                .expect("cells should always have at least a terrain object");
-            let obj = self
-                .objects
-                .get(oid)
-                .expect("All objects in the level should still exist");
-            (*oid, obj)
-        } else {
-            (ObjId(1), &self.default)
-        }
-    }
-
-    /// Character, item, door, or if all else fails terrain.
-    fn get_top(&self, loc: &Point) -> (ObjId, &Object) {
-        if let Some(oids) = self.cells.get(loc) {
-            let oid = oids.last().expect("cells should always have at least a terrain object");
-            let obj = self
-                .objects
-                .get(oid)
-                .expect("All objects in the level should still exist");
-            (*oid, obj)
-        } else {
-            (ObjId(1), &self.default)
-        }
-    }
-
-    /// Iterates over the objects at loc starting with the topmost object.
-    fn cell_iter(&self, loc: &Point) -> impl Iterator<Item = (ObjId, &Object)> {
-        CellIterator::new(self, loc)
-    }
-
-    fn player_inv_iter(&self) -> impl Iterator<Item = (ObjId, &Object)> {
-        InventoryIterator::new(self, &self.player)
     }
 
     pub fn command(&self, command: Command, events: &mut Vec<Event>) {
@@ -497,8 +307,115 @@ impl Game {
     }
 }
 
+// Backend methods. Note that mutable methods should only be in the events module.
 impl Game {
-    // We're using a RefCell to avoid taking too many mutable Game references.
+    fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
+        info!("using seed {seed}");
+        Game {
+            stream: Vec::new(),
+            file,
+            state: State::Adventuring,
+            posting: false,
+            next_id: 2,
+
+            // TODO:
+            // 1) SmallRng is not guaranteed to be portable so results may
+            // not be reproducible between platforms.
+            // 2) We're going to have to be able to persist the RNG. rand_pcg
+            // supports serde so that would likely work. If not we could
+            // create our own simple RNG.
+            rng: RefCell::new(SmallRng::seed_from_u64(seed)),
+
+            player: Point::origin(),
+            objects: FnvHashMap::default(),
+            cells: FnvHashMap::default(),
+            default: make::stone_wall(),
+            constructing: true,
+
+            messages,
+            interactions: Interactions::new(),
+
+            pov: PoV::new(),
+            old_pov: OldPoV::new(),
+        }
+    }
+
+    fn has(&self, loc: &Point, tag: TagId) -> bool {
+        if let Some(oids) = self.cells.get(loc) {
+            for oid in oids.iter() {
+                let obj = self
+                    .objects
+                    .get(oid)
+                    .expect("All objects in the level should still exist");
+                if obj.has(tag) {
+                    return true;
+                }
+            }
+        }
+        self.default.has(tag)
+    }
+
+    fn get(&self, loc: &Point, tag: TagId) -> Option<(ObjId, &Object)> {
+        if let Some(oids) = self.cells.get(loc) {
+            for oid in oids.iter().rev() {
+                let obj = self
+                    .objects
+                    .get(oid)
+                    .expect("All objects in the level should still exist");
+                if obj.has(tag) {
+                    return Some((*oid, obj));
+                }
+            }
+        }
+        if self.default.has(tag) {
+            // Note that if this cell is converted into a real cell the oid will change.
+            // I don't think that this will be a problem in practice...
+            Some((ObjId(1), &self.default))
+        } else {
+            None
+        }
+    }
+
+    /// Typically this will be a terrain object.
+    fn get_bottom(&self, loc: &Point) -> (ObjId, &Object) {
+        if let Some(oids) = self.cells.get(loc) {
+            let oid = oids
+                .first()
+                .expect("cells should always have at least a terrain object");
+            let obj = self
+                .objects
+                .get(oid)
+                .expect("All objects in the level should still exist");
+            (*oid, obj)
+        } else {
+            (ObjId(1), &self.default)
+        }
+    }
+
+    /// Character, item, door, or if all else fails terrain.
+    fn get_top(&self, loc: &Point) -> (ObjId, &Object) {
+        if let Some(oids) = self.cells.get(loc) {
+            let oid = oids.last().expect("cells should always have at least a terrain object");
+            let obj = self
+                .objects
+                .get(oid)
+                .expect("All objects in the level should still exist");
+            (*oid, obj)
+        } else {
+            (ObjId(1), &self.default)
+        }
+    }
+
+    /// Iterates over the objects at loc starting with the topmost object.
+    fn cell_iter(&self, loc: &Point) -> impl Iterator<Item = (ObjId, &Object)> {
+        CellIterator::new(self, loc)
+    }
+
+    fn player_inv_iter(&self) -> impl Iterator<Item = (ObjId, &Object)> {
+        InventoryIterator::new(self, &self.player)
+    }
+
+    // The RNG doesn't directly affect the game state so we use interior mutability for it.
     fn rng(&self) -> RefMut<'_, dyn RngCore> {
         self.rng.borrow_mut()
     }
@@ -550,7 +467,10 @@ impl Game {
             }
         }
     }
+}
 
+// Debugging support
+impl Game {
     fn invariant(&self) {
         if self.constructing {
             return;
@@ -628,6 +548,91 @@ impl Game {
         // Finally we'll check each individual object.
         for obj in self.objects.values() {
             obj.invariant();
+        }
+    }
+}
+
+mod details {
+    use super::{FnvHashMap, ObjId, Object, PoV, Point};
+
+    /// View into game after posting an event to Level.
+    pub struct Game1<'a> {
+        pub objects: &'a FnvHashMap<ObjId, Object>,
+        pub cells: &'a FnvHashMap<Point, Vec<ObjId>>,
+    }
+
+    pub struct Game2<'a> {
+        pub objects: &'a FnvHashMap<ObjId, Object>,
+        pub cells: &'a FnvHashMap<Point, Vec<ObjId>>,
+        pub pov: &'a PoV,
+    }
+}
+
+struct CellIterator<'a> {
+    game: &'a Game,
+    oids: Option<&'a Vec<ObjId>>,
+    index: i32,
+}
+
+impl<'a> CellIterator<'a> {
+    fn new(game: &'a Game, loc: &Point) -> CellIterator<'a> {
+        let oids = game.cells.get(loc);
+        CellIterator {
+            game,
+            oids,
+            index: oids.map(|list| list.len() as i32).unwrap_or(-1),
+        }
+    }
+}
+
+impl<'a> Iterator for CellIterator<'a> {
+    type Item = (ObjId, &'a Object);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(oids) = self.oids {
+            self.index -= 1;
+            if self.index >= 0 {
+                let index = self.index as usize;
+                let oid = oids[index];
+                Some((oid, self.game.objects.get(&oid).unwrap()))
+            } else {
+                None // finished iteration
+            }
+        } else {
+            None // nothing at the loc
+        }
+    }
+}
+
+struct InventoryIterator<'a> {
+    game: &'a Game,
+    oids: &'a Vec<ObjId>,
+    index: i32,
+}
+
+impl<'a> InventoryIterator<'a> {
+    fn new(game: &'a Game, loc: &Point) -> InventoryIterator<'a> {
+        let (_, inv) = game.get(loc, INVENTORY_ID).unwrap();
+        let oids = inv.as_ref(INVENTORY_ID).unwrap();
+        InventoryIterator {
+            game,
+            oids,
+            index: oids.len() as i32,
+        }
+    }
+}
+
+impl<'a> Iterator for InventoryIterator<'a> {
+    type Item = (ObjId, &'a Object);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.index -= 1; // no real need to iterate in reverse order but it is consistent with CellIterator
+        if self.index >= 0 {
+            let index = self.index as usize;
+            let oid = self.oids[index];
+            Some((oid, self.game.objects.get(&oid).unwrap()))
+        } else {
+            None // finished iteration
         }
     }
 }

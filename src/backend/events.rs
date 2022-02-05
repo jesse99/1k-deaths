@@ -15,7 +15,7 @@ impl Game {
         self.posting = true;
         for event in events {
             trace!("posting {event}");
-            self.internal_post(event, replay);
+            self.do_post(event, replay);
         }
 
         OldPoV::update(self);
@@ -63,8 +63,7 @@ impl Game {
         self.stream.clear();
     }
 
-    // This should only be called by the post method.
-    fn internal_post(&mut self, event: Event, replay: bool) {
+    fn do_post(&mut self, event: Event, replay: bool) {
         // It'd be slicker to use a different Game type when replaying. This would prevent
         // us, at compile time, from touching fields like stream or rng. In practice however
         // this isn't much of an issue because the bulk of the code is already prevented
