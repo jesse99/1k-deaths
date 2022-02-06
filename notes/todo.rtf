@@ -36,25 +36,13 @@ https://crawl.kelbi.org/#lobby\
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
-\'95 Work on a time system:\
-	- object scheduling needs to be some sort of event\
-		` fuzzing should probably happen before push\
-	- player actions (moving, opening doors, picking up items, talking) should take time\
-	- change vitr so that it starts small and expands\
-		` vitr object wouldnn\'92t queue an action if all it\'92s neighbors are vitr\
-		` don\'92t grow into default cells\
-	- look at some of the resources for time system info\
+\'95 Water should flood\
 \'95 Rename ObjId and TagId to Oid and Tid?\
-\'95 Generate tag.rs\
-	- probably from some sort of config file\
-	- be sure to add a comment that it is a generated file, along with a timestamp\
-\'95 Do we want to generate make.rs too?\
-	- experiment and see if this is really a win\
-	- macros would be another possibility\
 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- maybe disposition enum, friendly, neutral, aggresive\
 	- these move either toward or away from the player\
+	- spawn the seven faces in the rock? https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock\
 \'95\'a0Add an info view:\
 	- player stats\
 	- top N NPCs\
@@ -111,7 +99,13 @@ enum ObjectTag\
 Step 8 - Data files\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf3 \'95\'a0Make it easier to create new objects\
+\f1\b0 \cf3 \'95 Generate tag.rs\
+	- probably from some sort of config file\
+	- be sure to add a comment that it is a generated file, along with a timestamp\
+\'95 Do we want to generate make.rs too?\
+	- experiment and see if this is really a win\
+	- macros would be another possibility\
+\'95\'a0Make it easier to create new objects\
 	- this would probably involve something like a macro rather than a config file
 \f2\b \cf3 \
 \

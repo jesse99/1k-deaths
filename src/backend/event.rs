@@ -1,26 +1,26 @@
-use super::{Message, ObjId, Object, Point, State};
+use super::{Message, Object, Oid, Point, State};
 use std::fmt::{self, Formatter};
 
 /// These are used to initiate an Action which requires some time before it actually
 /// happens.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ScheduledAction {
-    DamageWall(Point, ObjId),          // (obj_loc, obj_oid))
-    FightRhulad(Point, ObjId),         // (char_loc, char)
-    Move(Point, Point),                // (old_loc, new_loc)
-    OpenDoor(Point, Point, ObjId),     // (ch_loc, obj_loc, obj_oid)
-    PickUp(Point, ObjId),              // (obj_loc, obj_oid)
-    ShoveDoorman(Point, ObjId, Point), // (old_loc, char, new_loc)
+    DamageWall(Point, Oid),          // (obj_loc, obj_oid))
+    FightRhulad(Point, Oid),         // (char_loc, char)
+    Move(Point, Point),              // (old_loc, new_loc)
+    OpenDoor(Point, Point, Oid),     // (ch_loc, obj_loc, obj_oid)
+    PickUp(Point, Oid),              // (obj_loc, obj_oid)
+    ShoveDoorman(Point, Oid, Point), // (old_loc, char, new_loc)
 }
 
 /// These normally happen after a ScheduledAction and mutate the game somehow.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Action {
-    AddObject(Point, Object),            // (obj_loc, obj)
-    DestroyObject(Point, ObjId),         // (obj_loc, obj_oid))
-    Move(ObjId, Point, Point),           // (char, old_loc, new_loc)
-    PickUp(ObjId, Point, ObjId),         // typically (char_oid, obj_loc, obj_oid)
-    ReplaceObject(Point, ObjId, Object), // (obj_loc, old_obj_oid, new_obj)
+    AddObject(Point, Object),          // (obj_loc, obj)
+    DestroyObject(Point, Oid),         // (obj_loc, obj_oid))
+    Move(Oid, Point, Point),           // (char, old_loc, new_loc)
+    PickUp(Oid, Point, Oid),           // typically (char_oid, obj_loc, obj_oid)
+    ReplaceObject(Point, Oid, Object), // (obj_loc, old_obj_oid, new_obj)
 }
 
 /// These are the "facts" associated with a particular game. All game state
@@ -32,7 +32,7 @@ pub enum Event {
     BeginConstructLevel,
     EndConstructLevel,
     NewGame,
-    ScheduledAction(ObjId, ScheduledAction), // oid is usually a Character
+    ScheduledAction(Oid, ScheduledAction), // oid is usually a Character
     StateChanged(State),
     // Note that new variants MUST be added at the end (or saved games will break).
 }

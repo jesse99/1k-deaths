@@ -29,7 +29,7 @@ impl Game {
 // have control of when they are called.
 impl Game {
     // get_mut would be nicer but couldn't figure out how to write that.
-    fn mutate<F>(&mut self, loc: &Point, tag: TagId, callback: F)
+    fn mutate<F>(&mut self, loc: &Point, tag: Tid, callback: F)
     where
         F: Fn(&mut Object),
     {
@@ -50,7 +50,7 @@ impl Game {
         panic!("Didn't find {tag} at {loc}");
     }
 
-    pub fn handle_scheduled_action(&mut self, oid: ObjId, saction: ScheduledAction) {
+    pub fn handle_scheduled_action(&mut self, oid: Oid, saction: ScheduledAction) {
         let events = match saction {
             ScheduledAction::DamageWall(obj_loc, obj_oid) => self.damage_wall_events(obj_loc, obj_oid),
             ScheduledAction::FightRhulad(char_loc, ch) => self.fight_rhulad_events(char_loc, ch),
@@ -152,7 +152,7 @@ impl Game {
                 None
             }
             Event::BeginConstructLevel => {
-                let oid = ObjId(0);
+                let oid = Oid(0);
                 let player = self.objects.remove(&oid);
                 self.objects = FnvHashMap::default();
                 self.cells = FnvHashMap::default();
@@ -190,8 +190,8 @@ impl Game {
         }
     }
 
-    fn create_player(&mut self, loc: &Point, obj: Object) -> ObjId {
-        let oid = ObjId(0);
+    fn create_player(&mut self, loc: &Point, obj: Object) -> Oid {
+        let oid = Oid(0);
         self.objects.insert(oid, obj);
 
         let oids = self.cells.entry(*loc).or_insert_with(Vec::new);
@@ -200,8 +200,8 @@ impl Game {
     }
 
     // This does not update cells (the object may go elsewhere).
-    fn create_object(&mut self, obj: Object) -> ObjId {
-        let oid = ObjId(self.next_id);
+    fn create_object(&mut self, obj: Object) -> Oid {
+        let oid = Oid(self.next_id);
         self.next_id += 1;
         self.objects.insert(oid, obj);
         oid
@@ -212,7 +212,7 @@ impl Game {
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             let _ = self.cells.entry(new_loc).or_insert_with(|| {
-                let oid = ObjId(self.next_id);
+                let oid = Oid(self.next_id);
                 self.next_id += 1;
                 self.objects.insert(oid, self.default.clone());
                 vec![oid]
@@ -255,7 +255,7 @@ impl Game {
         }
     }
 
-    fn damage_wall_events(&self, obj_loc: Point, _obj_oid: ObjId) -> Vec<Event> {
+    fn damage_wall_events(&self, obj_loc: Point, _obj_oid: Oid) -> Vec<Event> {
         let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
         let material: Option<Material> = obj.value(MATERIAL_ID);
         match material {
@@ -264,7 +264,7 @@ impl Game {
         }
     }
 
-    fn fight_rhulad_events(&self, char_loc: Point, _chr: ObjId) -> Vec<Event> {
+    fn fight_rhulad_events(&self, char_loc: Point, _chr: Oid) -> Vec<Event> {
         let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
         let oid = self.get(&char_loc, CHARACTER_ID).unwrap().0;
         let action1 = Action::DestroyObject(char_loc, oid);
@@ -277,27 +277,27 @@ impl Game {
         ]
     }
 
-    fn move_events(&self, oid: ObjId, old: Point, new: Point) -> Vec<Event> {
+    fn move_events(&self, oid: Oid, old: Point, new: Point) -> Vec<Event> {
         let action = Action::Move(oid, old, new);
         vec![Event::Action(action)]
     }
 
-    fn open_door_events(&self, ch_loc: Point, oid: ObjId, obj_loc: Point, obj_oid: ObjId) -> Vec<Event> {
+    fn open_door_events(&self, ch_loc: Point, oid: Oid, obj_loc: Point, obj_oid: Oid) -> Vec<Event> {
         let action1 = Action::ReplaceObject(obj_loc, obj_oid, make::open_door());
         let action2 = Action::Move(oid, ch_loc, obj_loc);
         vec![Event::Action(action1), Event::Action(action2)]
     }
 
-    fn pickup_events(&self, oid: ObjId, obj_loc: Point, obj_oid: ObjId) -> Vec<Event> {
+    fn pickup_events(&self, oid: Oid, obj_loc: Point, obj_oid: Oid) -> Vec<Event> {
         let action = Action::PickUp(oid, obj_loc, obj_oid);
         vec![Event::Action(action)]
     }
 
     fn shove_doorman_events(
         &self,
-        player_oid: ObjId,
+        player_oid: Oid,
         old_doorman_loc: Point,
-        doorman_oid: ObjId,
+        doorman_oid: Oid,
         new_doorman_loc: Point,
     ) -> Vec<Event> {
         let action1 = Action::Move(doorman_oid, old_doorman_loc, new_doorman_loc);
@@ -320,7 +320,7 @@ impl Game {
         None
     }
 
-    fn do_destroy_object(&mut self, loc: Point, old_oid: ObjId) -> Option<Event> {
+    fn do_destroy_object(&mut self, loc: Point, old_oid: Oid) -> Option<Event> {
         let oids = self.cells.get_mut(&loc).unwrap();
         let index = oids.iter().position(|id| *id == old_oid).unwrap();
         let obj = self.objects.get(&old_oid).unwrap();
@@ -329,10 +329,10 @@ impl Game {
             let new_obj = if obj.has(WALL_ID) {
                 make::rubble()
             } else {
-                error!("Need to better handle destroying TagId {obj}"); // Doors, trees, etc
+                error!("Need to better handle destroying Tid {obj}"); // Doors, trees, etc
                 make::dirt()
             };
-            let new_oid = ObjId(self.next_id);
+            let new_oid = Oid(self.next_id);
             self.next_id += 1;
             self.objects.insert(new_oid, new_obj);
             oids[index] = new_oid;
@@ -349,7 +349,7 @@ impl Game {
         None
     }
 
-    fn do_move(&mut self, oid: ObjId, old: Point, new: Point) -> Option<Event> {
+    fn do_move(&mut self, oid: Oid, old: Point, new: Point) -> Option<Event> {
         assert!(!self.constructing); // make sure this is reset once things start happening
 
         let oids = self.cells.get_mut(&old).unwrap();
@@ -366,7 +366,7 @@ impl Game {
         Some(Event::Action(action))
     }
 
-    fn do_pickup(&mut self, ch_id: ObjId, loc: Point, obj_id: ObjId) -> Option<Event> {
+    fn do_pickup(&mut self, ch_id: Oid, loc: Point, obj_id: Oid) -> Option<Event> {
         let obj = self.objects.get(&obj_id).unwrap();
         let name: String = obj.value(NAME_ID).unwrap();
         let mesg = Message {
@@ -388,7 +388,7 @@ impl Game {
         Some(Event::Action(action))
     }
 
-    fn do_replace_object(&mut self, loc: Point, old_oid: ObjId, new_obj: Object) -> Option<Event> {
+    fn do_replace_object(&mut self, loc: Point, old_oid: Oid, new_obj: Object) -> Option<Event> {
         let new_oid = self.create_object(new_obj);
         let oids = self.cells.get_mut(&loc).unwrap();
         let index = oids.iter().position(|id| *id == old_oid).unwrap();

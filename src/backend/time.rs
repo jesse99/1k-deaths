@@ -21,7 +21,7 @@
 // is a simpler design, it requires that all objects accumulate time units whenever another
 // object takes an action. Maybe that's not so bad in practice but it would introduce an
 // O(N) algorithm in the hot code path which doesn't seem great.
-use super::{ObjId, ScheduledAction};
+use super::{Oid, ScheduledAction};
 use fnv::FnvHashSet;
 use rand::rngs::SmallRng;
 use rand::Rng;
@@ -49,7 +49,7 @@ pub struct Scheduler {
     heap: BinaryHeap<Entry>,
     now: Time,
     player: bool,
-    scheduled: FnvHashSet<ObjId>,
+    scheduled: FnvHashSet<Oid>,
 }
 
 impl Scheduler {
@@ -67,7 +67,7 @@ impl Scheduler {
         self.player
     }
 
-    pub fn push(&mut self, oid: ObjId, saction: ScheduledAction, delay: Time, rng: &RefCell<SmallRng>) {
+    pub fn push(&mut self, oid: Oid, saction: ScheduledAction, delay: Time, rng: &RefCell<SmallRng>) {
         // Can't schedule an object more than once (we'd have to find the existing entry
         // and update the time for whichever expires later).
         assert!(self.scheduled.insert(oid), "{oid} is already scheduled");
@@ -89,7 +89,7 @@ impl Scheduler {
         self.player = oid.0 == 0;
     }
 
-    pub fn pop(&mut self) -> (ObjId, ScheduledAction) {
+    pub fn pop(&mut self) -> (Oid, ScheduledAction) {
         let entry = self.heap.pop().unwrap();
         self.pop_scheduled(entry.oid);
         self.now = entry.at;
@@ -100,7 +100,7 @@ impl Scheduler {
     }
 
     #[cfg(debug_assertions)]
-    pub fn pop_scheduled(&mut self, oid: ObjId) {
+    pub fn pop_scheduled(&mut self, oid: Oid) {
         self.scheduled.remove(&oid);
     }
 }
@@ -134,7 +134,7 @@ impl Sub for Time {
 // ---- Entry struct ---------------------------------------------------------------------
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct Entry {
-    oid: ObjId,
+    oid: Oid,
     saction: ScheduledAction,
     at: Time,
 }

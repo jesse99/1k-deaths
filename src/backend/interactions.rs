@@ -3,7 +3,7 @@
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
 use super::object::TagValue;
 use super::tag::*;
-use super::{Event, Game, Material, Message, ObjId, Object, Point, ScheduledAction, State, Tag, Topic};
+use super::{Event, Game, Material, Message, Object, Oid, Point, ScheduledAction, State, Tag, Topic};
 use fnv::FnvHashMap;
 use rand::prelude::*;
 
@@ -14,8 +14,8 @@ type PostHandler = fn(&Game, &Point, &mut Vec<Event>);
 // TODO:
 // do we need any other handlers? or maybe just comment missing ones?
 pub struct Interactions {
-    pre_table: FnvHashMap<(TagId, TagId), PreHandler>,
-    post_table: FnvHashMap<TagId, PostHandler>,
+    pre_table: FnvHashMap<(Tid, Tid), PreHandler>,
+    post_table: FnvHashMap<Tid, PostHandler>,
 }
 
 impl Interactions {
@@ -74,11 +74,11 @@ impl Interactions {
         }
     }
 
-    fn pre_ins(&mut self, id0: TagId, id1: TagId, handler: PreHandler) {
+    fn pre_ins(&mut self, id0: Tid, id1: Tid, handler: PreHandler) {
         self.pre_table.insert((id0, id1), handler);
     }
 
-    fn post_ins(&mut self, id1: TagId, handler: PostHandler) {
+    fn post_ins(&mut self, id1: Tid, handler: PostHandler) {
         self.post_table.insert(id1, handler);
     }
 }
@@ -145,7 +145,7 @@ fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &
     match material {
         Some(Material::Stone) => {
             let saction = ScheduledAction::DamageWall(*new_loc, oid);
-            events.push(Event::ScheduledAction(ObjId(0), saction));
+            events.push(Event::ScheduledAction(Oid(0), saction));
         }
         Some(Material::Metal) => {
             let mesg = Message::new(
@@ -166,7 +166,7 @@ fn player_vs_doorman(game: &Game, _player_loc: &Point, doorman_loc: &Point, even
         let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = find_empty_cell(game, doorman, doorman_loc) {
             let saction = ScheduledAction::ShoveDoorman(*doorman_loc, oid, to_loc);
-            events.push(Event::ScheduledAction(ObjId(0), saction));
+            events.push(Event::ScheduledAction(Oid(0), saction));
         }
     } else {
         let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
@@ -183,13 +183,13 @@ fn player_vs_deep_water(game: &Game, player_loc: &Point, _new_loc: &Point, event
 fn player_vs_portable(game: &Game, loc: &Point, events: &mut Vec<Event>) {
     let oid = game.get(loc, PORTABLE_ID).unwrap().0;
     let saction = ScheduledAction::PickUp(*loc, oid);
-    events.push(Event::ScheduledAction(ObjId(0), saction));
+    events.push(Event::ScheduledAction(Oid(0), saction));
 }
 
 fn player_vs_rhulad(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
     let oid = game.get(new_loc, CHARACTER_ID).unwrap().0;
     let saction = ScheduledAction::FightRhulad(*new_loc, oid);
-    events.push(Event::ScheduledAction(ObjId(0), saction));
+    events.push(Event::ScheduledAction(Oid(0), saction));
 }
 
 fn player_vs_shallow_water(_game: &Game, _loc: &Point, events: &mut Vec<Event>) {
@@ -249,5 +249,5 @@ fn player_vs_wall(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mu
 fn player_vs_closed_door(game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
     let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
     let saction = ScheduledAction::OpenDoor(*player_loc, *new_loc, oid);
-    events.push(Event::ScheduledAction(ObjId(0), saction));
+    events.push(Event::ScheduledAction(Oid(0), saction));
 }

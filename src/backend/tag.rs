@@ -1,4 +1,4 @@
-use super::{Color, ObjId};
+use super::{Color, Oid};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
@@ -36,7 +36,7 @@ pub enum Tag {
     Spectator,
 
     /// Objects that a Character has picked up.
-    Inventory(Vec<ObjId>),
+    Inventory(Vec<Oid>),
 
     CanOpenDoor,
 
@@ -106,35 +106,35 @@ pub enum Tag {
 // Unlike Object id's tag id's don't typically hang around for very long. So I think it's
 // fine to simply make them a u16 rather than something more intelligible.
 #[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct TagId(u16);
+pub struct Tid(u16);
 
-pub const CHARACTER_ID: TagId = TagId(0);
-pub const PLAYER_ID: TagId = TagId(1);
-pub const DOORMAN_ID: TagId = TagId(2);
-pub const RHULAD_ID: TagId = TagId(3);
-pub const SPECTATOR_ID: TagId = TagId(4);
-pub const INVENTORY_ID: TagId = TagId(5);
-pub const PORTABLE_ID: TagId = TagId(6);
-pub const PICK_AXE_ID: TagId = TagId(7);
-pub const SIGN_ID: TagId = TagId(8);
-pub const EMP_SWORD_ID: TagId = TagId(9);
-pub const CLOSED_DOOR_ID: TagId = TagId(10);
-pub const GROUND_ID: TagId = TagId(11);
-pub const SHALLOW_WATER_ID: TagId = TagId(12);
-pub const DEEP_WATER_ID: TagId = TagId(13);
-pub const VITR_ID: TagId = TagId(14);
-pub const OPEN_DOOR_ID: TagId = TagId(15);
-pub const TERRAIN_ID: TagId = TagId(16);
-pub const TREE_ID: TagId = TagId(17);
-pub const WALL_ID: TagId = TagId(18);
-pub const BACKGROUND_ID: TagId = TagId(19);
-pub const DURABILITY_ID: TagId = TagId(20);
-pub const MATERIAL_ID: TagId = TagId(21);
-pub const NAME_ID: TagId = TagId(22);
-pub const CAN_OPEN_DOOR_ID: TagId = TagId(23);
+pub const CHARACTER_ID: Tid = Tid(0);
+pub const PLAYER_ID: Tid = Tid(1);
+pub const DOORMAN_ID: Tid = Tid(2);
+pub const RHULAD_ID: Tid = Tid(3);
+pub const SPECTATOR_ID: Tid = Tid(4);
+pub const INVENTORY_ID: Tid = Tid(5);
+pub const PORTABLE_ID: Tid = Tid(6);
+pub const PICK_AXE_ID: Tid = Tid(7);
+pub const SIGN_ID: Tid = Tid(8);
+pub const EMP_SWORD_ID: Tid = Tid(9);
+pub const CLOSED_DOOR_ID: Tid = Tid(10);
+pub const GROUND_ID: Tid = Tid(11);
+pub const SHALLOW_WATER_ID: Tid = Tid(12);
+pub const DEEP_WATER_ID: Tid = Tid(13);
+pub const VITR_ID: Tid = Tid(14);
+pub const OPEN_DOOR_ID: Tid = Tid(15);
+pub const TERRAIN_ID: Tid = Tid(16);
+pub const TREE_ID: Tid = Tid(17);
+pub const WALL_ID: Tid = Tid(18);
+pub const BACKGROUND_ID: Tid = Tid(19);
+pub const DURABILITY_ID: Tid = Tid(20);
+pub const MATERIAL_ID: Tid = Tid(21);
+pub const NAME_ID: Tid = Tid(22);
+pub const CAN_OPEN_DOOR_ID: Tid = Tid(23);
 
 impl Tag {
-    pub fn to_id(&self) -> TagId {
+    pub fn to_id(&self) -> Tid {
         match self {
             Tag::Character => CHARACTER_ID,
             Tag::Player => PLAYER_ID,

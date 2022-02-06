@@ -40,7 +40,7 @@ const MAX_MESSAGES: usize = 1000;
 // a newtype string (e.g. "wall 97") or a simple struct with a static string ref and a
 // counter.
 #[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct ObjId(u64);
+pub struct Oid(u64);
 
 #[derive(Clone, Copy, Debug)]
 pub enum Command {
@@ -81,8 +81,8 @@ pub struct Game {
 
     player: Point,
     default: Object, // object to use for a non-existent cell (can happen if a wall is destroyed)
-    objects: FnvHashMap<ObjId, Object>, // all existing objects are here
-    cells: FnvHashMap<Point, Vec<ObjId>>, // objects within each cell on the map
+    objects: FnvHashMap<Oid, Object>, // all existing objects are here
+    cells: FnvHashMap<Point, Vec<Oid>>, // objects within each cell on the map
     constructing: bool, // level is in the process of being constructed
 
     messages: Vec<Message>,     // messages shown to the player
@@ -227,7 +227,7 @@ impl Game {
                 let new_loc = Point::new(player.x + dx, player.y + dy);
                 if !self.scheduled_interaction(&player, &new_loc, events) {
                     let saction = ScheduledAction::Move(self.player, new_loc);
-                    events.push(Event::ScheduledAction(ObjId(0), saction));
+                    events.push(Event::ScheduledAction(Oid(0), saction));
                 }
             }
             Command::Examine(new_loc, wizard) => {
@@ -368,7 +368,7 @@ impl Game {
         }
     }
 
-    fn has(&self, loc: &Point, tag: TagId) -> bool {
+    fn has(&self, loc: &Point, tag: Tid) -> bool {
         if let Some(oids) = self.cells.get(loc) {
             for oid in oids {
                 let obj = self
@@ -383,7 +383,7 @@ impl Game {
         self.default.has(tag)
     }
 
-    fn get(&self, loc: &Point, tag: TagId) -> Option<(ObjId, &Object)> {
+    fn get(&self, loc: &Point, tag: Tid) -> Option<(Oid, &Object)> {
         if let Some(oids) = self.cells.get(loc) {
             for oid in oids.iter().rev() {
                 let obj = self
@@ -398,14 +398,14 @@ impl Game {
         if self.default.has(tag) {
             // Note that if this cell is converted into a real cell the oid will change.
             // I don't think that this will be a problem in practice...
-            Some((ObjId(1), &self.default))
+            Some((Oid(1), &self.default))
         } else {
             None
         }
     }
 
     /// Typically this will be a terrain object.
-    fn get_bottom(&self, loc: &Point) -> (ObjId, &Object) {
+    fn get_bottom(&self, loc: &Point) -> (Oid, &Object) {
         if let Some(oids) = self.cells.get(loc) {
             let oid = oids
                 .first()
@@ -416,12 +416,12 @@ impl Game {
                 .expect("All objects in the level should still exist");
             (*oid, obj)
         } else {
-            (ObjId(1), &self.default)
+            (Oid(1), &self.default)
         }
     }
 
     /// Character, item, door, or if all else fails terrain.
-    fn get_top(&self, loc: &Point) -> (ObjId, &Object) {
+    fn get_top(&self, loc: &Point) -> (Oid, &Object) {
         if let Some(oids) = self.cells.get(loc) {
             let oid = oids.last().expect("cells should always have at least a terrain object");
             let obj = self
@@ -430,16 +430,16 @@ impl Game {
                 .expect("All objects in the level should still exist");
             (*oid, obj)
         } else {
-            (ObjId(1), &self.default)
+            (Oid(1), &self.default)
         }
     }
 
     /// Iterates over the objects at loc starting with the topmost object.
-    fn cell_iter(&self, loc: &Point) -> impl Iterator<Item = (ObjId, &Object)> {
+    fn cell_iter(&self, loc: &Point) -> impl Iterator<Item = (Oid, &Object)> {
         CellIterator::new(self, loc)
     }
 
-    fn player_inv_iter(&self) -> impl Iterator<Item = (ObjId, &Object)> {
+    fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {
         InventoryIterator::new(self, &self.player)
     }
 
@@ -506,10 +506,10 @@ impl Game {
         }
 
         // Check what we can that isn't very expensive to do.
-        let obj = self.objects.get(&ObjId(0)).expect("oid 0 should always exist");
+        let obj = self.objects.get(&Oid(0)).expect("oid 0 should always exist");
         assert!(obj.has(PLAYER_ID), "oid 0 should be the player not {obj}");
 
-        let obj = self.objects.get(&ObjId(1));
+        let obj = self.objects.get(&Oid(1));
         assert!(
             obj.is_none(),
             "oid 1 should be the default object, not {}",
@@ -627,24 +627,24 @@ impl Game {
 }
 
 mod details {
-    use super::{FnvHashMap, ObjId, Object, PoV, Point};
+    use super::{FnvHashMap, Object, Oid, PoV, Point};
 
     /// View into game after posting an event to Level.
     pub struct Game1<'a> {
-        pub objects: &'a FnvHashMap<ObjId, Object>,
-        pub cells: &'a FnvHashMap<Point, Vec<ObjId>>,
+        pub objects: &'a FnvHashMap<Oid, Object>,
+        pub cells: &'a FnvHashMap<Point, Vec<Oid>>,
     }
 
     pub struct Game2<'a> {
-        pub objects: &'a FnvHashMap<ObjId, Object>,
-        pub cells: &'a FnvHashMap<Point, Vec<ObjId>>,
+        pub objects: &'a FnvHashMap<Oid, Object>,
+        pub cells: &'a FnvHashMap<Point, Vec<Oid>>,
         pub pov: &'a PoV,
     }
 }
 
 struct CellIterator<'a> {
     game: &'a Game,
-    oids: Option<&'a Vec<ObjId>>,
+    oids: Option<&'a Vec<Oid>>,
     index: i32,
 }
 
@@ -660,7 +660,7 @@ impl<'a> CellIterator<'a> {
 }
 
 impl<'a> Iterator for CellIterator<'a> {
-    type Item = (ObjId, &'a Object);
+    type Item = (Oid, &'a Object);
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(oids) = self.oids {
@@ -680,7 +680,7 @@ impl<'a> Iterator for CellIterator<'a> {
 
 struct InventoryIterator<'a> {
     game: &'a Game,
-    oids: &'a Vec<ObjId>,
+    oids: &'a Vec<Oid>,
     index: i32,
 }
 
@@ -697,7 +697,7 @@ impl<'a> InventoryIterator<'a> {
 }
 
 impl<'a> Iterator for InventoryIterator<'a> {
-    type Item = (ObjId, &'a Object);
+    type Item = (Oid, &'a Object);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.index -= 1; // no real need to iterate in reverse order but it is consistent with CellIterator

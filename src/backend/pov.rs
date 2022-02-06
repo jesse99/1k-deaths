@@ -1,7 +1,7 @@
 use super::details::Game1;
 use super::primitives::FoV;
 use super::tag::*;
-use super::{Action, Event, Game, ObjId, Object, Point};
+use super::{Action, Event, Game, Object, Oid, Point};
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -108,7 +108,7 @@ fn obj_blocks_los(obj: &Object) -> bool {
     }
 }
 
-fn blocks_los<'a>(objs: impl Iterator<Item = (ObjId, &'a Object)>) -> bool {
+fn blocks_los<'a>(objs: impl Iterator<Item = (Oid, &'a Object)>) -> bool {
     let mut count = 0;
     for obj in objs {
         if obj_blocks_los(obj.1) {
