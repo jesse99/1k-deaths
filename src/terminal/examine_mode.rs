@@ -60,7 +60,7 @@ impl ExamineMode {
     fn do_examine(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
         let mut events = Vec::new();
         self.examined = Point::new(self.examined.x + dx, self.examined.y + dy);
-        game.command(Command::Examine(self.examined), &mut events);
+        game.command(Command::Examine(self.examined, super::wizard_mode()), &mut events);
         game.post(events, false);
         InputAction::UpdatedGame
     }
@@ -98,7 +98,7 @@ The focus can be moved with the usual keys:
             self.examined = loc;
 
             let mut events = Vec::new();
-            game.command(Command::Examine(loc), &mut events);
+            game.command(Command::Examine(loc, super::wizard_mode()), &mut events);
             game.post(events, false);
         }
         InputAction::UpdatedGame

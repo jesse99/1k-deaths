@@ -66,7 +66,11 @@ impl Terminal {
 
         while state != GameState::Exiting {
             self.render();
-            state = self.ui.handle_input(&mut self.stdout, &mut self.game);
+            if self.game.players_turn() {
+                state = self.ui.handle_input(&mut self.stdout, &mut self.game);
+            } else {
+                self.game.advance_time();
+            }
         }
     }
 

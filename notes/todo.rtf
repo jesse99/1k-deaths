@@ -23,6 +23,7 @@ http://www.roguebasin.com/index.php?title=Category:Articles\
 https://www.reddit.com/r/roguelikedev\
 http://malazan.wikia.com/wiki/Malazan_Wiki\
 https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguelikes/\
+https://crawl.kelbi.org/#lobby\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
@@ -35,24 +36,15 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
-\'95 The doorman should not be able to move through closed doors\
-	- maybe add a CanOpenDoor tag\
 \'95 Work on a time system:\
+	- object scheduling needs to be some sort of event\
+		` fuzzing should probably happen before push\
 	- player actions (moving, opening doors, picking up items, talking) should take time\
-	- need a priority queue to keep track of who\'92s turn it is next\
-	- when popping off an object from queue advance time to that point\
-	- queue will need some sort of object reference\
-		` could be loc and tag (but what if someone kills a character before it can move?)\
-		` objects have a unique id\
-			could have a table somewhere that listens for AddObject and DestroyObject\
 	- change vitr so that it starts small and expands\
 		` vitr object wouldnn\'92t queue an action if all it\'92s neighbors are vitr\
 		` don\'92t grow into default cells\
-	- min action time should be 1s\
-	- 1s == 100 ticks\
-	- fuzz times by +/1 15%	\
-	- times should probably be represented with a newtype (ticks are i64)\
 	- look at some of the resources for time system info\
+\'95 Rename ObjId and TagId to Oid and Tid?\
 \'95 Generate tag.rs\
 	- probably from some sort of config file\
 	- be sure to add a comment that it is a generated file, along with a timestamp\

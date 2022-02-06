@@ -1,15 +1,14 @@
 //! This is where the bulk of the logic exists to handle interactions between
 //! Characters and between items. It's structured as a lookup table of
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
-use super::make;
 use super::object::TagValue;
 use super::tag::*;
-use super::{Event, Game, Material, Message, Object, Point, State, Tag, Topic};
+use super::{Event, Game, Material, Message, ObjId, Object, Point, ScheduledAction, State, Tag, Topic};
 use fnv::FnvHashMap;
 use rand::prelude::*;
 
 // ---- struct Interaction -------------------------------------------------
-type PreHandler = fn(&Game, &Point, &Point, &mut Vec<Event>) -> bool; // true == no move
+type PreHandler = fn(&Game, &Point, &Point, &mut Vec<Event>);
 type PostHandler = fn(&Game, &Point, &mut Vec<Event>);
 
 // TODO:
@@ -48,7 +47,7 @@ impl Interactions {
     /// an interaction instead of a move (e.g. attack another Character or
     /// unlock a door). Typically only the topmost interactible object is
     /// interacted with.
-    pub fn pre_move(
+    pub fn scheduled_interaction(
         &self,
         tag0: &Tag,
         tag1: &Tag,
@@ -58,7 +57,8 @@ impl Interactions {
         events: &mut Vec<Event>,
     ) -> bool {
         if let Some(handler) = self.pre_table.get(&(tag0.to_id(), tag1.to_id())) {
-            handler(game, char_loc, new_loc, events)
+            handler(game, char_loc, new_loc, events);
+            true
         } else {
             false
         }
@@ -124,35 +124,8 @@ fn find_empty_cell(game: &Game, ch: &Object, loc: &Point) -> Option<Point> {
     None
 }
 
-fn damage_wall(game: &Game, loc: &Point, scaled_damage: i32, events: &mut Vec<Event>) {
-    assert!(scaled_damage > 0);
-    let (oid, obj) = game.get(loc, WALL_ID).unwrap();
-    let durability: Durability = obj.value(DURABILITY_ID).unwrap();
-    let damage = durability.max / scaled_damage;
-
-    if damage < durability.current {
-        let mesg = Message::new(
-            Topic::Normal,
-            "You chip away at the wall with your pick-axe.", // TODO: probably should have slightly different text for wooden walls (if we ever add them)
-        );
-        events.push(Event::AddMessage(mesg));
-
-        let mut obj = obj.clone();
-        obj.replace(Tag::Durability(Durability {
-            current: durability.current - damage,
-            max: durability.max,
-        }));
-        events.push(Event::ReplaceObject(*loc, oid, obj));
-    } else {
-        let mesg = Message::new(Topic::Important, "You destroy the wall!");
-        events.push(Event::AddMessage(mesg));
-
-        events.push(Event::DestroyObjectId(*loc, oid));
-    }
-}
-
 // ---- Interaction handlers -----------------------------------------------
-fn emp_sword_vs_vitr(game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn emp_sword_vs_vitr(game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) {
     if !matches!(game.state, State::WonGame) {
         let mesg = Message::new(
             Topic::Important,
@@ -163,18 +136,17 @@ fn emp_sword_vs_vitr(game: &Game, _player_loc: &Point, _new_loc: &Point, events:
         let mesg = Message::new(Topic::Important, "You have won the game!!");
         events.push(Event::AddMessage(mesg));
         events.push(Event::StateChanged(State::WonGame));
-        true
-    } else {
-        false
     }
 }
 
-fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let (_, obj) = game.get(new_loc, WALL_ID).unwrap();
+fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
+    let (oid, obj) = game.get(new_loc, WALL_ID).unwrap();
     let material: Option<Material> = obj.value(MATERIAL_ID);
     match material {
-        // Some(Material::Wood) => damage_wall(game, new_loc, 3, events),
-        Some(Material::Stone) => damage_wall(game, new_loc, 6, events),
+        Some(Material::Stone) => {
+            let saction = ScheduledAction::DamageWall(*new_loc, oid);
+            events.push(Event::ScheduledAction(ObjId(0), saction));
+        }
         Some(Material::Metal) => {
             let mesg = Message::new(
                 Topic::Normal,
@@ -184,49 +156,40 @@ fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &
         }
         None => panic!("Walls should always have a Material"),
     }
-    true
 }
 
-fn player_vs_doorman(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn player_vs_doorman(game: &Game, _player_loc: &Point, doorman_loc: &Point, events: &mut Vec<Event>) {
     if game
         .player_inv_iter()
         .any(|(_, obj)| obj.description().contains("Doom"))
     {
-        let mesg = Message::new(Topic::NPCSpeaks, "Ahh, a new champion for the Emperor!");
-        events.push(Event::AddMessage(mesg));
-
-        let doorman = game.get(new_loc, CHARACTER_ID).unwrap().1;
-        if let Some(to_loc) = find_empty_cell(game, doorman, new_loc) {
-            events.push(Event::NPCMoved(*new_loc, to_loc));
+        let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
+        if let Some(to_loc) = find_empty_cell(game, doorman, doorman_loc) {
+            let saction = ScheduledAction::ShoveDoorman(*doorman_loc, oid, to_loc);
+            events.push(Event::ScheduledAction(ObjId(0), saction));
         }
     } else {
         let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
         events.push(Event::AddMessage(mesg));
     }
-    true
 }
 
-fn player_vs_deep_water(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn player_vs_deep_water(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = impassible_terrain_tag(player, &Tag::DeepWater).unwrap();
     events.push(Event::AddMessage(mesg));
-    true
 }
 
-fn player_vs_portable(_game: &Game, loc: &Point, events: &mut Vec<Event>) {
-    events.push(Event::AddToInventory(*loc));
+fn player_vs_portable(game: &Game, loc: &Point, events: &mut Vec<Event>) {
+    let oid = game.get(loc, PORTABLE_ID).unwrap().0;
+    let saction = ScheduledAction::PickUp(*loc, oid);
+    events.push(Event::ScheduledAction(ObjId(0), saction));
 }
 
-fn player_vs_rhulad(game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
-    events.push(Event::AddMessage(mesg));
-
-    let (oid, _) = game.get(new_loc, CHARACTER_ID).unwrap();
-    events.push(Event::DestroyObjectId(*new_loc, oid));
-    events.push(Event::AddObject(*player_loc, super::make::emp_sword()));
-    events.push(Event::AddToInventory(*player_loc));
-    events.push(Event::StateChanged(State::KilledRhulad));
-    true
+fn player_vs_rhulad(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
+    let oid = game.get(new_loc, CHARACTER_ID).unwrap().0;
+    let saction = ScheduledAction::FightRhulad(*new_loc, oid);
+    events.push(Event::ScheduledAction(ObjId(0), saction));
 }
 
 fn player_vs_shallow_water(_game: &Game, _loc: &Point, events: &mut Vec<Event>) {
@@ -243,7 +206,7 @@ fn player_vs_sign(game: &Game, loc: &Point, events: &mut Vec<Event>) {
     events.push(Event::AddMessage(mesg));
 }
 
-fn player_vs_spectator(game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn player_vs_spectator(game: &Game, _player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) {
     let messages = if matches!(game.state, State::Adventuring) {
         vec![
             "I hope you're prepared to die!",
@@ -263,39 +226,28 @@ fn player_vs_spectator(game: &Game, _player_loc: &Point, _new_loc: &Point, event
 
     let mesg = Message::new(Topic::NPCSpeaks, text);
     events.push(Event::AddMessage(mesg));
-    true
 }
 
-fn player_vs_tree(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn player_vs_tree(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = impassible_terrain_tag(player, &Tag::Tree).unwrap();
     events.push(Event::AddMessage(mesg));
-    true
 }
 
-fn player_vs_vitr(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn player_vs_vitr(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = impassible_terrain_tag(player, &Tag::Vitr).unwrap();
     events.push(Event::AddMessage(mesg));
-    true
 }
 
-fn player_vs_wall(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) -> bool {
+fn player_vs_wall(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mut Vec<Event>) {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = impassible_terrain_tag(player, &Tag::Wall).unwrap();
     events.push(Event::AddMessage(mesg));
-    true
 }
 
-fn player_vs_closed_door(game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
-    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
-    let terrain = game.get_bottom(new_loc).1;
-    if let Some(mesg) = impassible_terrain(player, terrain) {
-        events.push(Event::AddMessage(mesg));
-        true
-    } else {
-        let (oid, _) = game.get(new_loc, CLOSED_DOOR_ID).unwrap();
-        events.push(Event::ReplaceObject(*new_loc, oid, make::open_door()));
-        false
-    }
+fn player_vs_closed_door(game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
+    let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
+    let saction = ScheduledAction::OpenDoor(*player_loc, *new_loc, oid);
+    events.push(Event::ScheduledAction(ObjId(0), saction));
 }

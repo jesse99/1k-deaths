@@ -10,14 +10,16 @@ mod persistence;
 mod pov;
 mod primitives;
 mod tag;
+mod time;
 
-pub use event::Event;
+pub use event::Event; // this is here for the show events wizard command
 pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
 
 use derive_more::Display;
+use event::{Action, ScheduledAction};
 use fnv::{FnvHashMap, FnvHashSet};
 use interactions::Interactions;
 use object::{Object, TagValue};
@@ -30,6 +32,7 @@ use std::cell::{RefCell, RefMut};
 use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
+use time::Scheduler;
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -47,7 +50,7 @@ pub enum Command {
     /// Print descriptions for objects at the cell. Note that any cell can be examined but
     /// cells that are not in the player's PoV will have either an unhelpful description or
     /// a stale description.
-    Examine(Point),
+    Examine(Point, bool),
 }
 
 pub enum Tile {
@@ -74,6 +77,7 @@ pub struct Game {
     posting: bool,      // prevents re-entrant posting events
     next_id: u64,       // 0 is the player
     rng: RefCell<SmallRng>,
+    scheduler: Scheduler,
 
     player: Point,
     default: Object, // object to use for a non-existent cell (can happen if a wall is destroyed)
@@ -198,6 +202,19 @@ impl Game {
         self.player
     }
 
+    /// if this returns true then the UI should call command, otherwise the UI should call
+    /// advance_time.
+    pub fn players_turn(&self) -> bool {
+        !self.scheduler.has_player()
+    }
+
+    pub fn advance_time(&mut self) {
+        // Pop should always be safe because this is called only if the scheduler has a
+        // player action.
+        let (oid, saction) = self.scheduler.pop();
+        self.handle_scheduled_action(oid, saction);
+    }
+
     pub fn command(&self, command: Command, events: &mut Vec<Event>) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
@@ -208,35 +225,33 @@ impl Game {
                 assert!(dx != 0 || dy != 0); // TODO: should this be a short rest?
                 let player = self.player;
                 let new_loc = Point::new(player.x + dx, player.y + dy);
-                if !self.interact_pre_move(&player, &new_loc, events) {
-                    events.push(Event::PlayerMoved(new_loc));
+                if !self.scheduled_interaction(&player, &new_loc, events) {
+                    let saction = ScheduledAction::Move(self.player, new_loc);
+                    events.push(Event::ScheduledAction(ObjId(0), saction));
                 }
             }
-            Command::Examine(new_loc) => {
-                if self.pov.visible(&new_loc) {
+            Command::Examine(new_loc, wizard) => {
+                let suffix = if wizard {
+                    format!(" ({})", new_loc)
+                } else {
+                    "".to_string()
+                };
+                let text = if self.pov.visible(&new_loc) {
                     let descs: Vec<String> = self
                         .cell_iter(&new_loc)
                         .map(|(_, obj)| obj.description().to_string())
                         .collect();
                     let descs = descs.join(", and ");
-                    let text = format!("You see {descs}.");
-                    events.push(Event::AddMessage(Message {
-                        topic: Topic::Normal,
-                        text,
-                    }));
+                    format!("You see {descs}{suffix}.")
                 } else if self.old_pov.get(&new_loc).is_some() {
-                    let text = "You can no longer see there.".to_string();
-                    events.push(Event::AddMessage(Message {
-                        topic: Topic::Normal,
-                        text,
-                    }));
+                    "You can no longer see there{suffix}.".to_string()
                 } else {
-                    let text = "You've never seen there.".to_string();
-                    events.push(Event::AddMessage(Message {
-                        topic: Topic::Normal,
-                        text,
-                    }));
-                }
+                    "You've never seen there{suffix}.".to_string()
+                };
+                events.push(Event::AddMessage(Message {
+                    topic: Topic::Normal,
+                    text,
+                }));
             }
         }
     }
@@ -328,6 +343,7 @@ impl Game {
             state: State::Adventuring,
             posting: false,
             next_id: 2,
+            scheduler: Scheduler::new(),
 
             // TODO:
             // 1) SmallRng is not guaranteed to be portable so results may
@@ -432,7 +448,7 @@ impl Game {
         self.rng.borrow_mut()
     }
 
-    fn interact_pre_move_with_tag(
+    fn scheduled_interaction_with_tag(
         &self,
         tag0: &Tag,
         player_loc: &Point,
@@ -443,7 +459,7 @@ impl Game {
             for tag1 in obj.iter() {
                 if self
                     .interactions
-                    .pre_move(tag0, tag1, self, player_loc, new_loc, events)
+                    .scheduled_interaction(tag0, tag1, self, player_loc, new_loc, events)
                 {
                     return true;
                 }
@@ -452,18 +468,18 @@ impl Game {
         false
     }
     // Player attempting to interact with an adjacent cell.
-    fn interact_pre_move(&self, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    fn scheduled_interaction(&self, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
         // First see if an inventory item can interact with the new cell.
         for (_, obj) in self.player_inv_iter() {
             for tag0 in obj.iter() {
-                if self.interact_pre_move_with_tag(tag0, player_loc, new_loc, events) {
+                if self.scheduled_interaction_with_tag(tag0, player_loc, new_loc, events) {
                     return true;
                 }
             }
         }
 
         // Failing that see if the player itself can interact with the cell.
-        if self.interact_pre_move_with_tag(&Tag::Player, player_loc, new_loc, events) {
+        if self.scheduled_interaction_with_tag(&Tag::Player, player_loc, new_loc, events) {
             return true;
         }
         false

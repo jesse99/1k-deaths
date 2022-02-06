@@ -41,7 +41,7 @@ use std::io::Write;
 use std::path::Path;
 
 #[cfg(test)]
-use super::{Message, Point, Topic};
+use super::{Action, Message, ObjId, Point, Topic};
 #[cfg(test)]
 use std::fs;
 
@@ -182,8 +182,8 @@ mod tests {
 
         let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
         let events2 = vec![
-            Event::PlayerMoved(Point::new(1, 2)),
-            Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
+            Event::Action(Action::Move(ObjId(0), Point::new(1, 1), Point::new(1, 2))),
+            Event::Action(Action::AddObject(Point::new(2, 3), super::super::make::stone_wall())),
         ];
 
         {
@@ -211,8 +211,8 @@ mod tests {
 
         let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
         let events2 = vec![
-            Event::PlayerMoved(Point::new(1, 2)),
-            Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
+            Event::Action(Action::Move(ObjId(0), Point::new(1, 1), Point::new(1, 2))),
+            Event::Action(Action::AddObject(Point::new(2, 3), super::super::make::stone_wall())),
         ];
         let events3 = vec![Event::AddMessage(Message::new(Topic::Normal, "hello"))];
 

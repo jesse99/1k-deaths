@@ -1,7 +1,7 @@
 use super::details::Game1;
 use super::primitives::FoV;
 use super::tag::*;
-use super::{Event, Game, ObjId, Object, Point};
+use super::{Action, Event, Game, ObjId, Object, Point};
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -31,21 +31,25 @@ impl PoV {
             Event::NewGame => self.dirty = true,
             Event::BeginConstructLevel => self.dirty = true,
             Event::EndConstructLevel => self.dirty = true,
-            Event::AddObject(_loc, new_obj) => {
-                if !self.dirty && obj_blocks_los(new_obj) {
-                    self.dirty = true;
+            Event::Action(action) => {
+                match action {
+                    Action::AddObject(_, new_obj) => {
+                        if !self.dirty && obj_blocks_los(new_obj) {
+                            self.dirty = true;
+                        }
+                    }
+                    // TODO: this should dirty only if the origin changes.
+                    Action::Move(oid, _, _) if oid.0 == 0 => self.dirty = true,
+                    Action::ReplaceObject(_, _, _) => {
+                        // TODO: This is currently only used for terrain, e.g. to open
+                        // a door. These changes will normally require dirtying the PoV
+                        // so, in theory, we could be smarter about this (but note that
+                        // the Level has already changed).
+                        self.dirty = true;
+                    }
+                    _ => (), // TODO: should we make this an exhaustive match?
                 }
             }
-            Event::ReplaceObject(_loc, _old_oid, _new_oid) => {
-                // TODO: This is currently only used for terrain, e.g. to open
-                // a door. These changes will normally require dirtying the PoV
-                // so, in theory, we could be smarter about this (but note that
-                // the Level has already changed).
-                self.dirty = true;
-            }
-            // TODO: this should dirty only if the origin changes. Maybe we can add an id to PoV
-            // and check to see if loc matches that id's location.
-            Event::PlayerMoved(_loc) => self.dirty = true,
             _ => (),
         };
     }

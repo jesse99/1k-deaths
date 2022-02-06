@@ -14,6 +14,7 @@ fnv = "1.0.7"	        # custom hasher that is much more performant for small key
 log = "0.4.14" 	        # logging facade
 postcard = {version = "0.7.3", features = ["use-std"]}  # binary backend for serde
 rand = {version = "0.8.4", features = ["small_rng"]}	# random numbers
+rand_distr = "0.4.3"    # normal (and other) distributions
 serde = "1.0.133"	    # serialization framework
 serde_derive = "1.0.133"# serde derive macros
 simplelog = "0.11.2" 	# logging to a file
