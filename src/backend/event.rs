@@ -1,3 +1,13 @@
+//! There are three main classes of events:
+//! 1) ScheduledAction events which happen in two parts: first the ScheduledAction is
+//! scheduled to execute at a later time. When it does execute Action events are posted
+//! to make the actual game changes.
+//!
+//! 2) Action events are the typical way that the game is modified. They normally happen
+//! via ScheduledAction's.
+//!
+//! 3) Everything else. This includes events like AddMessage which don't take time to
+//! execute as well as events used for construction like BeginConstructLevel.
 use super::{Message, Object, Oid, Point, State};
 use std::fmt::{self, Formatter};
 
