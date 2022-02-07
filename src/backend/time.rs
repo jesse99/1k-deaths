@@ -70,7 +70,7 @@ impl Scheduler {
     pub fn push(&mut self, oid: Oid, saction: ScheduledAction, delay: Time, rng: &RefCell<SmallRng>) {
         // Can't schedule an object more than once (we'd have to find the existing entry
         // and update the time for whichever expires later).
-        assert!(
+        debug_assert!(
             self.scheduled.insert(oid),
             "{oid} is already scheduled (scheduling {saction})"
         );
@@ -116,7 +116,10 @@ impl Scheduler {
 
     pub fn pop(&mut self) -> (Oid, ScheduledAction) {
         let entry = self.heap.pop().unwrap();
-        self.pop_scheduled(entry.oid);
+        {
+            #[cfg(debug_assertions)]
+            self.pop_scheduled(entry.oid);
+        }
         self.now = entry.at;
         if entry.oid.0 == 0 {
             self.player = false;

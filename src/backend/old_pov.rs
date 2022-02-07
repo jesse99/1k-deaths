@@ -1,5 +1,5 @@
 use super::details::Game2;
-use super::{Event, Game, Point};
+use super::{Event, Game, Point, Symbol};
 use fnv::FnvHashMap;
 
 /// Locations that were visible to a character. Note that PoV overrides
@@ -7,8 +7,8 @@ use fnv::FnvHashMap;
 /// visible. Current;y this is only used for the Player to render locations
 /// that he has seen before.
 pub struct OldPoV {
-    old: FnvHashMap<Point, char>, // may not match the current Level state
-    edition: u32,                 // current PoV edition
+    old: FnvHashMap<Point, Symbol>, // may not match the current Level state
+    edition: u32,                   // current PoV edition
 }
 
 impl OldPoV {
@@ -41,7 +41,7 @@ impl OldPoV {
         }
     }
 
-    pub fn get(&self, loc: &Point) -> Option<char> {
-        self.old.get(loc).copied()
+    pub fn get(&self, loc: &Point) -> Option<&Symbol> {
+        self.old.get(loc)
     }
 }

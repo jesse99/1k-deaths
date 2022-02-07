@@ -1,7 +1,26 @@
 use super::tag::*;
 use super::{Color, Material, Oid, Tag};
+#[cfg(debug_assertions)]
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
+
+#[derive(Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Symbol {
+    Character(char),
+    ClosedDoor,
+    DeepLiquid,
+    Dirt,
+    OpenDoor,
+    PickAxe,
+    Rubble,
+    ShallowLiquid,
+    Sign,
+    StrongSword,
+    Tree,
+    Unseen,
+    Wall,
+    WeakSword,
+}
 
 /// Objects are a very general concept: they contain state that may be combined
 /// in arbitrary ways (e.g. in theory a cobra could be both a Character and a
@@ -10,10 +29,10 @@ use std::fmt::{self, Formatter};
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
-    dname: String, // these could be `&'static str` but for Deserialize
+    dname: String, // these could be `&'static str` but for Deserialize, TODO: maybe could intern them?
 
     tags: Vec<Tag>,
-    symbol: char,
+    symbol: Symbol,
     color: Color,
     description: String,
 }
@@ -22,7 +41,7 @@ impl Object {
     pub fn new<S: Into<String>, T: Into<String>>(
         dname: S,
         tags: Vec<Tag>,
-        symbol: char,
+        symbol: Symbol,
         color: Color,
         description: T,
     ) -> Object {
@@ -47,7 +66,11 @@ impl Object {
         let id = tag.to_id();
         let index = self.tags.iter().position(|candidate| candidate.to_id() == id).unwrap();
         self.tags[index] = tag;
-        self.invariant();
+
+        {
+            #[cfg(debug_assertions)]
+            self.invariant();
+        }
     }
 
     // We use this instead of as_mut_ref to make it easier to call the invariant.
@@ -65,7 +88,7 @@ impl Object {
         self.value(BACKGROUND_ID).expect("Expected a Background tag")
     }
 
-    pub fn to_fg_symbol(&self) -> (Color, char) {
+    pub fn to_fg_symbol(&self) -> (Color, Symbol) {
         (self.color, self.symbol)
     }
 }

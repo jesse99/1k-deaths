@@ -22,7 +22,10 @@ impl Game {
         OldPoV::update(self);
         PoV::refresh(self);
         self.posting = false;
-        self.invariant();
+        {
+            #[cfg(debug_assertions)]
+            self.invariant();
+        }
     }
 }
 

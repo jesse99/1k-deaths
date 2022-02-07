@@ -80,13 +80,6 @@ fn configure_logging(level: LevelFilter) {
     );
 }
 
-#[cfg(debug_assertions)]
-fn configure_invariants(args: &Args, game: &mut Game) {
-    if args.invariants {
-        game.set_invariants(true);
-    }
-}
-
 fn main() {
     let options = Args::parse();
     configure_logging(to_filter(options.log_level));
@@ -105,8 +98,12 @@ fn main() {
         None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game", seed),
         None => (Game::new_game("saved.game", seed), Vec::new()),
     };
-
-    configure_invariants(&options, &mut game);
+    {
+        #[cfg(debug_assertions)]
+        if options.invariants {
+            game.set_invariants(true);
+        }
+    }
 
     let mut terminal = terminal::Terminal::new(game, events);
     terminal.run();

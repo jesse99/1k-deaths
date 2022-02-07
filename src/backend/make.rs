@@ -1,4 +1,4 @@
-use super::{Action, Color, Durability, Event, Game, Material, Message, Object, Point, Tag, Topic};
+use super::*;
 use rand::prelude::*;
 
 fn add(loc: Point, obj: Object, events: &mut Vec<Event>) {
@@ -78,7 +78,7 @@ pub fn dirt() -> Object {
     Object::new(
         "dirt",
         ground_tags(Color::Black),
-        '.',
+        Symbol::Dirt,
         Color::LightSlateGray,
         "a patch of dirt",
     )
@@ -88,7 +88,7 @@ pub fn rubble() -> Object {
     Object::new(
         "rubble",
         ground_tags(Color::Black),
-        '…',
+        Symbol::Rubble,
         Color::Chocolate,
         "a destroyed wall",
     )
@@ -98,7 +98,7 @@ pub fn stone_wall() -> Object {
     Object::new(
         "stone wall",
         wall_tags(Color::Black, Material::Stone),
-        '#',
+        Symbol::Wall,
         Color::Chocolate,
         "a stone wall",
     )
@@ -108,21 +108,21 @@ pub fn metal_wall() -> Object {
     Object::new(
         "metal wall",
         wall_tags(Color::Black, Material::Metal),
-        '#',
+        Symbol::Wall,
         Color::Silver,
         "a metal wall",
     )
 }
 
 pub fn tree() -> Object {
-    Object::new("tree", tree_tags(), 'T', Color::ForestGreen, "a tree")
+    Object::new("tree", tree_tags(), Symbol::Tree, Color::ForestGreen, "a tree")
 }
 
 pub fn closed_door() -> Object {
     Object::new(
         "closed door",
         door_tags(Color::Black, Material::Stone, false),
-        '+',
+        Symbol::ClosedDoor,
         Color::Yellow,
         "a closed door",
     )
@@ -132,29 +132,47 @@ pub fn open_door() -> Object {
     Object::new(
         "open door",
         door_tags(Color::Black, Material::Stone, true),
-        '-',
+        Symbol::OpenDoor,
         Color::Yellow,
         "an open door",
     )
 }
 
 pub fn shallow_water() -> Object {
-    Object::new("shallow water", shallow_water_tags(), '~', Color::Blue, "shallow water")
+    Object::new(
+        "shallow water",
+        shallow_water_tags(),
+        Symbol::ShallowLiquid,
+        Color::Blue,
+        "shallow water",
+    )
 }
 
 pub fn deep_water() -> Object {
-    Object::new("deep water", deep_water_tags(), 'W', Color::Blue, "deep water")
+    Object::new(
+        "deep water",
+        deep_water_tags(),
+        Symbol::DeepLiquid,
+        Color::Blue,
+        "deep water",
+    )
 }
 
 pub fn vitr() -> Object {
-    Object::new("vitr", vitr_tags(), 'V', Color::Gold, "a pool of chaotic acid")
+    Object::new(
+        "vitr",
+        vitr_tags(),
+        Symbol::DeepLiquid,
+        Color::Gold,
+        "a pool of chaotic acid",
+    )
 }
 
 fn doorman() -> Object {
     Object::new(
         "doorman",
         npc_tags("Doorman", Tag::Doorman),
-        'D',
+        Symbol::Character('D'),
         Color::Green,
         "a royal guard",
     )
@@ -164,7 +182,7 @@ fn rhulad() -> Object {
     Object::new(
         "rhulad",
         npc_tags("Rhulad", Tag::Rhulad),
-        'R',
+        Symbol::Character('R'),
         Color::Red,
         "the Emperor of a Thousand Deaths",
     )
@@ -174,21 +192,21 @@ fn spectator() -> Object {
     Object::new(
         "spectator",
         npc_tags("Spectator", Tag::Spectator),
-        'o',
+        Symbol::Character('s'),
         Color::Plum,
         "a spectator",
     )
 }
 
 fn player() -> Object {
-    Object::new("player", player_tags(), '@', Color::Blue, "yourself")
+    Object::new("player", player_tags(), Symbol::Character('@'), Color::Blue, "yourself")
 }
 
 pub fn sign(text: &str) -> Object {
     Object::new(
         "sign",
         sign_tags(),
-        'i',
+        Symbol::Sign,
         Color::Pink,
         format!("a sign that says '{text}'"),
     )
@@ -198,7 +216,7 @@ pub fn emp_sword() -> Object {
     Object::new(
         "emp sword",
         emp_sword_tags(),
-        'C',
+        Symbol::StrongSword,
         Color::Silver,
         "the Sword of the Crippled God",
     )
@@ -212,21 +230,27 @@ pub fn weak_sword(game: &Game) -> Object {
         ("dagger", "a pointy dagger"),
     ];
     let sword = swords.iter().choose(&mut *game.rng()).unwrap();
-    Object::new("weak sword", weak_sword_tags(sword.0), 's', Color::Silver, sword.1)
+    Object::new(
+        "weak sword",
+        weak_sword_tags(sword.0),
+        Symbol::WeakSword,
+        Color::Silver,
+        sword.1,
+    )
 }
 
 pub fn mighty_sword() -> Object {
     Object::new(
         "mighty sword",
         mighty_sword_tags(),
-        'S',
+        Symbol::StrongSword,
         Color::Silver,
         "the Sword of Impending Doom",
     )
 }
 
 pub fn pick_axe() -> Object {
-    Object::new("pick-axe", pick_axe_tags(), 'p', Color::Tan, "a pick-axe")
+    Object::new("pick-axe", pick_axe_tags(), Symbol::PickAxe, Color::Tan, "a pick-axe")
 }
 
 fn ground_tags(bg: Color) -> Vec<Tag> {

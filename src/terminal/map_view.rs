@@ -1,4 +1,4 @@
-use crate::backend::{Color, Game, Point, Size, Tile};
+use crate::backend::{Color, Game, Point, Size, Symbol, Tile};
 use std::io::Write;
 use termion::{color, cursor, style};
 
@@ -27,7 +27,7 @@ impl MapView {
                         symbol: s,
                     } => (b, f, s), // TODO: use black if there is a character or item?
                     Tile::Stale(s) => (Color::LightGrey, Color::DarkGray, s),
-                    Tile::NotVisible => (Color::Black, Color::Black, ' '),
+                    Tile::NotVisible => (Color::Black, Color::Black, Symbol::Unseen),
                 };
                 let _ = write!(
                     stdout,
@@ -40,16 +40,59 @@ impl MapView {
                 if focused {
                     let _ = write!(stdout, "{}", style::Invert);
                 }
-                if symbol == '#' {
-                    // TODO: is this how we want to handle unicode?
-                    // TODO: at least should have constants for these
-                    let _ = write!(stdout, "\u{25FC}\u{FE0E}"); // BLACK MEDIUM SQUARE
-                } else {
-                    let _ = write!(stdout, "{}", symbol);
-                }
+                self.render_symbol(stdout, symbol);
                 if focused {
                     let _ = write!(stdout, "{}", style::Reset);
                 }
+            }
+        }
+    }
+
+    // let _ = write!(stdout, "\u{25FC}\u{FE0E}"); // BLACK MEDIUM SQUARE
+    fn render_symbol(&self, stdout: &mut Box<dyn Write>, symbol: Symbol) {
+        use Symbol::*;
+        match symbol {
+            Character(ch) => {
+                let _ = write!(stdout, "{}", ch);
+            }
+            ClosedDoor => {
+                let _ = write!(stdout, "+");
+            }
+            DeepLiquid => {
+                let _ = write!(stdout, "\u{224B}"); // TRIPLE TILDE
+            }
+            Dirt => {
+                let _ = write!(stdout, ".");
+            }
+            OpenDoor => {
+                let _ = write!(stdout, ":");
+            }
+            PickAxe => {
+                let _ = write!(stdout, "\u{26CF}"); // pick
+            }
+            Rubble => {
+                let _ = write!(stdout, "\u{2237}"); // PROPORTION
+            }
+            ShallowLiquid => {
+                let _ = write!(stdout, "~");
+            }
+            Sign => {
+                let _ = write!(stdout, "\u{261E}"); // WHITE RIGHT POINTING INDEX
+            }
+            StrongSword => {
+                let _ = write!(stdout, "\u{2694}\u{FE0F}"); // crossed swords
+            }
+            Tree => {
+                let _ = write!(stdout, "\u{2B06}\u{FE0E}"); // UPWARDS BLACK ARROW
+            }
+            Unseen => {
+                let _ = write!(stdout, " ");
+            }
+            Wall => {
+                let _ = write!(stdout, "\u{25FC}\u{FE0E}"); // BLACK MEDIUM SQUARE
+            }
+            WeakSword => {
+                let _ = write!(stdout, "\u{1F5E1}"); // dagger
             }
         }
     }

@@ -14,13 +14,16 @@ mod time;
 
 pub use event::Event; // this is here for the show events wizard command
 pub use message::{Message, Topic};
+pub use object::Symbol;
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
 
 use derive_more::Display;
 use event::{Action, ScheduledAction};
-use fnv::{FnvHashMap, FnvHashSet};
+use fnv::FnvHashMap;
+#[cfg(debug_assertions)]
+use fnv::FnvHashSet;
 use interactions::Interactions;
 use object::{Object, TagValue};
 use old_pov::OldPoV;
@@ -55,9 +58,9 @@ pub enum Command {
 
 pub enum Tile {
     /// player can see this
-    Visible { bg: Color, fg: Color, symbol: char },
+    Visible { bg: Color, fg: Color, symbol: Symbol },
     /// player can't see this but has in the past, note that this may not reflect the current state
-    Stale(char),
+    Stale(Symbol),
     /// player has never seen this location (and it may not exist)
     NotVisible,
 }
@@ -89,8 +92,10 @@ pub struct Game {
     messages: Vec<Message>,     // messages shown to the player
     interactions: Interactions, // double dispatch action tables, e.g. player vs door
 
-    pov: PoV,         // locations that the player can currently see
-    old_pov: OldPoV,  // locations that the user has seen in the past (this will often be stale data)
+    pov: PoV,        // locations that the player can currently see
+    old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
+
+    #[cfg(debug_assertions)]
     invariants: bool, // if true then expensive checks are enabled
 }
 
@@ -283,7 +288,7 @@ impl Game {
             Tile::Visible { bg, fg, symbol }
         } else {
             match self.old_pov.get(loc) {
-                Some(symbol) => Tile::Stale(symbol),
+                Some(symbol) => Tile::Stale(*symbol),
                 None => Tile::NotVisible, // not visible and never seen
             }
         };
@@ -378,6 +383,8 @@ impl Game {
 
             pov: PoV::new(),
             old_pov: OldPoV::new(),
+
+            #[cfg(debug_assertions)]
             invariants: false,
         }
     }
