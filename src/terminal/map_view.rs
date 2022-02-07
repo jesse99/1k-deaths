@@ -40,7 +40,13 @@ impl MapView {
                 if focused {
                     let _ = write!(stdout, "{}", style::Invert);
                 }
-                let _ = write!(stdout, "{}", symbol);
+                if symbol == '#' {
+                    // TODO: is this how we want to handle unicode?
+                    // TODO: at least should have constants for these
+                    let _ = write!(stdout, "\u{25FC}\u{FE0E}"); // BLACK MEDIUM SQUARE
+                } else {
+                    let _ = write!(stdout, "{}", symbol);
+                }
                 if focused {
                     let _ = write!(stdout, "{}", style::Reset);
                 }
