@@ -1,6 +1,7 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2580
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Bold;
-\f3\fswiss\fcharset0 Helvetica-Oblique;}
+\f3\fnil\fcharset129 AppleSDGothicNeo-Regular;\f4\fnil\fcharset0 ArialUnicodeMS;\f5\fnil\fcharset0 AppleColorEmoji;
+\f6\fnil\fcharset0 STIXGeneral-Regular;\f7\fswiss\fcharset0 Helvetica-Oblique;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red2\green2\blue2;}
 {\*\expandedcolortbl;;\csgray\c0;\csgenericrgb\c784\c784\c784;}
 \deftab720
@@ -37,6 +38,66 @@ https://crawl.kelbi.org/#lobby\
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 \'95 Water should flood\
+\'95 Use unicode symbols for terrain and objects \
+	
+\f3 \uc0\u9724 \u65038 
+\f1 \
+BLACK MEDIUM SQUARE\
+Unicode: U+25FC U+FE0E, UTF-8: E2 97 BC EF B8 8E\
+
+\f4 \uc0\u9810 \u65038 
+\f1 \
+AQUARIUS\
+Unicode: U+2652 U+FE0E, UTF-8: E2 99 92 EF B8 8E\
+
+\f5 \uc0\u55356 \u57138 
+\f1 \
+evergreen tree\
+Unicode: U+1F332, UTF-8: F0 9F 8C B2\
+
+\f5 \uc0\u10060 
+\f1 \
+cross mark\
+Unicode: U+274C, UTF-8: E2 9D 8C\
+
+\f6 \uc0\u8509 
+\f1 \
+DOUBLE-STRUCK SMALL GAMMA\
+Unicode: U+213D, UTF-8: E2 84 BD\
+
+\f6 \uc0\u55349 \u57113 
+\f1 \
+MATHEMATICAL ITALIC PHI SYMBOL\
+Unicode: U+1D719, UTF-8: F0 9D 9C 99\
+\uc0\u8711 \
+NABLA\
+Unicode: U+2207, UTF-8: E2 88 87\
+
+\f5 \uc0\u9935 
+\f1 \
+pick\
+Unicode: U+26CF, UTF-8: E2 9B 8F\
+
+\f5 \uc0\u55357 \u56801 
+\f1 \
+dagger\
+Unicode: U+1F5E1, UTF-8: F0 9F 97 A1\
+
+\f5 \uc0\u9876 \u65039 
+\f1 \
+crossed swords\
+Unicode: U+2694 U+FE0F, UTF-8: E2 9A 94 EF B8 8F\
+\'86\
+DAGGER\
+Unicode: U+2020, UTF-8: E2 80 A0\
+\'86\
+DAGGER\
+Unicode: U+2020, UTF-8: E2 80 A0\
+
+\f5 \uc0\u55357 \u57057 
+\f1 \
+shield\
+Unicode: U+1F6E1, UTF-8: F0 9F 9B A1\
 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- maybe disposition enum, friendly, neutral, aggresive\
@@ -66,30 +127,30 @@ https://crawl.kelbi.org/#lobby\
 	- maybe also a wizard mode examine command to get full cell details\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\i \cf3 	
+\f7\i \cf3 	
 \f1\i0 \cf3 \
 enum ObjectTag\
 	Weapon\
 	MinDamage(i32)\
 	MaxDamage(i32)\
 	Range(i32)          
-\f3\i \cf3 ranged weapon, spell, etc
+\f7\i \cf3 ranged weapon, spell, etc
 \f1\i0 \cf3 \
 	Brand(element)\
 	\
 	Inventory([Objects]),   
-\f3\i \cf3 or ids?
+\f7\i \cf3 or ids?
 \f1\i0 \cf3 \
 
-\f3\i \cf3 	
+\f7\i \cf3 	
 \f1\i0 \cf3 Binding(String) 
-\f3\i \cf3 used to associate objects, eg a key and a door
+\f7\i \cf3 used to associate objects, eg a key and a door
 \f1\i0 \cf3 	\
 	Fountain(type)   
-\f3\i \cf3 water or blood\
+\f7\i \cf3 water or blood\
 	
 \f1\i0 \cf3 Key                    
-\f3\i \cf3 keys should have a binding\
+\f7\i \cf3 keys should have a binding\
 	Chest(contents) has a binding if a key is required
 \f1\i0 \cf3 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0

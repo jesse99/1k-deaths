@@ -19,7 +19,7 @@ impl OldPoV {
         }
     }
 
-    pub fn posted(&mut self, _game: &Game2, event: &Event) {
+    pub fn posting(&mut self, _game: &Game2, event: &Event) {
         match event {
             Event::NewGame | Event::BeginConstructLevel | Event::EndConstructLevel => {
                 self.old.clear();

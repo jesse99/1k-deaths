@@ -17,6 +17,8 @@ use std::fmt::{self, Formatter};
 pub enum ScheduledAction {
     DamageWall(Point, Oid),          // (obj_loc, obj_oid))
     FightRhulad(Point, Oid),         // (char_loc, char)
+    FloodDeep(Point),                // (water_loc)
+    FloodShallow(Point),             // (water_loc)
     Move(Point, Point),              // (old_loc, new_loc)
     OpenDoor(Point, Point, Oid),     // (ch_loc, obj_loc, obj_oid)
     PickUp(Point, Oid),              // (obj_loc, obj_oid)
@@ -43,6 +45,7 @@ pub enum Event {
     EndConstructLevel,
     NewGame,
     ScheduledAction(Oid, ScheduledAction), // oid is usually a Character
+    ForceAction(Oid, ScheduledAction),     // like ScheduledAction except that it cancels pending actions
     StateChanged(State),
     // Note that new variants MUST be added at the end (or saved games will break).
 }
@@ -54,6 +57,8 @@ impl fmt::Display for ScheduledAction {
         match self {
             DamageWall(loc, oid) => write!(f, "DamageWall({loc}, {oid})"),
             FightRhulad(ch_loc, ch) => write!(f, "FightRhulad({ch_loc}, {ch})"),
+            FloodDeep(loc) => write!(f, "FloodDeep({loc})"),
+            FloodShallow(loc) => write!(f, "FloodShallow({loc})"),
             Move(old_loc, new_loc) => write!(f, "Move({old_loc}, {new_loc})"),
             OpenDoor(ch_loc, obj_loc, obj_oid) => write!(f, "OpenDoor({ch_loc}, {obj_loc}, {obj_oid})"),
             PickUp(obj_loc, obj_oid) => write!(f, "PickUp({obj_loc}, {obj_oid})"),
@@ -85,6 +90,7 @@ impl fmt::Display for Event {
             EndConstructLevel => write!(f, "EndConstructLevel"),
             NewGame => write!(f, "NewGame"),
             ScheduledAction(oid, action) => write!(f, "ScheduledAction({oid}, {action})"),
+            ForceAction(oid, action) => write!(f, "ForceAction({oid}, {action})"),
             StateChanged(state) => write!(f, "StateChanged({state})"),
         }
     }

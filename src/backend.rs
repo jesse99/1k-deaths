@@ -32,7 +32,7 @@ use std::cell::{RefCell, RefMut};
 use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
-use time::Scheduler;
+use time::{Scheduler, Time};
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -67,6 +67,7 @@ pub enum State {
     Adventuring,
     KilledRhulad,
     WonGame,
+    LostGame,
 }
 
 /// Top-level backend object encapsulating the game state.
@@ -202,6 +203,10 @@ impl Game {
         self.player
     }
 
+    pub fn in_progress(&self) -> bool {
+        !matches!(self.state, State::LostGame)
+    }
+
     /// if this returns true then the UI should call command, otherwise the UI should call
     /// advance_time.
     pub fn players_turn(&self) -> bool {
@@ -211,8 +216,15 @@ impl Game {
     pub fn advance_time(&mut self) {
         // Pop should always be safe because this is called only if the scheduler has a
         // player action.
-        let (oid, saction) = self.scheduler.pop();
-        self.handle_scheduled_action(oid, saction);
+        loop {
+            // When an object is destroyed the scheduler isn't cleaned up so we need to
+            // ignore any stale references.
+            let (oid, saction) = self.scheduler.pop();
+            if self.objects.contains_key(&oid) {
+                self.handle_scheduled_action(oid, saction);
+                break;
+            }
+        }
     }
 
     pub fn command(&self, command: Command, events: &mut Vec<Event>) {
@@ -223,11 +235,13 @@ impl Game {
                 assert!(dx >= -1 && dx <= 1);
                 assert!(dy >= -1 && dy <= 1);
                 assert!(dx != 0 || dy != 0); // TODO: should this be a short rest?
-                let player = self.player;
-                let new_loc = Point::new(player.x + dx, player.y + dy);
-                if !self.scheduled_interaction(&player, &new_loc, events) {
-                    let saction = ScheduledAction::Move(self.player, new_loc);
-                    events.push(Event::ScheduledAction(Oid(0), saction));
+                if self.in_progress() {
+                    let player = self.player;
+                    let new_loc = Point::new(player.x + dx, player.y + dy);
+                    if !self.scheduled_interaction(&player, &new_loc, events) {
+                        let saction = ScheduledAction::Move(self.player, new_loc);
+                        events.push(Event::ScheduledAction(Oid(0), saction));
+                    }
                 }
             }
             Command::Examine(new_loc, wizard) => {

@@ -161,23 +161,43 @@ impl Object {
 impl Object {
     #[cfg(debug_assertions)]
     pub fn invariant(&self) {
-        assert!(!self.description.is_empty(), "Must have a description: {self}");
+        assert!(!self.description.is_empty(), "Must have a description: {self:?}");
         if self.has(TERRAIN_ID) {
             assert!(
                 self.has(BACKGROUND_ID),
-                "Terrain objects must have a Background: {self}",
+                "Terrain objects must have a Background: {self:?}",
             );
             assert!(
                 !self.has(CHARACTER_ID),
-                "Terrain objects cannot also be Characters: {self}",
+                "Terrain objects cannot also be Characters: {self:?}",
             );
-            assert!(!self.has(PORTABLE_ID), "Terrain objects cannot be Portable: {self}",);
+            assert!(!self.has(PORTABLE_ID), "Terrain objects cannot be Portable: {self:?}");
+
+            // TODO: May want to add similar checks: one sort of character, one sort of
+            // portable.
+            let count = self
+                .tags
+                .iter()
+                .filter(|t| {
+                    matches!(
+                        t,
+                        Tag::Wall
+                            | Tag::ClosedDoor
+                            | Tag::Ground
+                            | Tag::ShallowWater
+                            | Tag::DeepWater
+                            | Tag::Vitr
+                            | Tag::OpenDoor
+                    )
+                })
+                .count();
+            assert!(count == 1, "Terrain objects must be one sort of terrain: {self:?}");
         }
         if self.has(CLOSED_DOOR_ID) {
             if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
                 assert!(
                     durability.current > 0,
-                    "Destroyed doors should change to Ground: {self}"
+                    "Destroyed doors should change to Ground: {self:?}"
                 );
             }
         }
@@ -185,25 +205,25 @@ impl Object {
             if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
                 assert!(
                     durability.current > 0,
-                    "Destroyed walls should change to Ground: {self}"
+                    "Destroyed walls should change to Ground: {self:?}"
                 );
             }
         }
         if self.has(CHARACTER_ID) {
-            assert!(self.has(NAME_ID), "Character's must have a name: {self}");
-            assert!(!self.has(PORTABLE_ID), "Character objects cannot be Portable: {self}",);
+            assert!(self.has(NAME_ID), "Character's must have a name: {self:?}");
+            assert!(!self.has(PORTABLE_ID), "Character objects cannot be Portable: {self:?}",);
         }
         if self.has(PLAYER_ID) {
-            assert!(self.has(CHARACTER_ID), "Player must be a Character: {self}")
+            assert!(self.has(CHARACTER_ID), "Player must be a Character: {self:?}")
         }
         if self.has(PORTABLE_ID) {
-            assert!(self.has(NAME_ID), "Portable objects must have a Name: {self}")
+            assert!(self.has(NAME_ID), "Portable objects must have a Name: {self:?}")
         }
 
         let mut ids = FnvHashSet::default();
         for tag in &self.tags {
             let id = tag.to_id();
-            assert!(!ids.contains(&id), "'{}' has duplicate tags: {self}", self.dname);
+            assert!(!ids.contains(&id), "'{}' has duplicate tags: {self:?}", self.dname);
             ids.insert(id);
         }
     }

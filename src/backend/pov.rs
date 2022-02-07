@@ -26,7 +26,7 @@ impl PoV {
     // or do we need to give objects a unique id? could use a new state object to track that
     //    think we'll need something like that for stuff like ranged combat
     //    want to be able to easily attack the same NPC even if it moved
-    pub fn posted(&mut self, _game: &Game1, event: &Event) {
+    pub fn posting(&mut self, _game: &Game1, event: &Event) {
         match event {
             Event::NewGame => self.dirty = true,
             Event::BeginConstructLevel => self.dirty = true,

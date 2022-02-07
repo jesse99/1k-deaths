@@ -70,23 +70,48 @@ impl Scheduler {
     pub fn push(&mut self, oid: Oid, saction: ScheduledAction, delay: Time, rng: &RefCell<SmallRng>) {
         // Can't schedule an object more than once (we'd have to find the existing entry
         // and update the time for whichever expires later).
-        assert!(self.scheduled.insert(oid), "{oid} is already scheduled");
+        assert!(
+            self.scheduled.insert(oid),
+            "{oid} is already scheduled (scheduling {saction})"
+        );
 
         let rng = &mut *rng.borrow_mut();
-        let delta: f64 = rng.sample(StandardNormal); // 0..1
-        let delta = 2.0 * delta - 1.0; // -1..1
-        let delta = 0.15 * (delay.t as f64) * delta; // +/- 15% of delay
-        let delta = f64::max((delay.t as f64) + delta, 1.0);
+        let delta: f64 = rng.sample(StandardNormal); // most are in -2..2
+        let delta = delta / 2.0; // most are in -1..1
+        let delta = delta * 0.15 * ((delay.t / SECS_TO_TIME) as f64); // most are in +/- 15% of delay
+        let max_delta = 0.3 * (delay.t as f64);
+        let delta = f64::clamp(delta, -max_delta, max_delta); // no more than +/- 30% of delay
 
+        let delay = delay.t + (SECS_TO_TIME * delta as i64);
+        let delay = i64::max(delay, 1); // time has to advance
         let entry = Entry {
             oid,
             saction,
-            at: Time {
-                t: self.now.t + (delta as i64),
-            },
+            at: Time { t: self.now.t + delay },
         };
+        // trace!("scheduled {oid} and {saction} for {}", entry.at);
         self.heap.push(entry);
-        self.player = oid.0 == 0;
+        if oid.0 == 0 {
+            self.player = true;
+        }
+    }
+
+    /// This will cancel any pending actions for oid.
+    pub fn force_push(&mut self, oid: Oid, saction: ScheduledAction, delay: Time, rng: &RefCell<SmallRng>) {
+        // After this old_heap will be the original heap and self.heap will be empty.
+        let mut old_heap = BinaryHeap::with_capacity(self.heap.len());
+        std::mem::swap(&mut self.heap, &mut old_heap);
+
+        // Push all the entries into self.heap other than those that match oid (there
+        // should be one of those).
+        let entries = old_heap.iter().filter(|e| e.oid != oid);
+        for entry in entries {
+            self.heap.push(*entry);
+        }
+
+        // This is all rather slow but it should be a rare operation...
+        self.scheduled.remove(&oid);
+        self.push(oid, saction, delay, rng);
     }
 
     pub fn pop(&mut self) -> (Oid, ScheduledAction) {
@@ -96,6 +121,7 @@ impl Scheduler {
         if entry.oid.0 == 0 {
             self.player = false;
         }
+        // trace!("popping {} and {}", entry.oid, entry.saction);
         (entry.oid, entry.saction)
     }
 
