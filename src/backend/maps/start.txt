@@ -4,10 +4,10 @@
 #                           ~                                       #######                   #######                       #
 #                            ~                                      # sss #                   # sSs #                       #
 #                            ~                                      #     #                   #     #                       #
-#                             ~                                     #     #                   #     #                       #
+#                             ~                                     #p    #                   #     #                       #
 #                              ~                                    ###+###                   ###+###                       #
 #                              ~                                       a                         b                          #
-#              P                ~                                                                                p          #
+#              P                ~                                                                                           #
 #                               ~                                                                                           #
 #                               ~                                                                                           #
 #                               ~                                                                                           #
@@ -15,9 +15,9 @@
 #                              ~                                                                                            #
 #                             ~                                                                                             #
 #                            ~~~~                                                                                           #
-#                           ~~~W~                                                                                           #
-#                         ~~~~WW~~~                                                                                         #
-#                           ~~W~~                                     MMMMMMMMMMMMMMMMMMM                                   #
+#                           ~~~W~                                                                          W                #
+#                         ~~~~WW~~~                                                                       WWW               #
+#                           ~~W~~                                     MMMMMMMMMMMMMMMMMMM                   W               #
 #                            ~W~~                                     MMMMMMMMMMMMMMMMMMM                                   #
 #                            ~~~                                      MM    ooooo      MM                                   #
 #                             ~                                       MM               MM                                   #
