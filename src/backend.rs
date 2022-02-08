@@ -544,10 +544,9 @@ impl Game {
             self.player
         );
 
+        self.cheap_invariants(&self.player);
         if self.invariants {
-            self.expensive_invariants();
-        } else {
-            self.cheap_invariants(&self.player);
+            self.expensive_invariants(); // some overlap with cheap_invariants but that should be OK
         }
     }
 
@@ -560,6 +559,14 @@ impl Game {
             !oids.is_empty(),
             "cell at {loc} is empty (should have at least a terrain object)"
         );
+
+        if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
+            let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
+            assert!(
+                interactions::impassible_terrain(ch, terrain).is_none(),
+                "{ch} shouldn't be in {terrain}"
+            );
+        }
 
         for (i, oid) in oids.iter().enumerate() {
             let obj = self.objects.get(oid).expect("oid {oid} at {loc} is not in objects");

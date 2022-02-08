@@ -98,7 +98,7 @@ fn impassible_terrain_tag(ch: &Object, tag: &Tag) -> Option<Message> {
     }
 }
 
-fn impassible_terrain(ch: &Object, terrain: &Object) -> Option<Message> {
+pub fn impassible_terrain(ch: &Object, terrain: &Object) -> Option<Message> {
     for tag in terrain.iter() {
         let mesg = impassible_terrain_tag(ch, tag);
         if mesg.is_some() {
