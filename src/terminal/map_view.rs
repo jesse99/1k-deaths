@@ -52,9 +52,6 @@ impl MapView {
     fn render_symbol(&self, stdout: &mut Box<dyn Write>, symbol: Symbol) {
         use Symbol::*;
         match symbol {
-            Character(ch) => {
-                let _ = write!(stdout, "{}", ch);
-            }
             ClosedDoor => {
                 let _ = write!(stdout, "+");
             }
@@ -64,11 +61,17 @@ impl MapView {
             Dirt => {
                 let _ = write!(stdout, ".");
             }
+            Npc(ch) => {
+                let _ = write!(stdout, "{}", ch);
+            }
             OpenDoor => {
                 let _ = write!(stdout, ":");
             }
             PickAxe => {
                 let _ = write!(stdout, "\u{26CF}"); // pick
+            }
+            Player => {
+                let _ = write!(stdout, "\u{265D}"); // BLACK CHESS BISHOP
             }
             Rubble => {
                 let _ = write!(stdout, "\u{2237}"); // PROPORTION

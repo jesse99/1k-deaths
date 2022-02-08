@@ -172,7 +172,7 @@ fn doorman() -> Object {
     Object::new(
         "doorman",
         npc_tags("Doorman", Tag::Doorman),
-        Symbol::Character('D'),
+        Symbol::Npc('D'),
         Color::Green,
         "a royal guard",
     )
@@ -182,7 +182,7 @@ fn rhulad() -> Object {
     Object::new(
         "rhulad",
         npc_tags("Rhulad", Tag::Rhulad),
-        Symbol::Character('R'),
+        Symbol::Npc('R'),
         Color::Red,
         "the Emperor of a Thousand Deaths",
     )
@@ -192,14 +192,14 @@ fn spectator() -> Object {
     Object::new(
         "spectator",
         npc_tags("Spectator", Tag::Spectator),
-        Symbol::Character('s'),
+        Symbol::Npc('s'),
         Color::Plum,
         "a spectator",
     )
 }
 
 fn player() -> Object {
-    Object::new("player", player_tags(), Symbol::Character('@'), Color::Blue, "yourself")
+    Object::new("player", player_tags(), Symbol::Player, Color::Gold, "yourself")
 }
 
 pub fn sign(text: &str) -> Object {

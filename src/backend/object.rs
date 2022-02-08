@@ -6,12 +6,13 @@ use std::fmt::{self, Formatter};
 
 #[derive(Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Symbol {
-    Character(char),
     ClosedDoor,
     DeepLiquid,
     Dirt,
+    Npc(char),
     OpenDoor,
     PickAxe,
+    Player,
     Rubble,
     ShallowLiquid,
     Sign,
