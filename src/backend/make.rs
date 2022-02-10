@@ -2,8 +2,7 @@ use super::*;
 use rand::prelude::*;
 
 fn add(loc: Point, obj: Object, events: &mut Vec<Event>) {
-    let action = Action::AddObject(loc, obj);
-    events.push(Event::Action(action))
+    events.push(Event::AddObject(loc, obj))
 }
 
 pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
@@ -258,12 +257,23 @@ fn ground_tags(bg: Color) -> Vec<Tag> {
 }
 
 fn shallow_water_tags() -> Vec<Tag> {
-    vec![Tag::ShallowWater, Tag::Background(Color::LightBlue), Tag::Terrain]
+    vec![
+        Tag::ShallowWater,
+        Tag::Background(Color::LightBlue),
+        Tag::Terrain,
+        Tag::Scheduled,
+    ]
 }
 
 fn deep_water_tags() -> Vec<Tag> {
-    vec![Tag::DeepWater, Tag::Background(Color::LightBlue), Tag::Terrain]
+    vec![
+        Tag::DeepWater,
+        Tag::Background(Color::LightBlue),
+        Tag::Terrain,
+        Tag::Scheduled,
+    ]
 }
+
 fn vitr_tags() -> Vec<Tag> {
     vec![Tag::Vitr, Tag::Background(Color::Black), Tag::Terrain]
 }
@@ -318,6 +328,7 @@ fn player_tags() -> Vec<Tag> {
         Tag::Name(String::from("yourself")),
         Tag::CanOpenDoor,
         Tag::Player,
+        Tag::Scheduled,
     ]
 }
 

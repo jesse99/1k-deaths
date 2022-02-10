@@ -115,7 +115,7 @@ Wizard mode commands:
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
         let mut events = Vec::new();
         game.command(Command::Move { dx, dy }, &mut events);
-        game.post(events, false);
+        game.post_player(events);
         InputAction::UpdatedGame
     }
 

@@ -182,8 +182,8 @@ mod tests {
 
         let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
         let events2 = vec![
-            Event::Action(Action::Move(Oid(0), Point::new(1, 1), Point::new(1, 2))),
-            Event::Action(Action::AddObject(Point::new(2, 3), super::super::make::stone_wall())),
+            Event::Action(Oid(0), Action::Move(Point::new(1, 1), Point::new(1, 2))),
+            Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
         ];
 
         {
@@ -211,8 +211,8 @@ mod tests {
 
         let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
         let events2 = vec![
-            Event::Action(Action::Move(Oid(0), Point::new(1, 1), Point::new(1, 2))),
-            Event::Action(Action::AddObject(Point::new(2, 3), super::super::make::stone_wall())),
+            Event::Action(Oid(0), Action::Move(Point::new(1, 1), Point::new(1, 2))),
+            Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
         ];
         let events3 = vec![Event::AddMessage(Message::new(Topic::Normal, "hello"))];
 

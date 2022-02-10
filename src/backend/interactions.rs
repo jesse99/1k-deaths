@@ -3,7 +3,7 @@
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
 use super::object::TagValue;
 use super::tag::*;
-use super::{Event, Game, Material, Message, Object, Oid, Point, ScheduledAction, State, Tag, Topic};
+use super::{Action, Event, Game, Material, Message, Object, Oid, Point, State, Tag, Topic};
 use fnv::FnvHashMap;
 use rand::prelude::*;
 
@@ -144,8 +144,8 @@ fn pick_axe_vs_wall(game: &Game, _player_loc: &Point, new_loc: &Point, events: &
     let material: Option<Material> = obj.value(MATERIAL_ID);
     match material {
         Some(Material::Stone) => {
-            let saction = ScheduledAction::DamageWall(*new_loc, oid);
-            events.push(Event::ScheduledAction(Oid(0), saction));
+            let action = Action::Dig(*new_loc, oid, 6);
+            events.push(Event::Action(Oid(0), action));
         }
         Some(Material::Metal) => {
             let mesg = Message::new(
@@ -165,8 +165,8 @@ fn player_vs_doorman(game: &Game, _player_loc: &Point, doorman_loc: &Point, even
     {
         let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = find_empty_cell(game, doorman, doorman_loc) {
-            let saction = ScheduledAction::ShoveDoorman(*doorman_loc, oid, to_loc);
-            events.push(Event::ScheduledAction(Oid(0), saction));
+            let action = Action::ShoveDoorman(*doorman_loc, oid, to_loc);
+            events.push(Event::Action(Oid(0), action));
         }
     } else {
         let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
@@ -182,14 +182,14 @@ fn player_vs_deep_water(game: &Game, player_loc: &Point, _new_loc: &Point, event
 
 fn player_vs_portable(game: &Game, loc: &Point, events: &mut Vec<Event>) {
     let oid = game.get(loc, PORTABLE_ID).unwrap().0;
-    let saction = ScheduledAction::PickUp(*loc, oid);
-    events.push(Event::ScheduledAction(Oid(0), saction));
+    let action = Action::PickUp(*loc, oid);
+    events.push(Event::Action(Oid(0), action));
 }
 
 fn player_vs_rhulad(game: &Game, _player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
     let oid = game.get(new_loc, CHARACTER_ID).unwrap().0;
-    let saction = ScheduledAction::FightRhulad(*new_loc, oid);
-    events.push(Event::ScheduledAction(Oid(0), saction));
+    let action = Action::FightRhulad(*new_loc, oid);
+    events.push(Event::Action(Oid(0), action));
 }
 
 fn player_vs_shallow_water(_game: &Game, _loc: &Point, events: &mut Vec<Event>) {
@@ -248,6 +248,6 @@ fn player_vs_wall(game: &Game, player_loc: &Point, _new_loc: &Point, events: &mu
 
 fn player_vs_closed_door(game: &Game, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) {
     let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
-    let saction = ScheduledAction::OpenDoor(*player_loc, *new_loc, oid);
-    events.push(Event::ScheduledAction(Oid(0), saction));
+    let action = Action::OpenDoor(*player_loc, *new_loc, oid);
+    events.push(Event::Action(Oid(0), action));
 }

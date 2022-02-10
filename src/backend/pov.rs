@@ -28,25 +28,20 @@ impl PoV {
     //    want to be able to easily attack the same NPC even if it moved
     pub fn posting(&mut self, _game: &Game1, event: &Event) {
         match event {
+            Event::AddObject(_, new_obj) => {
+                if !self.dirty && obj_blocks_los(new_obj) {
+                    self.dirty = true;
+                }
+            }
             Event::NewGame => self.dirty = true,
             Event::BeginConstructLevel => self.dirty = true,
             Event::EndConstructLevel => self.dirty = true,
-            Event::Action(action) => {
+            Event::Action(oid, action) => {
                 match action {
-                    Action::AddObject(_, new_obj) => {
-                        if !self.dirty && obj_blocks_los(new_obj) {
-                            self.dirty = true;
-                        }
-                    }
+                    Action::Dig(_, _, _) => self.dirty = true,
                     // TODO: this should dirty only if the origin changes.
-                    Action::Move(oid, _, _) if oid.0 == 0 => self.dirty = true,
-                    Action::ReplaceObject(_, _, _) => {
-                        // TODO: This is currently only used for terrain, e.g. to open
-                        // a door. These changes will normally require dirtying the PoV
-                        // so, in theory, we could be smarter about this (but note that
-                        // the Level has already changed).
-                        self.dirty = true;
-                    }
+                    Action::Move(_, _) if oid.0 == 0 => self.dirty = true,
+                    Action::OpenDoor(_, _, _) => self.dirty = true,
                     _ => (), // TODO: should we make this an exhaustive match?
                 }
             }

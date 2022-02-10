@@ -61,7 +61,7 @@ impl ExamineMode {
         let mut events = Vec::new();
         self.examined = Point::new(self.examined.x + dx, self.examined.y + dy);
         game.command(Command::Examine(self.examined, super::wizard_mode()), &mut events);
-        game.post(events, false);
+        game.post_player(events);
         InputAction::UpdatedGame
     }
 
@@ -99,7 +99,7 @@ The focus can be moved with the usual keys:
 
             let mut events = Vec::new();
             game.command(Command::Examine(loc, super::wizard_mode()), &mut events);
-            game.post(events, false);
+            game.post_player(events);
         }
         InputAction::UpdatedGame
     }

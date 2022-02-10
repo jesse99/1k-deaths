@@ -20,7 +20,7 @@ pub use primitives::Point;
 pub use primitives::Size;
 
 use derive_more::Display;
-use event::{Action, ScheduledAction};
+use event::Action;
 use fnv::FnvHashMap;
 #[cfg(debug_assertions)]
 use fnv::FnvHashSet;
@@ -31,11 +31,12 @@ use pov::PoV;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
+// use rand_distr::StandardNormal;
 use std::cell::{RefCell, RefMut};
 use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
-use time::{Scheduler, Time};
+use time::{Scheduler, Time, Turn};
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -84,6 +85,7 @@ pub struct Game {
     scheduler: Scheduler,
 
     player: Point,
+    players_move: bool,
     default: Object, // object to use for a non-existent cell (can happen if a wall is destroyed)
     objects: FnvHashMap<Oid, Object>, // all existing objects are here
     cells: FnvHashMap<Point, Vec<Oid>>, // objects within each cell on the map
@@ -212,24 +214,65 @@ impl Game {
         !matches!(self.state, State::LostGame)
     }
 
-    /// if this returns true then the UI should call command, otherwise the UI should call
+    /// If this returns true then the UI should call command, otherwise the UI should call
     /// advance_time.
     pub fn players_turn(&self) -> bool {
-        !self.scheduler.has_player()
+        self.players_move
     }
 
     pub fn advance_time(&mut self) {
-        // Pop should always be safe because this is called only if the scheduler has a
-        // player action.
-        loop {
-            // When an object is destroyed the scheduler isn't cleaned up so we need to
-            // ignore any stale references.
-            let (oid, saction) = self.scheduler.pop();
-            if self.objects.contains_key(&oid) {
-                self.handle_scheduled_action(oid, saction);
-                break;
+        let turn = self.scheduler.find_actor(&self.rng, |oid, units| {
+            // TODO: need to replace this with a table lookup
+            let loc = self.loc(oid).unwrap();
+            let obj = self.objects.get(&oid).unwrap();
+            let action = if obj.has(DEEP_WATER_ID) {
+                Action::FloodDeep(loc)
+            } else {
+                Action::FloodShallow(loc)
+            };
+            let duration = self.duration(action);
+            let event = Event::Action(oid, action);
+            if duration <= units {
+                Some((event, duration))
+            } else {
+                None
+            }
+        });
+        match turn {
+            Turn::Player => self.players_move = true,
+            Turn::Npc(oid, event, duration) => {
+                let extra = self.extra_duration(&event);
+                self.post(vec![event], false);
+                self.scheduler.acted(oid, duration, extra, &self.rng);
+            }
+            Turn::NoOne => self.scheduler.not_acted(),
+        }
+    }
+
+    pub fn post_player(&mut self, events: Vec<Event>) {
+        if events.iter().any(|event| {
+            if let Event::Action(_, action) = event {
+                self.duration(*action) > Time::zero()
+            } else {
+                false
+            }
+        }) {
+            self.players_move = false;
+        }
+        self.post(events, false);
+    }
+
+    // TODO: move this to private items
+    // TODO: need a new lookup table for this
+    fn loc(&self, oid: Oid) -> Option<Point> {
+        for (loc, oids) in &self.cells {
+            for candidate in oids {
+                if *candidate == oid {
+                    return Some(*loc);
+                }
             }
         }
+        None
     }
 
     pub fn command(&self, command: Command, events: &mut Vec<Event>) {
@@ -244,8 +287,8 @@ impl Game {
                     let player = self.player;
                     let new_loc = Point::new(player.x + dx, player.y + dy);
                     if !self.scheduled_interaction(&player, &new_loc, events) {
-                        let saction = ScheduledAction::Move(self.player, new_loc);
-                        events.push(Event::ScheduledAction(Oid(0), saction));
+                        let action = Action::Move(self.player, new_loc);
+                        events.push(Event::Action(Oid(0), action));
                     }
                 }
             }
@@ -373,6 +416,7 @@ impl Game {
             rng: RefCell::new(SmallRng::seed_from_u64(seed)),
 
             player: Point::origin(),
+            players_move: false,
             objects: FnvHashMap::default(),
             cells: FnvHashMap::default(),
             default: make::stone_wall(),
@@ -469,6 +513,40 @@ impl Game {
         self.rng.borrow_mut()
     }
 
+    fn duration(&self, action: Action) -> Time {
+        use Action::*;
+        match action {
+            Dig(_, _, _) => time::secs(20),
+            FightRhulad(_, _) => time::secs(30),
+            FloodDeep(_) => time::secs(12),
+            FloodShallow(_) => time::secs(12),
+            Move(old, new) if old.distance2(&new) == 1 => time::secs(4),
+            Move(_, _) => time::secs(6), // TODO: should be 5.6
+            OpenDoor(_, _, _) => time::secs(20),
+            PickUp(_, _) => time::secs(5),
+            ShoveDoorman(_, _, _) => time::secs(8),
+        }
+    }
+
+    fn extra_duration(&self, event: &Event) -> Time {
+        use Action::*;
+        if let Event::Action(_, action) = event {
+            match action {
+                FloodDeep(_) => self.flood_delay(),
+                FloodShallow(_) => self.flood_delay(),
+                _ => Time::zero(),
+            }
+        } else {
+            Time::zero()
+        }
+    }
+
+    fn flood_delay(&self) -> Time {
+        let rng = &mut *self.rng();
+        let t: i64 = 60 + rng.gen_range(0..(200 * 6));
+        time::secs(t)
+    }
+
     fn scheduled_interaction_with_tag(
         &self,
         tag0: &Tag,
@@ -488,6 +566,7 @@ impl Game {
         }
         false
     }
+
     // Player attempting to interact with an adjacent cell.
     fn scheduled_interaction(&self, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
         // First see if an inventory item can interact with the new cell.

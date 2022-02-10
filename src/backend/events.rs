@@ -1,5 +1,5 @@
 use super::*;
-use rand_distr::StandardNormal;
+// use rand_distr::StandardNormal;
 
 const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
@@ -16,6 +16,12 @@ impl Game {
         self.posting = true;
         for event in events {
             // trace!("posting {event}");
+            if let Event::Action(Oid(0), action) = event {
+                let duration = self.duration(action);
+                if duration > Time::zero() {
+                    self.scheduler.acted(Oid(0), duration, Time::zero(), &self.rng);
+                }
+            }
             self.do_post(event, replay);
         }
 
@@ -54,20 +60,6 @@ impl Game {
         panic!("Didn't find {tag} at {loc}");
     }
 
-    pub fn handle_scheduled_action(&mut self, oid: Oid, saction: ScheduledAction) {
-        let events = match saction {
-            ScheduledAction::DamageWall(obj_loc, obj_oid) => self.damage_wall_events(obj_loc, obj_oid),
-            ScheduledAction::FightRhulad(char_loc, ch) => self.fight_rhulad_events(char_loc, ch),
-            ScheduledAction::FloodDeep(loc) => self.flood_deep_events(loc),
-            ScheduledAction::FloodShallow(loc) => self.flood_shallow_events(loc),
-            ScheduledAction::Move(old, new) => self.move_events(oid, old, new),
-            ScheduledAction::OpenDoor(ch_loc, obj_loc, obj_oid) => self.open_door_events(ch_loc, oid, obj_loc, obj_oid),
-            ScheduledAction::PickUp(obj_loc, obj_oid) => self.pickup_events(oid, obj_loc, obj_oid),
-            ScheduledAction::ShoveDoorman(old_loc, ch, new_loc) => self.shove_doorman_events(oid, old_loc, ch, new_loc),
-        };
-        self.post(events, false);
-    }
-
     fn append_stream(&mut self) {
         if let Some(se) = &mut self.file {
             if let Err(err) = persistence::append_game(se, &self.stream) {
@@ -94,19 +86,6 @@ impl Game {
         while !events.is_empty() {
             let event = events.remove(0); // icky remove from front but the vector shouldn't be very large...
 
-            // All scheduled actions do is generate events, but if we're replaying we
-            // already have the generated events in the stream. TODO: though because we
-            // ignore the scheduled actions the scheduler time won't be updated. Perhaps
-            // we should have some sort of replay_push that just updates time.
-            if replay {
-                if let Event::ScheduledAction(_, _) = event {
-                    continue;
-                }
-                if let Event::ForceAction(_, _) = event {
-                    continue;
-                }
-            }
-
             // This is the type state pattern: as events are posted new state
             // objects are updated and upcoming state objects can safely reference
             // them. To enforce this at compile time Game1, Game2, etc objects
@@ -125,7 +104,7 @@ impl Game {
             self.old_pov.posting(&game2, &event);
 
             let moved_to = match event {
-                Event::Action(Action::Move(oid, _, to)) if oid.0 == 0 => Some(to),
+                Event::Action(oid, Action::Move(_, to)) if oid.0 == 0 => Some(to),
                 _ => None,
             };
             self.do_event(event);
@@ -140,13 +119,17 @@ impl Game {
     // Only returns a new event if it's something that could affect PoV.
     fn do_event(&mut self, event: Event) {
         match event {
-            Event::Action(action) => match action {
-                Action::AddObject(loc, obj) => self.do_add_object(loc, obj),
-                Action::DestroyObject(loc, oid) => self.do_destroy_object(loc, oid),
-                Action::Move(oid, old, new) => self.do_move(oid, old, new),
-                Action::PickUp(ch_id, loc, obj_id) => self.do_pickup(ch_id, loc, obj_id),
-                Action::ReplaceObject(loc, old_oid, new_obj) => self.do_replace_object(loc, old_oid, new_obj),
+            Event::Action(oid, action) => match action {
+                Action::Dig(obj_loc, obj_oid, damage) => self.do_dig(oid, obj_loc, obj_oid, damage),
+                Action::FightRhulad(char_loc, ch) => self.do_fight_rhulad(oid, char_loc, ch),
+                Action::FloodDeep(water_loc) => self.do_flood_deep(oid, water_loc),
+                Action::FloodShallow(water_loc) => self.do_flood_shallow(oid, water_loc),
+                Action::Move(old_loc, new_loc) => self.do_move(oid, old_loc, new_loc),
+                Action::OpenDoor(ch_loc, obj_loc, obj_oid) => self.do_open_door(oid, ch_loc, obj_loc, obj_oid),
+                Action::PickUp(obj_loc, obj_oid) => self.do_pick_up(oid, obj_loc, obj_oid),
+                Action::ShoveDoorman(old_loc, ch, new_loc) => self.do_shove_doorman(oid, old_loc, ch, new_loc),
             },
+            Event::AddObject(loc, obj) => self.do_add_object(loc, obj),
             Event::AddMessage(message) => {
                 if let Topic::Error = message.topic {
                     // TODO: do we really want to do this?
@@ -162,6 +145,7 @@ impl Game {
                 let player = self.objects.remove(&oid);
                 self.objects = FnvHashMap::default();
                 self.cells = FnvHashMap::default();
+                self.scheduler = Scheduler::new();
                 if let Some(player) = player {
                     self.objects.insert(oid, player);
                 }
@@ -173,31 +157,9 @@ impl Game {
             Event::NewGame => {
                 // TODO: do we want this event?
             }
-            Event::ScheduledAction(oid, saction) => {
-                let delay = self.action_delay(saction);
-                self.scheduler.push(oid, saction, delay, &self.rng);
-            }
-            Event::ForceAction(oid, saction) => {
-                let delay = self.action_delay(saction);
-                self.scheduler.force_push(oid, saction, delay, &self.rng);
-            }
             Event::StateChanged(state) => {
                 self.state = state;
             }
-        }
-    }
-
-    fn action_delay(&self, saction: ScheduledAction) -> Time {
-        match saction {
-            ScheduledAction::DamageWall(_, _) => time::secs(20),
-            ScheduledAction::FightRhulad(_, _) => time::secs(30),
-            ScheduledAction::Move(old, new) if old.distance2(&new) == 1 => time::secs(4),
-            ScheduledAction::FloodDeep(_) => self.flood_delay(),
-            ScheduledAction::FloodShallow(_) => self.flood_delay(),
-            ScheduledAction::Move(_, _) => time::secs(6), // TODO: should be 5.6
-            ScheduledAction::OpenDoor(_, _, _) => time::secs(20),
-            ScheduledAction::PickUp(_, _) => time::secs(5),
-            ScheduledAction::ShoveDoorman(_, _, _) => time::secs(8),
         }
     }
 
@@ -238,54 +200,138 @@ impl Drop for Game {
     }
 }
 
-// Scheduled Actions
+// Actions
 impl Game {
-    fn damage_wall(&self, loc: &Point, scaled_damage: i32) -> Vec<Event> {
-        assert!(scaled_damage > 0);
-        let (oid, obj) = self.get(loc, WALL_ID).unwrap();
-        let durability: Durability = obj.value(DURABILITY_ID).unwrap();
-        let damage = durability.max / scaled_damage;
+    fn do_dig(&mut self, _oid: Oid, obj_loc: Point, obj_oid: Oid, damage: i32) {
+        assert!(damage > 0);
+
+        let (damage, durability) = {
+            let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
+            let durability: Durability = obj.value(DURABILITY_ID).unwrap();
+            (durability.max / damage, durability)
+        };
 
         if damage < durability.current {
             let mesg = Message::new(
                 Topic::Normal,
                 "You chip away at the wall with your pick-axe.", // TODO: probably should have slightly differet text for wooden walls (if we ever add them)
             );
+            self.messages.push(mesg);
 
+            let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
             let mut obj = obj.clone();
             obj.replace(Tag::Durability(Durability {
                 current: durability.current - damage,
                 max: durability.max,
             }));
-            let action = Action::ReplaceObject(*loc, oid, obj);
-            vec![Event::AddMessage(mesg), Event::Action(action)]
+            self.do_replace_object(obj_loc, obj_oid, obj);
         } else {
             let mesg = Message::new(Topic::Important, "You destroy the wall!");
-            let action = Action::DestroyObject(*loc, oid);
-            vec![Event::AddMessage(mesg), Event::Action(action)]
+            self.messages.push(mesg);
+            self.do_destroy_object(obj_loc, obj_oid);
         }
     }
 
-    fn damage_wall_events(&self, obj_loc: Point, _obj_oid: Oid) -> Vec<Event> {
-        let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
-        let material: Option<Material> = obj.value(MATERIAL_ID);
-        match material {
-            Some(Material::Stone) => self.damage_wall(&obj_loc, 6),
-            _ => panic!("Should only be called for walls that can be damaged"),
-        }
-    }
-
-    fn fight_rhulad_events(&self, char_loc: Point, _chr: Oid) -> Vec<Event> {
+    fn do_fight_rhulad(&mut self, _oid: Oid, char_loc: Point, ch: Oid) {
         let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
-        let oid = self.get(&char_loc, CHARACTER_ID).unwrap().0;
-        let action1 = Action::DestroyObject(char_loc, oid);
-        let action2 = Action::AddObject(char_loc, super::make::emp_sword());
-        vec![
-            Event::AddMessage(mesg),
-            Event::Action(action1),
-            Event::Action(action2),
-            Event::StateChanged(State::KilledRhulad),
-        ]
+        self.messages.push(mesg);
+
+        self.do_destroy_object(char_loc, ch);
+        self.do_add_object(char_loc, super::make::emp_sword());
+        self.state = State::KilledRhulad;
+    }
+
+    fn do_flood_deep(&mut self, oid: Oid, loc: Point) {
+        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
+            self.get(candidate, GROUND_ID).is_some() || self.get(candidate, SHALLOW_WATER_ID).is_some()
+        }) {
+            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
+            self.do_replace_object(new_loc, bad_oid, super::make::deep_water());
+
+            if new_loc == self.player {
+                if let Some(newer_loc) = self.find_neighbor(&self.player, |candidate| {
+                    self.get(candidate, GROUND_ID).is_some()
+                        || self.get(candidate, SHALLOW_WATER_ID).is_some()
+                        || self.get(candidate, OPEN_DOOR_ID).is_some()
+                }) {
+                    let mesg = Message {
+                        topic: Topic::Normal,
+                        text: "You step away from the rising water.".to_string(),
+                    };
+                    self.messages.push(mesg);
+
+                    self.do_move(Oid(0), self.player, newer_loc);
+
+                    let action = Action::Move(self.player, newer_loc);
+                    let units = self.duration(action);
+                    self.scheduler.acted(Oid(0), units, Time::zero(), &self.rng);
+                } else {
+                    let mesg = Message {
+                        topic: Topic::Important,
+                        text: "You drown!".to_string(),
+                    };
+                    self.messages.push(mesg);
+
+                    self.state = State::LostGame;
+                }
+            }
+        } else {
+            // No where left to flood.
+            self.scheduler.remove(oid);
+        }
+    }
+
+    fn do_flood_shallow(&mut self, oid: Oid, loc: Point) {
+        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.get(candidate, GROUND_ID).is_some()) {
+            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
+            self.do_replace_object(new_loc, bad_oid, super::make::shallow_water());
+        } else {
+            // No where left to flood.
+            self.scheduler.remove(oid);
+        }
+    }
+
+    fn do_move(&mut self, oid: Oid, old_loc: Point, new_loc: Point) {
+        assert!(!self.constructing); // make sure this is reset once things start happening
+
+        let oids = self.cells.get_mut(&old_loc).unwrap();
+        let index = oids.iter().position(|id| *id == oid).unwrap();
+        oids.remove(index);
+        let cell = self.cells.entry(new_loc).or_insert_with(Vec::new);
+        cell.push(oid);
+
+        if oid.0 == 0 {
+            self.player = new_loc;
+        }
+    }
+
+    fn do_open_door(&mut self, oid: Oid, ch_loc: Point, obj_loc: Point, obj_oid: Oid) {
+        self.do_replace_object(obj_loc, obj_oid, super::make::open_door());
+        self.do_move(oid, ch_loc, obj_loc);
+    }
+
+    fn do_pick_up(&mut self, _oid: Oid, obj_loc: Point, obj_oid: Oid) {
+        let obj = self.objects.get(&obj_oid).unwrap();
+        let name: String = obj.value(NAME_ID).unwrap();
+        let mesg = Message {
+            topic: Topic::Normal,
+            text: format!("You pick up the {name}."),
+        };
+        self.messages.push(mesg);
+        {
+            let oids = self.cells.get_mut(&obj_loc).unwrap();
+            let index = oids.iter().position(|id| *id == obj_oid).unwrap();
+            oids.remove(index);
+        }
+        self.mutate(&obj_loc, INVENTORY_ID, |obj| {
+            let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
+            inv.push(obj_oid);
+        });
+    }
+
+    fn do_shove_doorman(&mut self, oid: Oid, old_loc: Point, ch: Oid, new_loc: Point) {
+        self.do_move(ch, old_loc, new_loc);
+        self.do_move(oid, self.player, old_loc);
     }
 
     fn find_neighbor<F>(&self, loc: &Point, predicate: F) -> Option<Point>
@@ -302,135 +348,34 @@ impl Game {
         }
         None
     }
-
-    fn flood_deep_events(&self, loc: Point) -> Vec<Event> {
-        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
-            self.get(candidate, GROUND_ID).is_some() || self.get(candidate, SHALLOW_WATER_ID).is_some()
-        }) {
-            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
-            let action = Action::ReplaceObject(new_loc, bad_oid, super::make::deep_water());
-            let event1 = Event::Action(action);
-
-            let old_oid = self.get(&loc, TERRAIN_ID).unwrap().0;
-            let saction = ScheduledAction::FloodDeep(loc);
-            let event2 = Event::ScheduledAction(old_oid, saction);
-
-            if new_loc == self.player {
-                if let Some(newer_loc) = self.find_neighbor(&self.player, |candidate| {
-                    self.get(candidate, GROUND_ID).is_some()
-                        || self.get(candidate, SHALLOW_WATER_ID).is_some()
-                        || self.get(candidate, OPEN_DOOR_ID).is_some()
-                }) {
-                    let saction = ScheduledAction::Move(self.player, newer_loc);
-                    let event3 = Event::ForceAction(Oid(0), saction);
-
-                    let mesg = Message {
-                        topic: Topic::Normal,
-                        text: "You step away from the rising water.".to_string(),
-                    };
-                    let event4 = Event::AddMessage(mesg);
-                    vec![event1, event2, event3, event4]
-                } else {
-                    let mesg = Message {
-                        topic: Topic::Important,
-                        text: "You drown!".to_string(),
-                    };
-                    let event3 = Event::AddMessage(mesg);
-                    let event4 = Event::StateChanged(State::LostGame);
-                    vec![event1, event2, event3, event4]
-                }
-            } else {
-                vec![event1, event2]
-            }
-        } else {
-            Vec::new()
-        }
-    }
-
-    fn flood_shallow_events(&self, loc: Point) -> Vec<Event> {
-        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
-            self.get(candidate, GROUND_ID).is_some() || self.get(candidate, OPEN_DOOR_ID).is_some()
-        }) {
-            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
-            let action = Action::ReplaceObject(new_loc, bad_oid, super::make::shallow_water());
-            let event1 = Event::Action(action);
-
-            let old_oid = self.get(&loc, TERRAIN_ID).unwrap().0;
-            let saction = ScheduledAction::FloodShallow(loc);
-            let event2 = Event::ScheduledAction(old_oid, saction);
-            vec![event1, event2]
-        } else {
-            Vec::new()
-        }
-    }
-
-    fn move_events(&self, oid: Oid, old: Point, new: Point) -> Vec<Event> {
-        let action = Action::Move(oid, old, new);
-        vec![Event::Action(action)]
-    }
-
-    fn open_door_events(&self, ch_loc: Point, oid: Oid, obj_loc: Point, obj_oid: Oid) -> Vec<Event> {
-        let action1 = Action::ReplaceObject(obj_loc, obj_oid, make::open_door());
-        let action2 = Action::Move(oid, ch_loc, obj_loc);
-        vec![Event::Action(action1), Event::Action(action2)]
-    }
-
-    fn pickup_events(&self, oid: Oid, obj_loc: Point, obj_oid: Oid) -> Vec<Event> {
-        let action = Action::PickUp(oid, obj_loc, obj_oid);
-        vec![Event::Action(action)]
-    }
-
-    fn shove_doorman_events(
-        &self,
-        player_oid: Oid,
-        old_doorman_loc: Point,
-        doorman_oid: Oid,
-        new_doorman_loc: Point,
-    ) -> Vec<Event> {
-        let action1 = Action::Move(doorman_oid, old_doorman_loc, new_doorman_loc);
-        let action2 = Action::Move(player_oid, self.player, old_doorman_loc);
-        vec![Event::Action(action1), Event::Action(action2)]
-    }
 }
 
-// Actions
+// Action helpers
 impl Game {
-    fn flood_delay(&self) -> Time {
-        let rng = &mut *self.rng();
-        let t: f64 = rng.sample(StandardNormal); // most are in -2..2
-        let t = t / 2.0; // most are in -1..1
-        let t = t * 100.0; // most are in -100..100
-        let t = t + 200.0; // most are in 100..300
-        let t = f64::max(t, 1.0); // times have to be positive
-        time::secs(t as i64)
-    }
-
     fn do_add_object(&mut self, loc: Point, obj: Object) {
-        if obj.has(PLAYER_ID) {
+        let scheduled = obj.has(SCHEDULED_ID);
+        let oid = if obj.has(PLAYER_ID) {
             self.player = loc;
-            self.create_player(&loc, obj);
+            self.create_player(&loc, obj)
         } else {
-            let is_shallow = obj.has(SHALLOW_WATER_ID);
-            let is_deep = obj.has(DEEP_WATER_ID);
             let oid = self.create_object(obj);
             let oids = self.cells.entry(loc).or_insert_with(Vec::new);
             oids.push(oid);
-
-            // TODO: probably want to get rid of flooding at some point
-            if is_deep {
-                let saction = ScheduledAction::FloodDeep(loc);
-                self.scheduler.push(oid, saction, self.flood_delay(), &self.rng);
-            } else if is_shallow {
-                let saction = ScheduledAction::FloodShallow(loc);
-                self.scheduler.push(oid, saction, self.flood_delay(), &self.rng);
-            }
+            oid
+        };
+        if scheduled {
+            self.do_schedule(oid);
         }
     }
 
     fn do_destroy_object(&mut self, loc: Point, old_oid: Oid) {
+        let obj = self.objects.get(&old_oid).unwrap();
+        if obj.has(SCHEDULED_ID) {
+            self.scheduler.remove(old_oid);
+        }
+
         let oids = self.cells.get_mut(&loc).unwrap();
         let index = oids.iter().position(|id| *id == old_oid).unwrap();
-        let obj = self.objects.get(&old_oid).unwrap();
         if obj.has(TERRAIN_ID) {
             // Terrain cannot be destroyed but has to be mutated into something else.
             let new_obj = if obj.has(WALL_ID) {
@@ -439,10 +384,16 @@ impl Game {
                 error!("Need to better handle destroying Tid {obj}"); // Doors, trees, etc
                 make::dirt()
             };
+            let scheduled = new_obj.has(SCHEDULED_ID);
+
             let new_oid = Oid(self.next_id);
             self.next_id += 1;
             self.objects.insert(new_oid, new_obj);
             oids[index] = new_oid;
+
+            if scheduled {
+                self.do_schedule(new_oid);
+            }
 
             // The player may now be able to see through this cell so we need to ensure
             // that cells around it exist now. TODO: probably should have a LOS changed
@@ -455,56 +406,32 @@ impl Game {
         self.objects.remove(&old_oid);
     }
 
-    fn do_move(&mut self, oid: Oid, old: Point, new: Point) {
-        assert!(!self.constructing); // make sure this is reset once things start happening
-
-        let oids = self.cells.get_mut(&old).unwrap();
-        let index = oids.iter().position(|id| *id == oid).unwrap();
-        oids.remove(index);
-        let cell = self.cells.entry(new).or_insert_with(Vec::new);
-        cell.push(oid);
-
-        if oid.0 == 0 {
-            self.player = new;
-        }
-    }
-
-    fn do_pickup(&mut self, _ch_id: Oid, loc: Point, obj_id: Oid) {
-        let obj = self.objects.get(&obj_id).unwrap();
-        let name: String = obj.value(NAME_ID).unwrap();
-        let mesg = Message {
-            topic: Topic::Normal,
-            text: format!("You pick up the {name}."),
-        };
-        self.messages.push(mesg);
-        {
-            let oids = self.cells.get_mut(&loc).unwrap();
-            let index = oids.iter().position(|id| *id == obj_id).unwrap();
-            oids.remove(index);
-        }
-        self.mutate(&loc, INVENTORY_ID, |obj| {
-            let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
-            inv.push(obj_id);
-        });
-    }
-
     fn do_replace_object(&mut self, loc: Point, old_oid: Oid, new_obj: Object) {
-        let is_shallow = new_obj.has(SHALLOW_WATER_ID);
-        let is_deep = new_obj.has(DEEP_WATER_ID);
+        let old_obj = self.objects.get(&old_oid).unwrap();
+        if old_obj.has(SCHEDULED_ID) {
+            self.scheduler.remove(old_oid);
+        }
 
+        let scheduled = new_obj.has(SCHEDULED_ID);
         let new_oid = self.create_object(new_obj);
         let oids = self.cells.get_mut(&loc).unwrap();
         let index = oids.iter().position(|id| *id == old_oid).unwrap();
         oids[index] = new_oid;
-        self.objects.remove(&old_oid);
 
-        // TODO: probably want to get rid of flooding at some point
-        if is_deep {
-            let saction = ScheduledAction::FloodDeep(loc);
-            self.scheduler.push(new_oid, saction, self.flood_delay(), &self.rng);
-        } else if is_shallow {
-            let saction = ScheduledAction::FloodShallow(loc);
-            self.scheduler.push(new_oid, saction, self.flood_delay(), &self.rng);
+        if scheduled {
+            self.do_schedule(new_oid);
         }
+    }
+
+    fn do_schedule(&mut self, oid: Oid) {
+        let obj = self.objects.get(&oid).unwrap();
+        let initial = if oid.0 == 0 {
+            time::secs(6) // enough for a move
+        } else if obj.has(SHALLOW_WATER_ID) || obj.has(DEEP_WATER_ID) {
+            Time::zero() - self.flood_delay()
+        } else {
+            Time::zero()
+        };
+        self.scheduler.add(oid, initial);
     }
 }

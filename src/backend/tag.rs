@@ -35,6 +35,9 @@ pub enum Tag {
     Rhulad,
     Spectator,
 
+    /// Object performs Action's using the Scheduler.
+    Scheduled,
+
     /// Objects that a Character has picked up.
     Inventory(Vec<Oid>),
 
@@ -132,6 +135,7 @@ pub const DURABILITY_ID: Tid = Tid(20);
 pub const MATERIAL_ID: Tid = Tid(21);
 pub const NAME_ID: Tid = Tid(22);
 pub const CAN_OPEN_DOOR_ID: Tid = Tid(23);
+pub const SCHEDULED_ID: Tid = Tid(24);
 
 impl Tag {
     pub fn to_id(&self) -> Tid {
@@ -160,6 +164,7 @@ impl Tag {
             Tag::Material(_) => MATERIAL_ID,
             Tag::Name(_) => NAME_ID,
             Tag::CanOpenDoor => CAN_OPEN_DOOR_ID,
+            Tag::Scheduled => SCHEDULED_ID,
         }
     }
 }
@@ -191,6 +196,7 @@ impl fmt::Display for Tag {
             Tag::Material(material) => write!(f, "Material({material})"),
             Tag::Name(text) => write!(f, "Name({text})"),
             Tag::CanOpenDoor => write!(f, "CanOpenDoor"),
+            Tag::Scheduled => write!(f, "Scheduled"),
         }
     }
 }
