@@ -1,3 +1,33 @@
+// ---- Overview -------------------------------------------------------------------------
+// The simplest option is to simply snapshot the current game state. However that makes
+// reproing bugs a terrible experience. So what we do instead is save player "actions".
+// There are different ways to do this. We could directly save the player action (move/
+// interact with neighbor cell), or high level actions (open door), or low level mutations
+// (replace closed door tag with open door tag).
+//
+// The advantage of the lower level methods is that they are more resilient to logic changes
+// since they skip some or all of the actual logic. Of course that could also be considered
+// a disadvantage because replay doesn't exercise the logic. Moreover it opens the door to
+// annoying de-synchronization issues (especially with the RNG).
+//
+// Here's an ordered list of the goals we want:
+// 1) If the game panics or does something else wrong we should be able to replay it and
+// trigger the issue again. In the future we'll want to allow users to submit problematic
+// saved games (or auto-cache them once we move to a web model).
+// 2) Saved games would be awfully nice for performance measurements.
+// 3) It's be easier to mine player games for interesting statistics, e.g. how often a
+// particular item or spell was used.
+// 4) We could use saved games for regression testing. Possibly combined with a checksum
+// to verify that the resulting state is the same as it was. Not sure how practical this
+// actually is...
+// 5) Players could replay notable games, e.g. from players who won with a tough character
+// or had a really high score.
+// TODO: need to implement some of the above
+//
+// Given the above I decided to go with saving player actions (although I did try saving
+// high level actions).
+//
+// ---- Crate selection ------------------------------------------------------------------
 // There are a bunch of different serde backends and I have looked at quite a few but none
 // of them are perfect for us. In order of importance we have these goals:
 // 1) In so far as possible, old games should be forward compatible with new code. In
