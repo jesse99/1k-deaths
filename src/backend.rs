@@ -6,7 +6,6 @@ mod make;
 mod message;
 mod object;
 mod old_pov;
-mod persistence;
 mod pov;
 mod primitives;
 mod tag;
@@ -31,9 +30,8 @@ use pov::PoV;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
-// use rand_distr::StandardNormal;
 use std::cell::{RefCell, RefMut};
-use std::fs::File;
+// use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
 use time::{Scheduler, Time, Turn};
@@ -76,11 +74,11 @@ pub enum State {
 
 /// Top-level backend object encapsulating the game state.
 pub struct Game {
-    stream: Vec<Event>, // used to reconstruct games
-    file: Option<File>, // events are perodically saved here
-    state: State,       // game milestones, eg won game
-    posting: bool,      // prevents re-entrant posting events
-    next_id: u64,       // 0 is the player
+    // stream: Vec<Event>, // used to reconstruct games
+    // file: Option<File>, // events are perodically saved here
+    state: State,  // game milestones, eg won game
+    posting: bool, // prevents re-entrant posting events
+    next_id: u64,  // 0 is the player
     rng: RefCell<SmallRng>,
     scheduler: Scheduler,
 
@@ -105,19 +103,19 @@ pub struct Game {
 impl Game {
     /// Start a brand new game and save it to path.
     pub fn new_game(path: &str, seed: u64) -> Game {
-        let mut messages = Vec::new();
+        let messages = Vec::new();
 
         info!("new {path}");
-        let file = match persistence::new_game(path) {
-            Ok(se) => Some(se),
-            Err(err) => {
-                messages.push(Message::new(
-                    Topic::Error,
-                    &format!("Couldn't open {path} for writing: {err}"),
-                ));
-                None
-            }
-        };
+        // let file = match persistence::new_game(path) {
+        //     Ok(se) => Some(se),
+        //     Err(err) => {
+        //         messages.push(Message::new(
+        //             Topic::Error,
+        //             &format!("Couldn't open {path} for writing: {err}"),
+        //         ));
+        //         None
+        //     }
+        // };
 
         let mut events = Vec::new();
         events.reserve(1000); // TODO: probably should tune this
@@ -139,7 +137,7 @@ impl Game {
 
         // TODO: may want a SetAllTerrain variant to avoid a zillion events
         // TODO: or have NewLevel take a default terrain
-        let mut game = Game::new(messages, seed, file);
+        let mut game = Game::new(messages, seed);
         let map = include_str!("backend/maps/start.txt");
         make::level(&game, map, &mut events);
         events.push(Event::EndConstructLevel);
@@ -152,45 +150,45 @@ impl Game {
     pub fn old_game(path: &str, seed: u64) -> (Game, Vec<Event>) {
         let mut events = Vec::new();
 
-        let mut messages = Vec::new();
-        let mut file = None;
-        info!("loading {path}");
-        match persistence::load_game(path) {
-            Ok(e) => events = e,
-            Err(err) => {
-                info!("loading file had err: {err}");
-                messages.push(Message::new(
-                    Topic::Error,
-                    &format!("Couldn't open {path} for reading: {err}"),
-                ));
-            }
-        };
+        let messages = Vec::new();
+        // let mut file = None;
+        // info!("loading {path}");
+        // match persistence::load_game(path) {
+        //     Ok(e) => events = e,
+        //     Err(err) => {
+        //         info!("loading file had err: {err}");
+        //         messages.push(Message::new(
+        //             Topic::Error,
+        //             &format!("Couldn't open {path} for reading: {err}"),
+        //         ));
+        //     }
+        // };
 
-        if !events.is_empty() {
-            info!("opening {path}");
-            file = match persistence::open_game(path) {
-                Ok(se) => Some(se),
-                Err(err) => {
-                    messages.push(Message::new(
-                        Topic::Error,
-                        &format!("Couldn't open {path} for appending: {err}"),
-                    ));
-                    None
-                }
-            };
-        }
+        // if !events.is_empty() {
+        //     info!("opening {path}");
+        //     file = match persistence::open_game(path) {
+        //         Ok(se) => Some(se),
+        //         Err(err) => {
+        //             messages.push(Message::new(
+        //                 Topic::Error,
+        //                 &format!("Couldn't open {path} for appending: {err}"),
+        //             ));
+        //             None
+        //         }
+        //     };
+        // }
 
-        if file.is_some() {
-            (Game::new(messages, seed, file), events)
-        } else {
-            let mut game = Game::new_game(path, seed);
+        // if file.is_some() {
+        //     (Game::new(messages, seed, file), events)
+        // } else {
+        let mut game = Game::new_game(path, seed);
 
-            events.clear();
-            events.extend(messages.into_iter().map(Event::AddMessage));
-            game.post(events, false);
+        events.clear();
+        events.extend(messages.into_iter().map(Event::AddMessage));
+        game.post(events, false);
 
-            (game, Vec::new())
-        }
+        (game, Vec::new())
+        // }
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
@@ -202,9 +200,9 @@ impl Game {
         }
     }
 
-    pub fn events(&self) -> Vec<String> {
-        self.stream.iter().map(|e| format!("{:?}", e)).collect()
-    }
+    // pub fn events(&self) -> Vec<String> {
+    //     self.stream.iter().map(|e| format!("{:?}", e)).collect()
+    // }
 
     pub fn player(&self) -> Point {
         self.player
@@ -397,11 +395,12 @@ impl Game {
 
 // Backend methods. Note that mutable methods should only be in the events module.
 impl Game {
-    fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
+    // fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
+    fn new(messages: Vec<Message>, seed: u64) -> Game {
         info!("using seed {seed}");
         Game {
-            stream: Vec::new(),
-            file,
+            // stream: Vec::new(),
+            // file,
             state: State::Adventuring,
             posting: false,
             next_id: 2,

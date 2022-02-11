@@ -1,7 +1,7 @@
 use super::*;
 // use rand_distr::StandardNormal;
 
-const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
+// const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
 // In order to ensure that games are replayable mutation should only happen as a direct
 // result of an event. To ensure that this is true this is the only public mutable Game
@@ -60,27 +60,27 @@ impl Game {
         panic!("Didn't find {tag} at {loc}");
     }
 
-    fn append_stream(&mut self) {
-        if let Some(se) = &mut self.file {
-            if let Err(err) = persistence::append_game(se, &self.stream) {
-                self.messages
-                    .push(Message::new(Topic::Error, &format!("Couldn't save game: {err}")));
-            }
-        }
-        // If we can't save there's not much we can do other than clear. (Still worthwhile
-        // appending onto the stream because we may want a wizard command to show the last
-        // few events).
-        self.stream.clear();
-    }
+    // fn append_stream(&mut self) {
+    //     if let Some(se) = &mut self.file {
+    //         if let Err(err) = persistence::append_game(se, &self.stream) {
+    //             self.messages
+    //                 .push(Message::new(Topic::Error, &format!("Couldn't save game: {err}")));
+    //         }
+    //     }
+    //     // If we can't save there's not much we can do other than clear. (Still worthwhile
+    //     // appending onto the stream because we may want a wizard command to show the last
+    //     // few events).
+    //     self.stream.clear();
+    // }
 
-    fn do_post(&mut self, event: Event, replay: bool) {
-        if !replay {
-            self.stream.push(event.clone());
+    fn do_post(&mut self, event: Event, _replay: bool) {
+        // if !replay {
+        //     self.stream.push(event.clone());
 
-            if self.stream.len() >= MAX_QUEUED_EVENTS {
-                self.append_stream();
-            }
-        }
+        //     if self.stream.len() >= MAX_QUEUED_EVENTS {
+        //         self.append_stream();
+        //     }
+        // }
 
         let mut events = vec![event];
         while !events.is_empty() {
@@ -197,7 +197,7 @@ impl Game {
 
 impl Drop for Game {
     fn drop(&mut self) {
-        self.append_stream();
+        // self.append_stream();
     }
 }
 

@@ -35,9 +35,9 @@ impl MainMode {
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
         commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
-        if super::wizard_mode() {
-            commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
-        }
+        // if super::wizard_mode() {
+        //     commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
+        // }
 
         // We don't receive ctrl-m. We're using ctrl-p because that's what Crawl does.
         commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
@@ -101,10 +101,10 @@ Movement is done using the numeric keypad or arrow keys:
         .to_string();
         if super::wizard_mode() {
             help += r#"
-
-Wizard mode commands:
-[[control-e]] show recent events.
 "#;
+
+            // Wizard mode commands:
+            // [[control-e]] show recent events.
         }
         validate_help("main", &help, self.commands.keys());
 
@@ -123,19 +123,19 @@ Wizard mode commands:
         InputAction::Quit
     }
 
-    fn do_show_events(&mut self, game: &mut Game) -> InputAction {
-        fn get_lines(game: &mut Game) -> Vec<Line> {
-            let mut lines = Vec::new();
-            for e in game.events() {
-                let line = vec![TextRun::Color(Color::White), TextRun::Text(e)];
-                lines.push(line);
-            }
-            lines
-        }
-        // TODO: Should we load saved events? Do we even want this mode?
-        let lines = get_lines(game);
-        InputAction::Push(TextMode::at_bottom().create(lines))
-    }
+    // fn do_show_events(&mut self, game: &mut Game) -> InputAction {
+    //     fn get_lines(game: &mut Game) -> Vec<Line> {
+    //         let mut lines = Vec::new();
+    //         for e in game.events() {
+    //             let line = vec![TextRun::Color(Color::White), TextRun::Text(e)];
+    //             lines.push(line);
+    //         }
+    //         lines
+    //     }
+    //     // TODO: Should we load saved events? Do we even want this mode?
+    //     let lines = get_lines(game);
+    //     InputAction::Push(TextMode::at_bottom().create(lines))
+    // }
 
     fn do_show_messages(&mut self, game: &mut Game) -> InputAction {
         fn get_lines(game: &mut Game) -> Vec<Line> {
