@@ -543,7 +543,7 @@ impl Game {
 
     fn flood_delay(&self) -> Time {
         let rng = &mut *self.rng();
-        let t: i64 = 60 + rng.gen_range(0..(200 * 6));
+        let t: i64 = 60 + rng.gen_range(0..(600 * 6));
         time::secs(t)
     }
 

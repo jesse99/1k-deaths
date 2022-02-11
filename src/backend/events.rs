@@ -85,6 +85,7 @@ impl Game {
         let mut events = vec![event];
         while !events.is_empty() {
             let event = events.remove(0); // icky remove from front but the vector shouldn't be very large...
+            trace!("processing {event}");
 
             // This is the type state pattern: as events are posted new state
             // objects are updated and upcoming state objects can safely reference
@@ -260,6 +261,7 @@ impl Game {
                     };
                     self.messages.push(mesg);
 
+                    trace!("flood is moving player from {} to {}", self.player, newer_loc);
                     self.do_move(Oid(0), self.player, newer_loc);
 
                     let action = Action::Move(self.player, newer_loc);
@@ -295,7 +297,10 @@ impl Game {
         assert!(!self.constructing); // make sure this is reset once things start happening
 
         let oids = self.cells.get_mut(&old_loc).unwrap();
-        let index = oids.iter().position(|id| *id == oid).unwrap();
+        let index = oids
+            .iter()
+            .position(|id| *id == oid)
+            .expect(&format!("expected {oid} at {old_loc}"));
         oids.remove(index);
         let cell = self.cells.entry(new_loc).or_insert_with(Vec::new);
         cell.push(oid);
@@ -338,9 +343,20 @@ impl Game {
     where
         F: Fn(&Point) -> bool,
     {
-        let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
-        deltas.shuffle(&mut *self.rng());
-        for delta in deltas {
+        let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        // deltas.shuffle(&mut *self.rng());
+        // for delta in deltas {
+
+        // TODO: events are supposed to encode all the info required to do the action. In
+        // particular randomized values (like damage) should be within the event. This is
+        // important because when the events are replayed the code that assembles the
+        // events is not executed so the RNG stream gets out of sync. Probably what we
+        // should do is create a new game view for events that doesn't include the rng.
+        let offset = self.next_id as usize;
+        for i in 0..deltas.len() {
+            let index = (i + offset) % deltas.len();
+            let delta = deltas[index];
+
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             if predicate(&new_loc) {
                 return Some(new_loc);

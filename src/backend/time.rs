@@ -72,6 +72,12 @@ impl Scheduler {
     /// units. That way the player will always have the first move. Other objects may
     /// start out with a negative time so that they execute some time in the future.
     pub fn add(&mut self, oid: Oid, initial: Time) {
+        debug_assert!(!self.entries.iter().any(|entry| entry.oid == oid), "{oid} is already scheduled!");
+        if oid.0 == 0 {
+            assert!(initial.t >= SECS_TO_TIME, "player should start out with positive time units");
+        } else {
+            assert!(initial.t <= 0, "NPCs should start out with zero or negative time units");
+        }
         // info!("added {oid} to the scheduler");
         self.entries.push(Entry { oid, units: initial });
     }
@@ -85,12 +91,18 @@ impl Scheduler {
         }
     }
 
-    /// Randomly execute the first object that wants to take an action. Note that the player
-    /// has an advantage because he is allowed to take a big action whenever he has some
-    /// time available. However he will go into the negative so other NPCs will have a lot
-    /// of time to take their own actions.
-    ///
-    /// Find an object that wants to do an action
+    /// Find an object that wants to do an action. The callback is given an oid with the
+    /// amount of time the associated object has available. if the object elects to peform
+    /// an action then it should return an event along with the duration of the event.
+    /// 
+    /// If this function returns Turn::Player then the UI will block for user input (note 
+    /// that the player has an advantage because he is allowed to take a big action whenever 
+    /// he has some time available. However he will go into the negative so other NPCs will 
+    /// have a lot of time to take their own actions).
+    /// 
+    /// If this function returns Turn::Npc then an NPC (or more rarely some other sort of
+    /// object) will perform an Action. If this function returns NoOne then either no one
+    /// had enough time for an action or everyone elected to wait for more time units.
     pub fn find_actor<F>(&self, rng: &RefCell<SmallRng>, callback: F) -> Turn
     where
         F: Fn(Oid, Time) -> Option<(Event, Time)>,
@@ -119,6 +131,7 @@ impl Scheduler {
         Turn::NoOne
     }
 
+    /// Called if find_actor returned NoOne. All objects are given a small amount of time.
     pub fn not_acted(&mut self) {
         // info!("no one acted");
         for entry in self.entries.iter_mut() {
@@ -126,10 +139,13 @@ impl Scheduler {
         }
     }
 
-    /// taken is the duration of the action the object just performed.
-    /// extra is can be used by an object to schedule additional actions further in the
-    /// future than they would ordinarily be.
+    /// Called whenever an object does an Action. taken is the duration of the action and
+    /// added to everyone elses time units. extra is used to schedule oid further into the
+    /// future than would normally be the case.
     pub fn acted(&mut self, oid: Oid, taken: Time, extra: Time, rng: &RefCell<SmallRng>) {
+        assert!(taken.t >= SECS_TO_TIME);
+        assert!(extra.t >= 0);
+
         let units = self.fuzz_time(taken, rng);
         // info!("{oid} acted and took {units}s");
         self.adjust_units(oid, units, extra);
