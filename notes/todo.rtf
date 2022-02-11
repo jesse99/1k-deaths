@@ -36,8 +36,14 @@ https://crawl.kelbi.org/#lobby\
 	- https://github.com/rust-unofficial/patterns  \
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
-\'95 Use debug_assert more.\
-\'95\'a0May want to enable some optimizations in debug profile.\
+\'95\'a0Look at some optimizations:\
+	- replay should log how long it took\
+	- io::Write takes 77% of the time\
+		37% in cursor.goto\
+		21% in color.Bg\
+		18% in color.Fg\
+	- should MapView::render try to not redraw unchanged cells?\
+	- may want to enable some optimizations in debug profile.\
 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- maybe disposition enum, friendly, neutral, aggresive\
