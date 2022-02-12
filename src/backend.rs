@@ -198,34 +198,32 @@ impl Game {
         self.players_move
     }
 
-    pub fn advance_time(&mut self) {
-        let turn = self.scheduler.find_actor(&self.rng, |oid, units| {
-            // TODO: need to replace this with a table lookup
-            // let loc = self.loc(oid).unwrap();
-            // let obj = self.objects.get(&oid).unwrap();
-            // let action = if obj.has(DEEP_WATER_ID) {
-            //     Action::FloodDeep(loc)
-            // } else {
-            //     Action::FloodShallow(loc)
-            // };
-            // let duration = self.duration(action);
-            // let event = Event::Action(oid, action);
-            // if duration <= units {
-            //     Some((event, duration))
-            // } else {
-            // TODO: call invariant
-            None
-            // }
-        });
-        match turn {
-            Turn::Player => self.players_move = true,
-            Turn::Npc(oid, duration) => {
-                // let extra = self.extra_duration(&event);
-                // self.post(vec![event], false);
-                let extra = Time::zero();
-                self.scheduler.acted(oid, duration, extra, &self.rng);
+    fn obj_acted(&mut self, oid: Oid, units: Time) -> Option<(Time, Time)> {
+        let base = time::secs(20);
+        let extra = self.flood_delay(); // TODO: rename this
+        if units >= base + extra {
+            let loc = self.loc(oid).unwrap();
+            let obj = self.objects.get(&oid).unwrap();
+            if obj.has(DEEP_WATER_ID) {
+                self.do_flood_deep(oid, loc);
+            } else {
+                self.do_flood_shallow(oid, loc);
+            };
+            {
+                #[cfg(debug_assertions)]
+                self.invariant();
             }
-            Turn::NoOne => self.scheduler.not_acted(),
+            Some((base, extra))
+        } else {
+            None
+        }
+    }
+
+    pub fn advance_time(&mut self) {
+        // TODO: this can't take a mutable game
+        // callback probably needs to return an index representing the action an object wants to take
+        if Scheduler::players_turn(self) {
+            self.players_move = true;
         }
     }
 
@@ -256,7 +254,7 @@ impl Game {
                     if let Some(duration) = self.try_interact(&player, &new_loc) {
                         if duration > Time::zero() {
                             let extra = Time::zero();
-                            self.scheduler.acted(Oid(0), duration, extra, &self.rng);
+                            self.scheduler.player_acted(duration, &self.rng);
                         }
                     } else {
                         let old_loc = self.player;
@@ -266,7 +264,11 @@ impl Game {
 
                     OldPoV::update(self);
                     PoV::refresh(self);
-                    self.invariant();
+
+                    {
+                        #[cfg(debug_assertions)]
+                        self.invariant();
+                    }
                 }
             }
             Command::Examine(new_loc, wizard) => {
@@ -490,7 +492,7 @@ impl Game {
 
     fn flood_delay(&self) -> Time {
         let rng = &mut *self.rng();
-        let t: i64 = 60 + rng.gen_range(0..(600 * 6));
+        let t: i64 = 60 + rng.gen_range(0..(400 * 6));
         time::secs(t)
     }
 
@@ -716,6 +718,32 @@ impl Game {
         }
     }
 
+    fn find_neighbor<F>(&self, loc: &Point, predicate: F) -> Option<Point>
+    where
+        F: Fn(&Point) -> bool,
+    {
+        let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        // deltas.shuffle(&mut *self.rng());
+        // for delta in deltas {
+
+        // TODO: events are supposed to encode all the info required to do the action. In
+        // particular randomized values (like damage) should be within the event. This is
+        // important because when the events are replayed the code that assembles the
+        // events is not executed so the RNG stream gets out of sync. Probably what we
+        // should do is create a new game view for events that doesn't include the rng.
+        let offset = self.next_id as usize;
+        for i in 0..deltas.len() {
+            let index = (i + offset) % deltas.len();
+            let delta = deltas[index];
+
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            if predicate(&new_loc) {
+                return Some(new_loc);
+            }
+        }
+        None
+    }
+
     fn do_dig(&mut self, _oid: Oid, obj_loc: &Point, obj_oid: Oid, damage: i32) {
         assert!(damage > 0);
 
@@ -756,6 +784,57 @@ impl Game {
         self.state = State::KilledRhulad;
     }
 
+    fn do_flood_deep(&mut self, oid: Oid, loc: Point) {
+        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
+            self.get(candidate, GROUND_ID).is_some() || self.get(candidate, SHALLOW_WATER_ID).is_some()
+        }) {
+            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
+            self.replace_object(&new_loc, bad_oid, make::deep_water());
+
+            if new_loc == self.player {
+                if let Some(newer_loc) = self.find_neighbor(&self.player, |candidate| {
+                    self.get(candidate, GROUND_ID).is_some()
+                        || self.get(candidate, SHALLOW_WATER_ID).is_some()
+                        || self.get(candidate, OPEN_DOOR_ID).is_some()
+                }) {
+                    let mesg = Message {
+                        topic: Topic::Normal,
+                        text: "You step away from the rising water.".to_string(),
+                    };
+                    self.messages.push(mesg);
+
+                    trace!("flood is moving player from {} to {}", self.player, newer_loc);
+                    let player_loc = self.player;
+                    self.do_move(Oid(0), &player_loc, &newer_loc);
+
+                    let units = time::secs(5); // TODO: do better here
+                    self.scheduler.force_acted(Oid(0), units, &self.rng);
+                } else {
+                    let mesg = Message {
+                        topic: Topic::Important,
+                        text: "You drown!".to_string(),
+                    };
+                    self.messages.push(mesg);
+
+                    self.state = State::LostGame;
+                }
+            }
+        } else {
+            // No where left to flood.
+            self.scheduler.remove(oid);
+        }
+    }
+
+    fn do_flood_shallow(&mut self, oid: Oid, loc: Point) {
+        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.get(candidate, GROUND_ID).is_some()) {
+            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
+            self.replace_object(&new_loc, bad_oid, make::shallow_water());
+        } else {
+            // No where left to flood.
+            self.scheduler.remove(oid);
+        }
+    }
+
     fn do_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
         assert!(!self.constructing); // make sure this is reset once things start happening
 
@@ -776,8 +855,7 @@ impl Game {
         // TODO: player actions should be in a table so that we can ensure that they
         // schedule properly
         let taken = time::secs(6) + self.interact_post_move(new_loc); // TODO: diagnols should be more
-        let extra = Time::zero();
-        self.scheduler.acted(oid, taken, extra, &self.rng);
+        self.scheduler.force_acted(oid, taken, &self.rng);
     }
 
     fn do_open_door(&mut self, oid: Oid, ch_loc: &Point, obj_loc: &Point, obj_oid: Oid) {

@@ -22,7 +22,7 @@
 // perform an action. When an object does an action the time it takes is given to all the
 // other objects. So a wizard who casts a long spell may have to wait a while to cast it
 // and once it goes off everything else will be able to do quite a lot.
-use super::Oid;
+use super::{Game, Oid};
 use rand::rngs::SmallRng;
 use rand::Rng;
 use rand_distr::StandardNormal;
@@ -50,6 +50,11 @@ pub fn secs(s: i64) -> Time {
 }
 
 pub enum Turn {
+    Player,
+    Npc,
+}
+
+pub enum TurnOld {
     Player,
     Npc(Oid, Time),
     NoOne,
@@ -97,69 +102,77 @@ impl Scheduler {
         }
     }
 
-    /// Find an object that wants to do an action. The callback is given an oid with the
-    /// amount of time the associated object has available. if the object elects to peform
-    /// an action then it should return an event along with the duration of the event.
-    ///
-    /// If this function returns Turn::Player then the UI will block for user input (note
-    /// that the player has an advantage because he is allowed to take a big action whenever
-    /// he has some time available. However he will go into the negative so other NPCs will
-    /// have a lot of time to take their own actions).
-    ///
-    /// If this function returns Turn::Npc then an NPC (or more rarely some other sort of
-    /// object) will perform an Action. If this function returns NoOne then either no one
-    /// had enough time for an action or everyone elected to wait for more time units.
-    pub fn find_actor<F>(&self, rng: &RefCell<SmallRng>, callback: F) -> Turn
-    where
-        F: Fn(Oid, Time) -> Option<Time>,
-    {
+    /// Find the next object with enough time units to perform the action it wants to do.
+    /// Note that the player has an advantage because he is allowed to take an action
+    /// whenever he has the minimum amount of time available. However he will go into the
+    /// negative so other NPCs will have a lot of time to take their own actions).
+    pub fn players_turn(game: &mut Game) -> bool {
         let offset = {
-            let rng = &mut *rng.borrow_mut();
-            rng.gen_range(0..self.entries.len())
+            let rng = &mut *game.rng.borrow_mut();
+            rng.gen_range(0..game.scheduler.entries.len())
         };
-        for i in 0..self.entries.len() {
-            let index = (i + offset) % self.entries.len();
-            let entry = self.entries[index];
-            if entry.units.t >= SECS_TO_TIME {
-                if entry.oid.0 == 0 {
-                    // info!("{index}: scheduling player");
-                    return Turn::Player;
-                } else if let Some(duration) = callback(entry.oid, entry.units) {
-                    assert!(duration.t >= SECS_TO_TIME);
-                    assert!(duration <= entry.units);
-                    // info!("{index}: scheduling {}", entry.oid);
-                    return Turn::Npc(entry.oid, duration);
-                } else {
-                    // info!("{index}: {} only had {} time units", entry.oid, entry.units);
+        for i in 0..100 {
+            for i in 0..game.scheduler.entries.len() {
+                let index = (i + offset) % game.scheduler.entries.len();
+                let entry = game.scheduler.entries[index];
+                if entry.units.t >= SECS_TO_TIME {
+                    if entry.oid.0 == 0 {
+                        return true;
+                    } else if let Some((duration, extra)) = game.obj_acted(entry.oid, entry.units) {
+                        assert!(duration.t >= SECS_TO_TIME);
+                        assert!(duration <= entry.units);
+                        assert!(extra.t >= 0);
+                        game.scheduler.obj_acted(entry.oid, duration, extra, &game.rng);
+                        return false;
+                    }
                 }
             }
+            game.scheduler.not_acted();
         }
-        Turn::NoOne
+        panic!("At least the player should have moved!");
     }
 
-    /// Called if find_actor returned NoOne. All objects are given a small amount of time.
-    pub fn not_acted(&mut self) {
-        // info!("no one acted");
-        for entry in self.entries.iter_mut() {
-            entry.units = entry.units + secs(6);
-        }
-    }
-
-    /// Called whenever an object does an Action. taken is the duration of the action and
-    /// added to everyone elses time units. extra is used to schedule oid further into the
-    /// future than would normally be the case.
-    pub fn acted(&mut self, oid: Oid, taken: Time, extra: Time, rng: &RefCell<SmallRng>) {
+    pub fn player_acted(&mut self, taken: Time, rng: &RefCell<SmallRng>) {
         assert!(taken.t >= SECS_TO_TIME);
-        assert!(extra.t >= 0);
 
-        let units = self.fuzz_time(taken, rng);
-        // info!("{oid} acted and took {units}s");
-        self.adjust_units(oid, units, extra);
+        let taken = self.fuzz_time(taken, rng);
+        let extra = Time::zero();
+        self.adjust_units(Oid(0), taken, extra);
+    }
+
+    /// This is used when an object causes another object to use up some of it's time.
+    /// Examples of this include stunning a character or a stronger character shoving a
+    /// weaker one out of the way. Note that this just subtracts the time from oid: it does
+    /// not give time to other objects.
+    pub fn force_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
+        assert!(taken.t >= SECS_TO_TIME);
+
+        let taken = self.fuzz_time(taken, rng);
+        for entry in self.entries.iter_mut() {
+            if entry.oid == oid {
+                entry.units = entry.units - taken;
+                break;
+            }
+        }
     }
 }
 
 // ---- Private methods ------------------------------------------------------------------
 impl Scheduler {
+    fn not_acted(&mut self) {
+        for entry in self.entries.iter_mut() {
+            entry.units = entry.units + secs(6);
+        }
+    }
+
+    fn obj_acted(&mut self, oid: Oid, taken: Time, extra: Time, rng: &RefCell<SmallRng>) {
+        assert!(taken.t >= SECS_TO_TIME);
+        assert!(extra.t >= 0);
+
+        let units = self.fuzz_time(taken, rng);
+        self.adjust_units(oid, units, extra);
+    }
+
     fn adjust_units(&mut self, oid: Oid, taken: Time, extra: Time) {
         self.now = self.now + taken;
 
