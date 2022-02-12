@@ -253,7 +253,6 @@ impl Game {
                     let new_loc = Point::new(player.x + dx, player.y + dy);
                     if let Some(duration) = self.try_interact(&player, &new_loc) {
                         if duration > Time::zero() {
-                            let extra = Time::zero();
                             self.scheduler.player_acted(duration, &self.rng);
                         }
                     } else {
@@ -273,7 +272,7 @@ impl Game {
             }
             Command::Examine(new_loc, wizard) => {
                 let suffix = if wizard {
-                    format!(" ({})", new_loc)
+                    format!(" {}", new_loc)
                 } else {
                     "".to_string()
                 };
@@ -285,14 +284,24 @@ impl Game {
                     let descs = descs.join(", and ");
                     format!("You see {descs}{suffix}.")
                 } else if self.old_pov.get(&new_loc).is_some() {
-                    "You can no longer see there{suffix}.".to_string()
+                    format!("You can no longer see there{suffix}.")
                 } else {
-                    "You've never seen there{suffix}.".to_string()
+                    format!("You've never seen there{suffix}.")
                 };
                 self.messages.push(Message {
                     topic: Topic::Normal,
                     text,
                 });
+                if wizard {
+                    let messages: Vec<String> =
+                        self.cell_iter(&new_loc).map(|(_, obj)| format!("   {obj:?}")).collect();
+                    for text in messages.into_iter() {
+                        self.messages.push(Message {
+                            topic: Topic::Normal,
+                            text,
+                        });
+                    }
+                }
             }
         }
     }
@@ -497,7 +506,6 @@ impl Game {
             for tag1 in obj.iter() {
                 let handler = self.interactions.find_interact_handler(tag0, tag1);
                 if handler.is_some() {
-                    info!("found pre_handler for {tag0} and {tag1}");
                     return handler;
                 }
             }
@@ -878,7 +886,6 @@ impl Game {
     }
 
     fn do_shove_doorman(&mut self, oid: Oid, old_loc: &Point, ch: Oid, new_loc: &Point) {
-        info!("shove_doorman oid: {oid} ch: {ch} old_loc: {old_loc} new_loc: {new_loc}");
         self.do_move(ch, old_loc, new_loc);
         let player_loc = self.player;
         self.do_move(oid, &player_loc, old_loc);
@@ -927,7 +934,7 @@ impl Game {
             "cell at {loc} is empty (should have at least a terrain object)"
         );
 
-        // if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
+        // if let Some((_, ch)) = self.get(loc, CHARACTER_ID) { // TODO: probably want to enable this
         //     let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
         //     assert!(
         //         interactions::impassible_terrain(ch, terrain).is_none(),
