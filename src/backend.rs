@@ -749,6 +749,22 @@ impl Game {
         }
         None
     }
+
+    fn find_empty_cell(&self, ch: &Object, loc: &Point) -> Option<Point> {
+        let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        deltas.shuffle(&mut *self.rng());
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            let character = &self.get(&new_loc, CHARACTER_ID);
+            if character.is_none() {
+                let (_, terrain) = self.get_bottom(&new_loc);
+                if ch.impassible_terrain(terrain).is_none() {
+                    return Some(new_loc);
+                }
+            }
+        }
+        None
+    }
 }
 
 // Debugging support

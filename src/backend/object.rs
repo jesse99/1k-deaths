@@ -1,5 +1,5 @@
 use super::tag::*;
-use super::{Color, Material, Oid, Tag};
+use super::{Color, Material, Message, Oid, Tag, Topic};
 #[cfg(debug_assertions)]
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
@@ -91,6 +91,32 @@ impl Object {
 
     pub fn to_fg_symbol(&self) -> (Color, Symbol) {
         (self.color, self.symbol)
+    }
+
+    pub fn impassible_terrain(&self, terrain: &Object) -> Option<Message> {
+        for tag in terrain.iter() {
+            let mesg = self.impassible_terrain_tag(tag);
+            if mesg.is_some() {
+                return mesg;
+            }
+        }
+        None
+    }
+
+    pub fn impassible_terrain_tag(&self, tag: &Tag) -> Option<Message> {
+        match tag {
+            Tag::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
+            Tag::Tree => Some(Message::new(
+                Topic::Failed,
+                "The tree's are too thick to travel through.",
+            )),
+            Tag::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
+            Tag::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
+            Tag::ClosedDoor if !self.has(CAN_OPEN_DOOR_ID) => {
+                Some(Message::new(Topic::Failed, "You fail to open the door."))
+            }
+            _ => None,
+        }
     }
 }
 

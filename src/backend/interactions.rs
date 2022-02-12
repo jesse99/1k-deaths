@@ -109,7 +109,7 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Op
 
 fn player_vs_deep_water(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = impassible_terrain_tag(player, &Tag::DeepWater).unwrap();
+    let mesg = player.impassible_terrain_tag(&Tag::DeepWater).unwrap();
     game.messages.push(mesg);
     Some(Time::zero())
 }
@@ -120,7 +120,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         .any(|(_, obj)| obj.description().contains("Doom"))
     {
         let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
-        if let Some(to_loc) = find_empty_cell(game, doorman, doorman_loc) {
+        if let Some(to_loc) = game.find_empty_cell(doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
             Some(time::SHOVE_DOORMAN)
         } else {
@@ -164,21 +164,21 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 
 fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = impassible_terrain_tag(player, &Tag::Tree).unwrap();
+    let mesg = player.impassible_terrain_tag(&Tag::Tree).unwrap();
     game.messages.push(mesg);
     Some(Time::zero())
 }
 
 fn player_vs_vitr(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = impassible_terrain_tag(player, &Tag::Vitr).unwrap();
+    let mesg = player.impassible_terrain_tag(&Tag::Vitr).unwrap();
     game.messages.push(mesg);
     Some(Time::zero())
 }
 
 fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = impassible_terrain_tag(player, &Tag::Wall).unwrap();
+    let mesg = player.impassible_terrain_tag(&Tag::Wall).unwrap();
     game.messages.push(mesg);
     Some(Time::zero())
 }
@@ -213,45 +213,4 @@ fn player_vs_sign(game: &mut Game, loc: &Point) -> Time {
     };
     game.messages.push(mesg);
     Time::zero()
-}
-
-// ---- Helpers ------------------------------------------------------------
-fn impassible_terrain_tag(ch: &Object, tag: &Tag) -> Option<Message> {
-    match tag {
-        Tag::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
-        Tag::Tree => Some(Message::new(
-            Topic::Failed,
-            "The tree's are too thick to travel through.",
-        )),
-        Tag::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
-        Tag::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
-        Tag::ClosedDoor if !ch.has(CAN_OPEN_DOOR_ID) => Some(Message::new(Topic::Failed, "You fail to open the door.")),
-        _ => None,
-    }
-}
-
-pub fn impassible_terrain(ch: &Object, terrain: &Object) -> Option<Message> {
-    for tag in terrain.iter() {
-        let mesg = impassible_terrain_tag(ch, tag);
-        if mesg.is_some() {
-            return mesg;
-        }
-    }
-    None
-}
-
-fn find_empty_cell(game: &Game, ch: &Object, loc: &Point) -> Option<Point> {
-    let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
-    deltas.shuffle(&mut *game.rng());
-    for delta in deltas {
-        let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-        let character = &game.get(&new_loc, CHARACTER_ID);
-        if character.is_none() {
-            let (_, terrain) = game.get_bottom(&new_loc);
-            if impassible_terrain(ch, terrain).is_none() {
-                return Some(new_loc);
-            }
-        }
-    }
-    None
 }
