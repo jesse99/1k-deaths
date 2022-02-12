@@ -7,6 +7,7 @@ mod object;
 mod old_pov;
 mod pov;
 mod primitives;
+mod scheduler;
 mod tag;
 mod time;
 
@@ -30,9 +31,10 @@ use rand::RngCore;
 use std::cell::{RefCell, RefMut};
 // use std::os::unix::prelude::FileTypeExt;
 // use std::fs::File;
+use scheduler::Scheduler;
 use tag::*;
 use tag::{Durability, Material, Tag};
-use time::{Scheduler, Time};
+use time::Time;
 
 const MAX_MESSAGES: usize = 1000;
 
