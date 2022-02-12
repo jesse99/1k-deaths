@@ -306,7 +306,6 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
     ]
 }
 
-// TODO: Once we get rid of the doorman add CanOpenDoor.
 fn npc_tags(name: &str, tag: Tag) -> Vec<Tag> {
     vec![
         Tag::Character,

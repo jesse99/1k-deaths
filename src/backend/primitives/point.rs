@@ -23,6 +23,17 @@ impl Point {
         let dy = self.y - rhs.y;
         dx * dx + dy * dy
     }
+
+    pub fn diagnol(&self, new_loc: &Point) -> bool {
+        assert!(self != new_loc);
+
+        let dx = self.x - new_loc.x;
+        let dy = self.y - new_loc.y;
+        assert!(dx >= -1 && dx <= 1);
+        assert!(dy >= -1 && dy <= 1);
+
+        dx != 0 && dy != 0
+    }
 }
 
 impl fmt::Display for Point {

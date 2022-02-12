@@ -80,7 +80,7 @@ fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> 
         let mesg = Message::new(Topic::Important, "You have won the game!!");
         game.messages.push(mesg);
         game.state = State::WonGame;
-        Some(time::secs(10))
+        Some(time::DESTROY_EMP_SWORD)
     } else {
         None
     }
@@ -93,7 +93,7 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Op
         Some(Material::Stone) => {
             let damage = 6;
             game.do_dig(Oid(0), new_loc, oid, damage);
-            Some(time::secs(20))
+            Some(time::DIG_STONE)
         }
         Some(Material::Metal) => {
             let mesg = Message::new(
@@ -101,7 +101,7 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Op
                 "Your pick-axe bounces off the metal wall doing no damage.",
             );
             game.messages.push(mesg);
-            Some(time::secs(3))
+            Some(time::SCRATCH_METAL)
         }
         None => panic!("Walls should always have a Material"),
     }
@@ -123,7 +123,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = find_empty_cell(game, doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
-            Some(time::secs(8))
+            Some(time::SHOVE_DOORMAN)
         } else {
             Some(Time::zero())
         }
@@ -138,7 +138,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
 fn player_vs_rhulad(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Option<Time> {
     let oid = game.get(new_loc, CHARACTER_ID).unwrap().0;
     game.do_fight_rhulad(Oid(0), new_loc, oid);
-    Some(time::secs(30))
+    Some(time::FIGHT_RHULAD)
 }
 
 fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> Option<Time> {
@@ -161,7 +161,7 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 
     let mesg = Message::new(Topic::NPCSpeaks, text);
     game.messages.push(mesg);
-    Some(time::secs(2))
+    Some(time::SPEAK_TO_SPECTATOR)
 }
 
 fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
@@ -188,14 +188,14 @@ fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Opti
 fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> Option<Time> {
     let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
     game.do_open_door(Oid(0), player_loc, new_loc, oid);
-    Some(time::secs(20))
+    Some(time::OPEN_DOOR)
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------
 fn player_vs_portable(game: &mut Game, loc: &Point) -> Time {
     let oid = game.get(loc, PORTABLE_ID).unwrap().0;
     game.do_pick_up(Oid(0), loc, oid);
-    time::secs(5)
+    time::PICK_UP
 }
 
 fn player_vs_shallow_water(game: &mut Game, _loc: &Point) -> Time {
@@ -204,7 +204,7 @@ fn player_vs_shallow_water(game: &mut Game, _loc: &Point) -> Time {
 
     // TODO: Some NPCs should not have a penalty (or maybe even be faster)
     // TODO: May change for the player as well (especially if we have any small races)
-    time::secs(1) // just a little slower
+    time::MOVE_THRU_SHALLOW_WATER // just a little slower
 }
 
 fn player_vs_sign(game: &mut Game, loc: &Point) -> Time {

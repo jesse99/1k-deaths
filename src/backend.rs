@@ -28,11 +28,11 @@ use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
-use std::os::unix::prelude::FileTypeExt;
+// use std::os::unix::prelude::FileTypeExt;
 // use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
-use time::{Scheduler, Time, Turn};
+use time::{Scheduler, Time};
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -125,8 +125,6 @@ impl Game {
             text: String::from("Press the '?' key for help."),
         });
 
-        // TODO: may want a SetAllTerrain variant to avoid a zillion events
-        // TODO: or have NewLevel take a default terrain
         let mut game = Game::new(messages, seed);
         let map = include_str!("backend/maps/start.txt");
         make::level(&mut game, map);
@@ -199,8 +197,8 @@ impl Game {
     }
 
     fn obj_acted(&mut self, oid: Oid, units: Time) -> Option<(Time, Time)> {
-        let base = time::secs(20);
-        let extra = self.flood_delay(); // TODO: rename this
+        let base = time::FLOOD;
+        let extra = self.extra_flood_delay();
         if units >= base + extra {
             let loc = self.loc(oid).unwrap();
             let obj = self.objects.get(&oid).unwrap();
@@ -219,15 +217,17 @@ impl Game {
         }
     }
 
+    // Either we need to allow the player to move or we need to re-render because an
+    // obhect did something.
     pub fn advance_time(&mut self) {
-        // TODO: this can't take a mutable game
-        // callback probably needs to return an index representing the action an object wants to take
         if Scheduler::players_turn(self) {
             self.players_move = true;
+        } else {
+            OldPoV::update(self);
+            PoV::refresh(self);
         }
     }
 
-    // TODO: move this to private items
     // TODO: need a new lookup table for this
     fn loc(&self, oid: Oid) -> Option<Point> {
         for (loc, oids) in &self.cells {
@@ -247,7 +247,7 @@ impl Game {
             Command::Move { dx, dy } => {
                 assert!(dx >= -1 && dx <= 1);
                 assert!(dy >= -1 && dy <= 1);
-                assert!(dx != 0 || dy != 0); // TODO: should this be a short rest?
+                assert!(dx != 0 || dy != 0);
                 if self.in_progress() {
                     let player = self.player;
                     let new_loc = Point::new(player.x + dx, player.y + dy);
@@ -386,12 +386,8 @@ impl Game {
             next_id: 2,
             scheduler: Scheduler::new(),
 
-            // TODO:
-            // 1) SmallRng is not guaranteed to be portable so results may
+            // TODO: SmallRng is not guaranteed to be portable so results may
             // not be reproducible between platforms.
-            // 2) We're going to have to be able to persist the RNG. rand_pcg
-            // supports serde so that would likely work. If not we could
-            // create our own simple RNG.
             rng: RefCell::new(SmallRng::seed_from_u64(seed)),
 
             player: Point::origin(),
@@ -490,7 +486,7 @@ impl Game {
         self.rng.borrow_mut()
     }
 
-    fn flood_delay(&self) -> Time {
+    fn extra_flood_delay(&self) -> Time {
         let rng = &mut *self.rng();
         let t: i64 = 60 + rng.gen_range(0..(400 * 6));
         time::secs(t)
@@ -618,9 +614,9 @@ impl Game {
     fn schedule_new_obj(&mut self, oid: Oid) {
         let obj = self.objects.get(&oid).unwrap();
         let initial = if oid.0 == 0 {
-            time::secs(6) // enough for a move
+            time::DIAGNOL_MOVE
         } else if obj.has(SHALLOW_WATER_ID) || obj.has(DEEP_WATER_ID) {
-            Time::zero() - self.flood_delay()
+            Time::zero() - self.extra_flood_delay()
         } else {
             Time::zero()
         };
@@ -722,20 +718,9 @@ impl Game {
     where
         F: Fn(&Point) -> bool,
     {
-        let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
-        // deltas.shuffle(&mut *self.rng());
-        // for delta in deltas {
-
-        // TODO: events are supposed to encode all the info required to do the action. In
-        // particular randomized values (like damage) should be within the event. This is
-        // important because when the events are replayed the code that assembles the
-        // events is not executed so the RNG stream gets out of sync. Probably what we
-        // should do is create a new game view for events that doesn't include the rng.
-        let offset = self.next_id as usize;
-        for i in 0..deltas.len() {
-            let index = (i + offset) % deltas.len();
-            let delta = deltas[index];
-
+        let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        deltas.shuffle(&mut *self.rng());
+        for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             if predicate(&new_loc) {
                 return Some(new_loc);
@@ -807,7 +792,11 @@ impl Game {
                     let player_loc = self.player;
                     self.do_move(Oid(0), &player_loc, &newer_loc);
 
-                    let units = time::secs(5); // TODO: do better here
+                    let units = if player_loc.diagnol(&newer_loc) {
+                        time::DIAGNOL_MOVE
+                    } else {
+                        time::CARDINAL_MOVE
+                    };
                     self.scheduler.force_acted(Oid(0), units, &self.rng);
                 } else {
                     let mesg = Message {
@@ -854,7 +843,12 @@ impl Game {
 
         // TODO: player actions should be in a table so that we can ensure that they
         // schedule properly
-        let taken = time::secs(6) + self.interact_post_move(new_loc); // TODO: diagnols should be more
+        let taken = if old_loc.diagnol(new_loc) {
+            time::DIAGNOL_MOVE
+        } else {
+            time::CARDINAL_MOVE
+        };
+        let taken = taken + self.interact_post_move(new_loc);
         self.scheduler.force_acted(oid, taken, &self.rng);
     }
 
