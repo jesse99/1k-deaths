@@ -809,13 +809,13 @@ impl Game {
             "cell at {loc} is empty (should have at least a terrain object)"
         );
 
-        // if let Some((_, ch)) = self.get(loc, CHARACTER_ID) { // TODO: probably want to enable this
-        //     let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
-        //     assert!(
-        //         interactions::impassible_terrain(ch, terrain).is_none(),
-        //         "{ch} shouldn't be in {terrain}"
-        //     );
-        // }
+        if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
+            let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
+            assert!(
+                ch.impassible_terrain(terrain).is_none(),
+                "{ch} shouldn't be in {terrain}"
+            );
+        }
 
         for (i, oid) in oids.iter().enumerate() {
             let obj = self.objects.get(oid).expect("oid {oid} at {loc} is not in objects");
