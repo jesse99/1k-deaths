@@ -150,10 +150,10 @@ impl Game {
             let index = oids.iter().position(|id| *id == obj_oid).unwrap();
             oids.remove(index);
         }
-        self.mutate(&obj_loc, INVENTORY_ID, |obj| {
-            let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
-            inv.push(obj_oid);
-        });
+
+        let obj = self.get_mut(obj_loc, INVENTORY_ID).unwrap().1;
+        let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
+        inv.push(obj_oid);
     }
 
     pub fn do_shove_doorman(&mut self, oid: Oid, old_loc: &Point, ch: Oid, new_loc: &Point) {

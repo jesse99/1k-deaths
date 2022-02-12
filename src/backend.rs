@@ -451,6 +451,33 @@ impl Game {
         }
     }
 
+    fn get_mut(&mut self, loc: &Point, tag: Tid) -> Option<(Oid, &mut Object)> {
+        if !self.cells.contains_key(loc) {
+            self.add_default(loc);
+        }
+
+        let mut oid = None;
+        if let Some(oids) = self.cells.get(loc) {
+            for candidate in oids.iter().rev() {
+                let obj = self
+                    .objects
+                    .get(candidate)
+                    .expect("All objects in the level should still exist");
+                if obj.has(tag) {
+                    oid = Some(candidate);
+                    break;
+                }
+            }
+        }
+
+        if let Some(oid) = oid {
+            let obj = self.objects.get_mut(oid).unwrap();
+            return Some((*oid, obj));
+        }
+
+        None
+    }
+
     /// Typically this will be a terrain object.
     fn get_bottom(&self, loc: &Point) -> (Oid, &Object) {
         if let Some(oids) = self.cells.get(loc) {
@@ -632,39 +659,22 @@ impl Game {
         self.scheduler.add(oid, initial);
     }
 
+    fn add_default(&mut self, new_loc: &Point) {
+        let oid = Oid(self.next_id);
+        self.next_id += 1;
+        self.objects.insert(oid, self.default.clone());
+        let old_oids = self.cells.insert(*new_loc, vec![oid]);
+        assert!(old_oids.is_none());
+    }
+
     fn ensure_neighbors(&mut self, loc: &Point) {
         let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let _ = self.cells.entry(new_loc).or_insert_with(|| {
-                let oid = Oid(self.next_id);
-                self.next_id += 1;
-                self.objects.insert(oid, self.default.clone());
-                vec![oid]
-            });
-        }
-    }
-
-    // get_mut would be nicer but couldn't figure out how to write that.
-    fn mutate<F>(&mut self, loc: &Point, tag: Tid, callback: F)
-    where
-        F: Fn(&mut Object),
-    {
-        let oids = self
-            .cells
-            .get(loc)
-            .expect("get methods should only be called for valid locations");
-        for oid in oids {
-            let obj = self
-                .objects
-                .get_mut(oid)
-                .expect("All objects in the level should still exist");
-            if obj.has(tag) {
-                callback(obj);
-                return;
+            if !self.cells.contains_key(&new_loc) {
+                self.add_default(&new_loc);
             }
         }
-        panic!("Didn't find {tag} at {loc}");
     }
 
     fn destroy_object(&mut self, loc: &Point, old_oid: Oid) {
