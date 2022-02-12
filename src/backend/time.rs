@@ -66,17 +66,6 @@ pub fn secs(s: i64) -> Time {
     Time { t: s * SECS_TO_TIME }
 }
 
-pub enum Turn {
-    Player,
-    Npc,
-}
-
-pub enum TurnOld {
-    Player,
-    Npc(Oid, Time),
-    NoOne,
-}
-
 pub struct Scheduler {
     entries: Vec<Entry>,
     now: Time,

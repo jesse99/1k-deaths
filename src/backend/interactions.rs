@@ -119,7 +119,6 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         .player_inv_iter()
         .any(|(_, obj)| obj.description().contains("Doom"))
     {
-        info!("player has sword");
         let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = find_empty_cell(game, doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
@@ -128,7 +127,6 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
             Some(Time::zero())
         }
     } else {
-        info!("player does not have sword");
         let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
         game.messages.push(mesg);
         Some(Time::zero())

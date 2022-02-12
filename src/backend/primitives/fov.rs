@@ -47,19 +47,11 @@ where
         (self.visible_tile)(self.start);
         visited.insert(self.start);
 
-        // Get the dimensions of the actual field of view, making sure not to go off the map or beyond the radius.
-        let min_extent_x = if self.start.x < self.radius {
-            self.start.x
-        } else {
-            self.radius
-        };
+        // Get the dimensions of the actual field of view. Unlike the original code we
+        // allow coordinates to go negative and have no limit to their magnitude.
+        let min_extent_x = self.radius;
         let max_extent_x = self.radius;
-
-        let min_extent_y = if self.start.y < self.radius {
-            self.start.y
-        } else {
-            self.radius
-        };
+        let min_extent_y = self.radius;
         let max_extent_y = self.radius;
 
         // Northeast quadrant
@@ -75,13 +67,8 @@ where
         self.check_quadrant(&mut visited, Point::new(-1, 1), min_extent_x, max_extent_y);
     }
 
-    fn check_quadrant(
-        &mut self,
-        visited: &mut FnvHashSet<Point>,
-        delta: Point,
-        extent_x: i32,
-        extent_y: i32,
-    ) where
+    fn check_quadrant(&mut self, visited: &mut FnvHashSet<Point>, delta: Point, extent_x: i32, extent_y: i32)
+    where
         V: FnMut(Point),
         B: Fn(Point) -> bool,
     {
@@ -138,21 +125,13 @@ where
         let top_left = Point::new(x, y + 1);
         let bottom_right = Point::new(x + 1, y);
 
-        while view_index < active_views.len()
-            && active_views[view_index]
-                .steep_line
-                .below_or_collinear(bottom_right)
-        {
+        while view_index < active_views.len() && active_views[view_index].steep_line.below_or_collinear(bottom_right) {
             // The current coordinate is above the current view and is
             // ignored.  The steeper fields may need it though.
             view_index += 1
         }
 
-        if view_index == active_views.len()
-            || active_views[view_index]
-                .shallow_line
-                .above_or_collinear(top_left)
-        {
+        if view_index == active_views.len() || active_views[view_index].shallow_line.above_or_collinear(top_left) {
             // Either the current coordinate is above all of the fields
             // or it is below all of the fields.
             return;
@@ -387,8 +366,7 @@ mod tests {
         }
         let actual = visit_tiles(&original, size, radius);
 
-        let expected =
-            "\n..?????.\n...???..\n...###..\n........\n....x...\n........\n........\n........";
+        let expected = "\n..?????.\n...???..\n...###..\n........\n....x...\n........\n........\n........";
         assert_eq!(actual, expected);
     }
 
@@ -401,8 +379,7 @@ mod tests {
         original.set(Point::new(size.width / 2, 2), '#');
         let actual = visit_tiles(&original, size, radius);
 
-        let expected =
-            "\n....?...\n....?...\n....#...\n........\n....x...\n........\n........\n........";
+        let expected = "\n....?...\n....?...\n....#...\n........\n....x...\n........\n........\n........";
         assert_eq!(actual, expected);
     }
 
@@ -415,8 +392,7 @@ mod tests {
         original.set(Point::new(size.width / 2, 3), '#');
         let actual = visit_tiles(&original, size, radius);
 
-        let expected =
-            "\n....?...\n....?...\n....?...\n....#...\n....x...\n........\n........\n........";
+        let expected = "\n....?...\n....?...\n....?...\n....#...\n....x...\n........\n........\n........";
         assert_eq!(actual, expected);
     }
 
@@ -448,16 +424,8 @@ mod tests {
                 start,
                 radius,
                 visible_tile: |loc| {
-                    let value = if loc == start {
-                        'x'
-                    } else {
-                        get_symbol(old_cells, &loc)
-                    };
-                    if loc.x >= 0
-                        && loc.y >= 0
-                        && loc.x < new_cells.size().width
-                        && loc.y < new_cells.size().height
-                    {
+                    let value = if loc == start { 'x' } else { get_symbol(old_cells, &loc) };
+                    if loc.x >= 0 && loc.y >= 0 && loc.x < new_cells.size().width && loc.y < new_cells.size().height {
                         new_cells.set(loc, value);
                     }
                 },
