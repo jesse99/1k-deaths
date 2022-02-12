@@ -92,11 +92,11 @@ fn main() {
 
     // Timestamps are a poor seed but should be fine for our purposes.
     let seed = options.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
-    let (mut game, events) = match options.load {
-        Some(ref path) if options.new_game => (Game::new_game(path, seed), Vec::new()),
+    let mut game = match options.load {
+        Some(ref path) if options.new_game => Game::new_game(path, seed),
         Some(ref path) => Game::old_game(path, seed),
         None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game", seed),
-        None => (Game::new_game("saved.game", seed), Vec::new()),
+        None => Game::new_game("saved.game", seed),
     };
     {
         #[cfg(debug_assertions)]
@@ -105,6 +105,6 @@ fn main() {
         }
     }
 
-    let mut terminal = terminal::Terminal::new(game, events);
+    let mut terminal = terminal::Terminal::new(game);
     terminal.run();
 }

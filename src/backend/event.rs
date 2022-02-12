@@ -32,9 +32,7 @@ pub enum Event {
     Action(Oid, Action),
     AddObject(Point, Object), // used when building a level
     AddMessage(Message),
-    BeginConstructLevel,
     EndConstructLevel,
-    NewGame,
     StateChanged(State),
     // Note that new variants MUST be added at the end (or saved games will break).
 }
@@ -63,9 +61,7 @@ impl fmt::Display for Event {
             Action(oid, action) => write!(f, "Action({oid}, {action})"),
             AddObject(loc, obj) => write!(f, "AddObject({loc}, {obj})"),
             AddMessage(mesg) => write!(f, "AddMessage({mesg})"),
-            BeginConstructLevel => write!(f, "BeginConstructLevel"),
             EndConstructLevel => write!(f, "EndConstructLevel"),
-            NewGame => write!(f, "NewGame"),
             StateChanged(state) => write!(f, "StateChanged({state})"),
         }
     }

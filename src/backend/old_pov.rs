@@ -1,5 +1,4 @@
-use super::details::Game2;
-use super::{Event, Game, Point, Symbol};
+use super::{Game, Point, Symbol};
 use fnv::FnvHashMap;
 
 /// Locations that were visible to a character. Note that PoV overrides
@@ -19,15 +18,16 @@ impl OldPoV {
         }
     }
 
-    pub fn posting(&mut self, _game: &Game2, event: &Event) {
-        match event {
-            Event::NewGame | Event::BeginConstructLevel | Event::EndConstructLevel => {
-                self.old.clear();
-                self.edition = 0;
-            }
-            _ => (),
-        };
-    }
+    // TODO: need to do something like this
+    // pub fn posting(&mut self, _game: &Game2, event: &Event) {
+    //     match event {
+    //         Event::BeginConstructLevel | Event::EndConstructLevel => {
+    //             self.old.clear();
+    //             self.edition = 0;
+    //         }
+    //         _ => (),
+    //     };
+    // }
 
     // This can't me an ordinary method or we run into all sorts of borrowing grief.
     pub fn update(game: &mut Game) {

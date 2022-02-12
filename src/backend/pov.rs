@@ -1,7 +1,6 @@
-use super::details::Game1;
 use super::primitives::FoV;
 use super::tag::*;
-use super::{Action, Event, Game, Object, Oid, Point};
+use super::{Game, Object, Oid, Point};
 use fnv::FnvHashSet;
 
 /// Field of View for a character. These are invalidated for certain events
@@ -21,32 +20,8 @@ impl PoV {
         }
     }
 
-    // TODO: visibility checks need to be some sort action, i.e. double dispatch
-    // would it help if objects kept track of a location (point, in inv, or equipped)?
-    // or do we need to give objects a unique id? could use a new state object to track that
-    //    think we'll need something like that for stuff like ranged combat
-    //    want to be able to easily attack the same NPC even if it moved
-    pub fn posting(&mut self, _game: &Game1, event: &Event) {
-        match event {
-            Event::AddObject(_, new_obj) => {
-                if !self.dirty && obj_blocks_los(new_obj) {
-                    self.dirty = true;
-                }
-            }
-            Event::NewGame => self.dirty = true,
-            Event::BeginConstructLevel => self.dirty = true,
-            Event::EndConstructLevel => self.dirty = true,
-            Event::Action(oid, action) => {
-                match action {
-                    Action::Dig(_, _, _) => self.dirty = true,
-                    // TODO: this should dirty only if the origin changes.
-                    Action::Move(_, _) if oid.0 == 0 => self.dirty = true,
-                    Action::OpenDoor(_, _, _) => self.dirty = true,
-                    _ => (), // TODO: should we make this an exhaustive match?
-                }
-            }
-            _ => (),
-        };
+    pub fn dirty(&mut self) {
+        self.dirty = true;
     }
 
     pub fn edition(&self) -> u32 {
@@ -64,7 +39,7 @@ impl PoV {
         self.visible.contains(loc)
     }
 
-    // This can't me an ordinary method or we run into all sorts of borrowing grief.
+    // This can't be an ordinary method or we run into all sorts of borrowing grief.
     pub fn refresh(game: &mut Game) {
         if game.pov.dirty {
             let loc = game.player;

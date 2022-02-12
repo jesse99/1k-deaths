@@ -155,9 +155,6 @@ impl Game {
             Event::EndConstructLevel => {
                 self.constructing = false;
             }
-            Event::NewGame => {
-                // TODO: do we want this event?
-            }
             Event::StateChanged(state) => {
                 self.state = state;
             }
@@ -313,25 +310,6 @@ impl Game {
     fn do_open_door(&mut self, oid: Oid, ch_loc: Point, obj_loc: Point, obj_oid: Oid) {
         self.do_replace_object(obj_loc, obj_oid, super::make::open_door());
         self.do_move(oid, ch_loc, obj_loc);
-    }
-
-    fn do_pick_up(&mut self, _oid: Oid, obj_loc: Point, obj_oid: Oid) {
-        let obj = self.objects.get(&obj_oid).unwrap();
-        let name: String = obj.value(NAME_ID).unwrap();
-        let mesg = Message {
-            topic: Topic::Normal,
-            text: format!("You pick up the {name}."),
-        };
-        self.messages.push(mesg);
-        {
-            let oids = self.cells.get_mut(&obj_loc).unwrap();
-            let index = oids.iter().position(|id| *id == obj_oid).unwrap();
-            oids.remove(index);
-        }
-        self.mutate(&obj_loc, INVENTORY_ID, |obj| {
-            let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
-            inv.push(obj_oid);
-        });
     }
 
     fn do_shove_doorman(&mut self, oid: Oid, old_loc: Point, ch: Oid, new_loc: Point) {

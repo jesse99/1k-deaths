@@ -113,9 +113,7 @@ Movement is done using the numeric keypad or arrow keys:
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
-        let mut events = Vec::new();
-        game.command(Command::Move { dx, dy }, &mut events);
-        game.post_player(events);
+        game.command(Command::Move { dx, dy });
         InputAction::UpdatedGame
     }
 

@@ -210,6 +210,7 @@ impl Object {
                             | Tag::Ground
                             | Tag::ShallowWater
                             | Tag::DeepWater
+                            | Tag::Tree
                             | Tag::Vitr
                             | Tag::OpenDoor
                     )

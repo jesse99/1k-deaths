@@ -22,7 +22,7 @@
 // perform an action. When an object does an action the time it takes is given to all the
 // other objects. So a wizard who casts a long spell may have to wait a while to cast it
 // and once it goes off everything else will be able to do quite a lot.
-use super::{Event, Oid};
+use super::Oid;
 use rand::rngs::SmallRng;
 use rand::Rng;
 use rand_distr::StandardNormal;
@@ -51,7 +51,7 @@ pub fn secs(s: i64) -> Time {
 
 pub enum Turn {
     Player,
-    Npc(Oid, Event, Time),
+    Npc(Oid, Time),
     NoOne,
 }
 
@@ -72,9 +72,15 @@ impl Scheduler {
     /// units. That way the player will always have the first move. Other objects may
     /// start out with a negative time so that they execute some time in the future.
     pub fn add(&mut self, oid: Oid, initial: Time) {
-        debug_assert!(!self.entries.iter().any(|entry| entry.oid == oid), "{oid} is already scheduled!");
+        debug_assert!(
+            !self.entries.iter().any(|entry| entry.oid == oid),
+            "{oid} is already scheduled!"
+        );
         if oid.0 == 0 {
-            assert!(initial.t >= SECS_TO_TIME, "player should start out with positive time units");
+            assert!(
+                initial.t >= SECS_TO_TIME,
+                "player should start out with positive time units"
+            );
         } else {
             assert!(initial.t <= 0, "NPCs should start out with zero or negative time units");
         }
@@ -94,18 +100,18 @@ impl Scheduler {
     /// Find an object that wants to do an action. The callback is given an oid with the
     /// amount of time the associated object has available. if the object elects to peform
     /// an action then it should return an event along with the duration of the event.
-    /// 
-    /// If this function returns Turn::Player then the UI will block for user input (note 
-    /// that the player has an advantage because he is allowed to take a big action whenever 
-    /// he has some time available. However he will go into the negative so other NPCs will 
+    ///
+    /// If this function returns Turn::Player then the UI will block for user input (note
+    /// that the player has an advantage because he is allowed to take a big action whenever
+    /// he has some time available. However he will go into the negative so other NPCs will
     /// have a lot of time to take their own actions).
-    /// 
+    ///
     /// If this function returns Turn::Npc then an NPC (or more rarely some other sort of
     /// object) will perform an Action. If this function returns NoOne then either no one
     /// had enough time for an action or everyone elected to wait for more time units.
     pub fn find_actor<F>(&self, rng: &RefCell<SmallRng>, callback: F) -> Turn
     where
-        F: Fn(Oid, Time) -> Option<(Event, Time)>,
+        F: Fn(Oid, Time) -> Option<Time>,
     {
         let offset = {
             let rng = &mut *rng.borrow_mut();
@@ -118,11 +124,11 @@ impl Scheduler {
                 if entry.oid.0 == 0 {
                     // info!("{index}: scheduling player");
                     return Turn::Player;
-                } else if let Some((event, duration)) = callback(entry.oid, entry.units) {
+                } else if let Some(duration) = callback(entry.oid, entry.units) {
                     assert!(duration.t >= SECS_TO_TIME);
                     assert!(duration <= entry.units);
                     // info!("{index}: scheduling {}", entry.oid);
-                    return Turn::Npc(entry.oid, event, duration);
+                    return Turn::Npc(entry.oid, duration);
                 } else {
                     // info!("{index}: {} only had {} time units", entry.oid, entry.units);
                 }

@@ -1,68 +1,64 @@
 use super::*;
 use rand::prelude::*;
 
-fn add(loc: Point, obj: Object, events: &mut Vec<Event>) {
-    events.push(Event::AddObject(loc, obj))
-}
-
-pub fn level(game: &Game, map: &str, events: &mut Vec<Event>) {
+pub fn level(game: &mut Game, map: &str) {
     let mut loc = Point::origin();
     for ch in map.chars() {
         // TODO: If we keep these level files we may want to add a symbol
         // mapping section so that characters can do things like refer to
         // different uniques.
         match ch {
-            ' ' => add(loc, dirt(), events),
-            '#' => add(loc, stone_wall(), events),
-            'M' => add(loc, metal_wall(), events),
-            '+' => add(loc, closed_door(), events),
-            '~' => add(loc, shallow_water(), events),
-            'V' => add(loc, vitr(), events),
-            'T' => add(loc, tree(), events),
-            'W' => add(loc, deep_water(), events),
+            ' ' => game.init_cell(loc, dirt()),
+            '#' => game.init_cell(loc, stone_wall()),
+            'M' => game.init_cell(loc, metal_wall()),
+            '+' => game.init_cell(loc, closed_door()),
+            '~' => game.init_cell(loc, shallow_water()),
+            'V' => game.init_cell(loc, vitr()),
+            'T' => game.init_cell(loc, tree()),
+            'W' => game.init_cell(loc, deep_water()),
             'P' => {
-                add(loc, dirt(), events);
-                add(loc, player(), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, player());
             }
             'D' => {
-                add(loc, dirt(), events);
-                add(loc, doorman(), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, doorman());
             }
             'o' => {
-                add(loc, dirt(), events);
-                add(loc, spectator(), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, spectator());
             }
             'R' => {
-                add(loc, dirt(), events);
-                add(loc, rhulad(), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, rhulad());
             }
             's' => {
-                add(loc, dirt(), events);
-                add(loc, weak_sword(game), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, weak_sword(game));
             }
             'p' => {
-                add(loc, dirt(), events);
-                add(loc, pick_axe(), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, pick_axe());
             }
             'S' => {
-                add(loc, dirt(), events);
-                add(loc, mighty_sword(), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, mighty_sword());
             }
             'a' => {
-                add(loc, dirt(), events);
-                add(loc, sign("the Lesser Armory"), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, sign("the Lesser Armory"));
             }
             'b' => {
-                add(loc, dirt(), events);
-                add(loc, sign("the Greater Armory"), events);
+                game.init_cell(loc, dirt());
+                game.init_cell(loc, sign("the Greater Armory"));
             }
             '\n' => (),
             _ => {
-                add(loc, dirt(), events);
-                events.push(Event::AddMessage(Message {
+                game.init_cell(loc, dirt());
+                game.messages.push(Message {
                     topic: Topic::Error,
                     text: format!("Ignoring map char '{ch}'"),
-                }));
+                });
             }
         }
         if ch == '\n' {

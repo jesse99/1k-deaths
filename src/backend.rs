@@ -1,6 +1,5 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
-mod event;
-mod events;
+// mod events;
 mod interactions;
 mod make;
 mod message;
@@ -11,7 +10,6 @@ mod primitives;
 mod tag;
 mod time;
 
-pub use event::Event; // this is here for the show events wizard command
 pub use message::{Message, Topic};
 pub use object::Symbol;
 pub use primitives::Color;
@@ -19,11 +17,10 @@ pub use primitives::Point;
 pub use primitives::Size;
 
 use derive_more::Display;
-use event::Action;
 use fnv::FnvHashMap;
 #[cfg(debug_assertions)]
 use fnv::FnvHashSet;
-use interactions::Interactions;
+use interactions::{Interactions, PreHandler};
 use object::{Object, TagValue};
 use old_pov::OldPoV;
 use pov::PoV;
@@ -31,6 +28,7 @@ use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
+use std::os::unix::prelude::FileTypeExt;
 // use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
@@ -76,9 +74,8 @@ pub enum State {
 pub struct Game {
     // stream: Vec<Event>, // used to reconstruct games
     // file: Option<File>, // events are perodically saved here
-    state: State,  // game milestones, eg won game
-    posting: bool, // prevents re-entrant posting events
-    next_id: u64,  // 0 is the player
+    state: State, // game milestones, eg won game
+    next_id: u64, // 0 is the player
     rng: RefCell<SmallRng>,
     scheduler: Scheduler,
 
@@ -91,10 +88,8 @@ pub struct Game {
 
     messages: Vec<Message>,     // messages shown to the player
     interactions: Interactions, // double dispatch action tables, e.g. player vs door
-
-    pov: PoV,        // locations that the player can currently see
-    old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
-
+    pov: PoV,                   // locations that the player can currently see
+    old_pov: OldPoV,            // locations that the user has seen in the past (this will often be stale data)
     #[cfg(debug_assertions)]
     invariants: bool, // if true then expensive checks are enabled
 }
@@ -103,7 +98,7 @@ pub struct Game {
 impl Game {
     /// Start a brand new game and save it to path.
     pub fn new_game(path: &str, seed: u64) -> Game {
-        let messages = Vec::new();
+        let mut messages = Vec::new();
 
         info!("new {path}");
         // let file = match persistence::new_game(path) {
@@ -117,40 +112,33 @@ impl Game {
         //     }
         // };
 
-        let mut events = Vec::new();
-        events.reserve(1000); // TODO: probably should tune this
-
-        events.push(Event::NewGame);
-        events.push(Event::BeginConstructLevel);
-        events.push(Event::AddMessage(Message {
+        messages.push(Message {
             topic: Topic::Important,
             text: String::from("Welcome to 1k-deaths!"),
-        }));
-        events.push(Event::AddMessage(Message {
+        });
+        messages.push(Message {
             topic: Topic::Important,
-            text: String::from("Are you the hero will will destroy the Crippled God's sword?"),
-        }));
-        events.push(Event::AddMessage(Message {
+            text: String::from("Are you the hero who will destroy the Crippled God's sword?"),
+        });
+        messages.push(Message {
             topic: Topic::Important,
             text: String::from("Press the '?' key for help."),
-        }));
+        });
 
         // TODO: may want a SetAllTerrain variant to avoid a zillion events
         // TODO: or have NewLevel take a default terrain
         let mut game = Game::new(messages, seed);
         let map = include_str!("backend/maps/start.txt");
-        make::level(&game, map, &mut events);
-        events.push(Event::EndConstructLevel);
-
-        game.post(events, false);
+        make::level(&mut game, map);
+        OldPoV::update(&mut game);
+        PoV::refresh(&mut game);
+        game.constructing = false;
         game
     }
 
     /// Load a saved game and return the events so that they can be replayed.
-    pub fn old_game(path: &str, seed: u64) -> (Game, Vec<Event>) {
-        let mut events = Vec::new();
-
-        let messages = Vec::new();
+    pub fn old_game(path: &str, seed: u64) -> Game {
+        // let messages = Vec::new();
         // let mut file = None;
         // info!("loading {path}");
         // match persistence::load_game(path) {
@@ -183,11 +171,7 @@ impl Game {
         // } else {
         let mut game = Game::new_game(path, seed);
 
-        events.clear();
-        events.extend(messages.into_iter().map(Event::AddMessage));
-        game.post(events, false);
-
-        (game, Vec::new())
+        game
         // }
     }
 
@@ -199,10 +183,6 @@ impl Game {
             iter.skip(0)
         }
     }
-
-    // pub fn events(&self) -> Vec<String> {
-    //     self.stream.iter().map(|e| format!("{:?}", e)).collect()
-    // }
 
     pub fn player(&self) -> Point {
         self.player
@@ -221,43 +201,32 @@ impl Game {
     pub fn advance_time(&mut self) {
         let turn = self.scheduler.find_actor(&self.rng, |oid, units| {
             // TODO: need to replace this with a table lookup
-            let loc = self.loc(oid).unwrap();
-            let obj = self.objects.get(&oid).unwrap();
-            let action = if obj.has(DEEP_WATER_ID) {
-                Action::FloodDeep(loc)
-            } else {
-                Action::FloodShallow(loc)
-            };
-            let duration = self.duration(action);
-            let event = Event::Action(oid, action);
-            if duration <= units {
-                Some((event, duration))
-            } else {
-                None
-            }
+            // let loc = self.loc(oid).unwrap();
+            // let obj = self.objects.get(&oid).unwrap();
+            // let action = if obj.has(DEEP_WATER_ID) {
+            //     Action::FloodDeep(loc)
+            // } else {
+            //     Action::FloodShallow(loc)
+            // };
+            // let duration = self.duration(action);
+            // let event = Event::Action(oid, action);
+            // if duration <= units {
+            //     Some((event, duration))
+            // } else {
+            // TODO: call invariant
+            None
+            // }
         });
         match turn {
             Turn::Player => self.players_move = true,
-            Turn::Npc(oid, event, duration) => {
-                let extra = self.extra_duration(&event);
-                self.post(vec![event], false);
+            Turn::Npc(oid, duration) => {
+                // let extra = self.extra_duration(&event);
+                // self.post(vec![event], false);
+                let extra = Time::zero();
                 self.scheduler.acted(oid, duration, extra, &self.rng);
             }
             Turn::NoOne => self.scheduler.not_acted(),
         }
-    }
-
-    pub fn post_player(&mut self, events: Vec<Event>) {
-        if events.iter().any(|event| {
-            if let Event::Action(_, action) = event {
-                self.duration(*action) > Time::zero()
-            } else {
-                false
-            }
-        }) {
-            self.players_move = false;
-        }
-        self.post(events, false);
     }
 
     // TODO: move this to private items
@@ -273,7 +242,7 @@ impl Game {
         None
     }
 
-    pub fn command(&self, command: Command, events: &mut Vec<Event>) {
+    pub fn command(&mut self, command: Command) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
         match command {
@@ -284,10 +253,20 @@ impl Game {
                 if self.in_progress() {
                     let player = self.player;
                     let new_loc = Point::new(player.x + dx, player.y + dy);
-                    if !self.scheduled_interaction(&player, &new_loc, events) {
-                        let action = Action::Move(self.player, new_loc);
-                        events.push(Event::Action(Oid(0), action));
+                    if let Some(duration) = self.try_interact(&player, &new_loc) {
+                        if duration > Time::zero() {
+                            let extra = Time::zero();
+                            self.scheduler.acted(Oid(0), duration, extra, &self.rng);
+                        }
+                    } else {
+                        let old_loc = self.player;
+                        self.do_move(Oid(0), &old_loc, &new_loc);
                     }
+                    self.players_move = false;
+
+                    OldPoV::update(self);
+                    PoV::refresh(self);
+                    self.invariant();
                 }
             }
             Command::Examine(new_loc, wizard) => {
@@ -308,10 +287,10 @@ impl Game {
                 } else {
                     "You've never seen there{suffix}.".to_string()
                 };
-                events.push(Event::AddMessage(Message {
+                self.messages.push(Message {
                     topic: Topic::Normal,
                     text,
-                }));
+                });
             }
         }
     }
@@ -402,7 +381,6 @@ impl Game {
             // stream: Vec::new(),
             // file,
             state: State::Adventuring,
-            posting: false,
             next_id: 2,
             scheduler: Scheduler::new(),
 
@@ -423,10 +401,8 @@ impl Game {
 
             messages,
             interactions: Interactions::new(),
-
             pov: PoV::new(),
             old_pov: OldPoV::new(),
-
             #[cfg(debug_assertions)]
             invariants: false,
         }
@@ -512,87 +488,328 @@ impl Game {
         self.rng.borrow_mut()
     }
 
-    fn duration(&self, action: Action) -> Time {
-        use Action::*;
-        match action {
-            Dig(_, _, _) => time::secs(20),
-            FightRhulad(_, _) => time::secs(30),
-            FloodDeep(_) => time::secs(12),
-            FloodShallow(_) => time::secs(12),
-            Move(old, new) if old.distance2(&new) == 1 => time::secs(4),
-            Move(_, _) => time::secs(6), // TODO: should be 5.6
-            OpenDoor(_, _, _) => time::secs(20),
-            PickUp(_, _) => time::secs(5),
-            ShoveDoorman(_, _, _) => time::secs(8),
-        }
-    }
-
-    fn extra_duration(&self, event: &Event) -> Time {
-        use Action::*;
-        if let Event::Action(_, action) = event {
-            match action {
-                FloodDeep(_) => self.flood_delay(),
-                FloodShallow(_) => self.flood_delay(),
-                _ => Time::zero(),
-            }
-        } else {
-            Time::zero()
-        }
-    }
-
     fn flood_delay(&self) -> Time {
         let rng = &mut *self.rng();
         let t: i64 = 60 + rng.gen_range(0..(600 * 6));
         time::secs(t)
     }
 
-    fn scheduled_interaction_with_tag(
-        &self,
-        tag0: &Tag,
-        player_loc: &Point,
-        new_loc: &Point,
-        events: &mut Vec<Event>,
-    ) -> bool {
+    fn find_interact_handler(&self, tag0: &Tag, new_loc: &Point) -> Option<PreHandler> {
         for (_, obj) in self.cell_iter(new_loc) {
             for tag1 in obj.iter() {
-                if self
-                    .interactions
-                    .scheduled_interaction(tag0, tag1, self, player_loc, new_loc, events)
-                {
-                    return true;
+                let handler = self.interactions.find_interact_handler(tag0, tag1);
+                if handler.is_some() {
+                    info!("found pre_handler for {tag0} and {tag1}");
+                    return handler;
                 }
             }
         }
-        false
+        None
     }
 
     // Player attempting to interact with an adjacent cell.
-    fn scheduled_interaction(&self, player_loc: &Point, new_loc: &Point, events: &mut Vec<Event>) -> bool {
+    fn try_interact(&mut self, player_loc: &Point, new_loc: &Point) -> Option<Time> {
+        let mut handler = None;
+
         // First see if an inventory item can interact with the new cell.
-        for (_, obj) in self.player_inv_iter() {
-            for tag0 in obj.iter() {
-                if self.scheduled_interaction_with_tag(tag0, player_loc, new_loc, events) {
-                    return true;
+        {
+            'outer: for (_, obj) in self.player_inv_iter() {
+                for tag0 in obj.iter() {
+                    handler = self.find_interact_handler(tag0, new_loc);
+                    if handler.is_some() {
+                        break 'outer;
+                    }
                 }
             }
         }
 
-        // Failing that see if the player itself can interact with the cell.
-        if self.scheduled_interaction_with_tag(&Tag::Player, player_loc, new_loc, events) {
-            return true;
+        if handler.is_some() {
+            if let Some(duration) = handler.unwrap()(self, player_loc, new_loc) {
+                assert!(duration >= Time::zero());
+                return Some(duration);
+            }
         }
-        false
+
+        // If we couldn't find a handler for an item or that handler returned None then
+        // see if the player itself can interact with the cell.
+        handler = self.find_interact_handler(&Tag::Player, new_loc);
+        if handler.is_some() {
+            let duration = handler.unwrap()(self, player_loc, new_loc);
+            assert!(duration.is_none() || duration.unwrap() >= Time::zero());
+            duration
+        } else {
+            None
+        }
     }
 
     // Player interacting with a cell he has just moved into.
-    fn interact_post_move(&self, new_loc: &Point, events: &mut Vec<Event>) {
-        let oids = self.cells.get(new_loc).unwrap();
-        for oid in oids.iter().rev() {
-            let obj = self.objects.get(oid).unwrap();
-            for tag in obj.iter() {
-                self.interactions.post_move(tag, self, new_loc, events)
+    fn interact_post_move(&mut self, new_loc: &Point) -> Time {
+        let mut handlers = Vec::new();
+        {
+            let oids = self.cells.get(new_loc).unwrap();
+            for oid in oids.iter().rev() {
+                let obj = self.objects.get(oid).unwrap();
+                for tag in obj.iter() {
+                    if let Some(handler) = self.interactions.find_post_handler(&Tag::Player, tag) {
+                        handlers.push(*handler);
+                    }
+                }
             }
         }
+
+        let mut extra = Time::zero();
+        for handler in handlers.into_iter() {
+            extra = extra + handler(self, new_loc);
+        }
+        extra
+    }
+
+    fn init_cell(&mut self, loc: Point, obj: Object) {
+        let scheduled = obj.has(SCHEDULED_ID);
+        let oid = if obj.has(PLAYER_ID) {
+            self.player = loc;
+            self.create_player(&loc, obj)
+        } else {
+            let oid = self.create_object(obj);
+            let oids = self.cells.entry(loc).or_insert_with(Vec::new);
+            oids.push(oid);
+            oid
+        };
+        if scheduled {
+            self.schedule_new_obj(oid);
+        }
+    }
+
+    fn add_object(&mut self, loc: &Point, obj: Object) {
+        let scheduled = obj.has(SCHEDULED_ID);
+        let oid = if obj.has(PLAYER_ID) {
+            self.player = *loc;
+            self.create_player(&loc, obj)
+        } else {
+            let oid = self.create_object(obj);
+            let oids = self.cells.entry(*loc).or_insert_with(Vec::new);
+            oids.push(oid);
+            oid
+        };
+        if scheduled {
+            self.schedule_new_obj(oid);
+        }
+    }
+
+    // This does not update cells (the object may go elsewhere).
+    fn create_object(&mut self, obj: Object) -> Oid {
+        let oid = Oid(self.next_id);
+        self.next_id += 1;
+        self.objects.insert(oid, obj); // TODO: dirty pov?
+        oid
+    }
+
+    fn create_player(&mut self, loc: &Point, obj: Object) -> Oid {
+        let oid = Oid(0);
+        self.objects.insert(oid, obj);
+
+        let oids = self.cells.entry(*loc).or_insert_with(Vec::new);
+        oids.push(oid);
+        oid
+    }
+
+    fn schedule_new_obj(&mut self, oid: Oid) {
+        let obj = self.objects.get(&oid).unwrap();
+        let initial = if oid.0 == 0 {
+            time::secs(6) // enough for a move
+        } else if obj.has(SHALLOW_WATER_ID) || obj.has(DEEP_WATER_ID) {
+            Time::zero() - self.flood_delay()
+        } else {
+            Time::zero()
+        };
+        self.scheduler.add(oid, initial);
+    }
+
+    fn ensure_neighbors(&mut self, loc: &Point) {
+        let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            let _ = self.cells.entry(new_loc).or_insert_with(|| {
+                let oid = Oid(self.next_id);
+                self.next_id += 1;
+                self.objects.insert(oid, self.default.clone());
+                vec![oid]
+            });
+        }
+    }
+
+    // get_mut would be nicer but couldn't figure out how to write that.
+    fn mutate<F>(&mut self, loc: &Point, tag: Tid, callback: F)
+    where
+        F: Fn(&mut Object),
+    {
+        let oids = self
+            .cells
+            .get(loc)
+            .expect("get methods should only be called for valid locations");
+        for oid in oids {
+            let obj = self
+                .objects
+                .get_mut(oid)
+                .expect("All objects in the level should still exist");
+            if obj.has(tag) {
+                callback(obj);
+                return;
+            }
+        }
+        panic!("Didn't find {tag} at {loc}");
+    }
+
+    fn destroy_object(&mut self, loc: &Point, old_oid: Oid) {
+        let obj = self.objects.get(&old_oid).unwrap();
+        if obj.has(SCHEDULED_ID) {
+            self.scheduler.remove(old_oid);
+        }
+
+        let oids = self.cells.get_mut(&loc).unwrap();
+        let index = oids.iter().position(|id| *id == old_oid).unwrap();
+        if obj.has(TERRAIN_ID) {
+            // Terrain cannot be destroyed but has to be mutated into something else.
+            let new_obj = if obj.has(WALL_ID) {
+                make::rubble()
+            } else {
+                error!("Need to better handle destroying Tid {obj}"); // Doors, trees, etc
+                make::dirt()
+            };
+            let scheduled = new_obj.has(SCHEDULED_ID);
+
+            let new_oid = Oid(self.next_id);
+            self.next_id += 1;
+            self.objects.insert(new_oid, new_obj);
+            oids[index] = new_oid;
+
+            if scheduled {
+                self.schedule_new_obj(new_oid);
+            }
+
+            // The player may now be able to see through this cell so we need to ensure
+            // that cells around it exist now. TODO: probably should have a LOS changed
+            // check.
+            self.ensure_neighbors(&loc);
+        } else {
+            // If it's just a normal object or character we can just nuke the object.
+            oids.remove(index);
+        }
+        self.objects.remove(&old_oid);
+    }
+
+    fn replace_object(&mut self, loc: &Point, old_oid: Oid, new_obj: Object) {
+        let old_obj = self.objects.get(&old_oid).unwrap();
+        if old_obj.has(SCHEDULED_ID) {
+            self.scheduler.remove(old_oid);
+        }
+
+        let scheduled = new_obj.has(SCHEDULED_ID);
+        let new_oid = self.create_object(new_obj);
+        let oids = self.cells.get_mut(&loc).unwrap();
+        let index = oids.iter().position(|id| *id == old_oid).unwrap();
+        oids[index] = new_oid;
+        self.objects.remove(&old_oid);
+
+        if scheduled {
+            self.schedule_new_obj(new_oid);
+        }
+    }
+
+    fn do_dig(&mut self, _oid: Oid, obj_loc: &Point, obj_oid: Oid, damage: i32) {
+        assert!(damage > 0);
+
+        let (damage, durability) = {
+            let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
+            let durability: Durability = obj.value(DURABILITY_ID).unwrap();
+            (durability.max / damage, durability)
+        };
+
+        if damage < durability.current {
+            let mesg = Message::new(
+                Topic::Normal,
+                "You chip away at the wall with your pick-axe.", // TODO: probably should have slightly differet text for wooden walls (if we ever add them)
+            );
+            self.messages.push(mesg);
+
+            let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
+            let mut obj = obj.clone();
+            obj.replace(Tag::Durability(Durability {
+                current: durability.current - damage,
+                max: durability.max,
+            }));
+            self.replace_object(obj_loc, obj_oid, obj);
+        } else {
+            let mesg = Message::new(Topic::Important, "You destroy the wall!");
+            self.messages.push(mesg);
+            self.destroy_object(obj_loc, obj_oid);
+            self.pov.dirty();
+        }
+    }
+
+    fn do_fight_rhulad(&mut self, _oid: Oid, char_loc: &Point, ch: Oid) {
+        let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
+        self.messages.push(mesg);
+
+        self.destroy_object(char_loc, ch);
+        self.add_object(char_loc, make::emp_sword());
+        self.state = State::KilledRhulad;
+    }
+
+    fn do_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
+        assert!(!self.constructing); // make sure this is reset once things start happening
+
+        let oids = self.cells.get_mut(&old_loc).unwrap();
+        let index = oids
+            .iter()
+            .position(|id| *id == oid)
+            .expect(&format!("expected {oid} at {old_loc}"));
+        oids.remove(index);
+        let cell = self.cells.entry(*new_loc).or_insert_with(Vec::new);
+        cell.push(oid);
+
+        if oid.0 == 0 {
+            self.player = *new_loc;
+            self.pov.dirty();
+        }
+
+        // TODO: player actions should be in a table so that we can ensure that they
+        // schedule properly
+        let taken = time::secs(6) + self.interact_post_move(new_loc); // TODO: diagnols should be more
+        let extra = Time::zero();
+        self.scheduler.acted(oid, taken, extra, &self.rng);
+    }
+
+    fn do_open_door(&mut self, oid: Oid, ch_loc: &Point, obj_loc: &Point, obj_oid: Oid) {
+        self.replace_object(obj_loc, obj_oid, make::open_door());
+        self.do_move(oid, ch_loc, obj_loc);
+        self.pov.dirty();
+    }
+
+    fn do_pick_up(&mut self, _oid: Oid, obj_loc: &Point, obj_oid: Oid) {
+        let obj = self.objects.get(&obj_oid).unwrap();
+        let name: String = obj.value(NAME_ID).unwrap();
+        let mesg = Message {
+            topic: Topic::Normal,
+            text: format!("You pick up the {name}."),
+        };
+        self.messages.push(mesg);
+        {
+            let oids = self.cells.get_mut(&obj_loc).unwrap();
+            let index = oids.iter().position(|id| *id == obj_oid).unwrap();
+            oids.remove(index);
+        }
+        self.mutate(&obj_loc, INVENTORY_ID, |obj| {
+            let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
+            inv.push(obj_oid);
+        });
+    }
+
+    fn do_shove_doorman(&mut self, oid: Oid, old_loc: &Point, ch: Oid, new_loc: &Point) {
+        info!("shove_doorman oid: {oid} ch: {ch} old_loc: {old_loc} new_loc: {new_loc}");
+        self.do_move(ch, old_loc, new_loc);
+        let player_loc = self.player;
+        self.do_move(oid, &player_loc, old_loc);
     }
 }
 
@@ -638,13 +855,13 @@ impl Game {
             "cell at {loc} is empty (should have at least a terrain object)"
         );
 
-        if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
-            let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
-            assert!(
-                interactions::impassible_terrain(ch, terrain).is_none(),
-                "{ch} shouldn't be in {terrain}"
-            );
-        }
+        // if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
+        //     let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
+        //     assert!(
+        //         interactions::impassible_terrain(ch, terrain).is_none(),
+        //         "{ch} shouldn't be in {terrain}"
+        //     );
+        // }
 
         for (i, oid) in oids.iter().enumerate() {
             let obj = self.objects.get(oid).expect("oid {oid} at {loc} is not in objects");
@@ -729,22 +946,6 @@ impl Game {
         for obj in self.objects.values() {
             obj.invariant();
         }
-    }
-}
-
-mod details {
-    use super::{FnvHashMap, Object, Oid, PoV, Point};
-
-    /// View into game after posting an event to Level.
-    pub struct Game1<'a> {
-        pub objects: &'a FnvHashMap<Oid, Object>,
-        pub cells: &'a FnvHashMap<Point, Vec<Oid>>,
-    }
-
-    pub struct Game2<'a> {
-        pub objects: &'a FnvHashMap<Oid, Object>,
-        pub cells: &'a FnvHashMap<Point, Vec<Oid>>,
-        pub pov: &'a PoV,
     }
 }
 
