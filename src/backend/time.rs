@@ -117,7 +117,7 @@ impl Scheduler {
             let rng = &mut *game.rng.borrow_mut();
             rng.gen_range(0..game.scheduler.entries.len())
         };
-        for i in 0..100 {
+        for _ in 0..100 {
             for i in 0..game.scheduler.entries.len() {
                 let index = (i + offset) % game.scheduler.entries.len();
                 let entry = game.scheduler.entries[index];
