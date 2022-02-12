@@ -587,6 +587,7 @@ impl Game {
     }
 
     fn add_object(&mut self, loc: &Point, obj: Object) {
+        trace!("adding {obj} to {loc}");
         let scheduled = obj.has(SCHEDULED_ID);
         let oid = if obj.has(PLAYER_ID) {
             self.player = *loc;
@@ -668,6 +669,7 @@ impl Game {
 
     fn destroy_object(&mut self, loc: &Point, old_oid: Oid) {
         let obj = self.objects.get(&old_oid).unwrap();
+        trace!("destroying {obj} at {loc}");
         if obj.has(SCHEDULED_ID) {
             self.scheduler.remove(old_oid);
         }
@@ -706,6 +708,7 @@ impl Game {
 
     fn replace_object(&mut self, loc: &Point, old_oid: Oid, new_obj: Object) {
         let old_obj = self.objects.get(&old_oid).unwrap();
+        trace!("replacing {old_obj} at {loc} with {new_obj}");
         if old_obj.has(SCHEDULED_ID) {
             self.scheduler.remove(old_oid);
         }
@@ -745,6 +748,7 @@ impl Game {
             let durability: Durability = obj.value(DURABILITY_ID).unwrap();
             (durability.max / damage, durability)
         };
+        debug!("digging at {obj_loc} for {damage} damage");
 
         if damage < durability.current {
             let mesg = Message::new(
@@ -769,6 +773,7 @@ impl Game {
     }
 
     fn do_fight_rhulad(&mut self, _oid: Oid, char_loc: &Point, ch: Oid) {
+        debug!("fighting Rhulad at {char_loc}");
         let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
         self.messages.push(mesg);
 
@@ -781,6 +786,7 @@ impl Game {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
             self.get(candidate, GROUND_ID).is_some() || self.get(candidate, SHALLOW_WATER_ID).is_some()
         }) {
+            debug!("flood deep from {loc} to {new_loc}");
             let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
             self.replace_object(&new_loc, bad_oid, make::deep_water());
 
@@ -824,6 +830,7 @@ impl Game {
 
     fn do_flood_shallow(&mut self, oid: Oid, loc: Point) {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.get(candidate, GROUND_ID).is_some()) {
+            debug!("flood shallow from {loc} to {new_loc}");
             let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
             self.replace_object(&new_loc, bad_oid, make::shallow_water());
         } else {
@@ -834,6 +841,7 @@ impl Game {
 
     fn do_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
         assert!(!self.constructing); // make sure this is reset once things start happening
+        debug!("{oid} moving from {old_loc} to {new_loc}");
 
         let oids = self.cells.get_mut(&old_loc).unwrap();
         let index = oids
@@ -861,13 +869,15 @@ impl Game {
     }
 
     fn do_open_door(&mut self, oid: Oid, ch_loc: &Point, obj_loc: &Point, obj_oid: Oid) {
+        debug!("{oid} is opening the door at {obj_loc}");
         self.replace_object(obj_loc, obj_oid, make::open_door());
         self.do_move(oid, ch_loc, obj_loc);
         self.pov.dirty();
     }
 
-    fn do_pick_up(&mut self, _oid: Oid, obj_loc: &Point, obj_oid: Oid) {
+    fn do_pick_up(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid) {
         let obj = self.objects.get(&obj_oid).unwrap();
+        debug!("{oid} is picking up {obj} at {obj_loc}");
         let name: String = obj.value(NAME_ID).unwrap();
         let mesg = Message {
             topic: Topic::Normal,
@@ -886,6 +896,7 @@ impl Game {
     }
 
     fn do_shove_doorman(&mut self, oid: Oid, old_loc: &Point, ch: Oid, new_loc: &Point) {
+        debug!("shoving doorman from {old_loc} to {new_loc}");
         self.do_move(ch, old_loc, new_loc);
         let player_loc = self.player;
         self.do_move(oid, &player_loc, old_loc);
