@@ -19,7 +19,9 @@ impl MessagesView {
             // Pad the string out to the full terminal width so that the back
             // color of the line is correct.
             let mut text = message.text.clone();
-            text.push_str(&String::from(' ').repeat(self.size.width as usize - text.len()));
+            if self.size.width as usize > text.len() {
+                text.push_str(&String::from(' ').repeat(self.size.width as usize - text.len()));
+            }
             let _ = write!(
                 stdout,
                 "{}{}{}{}",
