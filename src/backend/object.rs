@@ -4,7 +4,7 @@ use super::{Color, Material, Message, Oid, Tag, Topic};
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
 
-#[derive(Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Symbol {
     ClosedDoor,
     DeepLiquid,
@@ -27,7 +27,7 @@ pub enum Symbol {
 /// in arbitrary ways (e.g. in theory a cobra could be both a Character and a
 /// wieldable Weapon). But note that it's the Action objects that encapsulate
 /// behavior.
-#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
     dname: String, // these could be `&'static str` but for Deserialize, TODO: maybe could intern them?

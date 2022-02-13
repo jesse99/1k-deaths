@@ -33,9 +33,9 @@
 // 1) In so far as possible, old games should be forward compatible with new code. In
 // particular we're going to be constantly adding new Enum variants so that cannot break
 // old saved games.
-// 2) We want to be able to append events onto existing saved games. There are ways around
+// 2) We want to be able to append actions onto existing saved games. There are ways around
 // this but they don't seem like good ideas, e.g. we could simply not save until the player
-// quits (but there can be a *lot* of events) or we could save snapshots to individual
+// quits (but there can be a *lot* of actions) or we could save snapshots to individual
 // files (but then we'd have to manage all those lame files).
 // 3) Because we're storing the full history of the game we want an efficient format.
 // https://github.com/djkoloski/rust_serialization_benchmark has some good info on the
@@ -58,7 +58,7 @@
 //
 // borsh, nachricht, prost, and maybe rkyv are also options but, based on the benchmark
 // link above they are unlikely to be better than postcard.
-use super::Event;
+use super::Action;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use postcard::from_bytes;
 use serde::{Deserialize, Serialize};
@@ -71,7 +71,7 @@ use std::io::Write;
 use std::path::Path;
 
 #[cfg(test)]
-use super::{Action, Message, Oid, Point, Topic};
+use super::Point;
 #[cfg(test)]
 use std::fs;
 
@@ -97,31 +97,32 @@ impl std::error::Error for BadVersionError {}
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 struct Header {
-    major_version: u8,
+    app_version: String, // from Cargo.toml
+    major_version: u8,   // save game version (will change less often than app_version)
     minor_version: u8,
     date: String,
     os: String,
+    seed: u64,
 }
 
 impl Header {
-    fn new() -> Header {
+    fn new(seed: u64) -> Header {
         let local = chrono::Local::now();
+        info!("version: {}", env!("CARGO_PKG_VERSION"));
         Header {
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
             major_version: MAJOR_VERSION,
             minor_version: MINOR_VERSION,
             date: local.to_rfc2822(),
             os: env::consts::OS.to_string(),
+            seed,
         }
     }
 }
 
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "version: {}.{} date: {} os: {}",
-            self.major_version, self.minor_version, self.date, self.os
-        )
+        write!(f, "version: {} date: {} os: {}", self.app_version, self.date, self.os)
     }
 }
 
@@ -141,7 +142,7 @@ fn read_len(file: &mut File) -> Result<usize, Box<dyn Error>> {
 }
 
 // TODO: We might also want to save the entire game state (maybe in a separate file).
-// Loading that could be quite a bit faster than loading and replaying events. That would
+// Loading that could be quite a bit faster than loading and replaying actions. That would
 // also isolate us from logic changes that could hose replay.
 fn new_with_header(path: &str, header: Header) -> Result<File, Box<dyn Error>> {
     let path = Path::new(path);
@@ -155,8 +156,8 @@ fn new_with_header(path: &str, header: Header) -> Result<File, Box<dyn Error>> {
 }
 
 /// Create a brand new saved game at path (overwriting any existing game).
-pub fn new_game(path: &str) -> Result<File, Box<dyn Error>> {
-    let header = Header::new();
+pub fn new_game(path: &str, seed: u64) -> Result<File, Box<dyn Error>> {
+    let header = Header::new(seed);
     new_with_header(path, header)
 }
 
@@ -166,15 +167,15 @@ pub fn open_game(path: &str) -> Result<File, Box<dyn Error>> {
     Ok(file)
 }
 
-pub fn append_game(file: &mut File, events: &[Event]) -> Result<(), Box<dyn Error>> {
-    let bytes: Vec<u8> = postcard::to_stdvec(events)?; // TODO: compress events?
+pub fn append_game(file: &mut File, actions: &[Action]) -> Result<(), Box<dyn Error>> {
+    let bytes: Vec<u8> = postcard::to_stdvec(actions)?; // TODO: compress actions?
     write_len(file, bytes.len())?;
     file.write_all(&bytes)?;
     Ok(())
 }
 
 // TODO: Would be a lot better to return these a chunk at a time.
-pub fn load_game(path: &str) -> Result<Vec<Event>, Box<dyn Error>> {
+pub fn load_game(path: &str) -> Result<(u64, Vec<Action>), Box<dyn Error>> {
     let path = Path::new(path);
     let mut file = File::open(&path)?;
 
@@ -189,15 +190,15 @@ pub fn load_game(path: &str) -> Result<Vec<Event>, Box<dyn Error>> {
     }
     info!("loaded file, {header}");
 
-    let mut events = Vec::new();
+    let mut actions = Vec::new();
     while let Ok(len) = read_len(&mut file) {
         let mut bytes = vec![0u8; len];
         file.read_exact(&mut bytes)?;
-        let mut chunk: Vec<Event> = from_bytes(&bytes)?;
-        events.append(&mut chunk);
+        let mut chunk: Vec<Action> = from_bytes(&bytes)?;
+        actions.append(&mut chunk);
     }
 
-    Ok(events)
+    Ok((header.seed, actions))
 }
 
 #[cfg(test)]
@@ -210,27 +211,33 @@ mod tests {
         let path = format!("/tmp/saved-{}.game", line!()); // tests are run concurrently so we need to ensure paths are unique
         let _ = fs::remove_file(&path);
 
-        let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
-        let events2 = vec![
-            Event::Action(Oid(0), Action::Move(Point::new(1, 1), Point::new(1, 2))),
-            Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
+        let actions1 = vec![
+            Action::Examine {
+                loc: Point::new(0, 0),
+                wizard: false,
+            },
+            Action::Examine {
+                loc: Point::new(10, 20),
+                wizard: true,
+            },
         ];
+        let actions2 = vec![Action::Move { dx: 1, dy: 2 }, Action::Move { dx: 2, dy: 3 }];
 
         {
             // save, close
-            let mut serializer = new_game(&path).unwrap();
-            append_game(&mut serializer, &events1).unwrap();
-            append_game(&mut serializer, &events2).unwrap();
+            let mut serializer = new_game(&path, 1).unwrap();
+            append_game(&mut serializer, &actions1).unwrap();
+            append_game(&mut serializer, &actions2).unwrap();
         }
 
         // load
-        let events = load_game(&path).unwrap();
+        let actions = load_game(&path).unwrap().1;
 
-        assert_eq!(events.len(), 4);
-        assert_eq!(events[0], events1[0]);
-        assert_eq!(events[1], events1[1]);
-        assert_eq!(events[2], events2[0]);
-        assert_eq!(events[3], events2[1]);
+        assert_eq!(actions.len(), 4);
+        assert_eq!(actions[0], actions1[0]);
+        assert_eq!(actions[1], actions1[1]);
+        assert_eq!(actions[2], actions2[0]);
+        assert_eq!(actions[3], actions2[1]);
     }
 
     #[test]
@@ -239,59 +246,65 @@ mod tests {
         let path = format!("/tmp/saved-{}.game", line!());
         let _ = fs::remove_file(&path);
 
-        let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
-        let events2 = vec![
-            Event::Action(Oid(0), Action::Move(Point::new(1, 1), Point::new(1, 2))),
-            Event::AddObject(Point::new(2, 3), super::super::make::stone_wall()),
+        let actions1 = vec![
+            Action::Examine {
+                loc: Point::new(0, 0),
+                wizard: false,
+            },
+            Action::Examine {
+                loc: Point::new(10, 20),
+                wizard: true,
+            },
         ];
-        let events3 = vec![Event::AddMessage(Message::new(Topic::Normal, "hello"))];
+        let actions2 = vec![Action::Move { dx: 1, dy: 2 }, Action::Move { dx: 2, dy: 3 }];
+        let actions3 = vec![Action::Move { dx: 20, dy: 30 }];
 
         {
             // save, close
-            let mut serializer = new_game(&path).unwrap();
-            append_game(&mut serializer, &events1).unwrap();
-            append_game(&mut serializer, &events2).unwrap();
+            let mut serializer = new_game(&path, 1).unwrap();
+            append_game(&mut serializer, &actions1).unwrap();
+            append_game(&mut serializer, &actions2).unwrap();
         }
 
         {
             // load 1
-            let events = load_game(&path).unwrap();
+            let actions = load_game(&path).unwrap().1;
 
-            assert_eq!(events.len(), 4);
-            assert_eq!(events[0], events1[0]);
-            assert_eq!(events[1], events1[1]);
-            assert_eq!(events[2], events2[0]);
-            assert_eq!(events[3], events2[1]);
+            assert_eq!(actions.len(), 4);
+            assert_eq!(actions[0], actions1[0]);
+            assert_eq!(actions[1], actions1[1]);
+            assert_eq!(actions[2], actions2[0]);
+            assert_eq!(actions[3], actions2[1]);
         }
 
         {
             // open, append, close
             let mut serializer = open_game(&path).unwrap();
-            append_game(&mut serializer, &events3).unwrap();
+            append_game(&mut serializer, &actions3).unwrap();
         }
 
         // load 2
-        let events = load_game(&path).unwrap();
+        let actions = load_game(&path).unwrap().1;
 
-        assert_eq!(events.len(), 5);
-        assert_eq!(events[0], events1[0]);
-        assert_eq!(events[1], events1[1]);
-        assert_eq!(events[2], events2[0]);
-        assert_eq!(events[3], events2[1]);
-        assert_eq!(events[4], events3[0]);
+        assert_eq!(actions.len(), 5);
+        assert_eq!(actions[0], actions1[0]);
+        assert_eq!(actions[1], actions1[1]);
+        assert_eq!(actions[2], actions2[0]);
+        assert_eq!(actions[3], actions2[1]);
+        assert_eq!(actions[4], actions3[0]);
     }
 
     #[test]
     fn test_bad_paths() {
         // File in a non-existent directory.
         let path = "/nothing/there/x.y";
-        assert!(new_game(path).is_err());
+        assert!(new_game(path, 1).is_err());
         assert!(open_game(path).is_err());
         assert!(load_game(path).is_err());
 
         // Write to read-only directory.
         let path = "/user/bad.game";
-        assert!(new_game(path).is_err());
+        assert!(new_game(path, 1).is_err());
         assert!(open_game(path).is_err());
 
         // Load of missing file.
@@ -306,12 +319,21 @@ mod tests {
         let _ = fs::remove_file(&path);
 
         {
-            let mut header = Header::new();
+            let mut header = Header::new(1);
             header.major_version = MAJOR_VERSION - 1;
 
             let mut serializer = new_with_header(&path, header).unwrap();
-            let events1 = vec![Event::NewGame, Event::BeginConstructLevel];
-            append_game(&mut serializer, &events1).unwrap();
+            let actions1 = vec![
+                Action::Examine {
+                    loc: Point::new(0, 0),
+                    wizard: false,
+                },
+                Action::Examine {
+                    loc: Point::new(10, 20),
+                    wizard: true,
+                },
+            ];
+            append_game(&mut serializer, &actions1).unwrap();
         }
 
         let err = load_game(&path).unwrap_err();

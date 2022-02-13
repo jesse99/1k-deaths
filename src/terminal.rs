@@ -6,12 +6,12 @@ mod main_mode;
 mod map_view;
 mod messages_view;
 mod mode;
-// mod replay_mode;
+mod replay_mode;
 mod text_mode;
 mod text_view;
 mod ui;
 
-use super::backend::Game;
+use super::backend::{Action, Game};
 use std::cell::RefCell;
 use std::io::{self, Write};
 use std::process;
@@ -37,7 +37,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn new(mut game: Game) -> Terminal {
+    pub fn new(game: Game, replay: Vec<Action>) -> Terminal {
         let stdout = io::stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -55,7 +55,7 @@ impl Terminal {
         info!("terminal size is {} x {}", width, height);
 
         Terminal {
-            ui: UI::new(width, height, &mut game),
+            ui: UI::new(width, height, replay),
             game,
             stdout: Box::new(stdout),
         }

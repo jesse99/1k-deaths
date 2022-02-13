@@ -113,7 +113,7 @@ Movement is done using the numeric keypad or arrow keys:
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
-        game.player_acted(Action::Move { dx, dy });
+        game.player_acted(Action::Move { dx, dy }, false);
         InputAction::UpdatedGame
     }
 

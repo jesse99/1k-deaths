@@ -5,6 +5,7 @@ mod make;
 mod message;
 mod object;
 mod old_pov;
+mod persistence;
 mod pov;
 mod primitives;
 mod scheduler;
@@ -28,8 +29,8 @@ use rand::rngs::SmallRng;
 use rand::RngCore;
 use std::cell::{RefCell, RefMut};
 // use std::os::unix::prelude::FileTypeExt;
-// use std::fs::File;
 use scheduler::Scheduler;
+use std::fs::File;
 use tag::*;
 use tag::{Durability, Material, Tag};
 use time::Time;
@@ -38,22 +39,26 @@ use time::Time;
 use fnv::FnvHashSet;
 
 const MAX_MESSAGES: usize = 1000;
+const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
 // TODO: These numbers are not very intelligible. If that becomes an issue we could use
 // a newtype string (e.g. "wall 97") or a simple struct with a static string ref and a
 // counter.
-#[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub struct Oid(u64);
 
-#[derive(Clone, Copy, Debug)]
+/// Represents what the player wants to do next. Most of these will use up the player's
+/// remaining time units, but some like (Examine) don't take any time.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Action {
     /// Move the player to empty cells (or attempt to interact with an object at that cell).
     /// dx and dy must be 0, +1, or -1.
     Move { dx: i32, dy: i32 },
+
     /// Print descriptions for objects at the cell. Note that any cell can be examined but
     /// cells that are not in the player's PoV will have either an unhelpful description or
     /// a stale description.
-    Examine(Point, bool),
+    Examine { loc: Point, wizard: bool },
 }
 
 pub enum Tile {
@@ -75,10 +80,10 @@ pub enum State {
 
 /// Top-level backend object encapsulating the game state.
 pub struct Game {
-    // stream: Vec<Event>, // used to reconstruct games
-    // file: Option<File>, // events are perodically saved here
-    state: State, // game milestones, eg won game
-    next_id: u64, // 0 is the player
+    stream: Vec<Action>, // used to reconstruct games
+    file: Option<File>,  // actions are perodically saved here
+    state: State,        // game milestones, eg won game
+    next_id: u64,        // 0 is the player
     rng: RefCell<SmallRng>,
     scheduler: Scheduler,
 
@@ -104,16 +109,16 @@ impl Game {
         let mut messages = Vec::new();
 
         info!("new {path}");
-        // let file = match persistence::new_game(path) {
-        //     Ok(se) => Some(se),
-        //     Err(err) => {
-        //         messages.push(Message::new(
-        //             Topic::Error,
-        //             &format!("Couldn't open {path} for writing: {err}"),
-        //         ));
-        //         None
-        //     }
-        // };
+        let file = match persistence::new_game(path, seed) {
+            Ok(se) => Some(se),
+            Err(err) => {
+                messages.push(Message::new(
+                    Topic::Error,
+                    &format!("Couldn't open {path} for writing: {err}"),
+                ));
+                None
+            }
+        };
 
         messages.push(Message {
             topic: Topic::Important,
@@ -128,52 +133,52 @@ impl Game {
             text: String::from("Press the '?' key for help."),
         });
 
-        let mut game = Game::new(messages, seed);
-        let map = include_str!("backend/maps/start.txt");
-        make::level(&mut game, map);
-        OldPoV::update(&mut game);
-        PoV::refresh(&mut game);
-        game.constructing = false;
-        game
+        Game::new(messages, seed, file)
     }
 
-    /// Load a saved game and return the events so that they can be replayed.
-    pub fn old_game(path: &str, seed: u64) -> Game {
-        // let messages = Vec::new();
-        // let mut file = None;
-        // info!("loading {path}");
-        // match persistence::load_game(path) {
-        //     Ok(e) => events = e,
-        //     Err(err) => {
-        //         info!("loading file had err: {err}");
-        //         messages.push(Message::new(
-        //             Topic::Error,
-        //             &format!("Couldn't open {path} for reading: {err}"),
-        //         ));
-        //     }
-        // };
+    /// Load a saved game and return the actions so that they can be replayed.
+    pub fn old_game(path: &str) -> (Game, Vec<Action>) {
+        let mut seed = 1;
+        let mut actions = Vec::new();
+        let mut messages = Vec::new();
 
-        // if !events.is_empty() {
-        //     info!("opening {path}");
-        //     file = match persistence::open_game(path) {
-        //         Ok(se) => Some(se),
-        //         Err(err) => {
-        //             messages.push(Message::new(
-        //                 Topic::Error,
-        //                 &format!("Couldn't open {path} for appending: {err}"),
-        //             ));
-        //             None
-        //         }
-        //     };
-        // }
+        let mut file = None;
+        info!("loading {path}");
+        match persistence::load_game(path) {
+            Ok((s, a)) => {
+                seed = s;
+                actions = a;
+            }
+            Err(err) => {
+                info!("loading file had err: {err}");
+                messages.push(Message::new(
+                    Topic::Error,
+                    &format!("Couldn't open {path} for reading: {err}"),
+                ));
+            }
+        };
 
-        // if file.is_some() {
-        //     (Game::new(messages, seed, file), events)
-        // } else {
-        let mut game = Game::new_game(path, seed);
+        if !actions.is_empty() {
+            info!("opening {path}");
+            file = match persistence::open_game(path) {
+                Ok(se) => Some(se),
+                Err(err) => {
+                    messages.push(Message::new(
+                        Topic::Error,
+                        &format!("Couldn't open {path} for appending: {err}"),
+                    ));
+                    None
+                }
+            };
+        }
 
-        game
-        // }
+        if file.is_some() {
+            (Game::new(messages, seed, file), actions)
+        } else {
+            let mut game = Game::new_game(path, seed);
+            game.messages.extend(messages);
+            (game, Vec::new())
+        }
     }
 
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
@@ -206,8 +211,10 @@ impl Game {
             let loc = self.loc(oid).unwrap();
             let obj = self.objects.get(&oid).unwrap();
             if obj.has(DEEP_WATER_ID) {
+                trace!("{oid} at {loc} is deep flooding");
                 self.do_flood_deep(oid, loc);
             } else {
+                trace!("{oid} at {loc} is shallow flooding");
                 self.do_flood_shallow(oid, loc);
             };
             {
@@ -243,9 +250,10 @@ impl Game {
         None
     }
 
-    pub fn player_acted(&mut self, action: Action) {
+    pub fn player_acted(&mut self, action: Action, replay: bool) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
+        trace!("player is doing {action:?}");
         match action {
             Action::Move { dx, dy } => {
                 assert!(dx >= -1 && dx <= 1);
@@ -264,9 +272,9 @@ impl Game {
                             let old_loc = self.player;
                             self.do_move(Oid(0), &old_loc, &new_loc);
                             if old_loc.diagnol(&new_loc) {
-                                time::DIAGNOL_MOVE
+                                time::DIAGNOL_MOVE + self.interact_post_move(&new_loc)
                             } else {
-                                time::CARDINAL_MOVE
+                                time::CARDINAL_MOVE + self.interact_post_move(&new_loc)
                             }
                         }
                     };
@@ -285,20 +293,16 @@ impl Game {
                     }
                 }
             }
-            Action::Examine(new_loc, wizard) => {
-                let suffix = if wizard {
-                    format!(" {}", new_loc)
-                } else {
-                    "".to_string()
-                };
-                let text = if self.pov.visible(&new_loc) {
+            Action::Examine { loc, wizard } => {
+                let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
+                let text = if self.pov.visible(&loc) {
                     let descs: Vec<String> = self
-                        .cell_iter(&new_loc)
+                        .cell_iter(&loc)
                         .map(|(_, obj)| obj.description().to_string())
                         .collect();
                     let descs = descs.join(", and ");
                     format!("You see {descs}{suffix}.")
-                } else if self.old_pov.get(&new_loc).is_some() {
+                } else if self.old_pov.get(&loc).is_some() {
                     format!("You can no longer see there{suffix}.")
                 } else {
                     format!("You've never seen there{suffix}.")
@@ -308,8 +312,7 @@ impl Game {
                     text,
                 });
                 if wizard {
-                    let messages: Vec<String> =
-                        self.cell_iter(&new_loc).map(|(_, obj)| format!("   {obj:?}")).collect();
+                    let messages: Vec<String> = self.cell_iter(&loc).map(|(_, obj)| format!("   {obj:?}")).collect();
                     for text in messages.into_iter() {
                         self.messages.push(Message {
                             topic: Topic::Normal,
@@ -318,6 +321,16 @@ impl Game {
                     }
                 }
             }
+        }
+
+        if !replay {
+            self.stream.push(action);
+            if self.stream.len() >= MAX_QUEUED_EVENTS {
+                self.save_actions();
+            }
+        }
+        while self.messages.len() > MAX_MESSAGES {
+            self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
         }
     }
 
@@ -398,14 +411,13 @@ impl Game {
     }
 }
 
-// Backend methods. Note that mutable methods should only be in the events module.
+// Backend methods.
 impl Game {
-    // fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
-    fn new(messages: Vec<Message>, seed: u64) -> Game {
+    fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
         info!("using seed {seed}");
-        Game {
-            // stream: Vec::new(),
-            // file,
+        let mut game = Game {
+            stream: Vec::new(),
+            file,
             state: State::Adventuring,
             next_id: 2,
             scheduler: Scheduler::new(),
@@ -427,7 +439,18 @@ impl Game {
             old_pov: OldPoV::new(),
             #[cfg(debug_assertions)]
             invariants: false,
-        }
+        };
+        game.init_game();
+        game
+    }
+
+    fn init_game(&mut self) {
+        let map = include_str!("backend/maps/start.txt");
+        make::level(self, map);
+        self.constructing = false;
+
+        OldPoV::update(self);
+        PoV::refresh(self);
     }
 
     fn has(&self, loc: &Point, tag: Tid) -> bool {
@@ -775,6 +798,19 @@ impl Game {
         }
         None
     }
+
+    fn save_actions(&mut self) {
+        if let Some(se) = &mut self.file {
+            if let Err(err) = persistence::append_game(se, &self.stream) {
+                self.messages
+                    .push(Message::new(Topic::Error, &format!("Couldn't save game: {err}")));
+            }
+        }
+        // If we can't save there's not much we can do other than clear. (Still worthwhile
+        // appending onto the stream because we may want a wizard command to show the last
+        // few events).
+        self.stream.clear();
+    }
 }
 
 // Debugging support
@@ -979,5 +1015,11 @@ impl<'a> Iterator for InventoryIterator<'a> {
         } else {
             None // finished iteration
         }
+    }
+}
+
+impl Drop for Game {
+    fn drop(&mut self) {
+        self.save_actions();
     }
 }

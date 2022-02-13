@@ -1,6 +1,7 @@
 use super::main_mode::MainMode;
 use super::mode::{InputAction, Mode, RenderContext};
-use super::{Game, GameState};
+use super::replay_mode::ReplayMode;
+use super::{Action, Game, GameState};
 use std::io::{self, Write};
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
@@ -13,7 +14,7 @@ pub struct UI {
 }
 
 impl UI {
-    pub fn new(width: i32, height: i32, game: &mut Game) -> UI {
+    pub fn new(width: i32, height: i32, replay: Vec<Action>) -> UI {
         let (send, recv) = mpsc::channel();
         let _ = thread::spawn(move || {
             let stdin = io::stdin();
@@ -32,6 +33,9 @@ impl UI {
         });
 
         let mut modes = vec![MainMode::create(width, height)];
+        if !replay.is_empty() {
+            modes.push(ReplayMode::create(replay));
+        }
         UI { modes, recv }
     }
 

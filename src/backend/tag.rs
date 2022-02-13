@@ -4,14 +4,14 @@ use std::fmt::{self, Formatter};
 
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Material {
     // Wood,
     Stone,
     Metal,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Durability {
     pub current: i32,
     pub max: i32,
@@ -22,7 +22,7 @@ pub struct Durability {
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
 /// concept because those classes can be combined.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when
     /// players try to move into them. Will also have a Name tag. May have
@@ -108,7 +108,7 @@ pub enum Tag {
 
 // Unlike Object id's tag id's don't typically hang around for very long. So I think it's
 // fine to simply make them a u16 rather than something more intelligible.
-#[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub struct Tid(u16);
 
 pub const CHARACTER_ID: Tid = Tid(0);

@@ -1,7 +1,7 @@
 use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
-use super::{Event, Game};
+use super::{Action, Game};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
@@ -15,7 +15,7 @@ enum Replaying {
 }
 
 pub struct ReplayMode {
-    replay: Vec<Event>,
+    replay: Vec<Action>,
     replaying: Replaying,
     timeout: i32, // ms
     commands: CommandTable,
@@ -24,14 +24,7 @@ pub struct ReplayMode {
 const REPLAY_DELTA: i32 = 20;
 
 impl ReplayMode {
-    pub fn create(game: &mut Game, mut replay: Vec<Event>) -> Box<dyn Mode> {
-        if let Some(i) = replay.iter().position(|e| matches!(e, Event::EndConstructLevel)) {
-            // We don't want to replay setting the level up.
-            let tail = replay.split_off(i + 1);
-            let head = core::mem::replace(&mut replay, tail);
-            game.post(head, true);
-        }
-
+    pub fn create(replay: Vec<Action>) -> Box<dyn Mode> {
         let mut commands: CommandTable = FnvHashMap::default();
         commands.insert(Key::Char(' '), Box::new(|s, game| s.do_toggle(game)));
         commands.insert(Key::Char('s'), Box::new(|s, game| s.do_step(game)));
@@ -67,8 +60,8 @@ impl Mode for ReplayMode {
         if self.replay.is_empty() {
             InputAction::Pop
         } else if key == Key::Null {
-            let e = self.replay.remove(0);
-            game.post(vec![e], true);
+            let action = self.replay.remove(0);
+            game.player_acted(action, true);
             InputAction::UpdatedGame
         } else {
             match self.commands.get(&key).cloned() {
@@ -107,8 +100,10 @@ impl ReplayMode {
         // this is tricky to do because we'd need to somehow truncate the
         // saved file. The way to do this is probably to write the replayed
         // events to a temp file and swap the two files if the user aborts.
-        let events = std::mem::take(&mut self.replay);
-        game.post(events, true);
+        let actions = std::mem::take(&mut self.replay);
+        for action in actions.into_iter() {
+            game.player_acted(action, true);
+        }
         InputAction::Pop
     }
 
@@ -131,8 +126,8 @@ impl ReplayMode {
 
     fn do_step(&mut self, game: &mut Game) -> InputAction {
         self.replaying = Replaying::SingleStep;
-        let e = self.replay.remove(0);
-        game.post(vec![e], true);
+        let action = self.replay.remove(0);
+        game.player_acted(action, true);
         InputAction::UpdatedGame
     }
 

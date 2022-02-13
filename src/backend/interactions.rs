@@ -196,7 +196,7 @@ fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreR
 fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
     let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
     game.do_open_door(Oid(0), player_loc, new_loc, oid);
-    PreResult::ZeroAction
+    PreResult::Acted(time::OPEN_DOOR)
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------
