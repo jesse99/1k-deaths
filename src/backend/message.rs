@@ -35,9 +35,8 @@ pub enum Topic {
 
     // /// The player is at risk of taking damage.
     // PlayerIsThreatened,
-
-    // /// An operation was not completely successful.
-    // Warning,
+    /// An operation was not completely successful.
+    Warning,
 }
 
 #[derive(Clone, Debug, Display, Eq, PartialEq)]

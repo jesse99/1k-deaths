@@ -90,12 +90,24 @@ fn main() {
         })
     }
 
+    let mut warnings = Vec::new();
+    if options.seed.is_some() && (options.load.is_some() || Path::new("saved.game").is_file()) && !options.new_game {
+        // --new-game --load is a bit odd but means start a new game saved to the specified
+        // path. But --seed --load without the --new-game is wrong because we need to replay
+        // saved games using the original seed (we could reset the seed once we're finished
+        // replaying but that's kind of a pain).
+        warnings.push("Ignoring --seed (game is beiing replayed so the original seed is being used.)".to_string());
+    }
+
+    // TODO: probably need to make --seed and old_game into a warning
+    // (can't just set the seed because we'd have to do it after replay finishes)
+
     // Timestamps are a poor seed but should be fine for our purposes.
     let seed = options.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
     let (mut game, actions) = match options.load {
         Some(ref path) if options.new_game => (Game::new_game(path, seed), Vec::new()),
-        Some(ref path) => Game::old_game(path),
-        None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game"),
+        Some(ref path) => Game::old_game(path, warnings),
+        None if Path::new("saved.game").is_file() && !options.new_game => Game::old_game("saved.game", warnings),
         None => (Game::new_game("saved.game", seed), Vec::new()),
     };
     {

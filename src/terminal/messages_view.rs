@@ -43,5 +43,6 @@ pub fn to_fore_color(topic: Topic) -> Color {
         Failed => Color::Red,
         Important => Color::Blue,
         NPCSpeaks => Color::Coral,
+        Warning => Color::Orange,
     }
 }

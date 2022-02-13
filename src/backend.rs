@@ -137,7 +137,7 @@ impl Game {
     }
 
     /// Load a saved game and return the actions so that they can be replayed.
-    pub fn old_game(path: &str) -> (Game, Vec<Action>) {
+    pub fn old_game(path: &str, warnings: Vec<String>) -> (Game, Vec<Action>) {
         let mut seed = 1;
         let mut actions = Vec::new();
         let mut messages = Vec::new();
@@ -171,6 +171,8 @@ impl Game {
                 }
             };
         }
+
+        messages.extend(warnings.iter().map(|w| Message::new(Topic::Warning, w)));
 
         if file.is_some() {
             (Game::new(messages, seed, file), actions)
