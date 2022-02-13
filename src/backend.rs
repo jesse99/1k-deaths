@@ -46,7 +46,7 @@ const MAX_MESSAGES: usize = 1000;
 pub struct Oid(u64);
 
 #[derive(Clone, Copy, Debug)]
-pub enum Command {
+pub enum Action {
     /// Move the player to empty cells (or attempt to interact with an object at that cell).
     /// dx and dy must be 0, +1, or -1.
     Move { dx: i32, dy: i32 },
@@ -243,11 +243,11 @@ impl Game {
         None
     }
 
-    pub fn command(&mut self, command: Command) {
+    pub fn player_acted(&mut self, action: Action) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
-        match command {
-            Command::Move { dx, dy } => {
+        match action {
+            Action::Move { dx, dy } => {
                 assert!(dx >= -1 && dx <= 1);
                 assert!(dy >= -1 && dy <= 1);
                 assert!(dx != 0 || dy != 0);
@@ -285,7 +285,7 @@ impl Game {
                     }
                 }
             }
-            Command::Examine(new_loc, wizard) => {
+            Action::Examine(new_loc, wizard) => {
                 let suffix = if wizard {
                     format!(" {}", new_loc)
                 } else {

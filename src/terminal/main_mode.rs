@@ -4,7 +4,7 @@ use super::messages_view::{self, MessagesView};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
 use super::text_view::{Line, TextRun};
-use crate::backend::{Color, Command, Game, Point, Size};
+use crate::backend::{Action, Color, Game, Point, Size};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
@@ -113,7 +113,7 @@ Movement is done using the numeric keypad or arrow keys:
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
-        game.command(Command::Move { dx, dy });
+        game.player_acted(Action::Move { dx, dy });
         InputAction::UpdatedGame
     }
 

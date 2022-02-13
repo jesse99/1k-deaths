@@ -1,7 +1,7 @@
 use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
-use crate::backend::{Command, Game, Point};
+use crate::backend::{Action, Game, Point};
 use fnv::FnvHashMap;
 use termion::event::Key;
 
@@ -59,7 +59,7 @@ impl Mode for ExamineMode {
 impl ExamineMode {
     fn do_examine(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
         self.examined = Point::new(self.examined.x + dx, self.examined.y + dy);
-        game.command(Command::Examine(self.examined, super::wizard_mode()));
+        game.player_acted(Action::Examine(self.examined, super::wizard_mode()));
         InputAction::UpdatedGame
     }
 
@@ -94,7 +94,7 @@ The focus can be moved with the usual keys:
     fn do_tab_target(&mut self, game: &mut Game, delta: i32) -> InputAction {
         if let Some(loc) = game.target_next(&self.examined, delta) {
             self.examined = loc;
-            game.command(Command::Examine(loc, super::wizard_mode()));
+            game.player_acted(Action::Examine(loc, super::wizard_mode()));
         }
         InputAction::UpdatedGame
     }
