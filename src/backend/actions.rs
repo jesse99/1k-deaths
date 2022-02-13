@@ -65,7 +65,7 @@ impl Game {
 
                     trace!("flood is moving player from {} to {}", self.player, newer_loc);
                     let player_loc = self.player;
-                    self.do_move(Oid(0), &player_loc, &newer_loc);
+                    self.do_force_move(Oid(0), &player_loc, &newer_loc);
 
                     let units = if player_loc.diagnol(&newer_loc) {
                         time::DIAGNOL_MOVE
@@ -117,9 +117,11 @@ impl Game {
             self.player = *new_loc;
             self.pov.dirty();
         }
+    }
 
-        // TODO: player actions should be in a table so that we can ensure that they
-        // schedule properly
+    pub fn do_force_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
+        self.do_move(oid, old_loc, new_loc);
+
         let taken = if old_loc.diagnol(new_loc) {
             time::DIAGNOL_MOVE
         } else {
@@ -158,7 +160,7 @@ impl Game {
 
     pub fn do_shove_doorman(&mut self, oid: Oid, old_loc: &Point, ch: Oid, new_loc: &Point) {
         debug!("shoving doorman from {old_loc} to {new_loc}");
-        self.do_move(ch, old_loc, new_loc);
+        self.do_force_move(ch, old_loc, new_loc);
         let player_loc = self.player;
         self.do_move(oid, &player_loc, old_loc);
     }

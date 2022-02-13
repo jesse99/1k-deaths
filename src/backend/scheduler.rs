@@ -83,7 +83,7 @@ impl Scheduler {
             let rng = &mut *game.rng.borrow_mut();
             rng.gen_range(0..game.scheduler.entries.len())
         };
-        for _ in 0..100 {
+        for i in 0..100 {
             for i in 0..game.scheduler.entries.len() {
                 let index = (i + offset) % game.scheduler.entries.len();
                 let entry = game.scheduler.entries[index];
@@ -99,6 +99,7 @@ impl Scheduler {
                     }
                 }
             }
+            debug!("no one acted for iteration {i}");
             game.scheduler.not_acted();
         }
         panic!("At least the player should have moved!");
@@ -159,6 +160,14 @@ impl Scheduler {
                 // we'll assert because that's most likely a bug. TODO: we should be able
                 // to use a much tighter bound when we stop flooding.
                 if entry.oid.0 != 0 && entry.units > time::mins(100 * 60) {
+                    let mut mesg = String::new();
+                    for entry in &self.entries {
+                        mesg += &format!("{} has {}s\n", entry.oid, entry.units);
+                    }
+                    panic!("{mesg}");
+                }
+
+                if entry.units < time::mins(-100 * 60) {
                     let mut mesg = String::new();
                     for entry in &self.entries {
                         mesg += &format!("{} has {}s\n", entry.oid, entry.units);

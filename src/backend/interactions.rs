@@ -7,8 +7,18 @@ use super::*;
 use fnv::FnvHashMap;
 use rand::prelude::*;
 
+pub enum PreResult {
+    /// The player has interacted with an object at the new cell and the scheduler should
+    /// run again.
+    Acted(Time),
+
+    /// The player did something that didn't take any time so he should have a chance to
+    /// act again.
+    ZeroAction,
+}
+
 // ---- struct Interaction -------------------------------------------------
-pub type PreHandler = fn(&mut Game, &Point, &Point) -> Option<Time>;
+pub type PreHandler = fn(&mut Game, &Point, &Point) -> PreResult;
 pub type PostHandler = fn(&mut Game, &Point) -> Time;
 
 // TODO:
@@ -45,7 +55,7 @@ impl Interactions {
 
     /// Something may want to interact with something else in a neighboring cell, e.g. tag
     ///  == PLAYER_ID and tag1 == CLOSED_DOOR_ID is used when the player attempts to open
-    /// a door. PreHandler a duration if an interaction happened.
+    /// a door. PreHandler returns a duration if an interaction happened.
     pub fn find_interact_handler(&self, tag0: &Tag, tag1: &Tag) -> Option<PreHandler> {
         // It'd be nicer to actually do the interaction here but the borrow checker makes
         // that difficult.
@@ -69,7 +79,7 @@ impl Interactions {
 }
 
 // ---- Pre-move handlers ----------------------------------------------------------------
-fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> Option<Time> {
+fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> PreResult {
     if !matches!(game.state, State::WonGame) {
         let mesg = Message::new(
             Topic::Important,
@@ -80,20 +90,20 @@ fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> 
         let mesg = Message::new(Topic::Important, "You have won the game!!");
         game.messages.push(mesg);
         game.state = State::WonGame;
-        Some(time::DESTROY_EMP_SWORD)
+        PreResult::Acted(time::DESTROY_EMP_SWORD)
     } else {
-        None
+        PreResult::ZeroAction
     }
 }
 
-fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Option<Time> {
+fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> PreResult {
     let (oid, obj) = game.get(new_loc, WALL_ID).unwrap();
     let material: Option<Material> = obj.value(MATERIAL_ID);
     match material {
         Some(Material::Stone) => {
             let damage = 6;
             game.do_dig(Oid(0), new_loc, oid, damage);
-            Some(time::DIG_STONE)
+            PreResult::Acted(time::DIG_STONE)
         }
         Some(Material::Metal) => {
             let mesg = Message::new(
@@ -101,20 +111,20 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Op
                 "Your pick-axe bounces off the metal wall doing no damage.",
             );
             game.messages.push(mesg);
-            Some(time::SCRATCH_METAL)
+            PreResult::Acted(time::SCRATCH_METAL)
         }
         None => panic!("Walls should always have a Material"),
     }
 }
 
-fn player_vs_deep_water(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
+fn player_vs_deep_water(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::DeepWater).unwrap();
     game.messages.push(mesg);
-    Some(Time::zero())
+    PreResult::ZeroAction
 }
 
-fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) -> Option<Time> {
+fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) -> PreResult {
     if game
         .player_inv_iter()
         .any(|(_, obj)| obj.description().contains("Doom"))
@@ -122,24 +132,24 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = game.find_empty_cell(doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
-            Some(time::SHOVE_DOORMAN)
+            PreResult::Acted(time::SHOVE_DOORMAN)
         } else {
-            Some(Time::zero())
+            PreResult::ZeroAction
         }
     } else {
         let mesg = Message::new(Topic::NPCSpeaks, "You are not worthy.");
         game.messages.push(mesg);
-        Some(Time::zero())
+        PreResult::ZeroAction
     }
 }
 
-fn player_vs_rhulad(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Option<Time> {
+fn player_vs_rhulad(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> PreResult {
     let oid = game.get(new_loc, CHARACTER_ID).unwrap().0;
     game.do_fight_rhulad(Oid(0), new_loc, oid);
-    Some(time::FIGHT_RHULAD)
+    PreResult::Acted(time::FIGHT_RHULAD)
 }
 
-fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> Option<Time> {
+fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> PreResult {
     let messages = if matches!(game.state, State::Adventuring) {
         vec![
             "I hope you're prepared to die!",
@@ -159,34 +169,34 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 
     let mesg = Message::new(Topic::NPCSpeaks, text);
     game.messages.push(mesg);
-    Some(time::SPEAK_TO_SPECTATOR)
+    PreResult::Acted(time::SPEAK_TO_SPECTATOR)
 }
 
-fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
+fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::Tree).unwrap();
     game.messages.push(mesg);
-    Some(Time::zero())
+    PreResult::ZeroAction
 }
 
-fn player_vs_vitr(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
+fn player_vs_vitr(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::Vitr).unwrap();
     game.messages.push(mesg);
-    Some(Time::zero())
+    PreResult::ZeroAction
 }
 
-fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> Option<Time> {
+fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
     let player = game.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::Wall).unwrap();
     game.messages.push(mesg);
-    Some(Time::zero())
+    PreResult::ZeroAction
 }
 
-fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> Option<Time> {
+fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
     let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
     game.do_open_door(Oid(0), player_loc, new_loc, oid);
-    Some(time::OPEN_DOOR)
+    PreResult::ZeroAction
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------

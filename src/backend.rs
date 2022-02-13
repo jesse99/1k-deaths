@@ -19,9 +19,7 @@ pub use primitives::Size;
 
 use derive_more::Display;
 use fnv::FnvHashMap;
-#[cfg(debug_assertions)]
-use fnv::FnvHashSet;
-use interactions::{Interactions, PreHandler};
+use interactions::{Interactions, PreHandler, PreResult};
 use object::{Object, TagValue};
 use old_pov::OldPoV;
 use pov::PoV;
@@ -35,6 +33,9 @@ use scheduler::Scheduler;
 use tag::*;
 use tag::{Durability, Material, Tag};
 use time::Time;
+
+#[cfg(debug_assertions)]
+use fnv::FnvHashSet;
 
 const MAX_MESSAGES: usize = 1000;
 
@@ -253,18 +254,30 @@ impl Game {
                 if self.in_progress() {
                     let player = self.player;
                     let new_loc = Point::new(player.x + dx, player.y + dy);
-                    if let Some(duration) = self.try_interact(&player, &new_loc) {
-                        if duration > Time::zero() {
-                            self.scheduler.player_acted(duration, &self.rng);
+                    let duration = match self.try_interact(&player, &new_loc) {
+                        Some(PreResult::Acted(taken)) => {
+                            assert!(taken > Time::zero());
+                            taken
                         }
-                    } else {
-                        let old_loc = self.player;
-                        self.do_move(Oid(0), &old_loc, &new_loc);
-                    }
-                    self.players_move = false;
+                        Some(PreResult::ZeroAction) => Time::zero(),
+                        None => {
+                            let old_loc = self.player;
+                            self.do_move(Oid(0), &old_loc, &new_loc);
+                            if old_loc.diagnol(&new_loc) {
+                                time::DIAGNOL_MOVE
+                            } else {
+                                time::CARDINAL_MOVE
+                            }
+                        }
+                    };
 
-                    OldPoV::update(self);
-                    PoV::refresh(self);
+                    if duration > Time::zero() {
+                        self.scheduler.player_acted(duration, &self.rng);
+                        self.players_move = false;
+
+                        OldPoV::update(self);
+                        PoV::refresh(self);
+                    }
 
                     {
                         #[cfg(debug_assertions)]
@@ -543,7 +556,7 @@ impl Game {
     }
 
     // Player attempting to interact with an adjacent cell.
-    fn try_interact(&mut self, player_loc: &Point, new_loc: &Point) -> Option<Time> {
+    fn try_interact(&mut self, player_loc: &Point, new_loc: &Point) -> Option<PreResult> {
         let mut handler = None;
 
         // First see if an inventory item can interact with the new cell.
@@ -559,19 +572,14 @@ impl Game {
         }
 
         if handler.is_some() {
-            if let Some(duration) = handler.unwrap()(self, player_loc, new_loc) {
-                assert!(duration >= Time::zero());
-                return Some(duration);
-            }
+            return Some(handler.unwrap()(self, player_loc, new_loc));
         }
 
         // If we couldn't find a handler for an item or that handler returned None then
         // see if the player itself can interact with the cell.
         handler = self.find_interact_handler(&Tag::Player, new_loc);
         if handler.is_some() {
-            let duration = handler.unwrap()(self, player_loc, new_loc);
-            assert!(duration.is_none() || duration.unwrap() >= Time::zero());
-            duration
+            Some(handler.unwrap()(self, player_loc, new_loc))
         } else {
             None
         }
