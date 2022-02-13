@@ -59,6 +59,7 @@ pub enum Action {
     /// cells that are not in the player's PoV will have either an unhelpful description or
     /// a stale description.
     Examine { loc: Point, wizard: bool },
+    // Be sure to add new actions to the end (or saved games will break).
 }
 
 pub enum Tile {

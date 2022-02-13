@@ -30,28 +30,26 @@ pub enum Symbol {
 #[derive(Clone, Eq, PartialEq)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
-    dname: String, // these could be `&'static str` but for Deserialize, TODO: maybe could intern them?
+    dname: &'static str,
 
     tags: Vec<Tag>,
     symbol: Symbol,
     color: Color,
-    description: String,
+
+    // If we ever need a dynamic string we can continue to optimize for the common case
+    // by using a special static str to cause a DyanmicDesc tag to be used instead (or
+    // maybe just use that tag if it's present).
+    description: &'static str,
 }
 
 impl Object {
-    pub fn new<S: Into<String>, T: Into<String>>(
-        dname: S,
-        tags: Vec<Tag>,
-        symbol: Symbol,
-        color: Color,
-        description: T,
-    ) -> Object {
+    pub fn new(dname: &'static str, tags: Vec<Tag>, symbol: Symbol, color: Color, description: &'static str) -> Object {
         Object {
-            dname: dname.into(),
+            dname,
             tags,
             symbol,
             color,
-            description: description.into(),
+            description,
         }
     }
 
@@ -166,12 +164,12 @@ impl TagValue<Material> for Object {
     }
 }
 
-impl TagValue<String> for Object {
-    fn value(&self, id: Tid) -> Option<String> {
+impl TagValue<&'static str> for Object {
+    fn value(&self, id: Tid) -> Option<&'static str> {
         for candidate in &self.tags {
             if candidate.to_id() == id {
                 match candidate {
-                    Tag::Name(value) => return Some(value.clone()),
+                    Tag::Name(value) => return Some(value),
                     _ => panic!("{} tag doesn't have a String", candidate),
                 }
             }

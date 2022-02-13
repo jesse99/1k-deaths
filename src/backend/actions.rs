@@ -141,7 +141,7 @@ impl Game {
     pub fn do_pick_up(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid) {
         let obj = self.objects.get(&obj_oid).unwrap();
         debug!("{oid} is picking up {obj} at {obj_loc}");
-        let name: String = obj.value(NAME_ID).unwrap();
+        let name: &'static str = obj.value(NAME_ID).unwrap();
         let mesg = Message {
             topic: Topic::Normal,
             text: format!("You pick up the {name}."),

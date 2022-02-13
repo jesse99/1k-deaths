@@ -46,11 +46,11 @@ pub fn level(game: &mut Game, map: &str) {
             }
             'a' => {
                 game.init_cell(loc, dirt());
-                game.init_cell(loc, sign("the Lesser Armory"));
+                game.init_cell(loc, sign("a sign that says 'the Lesser Armory'"));
             }
             'b' => {
                 game.init_cell(loc, dirt());
-                game.init_cell(loc, sign("the Greater Armory"));
+                game.init_cell(loc, sign("a sign that says 'the Greater Armory'"));
             }
             '\n' => (),
             _ => {
@@ -197,14 +197,8 @@ fn player() -> Object {
     Object::new("player", player_tags(), Symbol::Player, Color::Gold, "yourself")
 }
 
-pub fn sign(text: &str) -> Object {
-    Object::new(
-        "sign",
-        sign_tags(),
-        Symbol::Sign,
-        Color::Pink,
-        format!("a sign that says '{text}'"),
-    )
+pub fn sign(text: &'static str) -> Object {
+    Object::new("sign", sign_tags(), Symbol::Sign, Color::Pink, text)
 }
 
 pub fn emp_sword() -> Object {
@@ -306,11 +300,11 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
     ]
 }
 
-fn npc_tags(name: &str, tag: Tag) -> Vec<Tag> {
+fn npc_tags(name: &'static str, tag: Tag) -> Vec<Tag> {
     vec![
         Tag::Character,
         // Tag::Inventory(Vec::new()),
-        Tag::Name(name.to_string()),
+        Tag::Name(name),
         tag,
     ]
 }
@@ -320,31 +314,27 @@ fn player_tags() -> Vec<Tag> {
         Tag::Character,
         Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Inventory(Vec::new()),
-        Tag::Name(String::from("yourself")),
+        Tag::Name("yourself"),
         Tag::CanOpenDoor,
         Tag::Player,
         Tag::Scheduled,
     ]
 }
 
-fn weak_sword_tags(name: &str) -> Vec<Tag> {
-    vec![Tag::Name(name.to_string()), Tag::Portable]
+fn weak_sword_tags(name: &'static str) -> Vec<Tag> {
+    vec![Tag::Name(name), Tag::Portable]
 }
 
 fn mighty_sword_tags() -> Vec<Tag> {
-    vec![Tag::Name(String::from("Sword of Impending Doom")), Tag::Portable]
+    vec![Tag::Name("Sword of Impending Doom"), Tag::Portable]
 }
 
 fn pick_axe_tags() -> Vec<Tag> {
-    vec![Tag::Name(String::from("a pick-axe")), Tag::PickAxe, Tag::Portable]
+    vec![Tag::Name("a pick-axe"), Tag::PickAxe, Tag::Portable]
 }
 
 fn emp_sword_tags() -> Vec<Tag> {
-    vec![
-        Tag::Name(String::from("Sword of the Crippled God")),
-        Tag::Portable,
-        Tag::EmpSword,
-    ]
+    vec![Tag::Name("Sword of the Crippled God"), Tag::Portable, Tag::EmpSword]
 }
 
 fn sign_tags() -> Vec<Tag> {

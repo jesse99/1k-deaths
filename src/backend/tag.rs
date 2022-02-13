@@ -103,7 +103,7 @@ pub enum Tag {
     Material(Material),
 
     /// Characters and portable objects all have names.
-    Name(String),
+    Name(&'static str),
 }
 
 // Unlike Object id's tag id's don't typically hang around for very long. So I think it's
