@@ -133,7 +133,7 @@ impl Scheduler {
 impl Scheduler {
     fn not_acted(&mut self) {
         for entry in self.entries.iter_mut() {
-            entry.units = entry.units + time::DIAGNOL_MOVE;
+            entry.units += time::DIAGNOL_MOVE;
         }
     }
 
@@ -150,9 +150,9 @@ impl Scheduler {
 
         for entry in self.entries.iter_mut() {
             if entry.oid == oid {
-                entry.units = entry.units - taken - extra;
+                entry.units -= taken + extra;
             } else {
-                entry.units = entry.units + taken;
+                entry.units += taken;
 
                 // In theory the player can rest for an arbitrarily long time. NPCs can
                 // also elect to do nothing but if they don't do anything for a long time

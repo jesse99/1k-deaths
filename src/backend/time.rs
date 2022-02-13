@@ -3,7 +3,7 @@ use rand::Rng;
 use rand_distr::StandardNormal;
 use std::cell::RefCell;
 use std::fmt::{self, Formatter};
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 pub const CARDINAL_MOVE: Time = Time { t: 4 * SECS_TO_TIME };
 pub const DIAGNOL_MOVE: Time = Time {
@@ -67,8 +67,6 @@ pub fn mins(m: i64) -> Time {
 // ---- Time traits ----------------------------------------------------------------------
 const SEC_TENTHS_TO_TIME: i64 = 10;
 const SECS_TO_TIME: i64 = 10 * SEC_TENTHS_TO_TIME;
-const MINS_TO_TIME: i64 = 60 * SECS_TO_TIME;
-const HOURS_TO_TIME: i64 = 60 * MINS_TO_TIME;
 
 impl fmt::Display for Time {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -90,5 +88,17 @@ impl Sub for Time {
 
     fn sub(self, rhs: Self) -> Self {
         Time { t: self.t - rhs.t }
+    }
+}
+
+impl AddAssign for Time {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Self { t: self.t + rhs.t };
+    }
+}
+
+impl SubAssign for Time {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = Self { t: self.t - rhs.t };
     }
 }
