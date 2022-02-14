@@ -37,21 +37,11 @@ https://crawl.kelbi.org/#lobby\
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday\
-\'95 Re-implement show events wizard command?\
 \'95 Do a better job with loc method	
 \f0\fs32 \cf4 \expnd0\expndtw0\kerning0
 \
 
-\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \'95 Up PoV radius a bit?\
-\'95\'a0Look at some optimizations:\
-	- replay should log how long it took\
-	- io::Write takes 77% of the time\
-		37% in cursor.goto\
-		21% in color.Bg\
-		18% in color.Fg\
-	- should MapView::render try to not redraw unchanged cells?\
-	- may want to enable some optimizations in debug profile.\
-\'95\'a0Add character stats, should be object tags\
+\f1\fs48 \cf3 \kerning1\expnd0\expndtw0 \'95\'a0Add character stats, should be object tags\
 \'95\'a0Add aggressive and fleeing NPCs\
 	- maybe disposition enum, friendly, neutral, aggresive\
 	- these move either toward or away from the player\
@@ -166,6 +156,15 @@ Step 11 - Simple game\
 	- usually won\'92t get anywhere tho\
 	- maybe occasionally could have a vault in an area of deep shadow\
 	- fighting would be messy, probably won\'92t know where to attack\
+\'95\'a0Look at some optimizations:\
+	- replay should log how long it took\
+	- io::Write takes 77% of the time\
+		37% in cursor.goto\
+		21% in color.Bg\
+		18% in color.Fg\
+	- should MapView::render try to not redraw unchanged cells?\
+		` or don\'92t re-render if a cell outside pov changed?\
+	- may want to enable some optimizations in debug profile.\
 \'95 Add the crippled god's sword\
 	- god may intercede to actually kill Rhulad\
 	- can't un-equip it\

@@ -56,7 +56,7 @@ impl PoV {
         let mut new_locs = Vec::new();
         let mut view = FoV {
             start: *origin,
-            radius: 8, // TODO: do better with this
+            radius: 10, // TODO: do better with this
             visible_tile: |loc| {
                 new_locs.push(loc);
             },

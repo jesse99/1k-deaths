@@ -207,37 +207,10 @@ impl Game {
         self.player
     }
 
-    pub fn in_progress(&self) -> bool {
-        !matches!(self.state, State::LostGame)
-    }
-
     /// If this returns true then the UI should call command, otherwise the UI should call
     /// advance_time.
     pub fn players_turn(&self) -> bool {
         self.players_move
-    }
-
-    fn obj_acted(&mut self, oid: Oid, units: Time) -> Option<(Time, Time)> {
-        let base = time::FLOOD;
-        let extra = self.extra_flood_delay();
-        if units >= base + extra {
-            let loc = self.loc(oid).unwrap();
-            let obj = self.objects.get(&oid).unwrap();
-            if obj.has(DEEP_WATER_ID) {
-                trace!("{oid} at {loc} is deep flooding");
-                self.do_flood_deep(oid, loc);
-            } else {
-                trace!("{oid} at {loc} is shallow flooding");
-                self.do_flood_shallow(oid, loc);
-            };
-            {
-                #[cfg(debug_assertions)]
-                self.invariant();
-            }
-            Some((base, extra))
-        } else {
-            None
-        }
     }
 
     // Either we need to allow the player to move or we need to re-render because an
@@ -251,18 +224,6 @@ impl Game {
         }
     }
 
-    // TODO: need a new lookup table for this
-    fn loc(&self, oid: Oid) -> Option<Point> {
-        for (loc, oids) in &self.cells {
-            for candidate in oids {
-                if *candidate == oid {
-                    return Some(*loc);
-                }
-            }
-        }
-        None
-    }
-
     pub fn player_acted(&mut self, action: Action, replay: bool) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
@@ -272,7 +233,7 @@ impl Game {
                 assert!(dx >= -1 && dx <= 1);
                 assert!(dy >= -1 && dy <= 1);
                 assert!(dx != 0 || dy != 0);
-                if self.in_progress() {
+                if self.lost_game() {
                     let player = self.player;
                     let new_loc = Point::new(player.x + dx, player.y + dy);
                     let duration = match self.try_interact(&player, &new_loc) {
@@ -466,6 +427,22 @@ impl Game {
         PoV::refresh(self);
     }
 
+    fn lost_game(&self) -> bool {
+        !matches!(self.state, State::LostGame)
+    }
+
+    // TODO: need a new lookup table for this
+    fn loc(&self, oid: Oid) -> Option<Point> {
+        for (loc, oids) in &self.cells {
+            for candidate in oids {
+                if *candidate == oid {
+                    return Some(*loc);
+                }
+            }
+        }
+        None
+    }
+
     fn has(&self, loc: &Point, tag: Tid) -> bool {
         if let Some(oids) = self.cells.get(loc) {
             for oid in oids {
@@ -577,6 +554,29 @@ impl Game {
         let rng = &mut *self.rng();
         let t: i64 = 60 + rng.gen_range(0..(400 * 6));
         time::secs(t)
+    }
+
+    fn obj_acted(&mut self, oid: Oid, units: Time) -> Option<(Time, Time)> {
+        let base = time::FLOOD;
+        let extra = self.extra_flood_delay();
+        if units >= base + extra {
+            let loc = self.loc(oid).unwrap();
+            let obj = self.objects.get(&oid).unwrap();
+            if obj.has(DEEP_WATER_ID) {
+                trace!("{oid} at {loc} is deep flooding");
+                self.do_flood_deep(oid, loc);
+            } else {
+                trace!("{oid} at {loc} is shallow flooding");
+                self.do_flood_shallow(oid, loc);
+            };
+            {
+                #[cfg(debug_assertions)]
+                self.invariant();
+            }
+            Some((base, extra))
+        } else {
+            None
+        }
     }
 
     fn find_interact_handler(&self, tag0: &Tag, new_loc: &Point) -> Option<PreHandler> {
