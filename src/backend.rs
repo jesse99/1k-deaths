@@ -431,7 +431,8 @@ impl Game {
         !matches!(self.state, State::LostGame)
     }
 
-    // TODO: need a new lookup table for this
+    // TODO: This is inefficient but it's not clear that we'll need this later (tho we
+    // may want a table to look up positions for oids in the player's pov).
     fn loc(&self, oid: Oid) -> Option<Point> {
         for (loc, oids) in &self.cells {
             for candidate in oids {
