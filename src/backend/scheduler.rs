@@ -28,6 +28,7 @@ use rand::rngs::SmallRng;
 use rand::Rng;
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::io::{Error, Write};
 
 pub struct Scheduler {
     entries: Vec<Entry>,
@@ -128,11 +129,25 @@ impl Scheduler {
             }
         }
     }
+
+    pub fn dump<W: Write>(&self, writer: &mut W, game: &Game) -> Result<(), Error> {
+        write!(writer, "scheduler is at {}\n", self.now)?;
+
+        let mut entries = self.entries.clone();
+        entries.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
+        write!(writer, "   oid  units dname\n")?;
+        for entry in entries.iter().rev() {
+            let obj = game.objects.get(&entry.oid).unwrap();
+            write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
+        }
+        Ok(())
+    }
 }
 
 // ---- Private methods ------------------------------------------------------------------
 impl Scheduler {
     fn not_acted(&mut self) {
+        self.now += time::DIAGNOL_MOVE;
         for entry in self.entries.iter_mut() {
             entry.units += time::DIAGNOL_MOVE;
         }
@@ -147,7 +162,7 @@ impl Scheduler {
     }
 
     fn adjust_units(&mut self, oid: Oid, taken: Time, extra: Time) {
-        self.now = self.now + taken;
+        self.now += taken;
 
         for entry in self.entries.iter_mut() {
             if entry.oid == oid {

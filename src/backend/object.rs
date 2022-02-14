@@ -53,6 +53,10 @@ impl Object {
         }
     }
 
+    pub fn dname(&self) -> &str {
+        &self.dname
+    }
+
     pub fn description(&self) -> &str {
         &self.description
     }

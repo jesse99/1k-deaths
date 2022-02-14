@@ -71,7 +71,13 @@ const SECS_TO_TIME: i64 = 10 * SEC_TENTHS_TO_TIME;
 impl fmt::Display for Time {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let secs = (self.t as f64) / (SECS_TO_TIME as f64);
-        write!(f, "{secs:.1}")
+        if f64::abs(secs) < 60.0 {
+            write!(f, "{secs:.1}s")
+        } else if f64::abs(secs) < 60.0 * 60.0 {
+            write!(f, "{:.1}m", secs / 60.0)
+        } else {
+            write!(f, "{:.1}h", secs / (60.0 * 60.0))
+        }
     }
 }
 

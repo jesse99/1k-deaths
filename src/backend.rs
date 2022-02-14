@@ -27,10 +27,11 @@ use pov::PoV;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
-use std::cell::{RefCell, RefMut};
-// use std::os::unix::prelude::FileTypeExt;
 use scheduler::Scheduler;
+use std::cell::{RefCell, RefMut};
+use std::cmp::{max, min};
 use std::fs::File;
+use std::io::{Error, Write};
 use tag::*;
 use tag::{Durability, Material, Tag};
 use time::Time;
@@ -184,6 +185,11 @@ impl Game {
         }
     }
 
+    pub fn dump_state<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        self.dump_pov(writer)?;
+        self.scheduler.dump(writer, self)
+    }
+
     pub fn recent_messages(&self, limit: usize) -> impl Iterator<Item = &Message> {
         let iter = self.messages.iter();
         if limit < self.messages.len() {
@@ -191,6 +197,10 @@ impl Game {
         } else {
             iter.skip(0)
         }
+    }
+
+    pub fn add_mesg(&mut self, mesg: Message) {
+        self.messages.push(mesg);
     }
 
     pub fn player(&self) -> Point {
@@ -813,6 +823,76 @@ impl Game {
         // appending onto the stream because we may want a wizard command to show the last
         // few events).
         self.stream.clear();
+    }
+
+    fn dump_cell<W: Write>(&self, writer: &mut W, loc: &Point) -> Result<(), Error> {
+        for (oid, obj) in self.cell_iter(loc) {
+            write!(writer, "   dname: {} oid: {oid}\n", obj.dname())?;
+            for tag in obj.iter() {
+                write!(writer, "   {tag:?}\n")?;
+            }
+            write!(writer, "\n")?;
+        }
+        Ok(())
+    }
+
+    fn dump_pov<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        // Find the dimensions of the player's pov.
+        let mut min_x = i32::MAX;
+        let mut min_y = i32::MAX;
+        let mut max_x = i32::MIN;
+        let mut max_y = i32::MIN;
+        for loc in self.pov.locations() {
+            min_x = min(loc.x, min_x);
+            min_y = min(loc.y, min_y);
+            max_x = max(loc.x, max_x);
+            max_y = max(loc.y, max_y);
+        }
+
+        // Render the PoV cells remembering which cells have characters and which have objects.
+        let mut chars = Vec::new();
+        let mut objs = Vec::new();
+        for y in min_y..=max_y {
+            for x in min_x..=max_x {
+                let loc = Point::new(x, y);
+                let obj = self.get_top(&loc).1;
+                if obj.has(CHARACTER_ID) {
+                    if chars.len() < 10 {
+                        write!(writer, " c{}", chars.len())?;
+                    } else {
+                        write!(writer, "c{}", chars.len())?;
+                    }
+                    chars.push(loc);
+                } else if !obj.has(TERRAIN_ID) {
+                    write!(writer, "{:>3}", objs.len())?;
+                    objs.push(loc);
+                } else if self.pov.visible(&loc) {
+                    write!(writer, "...")?;
+                } else {
+                    write!(writer, "   ")?;
+                }
+            }
+            write!(writer, "\n")?;
+        }
+
+        // Write out details for each character and object.
+        if !chars.is_empty() {
+            write!(writer, "\n")?;
+            for (i, loc) in chars.iter().enumerate() {
+                write!(writer, "c{i} at {loc}:\n")?;
+                self.dump_cell(writer, &loc)?;
+            }
+        }
+
+        if !objs.is_empty() {
+            write!(writer, "\n")?;
+            for (i, loc) in objs.iter().enumerate() {
+                write!(writer, "{i} at {loc}:\n")?;
+                self.dump_cell(writer, &loc)?;
+            }
+        }
+
+        Ok(())
     }
 }
 

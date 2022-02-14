@@ -4,8 +4,11 @@ use super::messages_view::{self, MessagesView};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
 use super::text_view::{Line, TextRun};
-use crate::backend::{Action, Color, Game, Point, Size};
+use crate::backend::{Action, Color, Game, Message, Point, Size, Topic};
 use fnv::FnvHashMap;
+use std::fs::File;
+use std::io::{Error, Write};
+use std::path::Path;
 use termion::event::Key;
 
 const NUM_MESSAGES: i32 = 5;
@@ -35,9 +38,9 @@ impl MainMode {
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
         commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
-        // if super::wizard_mode() {
-        //     commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_show_events(game)));
-        // }
+        if super::wizard_mode() {
+            commands.insert(Key::Ctrl('d'), Box::new(|s, game| s.do_save_state(game)));
+        }
 
         // We don't receive ctrl-m. We're using ctrl-p because that's what Crawl does.
         commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
@@ -101,10 +104,10 @@ Movement is done using the numeric keypad or arrow keys:
         .to_string();
         if super::wizard_mode() {
             help += r#"
-"#;
 
-            // Wizard mode commands:
-            // [[control-e]] show recent events.
+Wizard mode commands:
+[[control-d]] dump game state to state-xxx.txt.
+"#;
         }
         validate_help("main", &help, self.commands.keys());
 
@@ -121,19 +124,35 @@ Movement is done using the numeric keypad or arrow keys:
         InputAction::Quit
     }
 
-    // fn do_show_events(&mut self, game: &mut Game) -> InputAction {
-    //     fn get_lines(game: &mut Game) -> Vec<Line> {
-    //         let mut lines = Vec::new();
-    //         for e in game.events() {
-    //             let line = vec![TextRun::Color(Color::White), TextRun::Text(e)];
-    //             lines.push(line);
-    //         }
-    //         lines
-    //     }
-    //     // TODO: Should we load saved events? Do we even want this mode?
-    //     let lines = get_lines(game);
-    //     InputAction::Push(TextMode::at_bottom().create(lines))
-    // }
+    fn state_path(&self, base: &str) -> String {
+        for i in 1..1000 {
+            let candidate = format!("{base}-{:0>3}.txt", i);
+            if !Path::new(&candidate).is_file() {
+                return candidate;
+            }
+        }
+        panic!("Couldn't find a file to dump state in 1K tries!");
+    }
+
+    fn save_state<W: Write>(&self, path: &str, writer: &mut W, game: &mut Game) -> Result<(), Error> {
+        game.dump_state(writer)?;
+        game.add_mesg(Message {
+            topic: Topic::Important,
+            text: format!("Saved state to {path}"),
+        });
+        Ok(())
+    }
+
+    fn do_save_state(&mut self, game: &mut Game) -> InputAction {
+        let path = self.state_path("state");
+        if let Err(err) = File::create(&path).and_then(|mut file| self.save_state(&path, &mut file, game)) {
+            game.add_mesg(Message {
+                topic: Topic::Error,
+                text: format!("Couldn't save state to {path}: {err}"),
+            })
+        }
+        InputAction::UpdatedGame
+    }
 
     fn do_show_messages(&mut self, game: &mut Game) -> InputAction {
         fn get_lines(game: &mut Game) -> Vec<Line> {
