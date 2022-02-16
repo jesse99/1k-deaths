@@ -265,6 +265,13 @@ impl Object {
         if self.has(CHARACTER_ID) {
             assert!(self.has(NAME_ID), "Character's must have a name: {self:?}");
             assert!(!self.has(PORTABLE_ID), "Character objects cannot be Portable: {self:?}",);
+
+            // This way the interactions table will find a tag for a particular NPC before
+            // using the generic Character tag.
+            assert!(
+                self.tags.last().unwrap().to_id() == CHARACTER_ID,
+                "Character tag must come last: {self:?}",
+            );
         }
         if self.has(PLAYER_ID) {
             assert!(self.has(CHARACTER_ID), "Player must be a Character: {self:?}")

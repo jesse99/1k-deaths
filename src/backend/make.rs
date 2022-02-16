@@ -303,42 +303,44 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
 
 fn doorman_tags() -> Vec<Tag> {
     vec![
-        Tag::Character,
         Tag::Disposition(Disposition::Friendly),
         Tag::Name("Doorman"),
         Tag::Doorman,
+        Tag::Character,
     ]
 }
 
 fn rhulad_tags() -> Vec<Tag> {
     vec![
-        Tag::Character,
         Tag::Disposition(Disposition::Aggressive),
         Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Name("Rhulad"),
         Tag::Rhulad,
+        Tag::Scheduled,
+        Tag::Character,
     ]
 }
 
 fn spectator_tags() -> Vec<Tag> {
     vec![
-        Tag::Character,
         Tag::Disposition(Disposition::Neutral),
         Tag::Durability(Durability { current: 33, max: 33 }),
         Tag::Name("Spectator"),
         Tag::Spectator,
+        Tag::Scheduled,
+        Tag::Character,
     ]
 }
 
 fn player_tags() -> Vec<Tag> {
     vec![
-        Tag::Character,
         Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Inventory(Vec::new()),
         Tag::Name("yourself"),
         Tag::CanOpenDoor,
         Tag::Player,
         Tag::Scheduled,
+        Tag::Character,
     ]
 }
 
