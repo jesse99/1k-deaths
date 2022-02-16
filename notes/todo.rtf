@@ -35,26 +35,13 @@ https://crawl.kelbi.org/#lobby\
 	- https://blog.sentry.io/2018/04/05/you-cant-rust-that\
 	- http://aturon.github.io/\
 	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday\
-\'95\'a0Add character stats, should be object tags\
 \'95 Support combat\
-	- add a disposition tag, friendly, neutral, aggresive\
-	- spectators can be neutral, spectators should flee in combat\
-	- doorman is friendly?\
-	- rhulad is aggressive\
+	- can\'92t attack friendly\
+	- aggresive should move to player and attack\
+	- neutral should stay put and attempt to flee if attacked\
 	- add aggressive NPCs after killing rhulad\
 		https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock\
 	- for now this can be unarmed combat\
-	- should be tags for this\
-\'95 NPCs not in combat and at full health should cap energy\
-	- or maybe when sleeping they gain no energy\
-	- NPCs should drop combar if they can\'92t see the player?\
-		` or move towards where player was and drop combat then?\
-		` or maybe wander for a bit?\
-\'95\'a0Add an info view:\
-	- player stats\
-	- top N NPCs\
-		` color code these: red for aggresive and dangerous, orange, blue, green\
-\'95 Try underlining dangerous NPCs (both aggresive and neutral)\
 \'95 Look into Dijkstra Maps\
 	- http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps\
 	- http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized
@@ -66,6 +53,19 @@ https://crawl.kelbi.org/#lobby\
 \'95\'a0Need a way to rest\
 	- also add a health bar for the player\
 	- and maybe targeted and near by NPCs\
+\'95 NPCs not in combat and at full health should cap energy\
+	- or maybe when sleeping they gain no energy\
+	- NPCs should drop combar if they can\'92t see the player?\
+		` or move towards where player was and drop combat then?\
+		` or maybe wander for a bit?\
+\'95\'a0Add an info view:\
+	- player stats\
+	- top N NPCs\
+		` color code these: red for aggresive and dangerous, orange, blue, green\
+\'95 Try underlining dangerous NPCs (both aggresive and neutral)\
+	- could add Icarium\
+	- neutral dangerous NPC\
+	- maybe confirm that you want to attack\
 \'95 Should be a wizard command to get combat details\
 	- maybe also a wizard mode examine command to get full cell details\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0

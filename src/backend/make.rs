@@ -166,7 +166,7 @@ pub fn vitr() -> Object {
 fn doorman() -> Object {
     Object::new(
         "doorman",
-        npc_tags("Doorman", Tag::Doorman),
+        doorman_tags(),
         Symbol::Npc('D'),
         Color::Green,
         "a royal guard",
@@ -176,7 +176,7 @@ fn doorman() -> Object {
 fn rhulad() -> Object {
     Object::new(
         "rhulad",
-        npc_tags("Rhulad", Tag::Rhulad),
+        rhulad_tags(),
         Symbol::Npc('R'),
         Color::Red,
         "the Emperor of a Thousand Deaths",
@@ -186,7 +186,7 @@ fn rhulad() -> Object {
 fn spectator() -> Object {
     Object::new(
         "spectator",
-        npc_tags("Spectator", Tag::Spectator),
+        spectator_tags(),
         Symbol::Npc('s'),
         Color::Plum,
         "a spectator",
@@ -242,6 +242,7 @@ pub fn pick_axe() -> Object {
     Object::new("pick-axe", pick_axe_tags(), Symbol::PickAxe, Color::Tan, "a pick-axe")
 }
 
+// --- tags ------------------------------------------------------------------------------
 fn ground_tags(bg: Color) -> Vec<Tag> {
     vec![Tag::Ground, Tag::Background(bg), Tag::Terrain]
 }
@@ -300,12 +301,32 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
     ]
 }
 
-fn npc_tags(name: &'static str, tag: Tag) -> Vec<Tag> {
+fn doorman_tags() -> Vec<Tag> {
     vec![
         Tag::Character,
-        // Tag::Inventory(Vec::new()),
-        Tag::Name(name),
-        tag,
+        Tag::Disposition(Disposition::Friendly),
+        Tag::Name("Doorman"),
+        Tag::Doorman,
+    ]
+}
+
+fn rhulad_tags() -> Vec<Tag> {
+    vec![
+        Tag::Character,
+        Tag::Disposition(Disposition::Aggressive),
+        Tag::Durability(Durability { current: 100, max: 100 }),
+        Tag::Name("Rhulad"),
+        Tag::Rhulad,
+    ]
+}
+
+fn spectator_tags() -> Vec<Tag> {
+    vec![
+        Tag::Character,
+        Tag::Disposition(Disposition::Neutral),
+        Tag::Durability(Durability { current: 33, max: 33 }),
+        Tag::Name("Spectator"),
+        Tag::Spectator,
     ]
 }
 

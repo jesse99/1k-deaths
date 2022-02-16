@@ -11,6 +11,18 @@ pub enum Material {
     Metal,
 }
 
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+pub enum Disposition {
+    /// Player cannot attack these.
+    Friendly,
+
+    /// These act friendly until attacked in which case they turn aggressive.
+    Neutral,
+
+    /// These will attack the player on sight.
+    Aggressive,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Durability {
     pub current: i32,
@@ -24,18 +36,17 @@ pub struct Durability {
 /// concept because those classes can be combined.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Tag {
-    /// Player, monsters, special entities. Triggers an interaction when
-    /// players try to move into them. Will also have a Name tag. May have
-    /// an Inventory tag.
+    /// Player, monsters, special entities. Triggers an interaction when players try to
+    /// move into them. These will have a Name tag. Often they will also have Scheduled,
+    /// Durability, Inventory, and CanOpenDoor tags. NPCs will also have a Disposition tag.
     Character,
 
-    /// Will also have Character and Inventory tags. Might have a CanOpenDoor tag.
     Player,
     Doorman,
     Rhulad,
     Spectator,
 
-    /// Object performs Action's using the Scheduler.
+    /// Present for objects that perform actions using the Scheduler.
     Scheduled,
 
     /// Objects that a Character has picked up.
@@ -95,6 +106,8 @@ pub enum Tag {
     /// Normally only used with Terrain.
     Background(Color),
 
+    Disposition(Disposition),
+
     /// Typically at zero durability an object will change somehow, e.g. a
     /// door will become open or a character will die.
     Durability(Durability),
@@ -136,6 +149,7 @@ pub const MATERIAL_ID: Tid = Tid(21);
 pub const NAME_ID: Tid = Tid(22);
 pub const CAN_OPEN_DOOR_ID: Tid = Tid(23);
 pub const SCHEDULED_ID: Tid = Tid(24);
+pub const DISPOSITION_ID: Tid = Tid(25);
 
 impl Tag {
     pub fn to_id(&self) -> Tid {
@@ -165,6 +179,7 @@ impl Tag {
             Tag::Name(_) => NAME_ID,
             Tag::CanOpenDoor => CAN_OPEN_DOOR_ID,
             Tag::Scheduled => SCHEDULED_ID,
+            Tag::Disposition(_) => DISPOSITION_ID,
         }
     }
 }
@@ -197,6 +212,7 @@ impl fmt::Display for Tag {
             Tag::Name(text) => write!(f, "Name({text})"),
             Tag::CanOpenDoor => write!(f, "CanOpenDoor"),
             Tag::Scheduled => write!(f, "Scheduled"),
+            Tag::Disposition(dis) => write!(f, "Disposition({dis})"),
         }
     }
 }
