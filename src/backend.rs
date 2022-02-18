@@ -20,7 +20,6 @@ pub use primitives::Point;
 pub use primitives::Size;
 
 use derive_more::Display;
-// use fnv::FnvHashMap;
 use interactions::{Interactions, PreHandler, PreResult};
 use level::Level;
 use object::{Object, TagValue};
@@ -259,37 +258,7 @@ impl Game {
                 }
             }
             Action::Examine { loc, wizard } => {
-                let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
-                let text = if self.pov.visible(&loc) {
-                    let descs: Vec<String> = self
-                        .level
-                        .cell_iter(&loc)
-                        .map(|(_, obj)| obj.description().to_string())
-                        .collect();
-                    let descs = descs.join(", and ");
-                    format!("You see {descs}{suffix}.")
-                } else if self.old_pov.get(&loc).is_some() {
-                    format!("You can no longer see there{suffix}.")
-                } else {
-                    format!("You've never seen there{suffix}.")
-                };
-                self.messages.push(Message {
-                    topic: Topic::Normal,
-                    text,
-                });
-                if wizard {
-                    let messages: Vec<String> = self
-                        .level
-                        .cell_iter(&loc)
-                        .map(|(_, obj)| format!("   {obj:?}"))
-                        .collect();
-                    for text in messages.into_iter() {
-                        self.messages.push(Message {
-                            topic: Topic::Normal,
-                            text,
-                        });
-                    }
-                }
+                self.examine(&loc, wizard);
             }
         }
 
@@ -302,6 +271,50 @@ impl Game {
         while self.messages.len() > MAX_MESSAGES {
             self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
         }
+    }
+
+    fn examine(&mut self, loc: &Point, wizard: bool) {
+        let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
+        if self.pov.visible(&loc) {
+            let descs: Vec<String> = self
+                .level
+                .cell_iter(&loc)
+                .map(|(_, obj)| {
+                    if wizard {
+                        format!("{} {obj:?}", obj.description())
+                    } else {
+                        obj.description().to_string()
+                    }
+                })
+                .collect();
+            if descs.len() == 1 {
+                self.messages.push(Message {
+                    topic: Topic::Normal,
+                    text: format!("You see {}{suffix}.", descs[0]),
+                });
+            } else {
+                self.messages.push(Message {
+                    topic: Topic::Normal,
+                    text: format!("You see{suffix}"),
+                });
+                for desc in descs {
+                    self.messages.push(Message {
+                        topic: Topic::Normal,
+                        text: format!("   {desc}."),
+                    });
+                }
+            }
+        } else if self.old_pov.get(&loc).is_some() {
+            self.messages.push(Message {
+                topic: Topic::Normal,
+                text: format!("You can no longer see there{suffix}."),
+            });
+        } else {
+            self.messages.push(Message {
+                topic: Topic::Normal,
+                text: format!("You've never seen there{suffix}."),
+            });
+        };
     }
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.

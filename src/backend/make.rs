@@ -24,6 +24,10 @@ pub fn level(game: &mut Game, map: &str) {
                 game.add_object(&loc, dirt());
                 game.add_object(&loc, doorman());
             }
+            'I' => {
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, icarium());
+            }
             'o' => {
                 game.add_object(&loc, dirt());
                 game.add_object(&loc, spectator());
@@ -173,6 +177,16 @@ fn doorman() -> Object {
     )
 }
 
+fn icarium() -> Object {
+    Object::new(
+        "icarium",
+        icarium_tags(),
+        Symbol::Npc('I'),
+        Color::LightGrey,
+        "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
+    )
+}
+
 fn rhulad() -> Object {
     Object::new(
         "rhulad",
@@ -306,6 +320,17 @@ fn doorman_tags() -> Vec<Tag> {
         Tag::Disposition(Disposition::Friendly),
         Tag::Name("Doorman"),
         Tag::Doorman,
+        Tag::Character,
+    ]
+}
+
+fn icarium_tags() -> Vec<Tag> {
+    vec![
+        Tag::Disposition(Disposition::Neutral),
+        Tag::Durability(Durability { current: 500, max: 500 }),
+        Tag::Name("Icarium"),
+        Tag::Icarium,
+        Tag::Scheduled,
         Tag::Character,
     ]
 }

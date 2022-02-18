@@ -43,6 +43,7 @@ pub enum Tag {
 
     Player,
     Doorman,
+    Icarium,
     Rhulad,
     Spectator,
 
@@ -150,6 +151,7 @@ pub const NAME_ID: Tid = Tid(22);
 pub const CAN_OPEN_DOOR_ID: Tid = Tid(23);
 pub const SCHEDULED_ID: Tid = Tid(24);
 pub const DISPOSITION_ID: Tid = Tid(25);
+pub const ICARIUM_ID: Tid = Tid(26);
 
 impl Tag {
     pub fn to_id(&self) -> Tid {
@@ -180,6 +182,7 @@ impl Tag {
             Tag::CanOpenDoor => CAN_OPEN_DOOR_ID,
             Tag::Scheduled => SCHEDULED_ID,
             Tag::Disposition(_) => DISPOSITION_ID,
+            Tag::Icarium => ICARIUM_ID,
         }
     }
 }
@@ -213,6 +216,7 @@ impl fmt::Display for Tag {
             Tag::CanOpenDoor => write!(f, "CanOpenDoor"),
             Tag::Scheduled => write!(f, "Scheduled"),
             Tag::Disposition(dis) => write!(f, "Disposition({dis})"),
+            Tag::Icarium => write!(f, "Icarium"),
         }
     }
 }
