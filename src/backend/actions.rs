@@ -5,7 +5,7 @@ impl Game {
         assert!(damage > 0);
 
         let (damage, durability) = {
-            let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
+            let obj = self.lookup.get(&obj_loc, WALL_ID).unwrap().1;
             let durability: Durability = obj.value(DURABILITY_ID).unwrap();
             (durability.max / damage, durability)
         };
@@ -18,7 +18,7 @@ impl Game {
             );
             self.messages.push(mesg);
 
-            let obj = self.get(&obj_loc, WALL_ID).unwrap().1;
+            let obj = self.lookup.get(&obj_loc, WALL_ID).unwrap().1;
             let mut obj = obj.clone();
             obj.replace(Tag::Durability(Durability {
                 current: durability.current - damage,
@@ -45,17 +45,17 @@ impl Game {
 
     pub fn do_flood_deep(&mut self, oid: Oid, loc: Point) {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
-            self.get(candidate, GROUND_ID).is_some() || self.get(candidate, SHALLOW_WATER_ID).is_some()
+            self.lookup.get(candidate, GROUND_ID).is_some() || self.lookup.get(candidate, SHALLOW_WATER_ID).is_some()
         }) {
             debug!("flood deep from {loc} to {new_loc}");
-            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
+            let bad_oid = self.lookup.get(&new_loc, TERRAIN_ID).unwrap().0;
             self.replace_object(&new_loc, bad_oid, make::deep_water());
 
-            if new_loc == self.player {
-                if let Some(newer_loc) = self.find_neighbor(&self.player, |candidate| {
-                    self.get(candidate, GROUND_ID).is_some()
-                        || self.get(candidate, SHALLOW_WATER_ID).is_some()
-                        || self.get(candidate, OPEN_DOOR_ID).is_some()
+            if new_loc == self.player_loc() {
+                if let Some(newer_loc) = self.find_neighbor(&self.player_loc(), |candidate| {
+                    self.lookup.get(candidate, GROUND_ID).is_some()
+                        || self.lookup.get(candidate, SHALLOW_WATER_ID).is_some()
+                        || self.lookup.get(candidate, OPEN_DOOR_ID).is_some()
                 }) {
                     let mesg = Message {
                         topic: Topic::Normal,
@@ -63,8 +63,8 @@ impl Game {
                     };
                     self.messages.push(mesg);
 
-                    trace!("flood is moving player from {} to {}", self.player, newer_loc);
-                    let player_loc = self.player;
+                    trace!("flood is moving player from {} to {}", self.player_loc(), newer_loc);
+                    let player_loc = self.player_loc();
                     self.do_force_move(Oid(0), &player_loc, &newer_loc);
 
                     let units = if player_loc.diagnol(&newer_loc) {
@@ -90,9 +90,9 @@ impl Game {
     }
 
     pub fn do_flood_shallow(&mut self, oid: Oid, loc: Point) {
-        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.get(candidate, GROUND_ID).is_some()) {
+        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.lookup.get(candidate, GROUND_ID).is_some()) {
             debug!("flood shallow from {loc} to {new_loc}");
-            let bad_oid = self.get(&new_loc, TERRAIN_ID).unwrap().0;
+            let bad_oid = self.lookup.get(&new_loc, TERRAIN_ID).unwrap().0;
             self.replace_object(&new_loc, bad_oid, make::shallow_water());
         } else {
             // No where left to flood.
@@ -101,20 +101,10 @@ impl Game {
     }
 
     pub fn do_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
-        assert!(!self.constructing); // make sure this is reset once things start happening
         debug!("{oid} moving from {old_loc} to {new_loc}");
 
-        let oids = self.cells.get_mut(&old_loc).unwrap();
-        let index = oids
-            .iter()
-            .position(|id| *id == oid)
-            .expect(&format!("expected {oid} at {old_loc}"));
-        oids.remove(index);
-        let cell = self.cells.entry(*new_loc).or_insert_with(Vec::new);
-        cell.push(oid);
-
+        self.lookup.moved(oid, old_loc, new_loc);
         if oid.0 == 0 {
-            self.player = *new_loc;
             self.pov.dirty();
         }
     }
@@ -139,29 +129,22 @@ impl Game {
     }
 
     pub fn do_pick_up(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid) {
-        let obj = self.objects.get(&obj_oid).unwrap();
-        debug!("{oid} is picking up {obj} at {obj_loc}");
+        let obj = self.lookup.obj(obj_oid).0;
+        debug!("{oid} is picking up {obj_oid}/{obj} at {obj_loc}");
         let name: &'static str = obj.value(NAME_ID).unwrap();
         let mesg = Message {
             topic: Topic::Normal,
             text: format!("You pick up the {name}."),
         };
         self.messages.push(mesg);
-        {
-            let oids = self.cells.get_mut(&obj_loc).unwrap();
-            let index = oids.iter().position(|id| *id == obj_oid).unwrap();
-            oids.remove(index);
-        }
 
-        let obj = self.get_mut(obj_loc, INVENTORY_ID).unwrap().1;
-        let inv = obj.as_mut_ref(INVENTORY_ID).unwrap();
-        inv.push(obj_oid);
+        self.lookup.pickup(obj_loc, obj_oid);
     }
 
     pub fn do_shove_doorman(&mut self, oid: Oid, old_loc: &Point, ch: Oid, new_loc: &Point) {
         debug!("shoving doorman from {old_loc} to {new_loc}");
         self.do_force_move(ch, old_loc, new_loc);
-        let player_loc = self.player;
+        let player_loc = self.player_loc();
         self.do_move(oid, &player_loc, old_loc);
     }
 }

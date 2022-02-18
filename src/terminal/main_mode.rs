@@ -82,7 +82,7 @@ impl Mode for MainMode {
 
 impl MainMode {
     fn do_examine(&mut self, game: &mut Game) -> InputAction {
-        let loc = game.player();
+        let loc = game.player_loc();
         let window = super::examine_mode::ExamineMode::create(loc);
         InputAction::Push(window)
     }

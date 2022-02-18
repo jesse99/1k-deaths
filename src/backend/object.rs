@@ -87,6 +87,10 @@ impl Object {
         self.tags.iter().any(|candidate| candidate.to_id() == id)
     }
 
+    pub fn blocks_los(&self) -> bool {
+        self.has(CLOSED_DOOR_ID) || self.has(TREE_ID) || self.has(WALL_ID)
+    }
+
     pub fn to_bg_color(&self) -> Color {
         self.value(BACKGROUND_ID).expect("Expected a Background tag")
     }

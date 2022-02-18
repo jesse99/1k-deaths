@@ -15,6 +15,9 @@ pub enum PreResult {
     /// The player did something that didn't take any time so he should have a chance to
     /// act again.
     ZeroAction,
+
+    /// Another handler should be attempted.
+    DidntAct,
 }
 
 // ---- struct Interaction -------------------------------------------------
@@ -92,12 +95,12 @@ fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> 
         game.state = State::WonGame;
         PreResult::Acted(time::DESTROY_EMP_SWORD)
     } else {
-        PreResult::ZeroAction
+        PreResult::DidntAct
     }
 }
 
 fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> PreResult {
-    let (oid, obj) = game.get(new_loc, WALL_ID).unwrap();
+    let (oid, obj) = game.lookup.get(new_loc, WALL_ID).unwrap();
     let material: Option<Material> = obj.value(MATERIAL_ID);
     match material {
         Some(Material::Stone) => {
@@ -118,7 +121,7 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Pr
 }
 
 fn player_vs_deep_water(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let player = game.lookup.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::DeepWater).unwrap();
     game.messages.push(mesg);
     PreResult::ZeroAction
@@ -129,7 +132,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         .player_inv_iter()
         .any(|(_, obj)| obj.description().contains("Doom"))
     {
-        let (oid, doorman) = game.get(doorman_loc, DOORMAN_ID).unwrap();
+        let (oid, doorman) = game.lookup.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = game.find_empty_cell(doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
             PreResult::Acted(time::SHOVE_DOORMAN)
@@ -144,7 +147,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
 }
 
 fn player_vs_rhulad(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> PreResult {
-    let oid = game.get(new_loc, CHARACTER_ID).unwrap().0;
+    let oid = game.lookup.get(new_loc, CHARACTER_ID).unwrap().0;
     game.do_fight_rhulad(Oid(0), new_loc, oid);
     PreResult::Acted(time::FIGHT_RHULAD)
 }
@@ -173,35 +176,35 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 }
 
 fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let player = game.lookup.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::Tree).unwrap();
     game.messages.push(mesg);
     PreResult::ZeroAction
 }
 
 fn player_vs_vitr(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let player = game.lookup.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::Vitr).unwrap();
     game.messages.push(mesg);
     PreResult::ZeroAction
 }
 
 fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.get(player_loc, PLAYER_ID).unwrap().1;
+    let player = game.lookup.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::Wall).unwrap();
     game.messages.push(mesg);
     PreResult::ZeroAction
 }
 
 fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
-    let oid = game.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
+    let oid = game.lookup.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
     game.do_open_door(Oid(0), player_loc, new_loc, oid);
     PreResult::Acted(time::OPEN_DOOR)
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------
 fn player_vs_portable(game: &mut Game, loc: &Point) -> Time {
-    let oid = game.get(loc, PORTABLE_ID).unwrap().0;
+    let oid = game.lookup.get(loc, PORTABLE_ID).unwrap().0;
     game.do_pick_up(Oid(0), loc, oid);
     time::PICK_UP
 }
@@ -216,7 +219,7 @@ fn player_vs_shallow_water(game: &mut Game, _loc: &Point) -> Time {
 }
 
 fn player_vs_sign(game: &mut Game, loc: &Point) -> Time {
-    let (_, obj) = game.get(loc, SIGN_ID).unwrap();
+    let (_, obj) = game.lookup.get(loc, SIGN_ID).unwrap();
     let mesg = Message {
         topic: Topic::Normal,
         text: format!("You see a sign {}.", obj.description()),

@@ -11,8 +11,8 @@ pub struct MapView {
 impl MapView {
     pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game, examined: Option<Point>) {
         let start_loc = Point::new(
-            game.player().x - self.size.width / 2,
-            game.player().y - self.size.height / 2,
+            game.player_loc().x - self.size.width / 2,
+            game.player_loc().y - self.size.height / 2,
         );
         for y in 0..self.size.height {
             for x in 0..self.size.width {

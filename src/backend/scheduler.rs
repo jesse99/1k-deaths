@@ -79,7 +79,7 @@ impl Scheduler {
     /// Note that the player has an advantage because he is allowed to take an action
     /// whenever he has the minimum amount of time available. However he will go into the
     /// negative so other NPCs will have a lot of time to take their own actions).
-    pub fn players_turn(game: &mut Game) -> bool {
+    pub fn player_is_ready(game: &mut Game) -> bool {
         let offset = {
             let rng = &mut *game.rng.borrow_mut();
             rng.gen_range(0..game.scheduler.entries.len())
@@ -137,7 +137,7 @@ impl Scheduler {
         entries.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
         write!(writer, "   oid  units dname\n")?;
         for entry in entries.iter().rev() {
-            let obj = game.objects.get(&entry.oid).unwrap();
+            let obj = game.lookup.obj(entry.oid).0;
             write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
         }
         Ok(())

@@ -1,5 +1,4 @@
 use super::primitives::FoV;
-use super::tag::*;
 use super::{Game, Object, Oid, Point};
 use fnv::FnvHashSet;
 
@@ -42,7 +41,7 @@ impl PoV {
     // This can't be an ordinary method or we run into all sorts of borrowing grief.
     pub fn refresh(game: &mut Game) {
         if game.pov.dirty {
-            let loc = game.player;
+            let loc = game.player_loc();
             PoV::do_refresh(game, &loc);
             game.pov.edition = game.pov.edition.wrapping_add(1);
             game.pov.dirty = false;
@@ -60,7 +59,7 @@ impl PoV {
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
-            blocks_los: { |loc| blocks_los(game.cell_iter(&loc)) },
+            blocks_los: { |loc| blocks_los(game.lookup.cell_iter(&loc)) },
         };
         view.visit();
 
@@ -70,18 +69,10 @@ impl PoV {
     }
 }
 
-fn obj_blocks_los(obj: &Object) -> bool {
-    if obj.has(CLOSED_DOOR_ID) {
-        true
-    } else {
-        obj.has(WALL_ID)
-    }
-}
-
 fn blocks_los<'a>(objs: impl Iterator<Item = (Oid, &'a Object)>) -> bool {
     let mut count = 0;
     for obj in objs {
-        if obj_blocks_los(obj.1) {
+        if obj.1.blocks_los() {
             return true;
         }
         count += 1;

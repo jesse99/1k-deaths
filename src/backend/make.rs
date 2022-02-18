@@ -8,53 +8,53 @@ pub fn level(game: &mut Game, map: &str) {
         // mapping section so that characters can do things like refer to
         // different uniques.
         match ch {
-            ' ' => game.init_cell(loc, dirt()),
-            '#' => game.init_cell(loc, stone_wall()),
-            'M' => game.init_cell(loc, metal_wall()),
-            '+' => game.init_cell(loc, closed_door()),
-            '~' => game.init_cell(loc, shallow_water()),
-            'V' => game.init_cell(loc, vitr()),
-            'T' => game.init_cell(loc, tree()),
-            'W' => game.init_cell(loc, deep_water()),
+            ' ' => game.add_object(&loc, dirt()),
+            '#' => game.add_object(&loc, stone_wall()),
+            'M' => game.add_object(&loc, metal_wall()),
+            '+' => game.add_object(&loc, closed_door()),
+            '~' => game.add_object(&loc, shallow_water()),
+            'V' => game.add_object(&loc, vitr()),
+            'T' => game.add_object(&loc, tree()),
+            'W' => game.add_object(&loc, deep_water()),
             'P' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, player());
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, player());
             }
             'D' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, doorman());
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, doorman());
             }
             'o' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, spectator());
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, spectator());
             }
             'R' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, rhulad());
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, rhulad());
             }
             's' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, weak_sword(game));
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, weak_sword(game));
             }
             'p' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, pick_axe());
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, pick_axe());
             }
             'S' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, mighty_sword());
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, mighty_sword());
             }
             'a' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, sign("a sign that says 'the Lesser Armory'"));
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, sign("a sign that says 'the Lesser Armory'"));
             }
             'b' => {
-                game.init_cell(loc, dirt());
-                game.init_cell(loc, sign("a sign that says 'the Greater Armory'"));
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, sign("a sign that says 'the Greater Armory'"));
             }
             '\n' => (),
             _ => {
-                game.init_cell(loc, dirt());
+                game.add_object(&loc, dirt());
                 game.messages.push(Message {
                     topic: Topic::Error,
                     text: format!("Ignoring map char '{ch}'"),
