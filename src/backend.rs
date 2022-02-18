@@ -326,17 +326,21 @@ impl Game {
     }
 
     pub fn target_next(&self, old_loc: &Point, delta: i32) -> Option<Point> {
-        // Find the cells with Characters in the player's PoV.
-        let mut chars = Vec::new();
-        for loc in self.pov.locations() {
-            if self.lookup.has(loc, CHARACTER_ID) {
-                chars.push(*loc);
-            }
-        }
-
-        // Sort those cells by distance from the player.
-        let p = self.player_loc();
-        chars.sort_by_key(|a| a.distance2(&p));
+        // Find the NPCs near the player that are actually visible to the player.
+        let chars: Vec<Point> = self
+            .lookup
+            .npcs()
+            .map_while(|oid| {
+                let loc = self.lookup.obj(oid).1.unwrap();
+                let dist = loc.distance2(&self.player_loc());
+                if dist <= pov::RADIUS * pov::RADIUS {
+                    Some(loc)
+                } else {
+                    None
+                }
+            })
+            .filter(|loc| self.pov.visible(&loc))
+            .collect();
 
         // Find the Character closest to old_loc.
         let mut index = 0;

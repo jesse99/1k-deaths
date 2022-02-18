@@ -56,20 +56,20 @@ impl Lookup {
         self.player_loc
     }
 
-    pub fn has(&self, loc: &Point, tag: Tid) -> bool {
-        if let Some(oids) = self.cells.get(loc) {
-            for oid in oids {
-                let entry = self
-                    .objects
-                    .get(oid)
-                    .expect("All objects in the level should still exist");
-                if entry.obj.has(tag) {
-                    return true;
-                }
-            }
-        }
-        self.default.has(tag)
-    }
+    // pub fn has(&self, loc: &Point, tag: Tid) -> bool {
+    //     if let Some(oids) = self.cells.get(loc) {
+    //         for oid in oids {
+    //             let entry = self
+    //                 .objects
+    //                 .get(oid)
+    //                 .expect("All objects in the level should still exist");
+    //             if entry.obj.has(tag) {
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //     self.default.has(tag)
+    // }
 
     pub fn get(&self, loc: &Point, tag: Tid) -> Option<(Oid, &Object)> {
         if let Some(oids) = self.cells.get(loc) {
@@ -169,7 +169,7 @@ impl Lookup {
 
     /// Note that this is sorted by distance from the player (closest first) and does not
     /// consider PoV.
-    pub fn npcs(&self, player_loc: &Point) -> impl Iterator<Item = Oid> + '_ {
+    pub fn npcs(&self) -> impl Iterator<Item = Oid> + '_ {
         if !self.sorted.get() {
             // This will normally be mostly sorted so it should be pretty close to an O(N)
             // operation. Still it's expensive enough that we want to defer sorting until
@@ -177,8 +177,8 @@ impl Lookup {
             self.npcs.borrow_mut().sort_by(|a, b| {
                 let a = self.obj(*a).1.unwrap();
                 let b = self.obj(*b).1.unwrap();
-                let a = a.distance2(player_loc);
-                let b = b.distance2(player_loc);
+                let a = a.distance2(&self.player_loc);
+                let b = b.distance2(&self.player_loc);
                 a.cmp(&b)
             });
             self.sorted.set(true);

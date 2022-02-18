@@ -2,6 +2,8 @@ use super::primitives::FoV;
 use super::{Game, Object, Oid, Point};
 use fnv::FnvHashSet;
 
+pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? or gear?
+
 /// Field of View for a character. These are invalidated for certain events
 /// (e.g. terrain changes).
 pub struct PoV {
@@ -55,7 +57,7 @@ impl PoV {
         let mut new_locs = Vec::new();
         let mut view = FoV {
             start: *origin,
-            radius: 10, // TODO: do better with this
+            radius: RADIUS,
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
