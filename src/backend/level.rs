@@ -9,7 +9,7 @@ struct Entry {
     loc: Option<Point>, // some objects are in Inventory tags
 }
 
-pub struct Lookup {
+pub struct Level {
     objects: FnvHashMap<Oid, Entry>,    // all existing objects are here
     cells: FnvHashMap<Point, Vec<Oid>>, // objects within each cell on the map
     npcs: RefCell<Vec<Oid>>,            // all NPCs sorted so that the first is closest to the player
@@ -24,9 +24,9 @@ pub struct Lookup {
     invariants: bool, // if true then expensive checks are enabled
 }
 
-impl Lookup {
-    pub fn new() -> Lookup {
-        Lookup {
+impl Level {
+    pub fn new() -> Level {
+        Level {
             objects: FnvHashMap::default(),
             cells: FnvHashMap::default(),
             npcs: RefCell::new(Vec::new()),
@@ -183,10 +183,7 @@ impl Lookup {
             });
             self.sorted.set(true);
         }
-        NpcsIterator {
-            lookup: self,
-            index: -1,
-        }
+        NpcsIterator { level: self, index: -1 }
     }
 
     pub fn add(&mut self, obj: Object, loc: Option<Point>) -> Oid {
@@ -203,7 +200,7 @@ impl Lookup {
         }
 
         let old = self.objects.insert(oid, Entry { obj, loc });
-        assert!(old.is_none(), "Lookup already had oid {oid}");
+        assert!(old.is_none(), "Level already had oid {oid}");
 
         if let Some(loc) = loc {
             let oids = self.cells.entry(loc).or_insert_with(Vec::new);
@@ -290,7 +287,7 @@ impl Lookup {
                 loc: Some(*loc),
             },
         );
-        assert!(old.is_none(), "Lookup already had oid {new_oid}");
+        assert!(old.is_none(), "Level already had oid {new_oid}");
 
         self.objects.remove(&old_oid);
 
@@ -370,7 +367,7 @@ impl Lookup {
 }
 
 // Debugging support
-impl Lookup {
+impl Level {
     #[cfg(debug_assertions)]
     fn invariant(&self) {
         if self.constructing {
@@ -527,16 +524,16 @@ impl Lookup {
 }
 
 struct CellIterator<'a> {
-    lookup: &'a Lookup,
+    level: &'a Level,
     oids: Option<&'a Vec<Oid>>,
     index: i32,
 }
 
 impl<'a> CellIterator<'a> {
-    fn new(lookup: &'a Lookup, loc: &Point) -> CellIterator<'a> {
-        let oids = lookup.cells.get(loc);
+    fn new(level: &'a Level, loc: &Point) -> CellIterator<'a> {
+        let oids = level.cells.get(loc);
         CellIterator {
-            lookup,
+            level,
             oids,
             index: oids.map(|list| list.len() as i32).unwrap_or(-1),
         }
@@ -552,7 +549,7 @@ impl<'a> Iterator for CellIterator<'a> {
             if self.index >= 0 {
                 let index = self.index as usize;
                 let oid = oids[index];
-                Some((oid, &self.lookup.objects.get(&oid).unwrap().obj))
+                Some((oid, &self.level.objects.get(&oid).unwrap().obj))
             } else {
                 None // finished iteration
             }
@@ -563,7 +560,7 @@ impl<'a> Iterator for CellIterator<'a> {
 }
 
 struct NpcsIterator<'a> {
-    lookup: &'a Lookup,
+    level: &'a Level,
     index: i32,
 }
 
@@ -572,7 +569,7 @@ impl<'a> Iterator for NpcsIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.index += 1;
-        let npcs = self.lookup.npcs.borrow();
+        let npcs = self.level.npcs.borrow();
         let index = self.index as usize;
         if index < npcs.len() {
             Some(npcs[index])

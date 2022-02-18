@@ -61,7 +61,7 @@ impl PoV {
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
-            blocks_los: { |loc| blocks_los(game.lookup.cell_iter(&loc)) },
+            blocks_los: { |loc| blocks_los(game.level.cell_iter(&loc)) },
         };
         view.visit();
 

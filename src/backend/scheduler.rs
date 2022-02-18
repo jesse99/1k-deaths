@@ -137,7 +137,7 @@ impl Scheduler {
         entries.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
         write!(writer, "   oid  units dname\n")?;
         for entry in entries.iter().rev() {
-            let obj = game.lookup.obj(entry.oid).0;
+            let obj = game.level.obj(entry.oid).0;
             write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
         }
         Ok(())

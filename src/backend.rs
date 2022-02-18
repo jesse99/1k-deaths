@@ -1,7 +1,7 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod actions;
 mod interactions;
-mod lookup;
+mod level;
 mod make;
 mod message;
 mod object;
@@ -22,7 +22,7 @@ pub use primitives::Size;
 use derive_more::Display;
 // use fnv::FnvHashMap;
 use interactions::{Interactions, PreHandler, PreResult};
-use lookup::Lookup;
+use level::Level;
 use object::{Object, TagValue};
 use old_pov::OldPoV;
 use pov::PoV;
@@ -90,7 +90,7 @@ pub struct Game {
     rng: RefCell<SmallRng>,
     scheduler: Scheduler,
 
-    lookup: Lookup,
+    level: Level,
     players_move: bool,
 
     messages: Vec<Message>,     // messages shown to the player
@@ -199,7 +199,7 @@ impl Game {
     }
 
     pub fn player_loc(&self) -> Point {
-        self.lookup.player_loc()
+        self.level.player_loc()
     }
 
     /// If this returns true then the UI should call command, otherwise the UI should call
@@ -262,7 +262,7 @@ impl Game {
                 let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
                 let text = if self.pov.visible(&loc) {
                     let descs: Vec<String> = self
-                        .lookup
+                        .level
                         .cell_iter(&loc)
                         .map(|(_, obj)| obj.description().to_string())
                         .collect();
@@ -279,7 +279,7 @@ impl Game {
                 });
                 if wizard {
                     let messages: Vec<String> = self
-                        .lookup
+                        .level
                         .cell_iter(&loc)
                         .map(|(_, obj)| format!("   {obj:?}"))
                         .collect();
@@ -308,10 +308,10 @@ impl Game {
     /// Otherwise return None.
     pub fn tile(&self, loc: &Point) -> Tile {
         let tile = if self.pov.visible(loc) {
-            let (_, obj) = self.lookup.get_bottom(loc);
+            let (_, obj) = self.level.get_bottom(loc);
             let bg = obj.to_bg_color();
 
-            let (_, obj) = self.lookup.get_top(loc);
+            let (_, obj) = self.level.get_top(loc);
             let (fg, symbol) = obj.to_fg_symbol();
 
             Tile::Visible { bg, fg, symbol }
@@ -328,10 +328,10 @@ impl Game {
     pub fn target_next(&self, old_loc: &Point, delta: i32) -> Option<Point> {
         // Find the NPCs near the player that are actually visible to the player.
         let chars: Vec<Point> = self
-            .lookup
+            .level
             .npcs()
             .map_while(|oid| {
-                let loc = self.lookup.obj(oid).1.unwrap();
+                let loc = self.level.obj(oid).1.unwrap();
                 let dist = loc.distance2(&self.player_loc());
                 if dist <= pov::RADIUS * pov::RADIUS {
                     Some(loc)
@@ -380,7 +380,7 @@ impl Game {
     #[cfg(debug_assertions)]
     pub fn set_invariants(&mut self, enable: bool) {
         // TODO: might want a wizard command to enable these
-        self.lookup.set_invariants(enable)
+        self.level.set_invariants(enable)
     }
 }
 
@@ -398,7 +398,7 @@ impl Game {
             // not be reproducible between platforms.
             rng: RefCell::new(SmallRng::seed_from_u64(seed)),
 
-            lookup: Lookup::new(),
+            level: Level::new(),
             players_move: false,
 
             messages,
@@ -413,7 +413,7 @@ impl Game {
     fn init_game(&mut self) {
         let map = include_str!("backend/maps/start.txt");
         make::level(self, map);
-        self.lookup.set_constructing(false);
+        self.level.set_constructing(false);
 
         OldPoV::update(self);
         PoV::refresh(self);
@@ -425,7 +425,7 @@ impl Game {
 
     // TODO: Not sure we'll need this in the future.
     fn loc(&self, oid: Oid) -> Option<Point> {
-        self.lookup.obj(oid).1
+        self.level.obj(oid).1
     }
 
     fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {
@@ -445,7 +445,7 @@ impl Game {
 
     fn obj_acted(&mut self, oid: Oid, units: Time) -> Option<(Time, Time)> {
         let loc = self.loc(oid).unwrap();
-        let obj = self.lookup.obj(oid).0;
+        let obj = self.level.obj(oid).0;
         let deep_water = obj.has(DEEP_WATER_ID);
         let shallow_water = obj.has(SHALLOW_WATER_ID);
 
@@ -466,7 +466,7 @@ impl Game {
     }
 
     fn find_interact_handler(&self, tag0: &Tag, new_loc: &Point) -> Option<PreHandler> {
-        for (_, obj) in self.lookup.cell_iter(new_loc) {
+        for (_, obj) in self.level.cell_iter(new_loc) {
             for tag1 in obj.iter() {
                 let handler = self.interactions.find_interact_handler(tag0, tag1);
                 if handler.is_some() {
@@ -514,9 +514,9 @@ impl Game {
     fn interact_post_move(&mut self, new_loc: &Point) -> Time {
         let mut handlers = Vec::new();
         {
-            let oids = self.lookup.cell(new_loc);
+            let oids = self.level.cell(new_loc);
             for oid in oids.iter().rev() {
-                let obj = self.lookup.obj(*oid).0;
+                let obj = self.level.obj(*oid).0;
                 for tag in obj.iter() {
                     if let Some(handler) = self.interactions.find_post_handler(&Tag::Player, tag) {
                         handlers.push(*handler);
@@ -535,14 +535,14 @@ impl Game {
     fn add_object(&mut self, loc: &Point, obj: Object) {
         trace!("adding {obj} to {loc}");
         let scheduled = obj.has(SCHEDULED_ID);
-        let oid = self.lookup.add(obj, Some(*loc));
+        let oid = self.level.add(obj, Some(*loc));
         if scheduled {
             self.schedule_new_obj(oid);
         }
     }
 
     fn schedule_new_obj(&mut self, oid: Oid) {
-        let obj = self.lookup.obj(oid).0;
+        let obj = self.level.obj(oid).0;
         let initial = if oid.0 == 0 {
             time::DIAGNOL_MOVE
         } else if obj.has(SHALLOW_WATER_ID) || obj.has(DEEP_WATER_ID) {
@@ -554,7 +554,7 @@ impl Game {
     }
 
     fn destroy_object(&mut self, loc: &Point, old_oid: Oid) {
-        let (obj, pos) = self.lookup.obj(old_oid);
+        let (obj, pos) = self.level.obj(old_oid);
         assert_eq!(pos.unwrap(), *loc);
 
         trace!("destroying {obj} at {loc}");
@@ -571,7 +571,7 @@ impl Game {
                 make::dirt()
             };
             let scheduled = new_obj.has(SCHEDULED_ID);
-            let new_oid = self.lookup.replace(loc, old_oid, new_obj);
+            let new_oid = self.level.replace(loc, old_oid, new_obj);
             if scheduled {
                 self.schedule_new_obj(new_oid);
             }
@@ -579,15 +579,15 @@ impl Game {
             // The player may now be able to see through this cell so we need to ensure
             // that cells around it exist now. TODO: probably should have a LOS changed
             // check.
-            self.lookup.ensure_neighbors(&loc);
+            self.level.ensure_neighbors(&loc);
         } else {
             // If it's just a normal object or character we can just nuke the object.
-            self.lookup.remove(old_oid);
+            self.level.remove(old_oid);
         }
     }
 
     fn replace_object(&mut self, loc: &Point, old_oid: Oid, new_obj: Object) {
-        let (old_obj, pos) = self.lookup.obj(old_oid);
+        let (old_obj, pos) = self.level.obj(old_oid);
         assert_eq!(pos.unwrap(), *loc);
 
         trace!("replacing {old_obj} at {loc} with {new_obj}");
@@ -596,7 +596,7 @@ impl Game {
         }
 
         let scheduled = new_obj.has(SCHEDULED_ID);
-        let new_oid = self.lookup.replace(loc, old_oid, new_obj);
+        let new_oid = self.level.replace(loc, old_oid, new_obj);
         if scheduled {
             self.schedule_new_obj(new_oid);
         }
@@ -622,9 +622,9 @@ impl Game {
         deltas.shuffle(&mut *self.rng());
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let character = &self.lookup.get(&new_loc, CHARACTER_ID);
+            let character = &self.level.get(&new_loc, CHARACTER_ID);
             if character.is_none() {
-                let (_, terrain) = self.lookup.get_bottom(&new_loc);
+                let (_, terrain) = self.level.get_bottom(&new_loc);
                 if ch.impassible_terrain(terrain).is_none() {
                     return Some(new_loc);
                 }
@@ -647,7 +647,7 @@ impl Game {
     }
 
     fn dump_cell<W: Write>(&self, writer: &mut W, loc: &Point) -> Result<(), Error> {
-        for (oid, obj) in self.lookup.cell_iter(loc) {
+        for (oid, obj) in self.level.cell_iter(loc) {
             write!(writer, "   dname: {} oid: {oid}\n", obj.dname())?;
             for tag in obj.iter() {
                 write!(writer, "   {tag:?}\n")?;
@@ -676,7 +676,7 @@ impl Game {
         for y in min_y..=max_y {
             for x in min_x..=max_x {
                 let loc = Point::new(x, y);
-                let obj = self.lookup.get_top(&loc).1;
+                let obj = self.level.get_top(&loc).1;
                 if obj.has(CHARACTER_ID) {
                     if chars.len() < 10 {
                         write!(writer, " c{}", chars.len())?;
@@ -725,7 +725,7 @@ struct InventoryIterator<'a> {
 
 impl<'a> InventoryIterator<'a> {
     fn new(game: &'a Game, loc: &Point) -> InventoryIterator<'a> {
-        let (_, inv) = game.lookup.get(loc, INVENTORY_ID).unwrap();
+        let (_, inv) = game.level.get(loc, INVENTORY_ID).unwrap();
         let oids = inv.as_ref(INVENTORY_ID).unwrap();
         InventoryIterator {
             game,
@@ -743,7 +743,7 @@ impl<'a> Iterator for InventoryIterator<'a> {
         if self.index >= 0 {
             let index = self.index as usize;
             let oid = self.oids[index];
-            Some((oid, self.game.lookup.obj(oid).0))
+            Some((oid, self.game.level.obj(oid).0))
         } else {
             None // finished iteration
         }
