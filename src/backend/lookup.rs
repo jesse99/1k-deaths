@@ -18,7 +18,7 @@ pub struct Lookup {
     player_loc: Point,
     default: Object,
     default_oids: Vec<Oid>,
-    changed: Point,
+    changed: Point,     // the loc that was last modified, used for cheap invariants
     constructing: bool, // level is in the process of being constructed
     #[cfg(debug_assertions)]
     invariants: bool, // if true then expensive checks are enabled
@@ -388,6 +388,9 @@ impl Lookup {
             entry.unwrap().obj
         );
 
+        let entry = self.objects.get(&Oid(self.next_id));
+        assert!(entry.is_none(), "next_id is somehow {}", entry.unwrap().obj);
+
         let oids = self.cells.get(&self.player_loc).expect("player should be on the map");
         assert!(
             oids.iter().any(|oid| self.objects.get(oid).unwrap().obj.has(PLAYER_ID)),
@@ -461,6 +464,10 @@ impl Lookup {
                 assert!(all_oids.insert(oid), "{loc} has oid {oid} which exists elsewhere");
                 assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
             }
+        }
+
+        for oid in self.npcs.borrow().iter() {
+            assert!(all_oids.contains(&oid), "{oid} NPC isn't on the map");
         }
 
         for entry in self.objects.values() {
