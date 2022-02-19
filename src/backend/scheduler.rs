@@ -22,6 +22,7 @@
 // perform an action. When an object does an action the time it takes is given to all the
 // other objects. So a wizard who casts a long spell may have to wait a while to cast it
 // and once it goes off everything else will be able to do quite a lot.
+use super::ai;
 use super::time;
 use super::{Game, Oid, Time};
 use rand::rngs::SmallRng;
@@ -41,6 +42,10 @@ impl Scheduler {
             entries: Vec::new(),
             now: Time::zero(),
         }
+    }
+
+    pub fn now(&self) -> Time {
+        self.now
     }
 
     /// Player starts with a small amount of time units. NPCs start out with zero time
@@ -76,34 +81,31 @@ impl Scheduler {
     }
 
     /// Find the next object with enough time units to perform the action it wants to do.
-    /// Note that the player has an advantage because he is allowed to take an action
-    /// whenever he has the minimum amount of time available. However he will go into the
-    /// negative so other NPCs will have a lot of time to take their own actions).
     pub fn player_is_ready(game: &mut Game) -> bool {
-        let offset = {
-            let rng = &mut *game.rng.borrow_mut();
-            rng.gen_range(0..game.scheduler.entries.len())
-        };
-        for i in 0..100 {
-            for i in 0..game.scheduler.entries.len() {
-                let index = (i + offset) % game.scheduler.entries.len();
-                let entry = game.scheduler.entries[index];
-                if entry.units >= time::MIN_TIME {
-                    if entry.oid.0 == 0 {
-                        return true;
-                    } else if let Some((duration, extra)) = game.obj_acted(entry.oid, entry.units) {
-                        assert!(duration >= time::MIN_TIME);
-                        assert!(duration <= entry.units);
-                        assert!(extra >= Time::zero());
-                        game.scheduler.obj_acted(entry.oid, duration, extra, &game.rng);
-                        return false;
-                    }
+        // We want the scheduler to be fair so we'll keep it simple and schedule which ever
+        // object has the most time available.
+        game.scheduler
+            .entries
+            .sort_by(|a, b| b.units.partial_cmp(&a.units).unwrap());
+        for index in 0..game.scheduler.entries.len() {
+            let entry = game.scheduler.entries[index];
+            if entry.units >= time::MIN_TIME {
+                if entry.oid.0 == 0 {
+                    // The player can move whenever he has a bit of time. This may once
+                    // in a while matter but he will go into negative time units which
+                    // will allow NPCs to do more.
+                    return true;
+                } else if let Some((duration, extra)) = ai::acted(game, entry.oid, entry.units) {
+                    assert!(duration >= time::MIN_TIME);
+                    assert!(duration <= entry.units);
+                    assert!(extra >= Time::zero());
+                    game.scheduler.obj_acted(entry.oid, duration, extra, &game.rng);
+                    return false;
                 }
             }
-            debug!("no one acted for iteration {i}");
-            game.scheduler.not_acted();
         }
-        panic!("At least the player should have moved!");
+        game.scheduler.not_acted();
+        true
     }
 
     pub fn player_acted(&mut self, taken: Time, rng: &RefCell<SmallRng>) {
