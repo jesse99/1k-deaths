@@ -130,6 +130,20 @@ pub trait TagValue<T> {
     fn value(&self, id: Tid) -> Option<T>;
 }
 
+impl TagValue<Behavior> for Object {
+    fn value(&self, id: Tid) -> Option<Behavior> {
+        for candidate in &self.tags {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Behavior(value) => return Some(*value),
+                    _ => panic!("{} tag doesn't have a Behavior", candidate),
+                }
+            }
+        }
+        None
+    }
+}
+
 impl TagValue<Color> for Object {
     fn value(&self, id: Tid) -> Option<Color> {
         for candidate in &self.tags {

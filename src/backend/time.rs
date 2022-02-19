@@ -22,7 +22,7 @@ pub const SPEAK_TO_SPECTATOR: Time = Time { t: 2 * SECS_TO_TIME };
 
 pub const MIN_TIME: Time = Time { t: 1 * SECS_TO_TIME };
 
-#[derive(Copy, Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Time {
     t: i64,
 }
@@ -33,6 +33,10 @@ pub struct Time {
 impl Time {
     pub fn zero() -> Time {
         Time { t: 0 }
+    }
+
+    pub fn max() -> Time {
+        Time { t: i64::MAX }
     }
 
     /// Used by the scheduler.

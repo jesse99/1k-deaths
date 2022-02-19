@@ -1,5 +1,6 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod actions;
+mod ai;
 mod interactions;
 mod level;
 mod make;
@@ -298,6 +299,7 @@ impl Game {
                     text: format!("You see{suffix}"),
                 });
                 for desc in descs {
+                    // TODO: at some point we'll want to cap the number of lines
                     self.messages.push(Message {
                         topic: Topic::Normal,
                         text: format!("   {desc}."),
@@ -450,34 +452,6 @@ impl Game {
         self.rng.borrow_mut()
     }
 
-    fn extra_flood_delay(&self) -> Time {
-        let rng = &mut *self.rng();
-        let t: i64 = 60 + rng.gen_range(0..(400 * 6));
-        time::secs(t)
-    }
-
-    fn obj_acted(&mut self, oid: Oid, units: Time) -> Option<(Time, Time)> {
-        let loc = self.loc(oid).unwrap();
-        let obj = self.level.obj(oid).0;
-        let deep_water = obj.has(DEEP_WATER_ID);
-        let shallow_water = obj.has(SHALLOW_WATER_ID);
-
-        let base = time::FLOOD;
-        let extra = self.extra_flood_delay();
-        if (deep_water || shallow_water) && units >= base + extra {
-            if deep_water {
-                trace!("{oid} at {loc} is deep flooding");
-                self.do_flood_deep(oid, loc);
-            } else {
-                trace!("{oid} at {loc} is shallow flooding");
-                self.do_flood_shallow(oid, loc);
-            };
-            Some((base, extra))
-        } else {
-            None
-        }
-    }
-
     fn find_interact_handler(&self, tag0: &Tag, new_loc: &Point) -> Option<PreHandler> {
         for (_, obj) in self.level.cell_iter(new_loc) {
             for tag1 in obj.iter() {
@@ -559,7 +533,7 @@ impl Game {
         let initial = if oid.0 == 0 {
             time::DIAGNOL_MOVE
         } else if obj.has(SHALLOW_WATER_ID) || obj.has(DEEP_WATER_ID) {
-            Time::zero() - self.extra_flood_delay()
+            Time::zero() - ai::extra_flood_delay(self)
         } else {
             Time::zero()
         };

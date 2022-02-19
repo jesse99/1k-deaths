@@ -1,4 +1,4 @@
-use super::{Color, Oid};
+use super::{Color, Oid, Time};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
@@ -23,6 +23,15 @@ pub enum Disposition {
     Aggressive,
 }
 
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+pub enum Behavior {
+    /// NPC will wander around until time goes past the specified time.
+    Wandering(Time),
+
+    /// NPC isn't doing anything but may wake up if there are noises.
+    Sleeping,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Durability {
     pub current: i32,
@@ -37,8 +46,9 @@ pub struct Durability {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when players try to
-    /// move into them. These will have a Name tag. Often they will also have Scheduled,
-    /// Durability, Inventory, and CanOpenDoor tags. NPCs will also have a Disposition tag.
+    /// move into them. These will have a Name tag. Often they will also have  Scheduled,
+    /// Durability, Inventory, and CanOpenDoor tags. NPCs will also have Disposition and
+    /// Behavior tags.
     Character,
 
     Player,
@@ -108,6 +118,7 @@ pub enum Tag {
     Background(Color),
 
     Disposition(Disposition),
+    Behavior(Behavior),
 
     /// Typically at zero durability an object will change somehow, e.g. a
     /// door will become open or a character will die.
@@ -152,6 +163,7 @@ pub const CAN_OPEN_DOOR_ID: Tid = Tid(23);
 pub const SCHEDULED_ID: Tid = Tid(24);
 pub const DISPOSITION_ID: Tid = Tid(25);
 pub const ICARIUM_ID: Tid = Tid(26);
+pub const BEHAVIOR_ID: Tid = Tid(27);
 
 impl Tag {
     pub fn to_id(&self) -> Tid {
@@ -183,6 +195,7 @@ impl Tag {
             Tag::Scheduled => SCHEDULED_ID,
             Tag::Disposition(_) => DISPOSITION_ID,
             Tag::Icarium => ICARIUM_ID,
+            Tag::Behavior(_) => BEHAVIOR_ID,
         }
     }
 }
@@ -217,6 +230,7 @@ impl fmt::Display for Tag {
             Tag::Scheduled => write!(f, "Scheduled"),
             Tag::Disposition(dis) => write!(f, "Disposition({dis})"),
             Tag::Icarium => write!(f, "Icarium"),
+            Tag::Behavior(b) => write!(f, "Behavior({b})"),
         }
     }
 }

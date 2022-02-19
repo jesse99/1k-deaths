@@ -327,6 +327,7 @@ fn doorman_tags() -> Vec<Tag> {
 fn icarium_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Neutral),
+        Tag::Behavior(Behavior::Wandering(Time::max())),
         Tag::Durability(Durability { current: 500, max: 500 }),
         Tag::Name("Icarium"),
         Tag::Icarium,
@@ -338,6 +339,7 @@ fn icarium_tags() -> Vec<Tag> {
 fn rhulad_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Aggressive),
+        Tag::Behavior(Behavior::Sleeping),
         Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Name("Rhulad"),
         Tag::Rhulad,
@@ -349,6 +351,7 @@ fn rhulad_tags() -> Vec<Tag> {
 fn spectator_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Neutral),
+        Tag::Behavior(Behavior::Sleeping),
         Tag::Durability(Durability { current: 33, max: 33 }),
         Tag::Name("Spectator"),
         Tag::Spectator,
