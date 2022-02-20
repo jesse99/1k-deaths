@@ -33,16 +33,6 @@ impl Game {
         }
     }
 
-    pub fn do_fight_rhulad(&mut self, _oid: Oid, char_loc: &Point, ch: Oid) {
-        debug!("fighting Rhulad at {char_loc}");
-        let mesg = Message::new(Topic::Important, "After an epic battle you kill the Emperor!");
-        self.messages.push(mesg);
-
-        self.destroy_object(char_loc, ch);
-        self.add_object(char_loc, make::emp_sword());
-        self.state = State::KilledRhulad;
-    }
-
     pub fn do_flood_deep(&mut self, oid: Oid, loc: Point) {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
             self.level.get(candidate, GROUND_ID).is_some() || self.level.get(candidate, SHALLOW_WATER_ID).is_some()

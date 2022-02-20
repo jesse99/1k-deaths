@@ -25,11 +25,14 @@ pub enum Disposition {
 
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
 pub enum Behavior {
-    /// NPC will wander around until time goes past the specified time.
-    Wandering(Time),
+    /// NPC is attempting to attack.
+    Attacking(Oid),
 
     /// NPC isn't doing anything but may wake up if there are noises.
     Sleeping,
+
+    /// NPC will wander around until time goes past the specified time.
+    Wandering(Time),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

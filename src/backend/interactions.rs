@@ -42,12 +42,12 @@ impl Interactions {
         i.pre_ins(PICK_AXE_ID, WALL_ID, pick_axe_vs_wall);
         i.pre_ins(PLAYER_ID, DEEP_WATER_ID, player_vs_deep_water);
         i.pre_ins(PLAYER_ID, DOORMAN_ID, player_vs_doorman);
-        i.pre_ins(PLAYER_ID, RHULAD_ID, player_vs_rhulad);
         i.pre_ins(PLAYER_ID, SPECTATOR_ID, player_vs_spectator);
         i.pre_ins(PLAYER_ID, TREE_ID, player_vs_tree);
         i.pre_ins(PLAYER_ID, VITR_ID, player_vs_vitr);
         i.pre_ins(PLAYER_ID, WALL_ID, player_vs_wall);
         i.pre_ins(PLAYER_ID, CLOSED_DOOR_ID, player_vs_closed_door);
+        i.pre_ins(PLAYER_ID, CHARACTER_ID, player_vs_charactor);
 
         i.post_ins(PLAYER_ID, PORTABLE_ID, player_vs_portable);
         i.post_ins(PLAYER_ID, SHALLOW_WATER_ID, player_vs_shallow_water);
@@ -120,6 +120,29 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Pr
     }
 }
 
+fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
+    let obj = game.level.get(new_loc, CHARACTER_ID).unwrap().1;
+    match obj.value(DISPOSITION_ID) {
+        Some(Disposition::Aggressive) => {
+            game.do_melee_attack(player_loc, new_loc);
+            PreResult::Acted(time::BASE_ATTACK) // TODO: should be scaled by weapon speed
+        }
+        Some(Disposition::Friendly) => {
+            let mesg = Message::new(Topic::Normal, "Why would you attack a friend?");
+            game.messages.push(mesg);
+            PreResult::ZeroAction
+        }
+        Some(Disposition::Neutral) => {
+            let obj = game.level.get_mut(new_loc, CHARACTER_ID).unwrap().1;
+            let disposition = Tag::Disposition(Disposition::Aggressive);
+            obj.replace(disposition);
+            game.do_melee_attack(player_loc, new_loc);
+            PreResult::Acted(time::BASE_ATTACK)
+        }
+        None => panic!("{obj} didn't have a Disposition!"),
+    }
+}
+
 fn player_vs_deep_water(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
     let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
     let mesg = player.impassible_terrain_tag(&Tag::DeepWater).unwrap();
@@ -144,12 +167,6 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         game.messages.push(mesg);
         PreResult::ZeroAction
     }
-}
-
-fn player_vs_rhulad(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> PreResult {
-    let oid = game.level.get(new_loc, CHARACTER_ID).unwrap().0;
-    game.do_fight_rhulad(Oid(0), new_loc, oid);
-    PreResult::Acted(time::FIGHT_RHULAD)
 }
 
 fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> PreResult {

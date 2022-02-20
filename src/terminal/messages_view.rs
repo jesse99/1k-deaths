@@ -42,7 +42,13 @@ pub fn to_fore_color(topic: Topic) -> Color {
         Normal => Color::Black,
         Failed => Color::Red,
         Important => Color::Blue,
+        NpcIsDamaged => Color::LightSkyBlue,
+        NpcIsNotDamaged => Color::Black,
         NPCSpeaks => Color::Coral,
+        PlayerDidDamage => Color::Goldenrod,
+        PlayerDidNoDamage => Color::Khaki,
+        PlayerIsDamaged => Color::Crimson,
+        PlayerIsNotDamaged => Color::Pink,
         Warning => Color::Orange,
     }
 }

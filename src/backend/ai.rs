@@ -15,11 +15,23 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Option<(Time, Time)> {
         shallow_flood(game, oid, units)
     } else {
         match obj.value(BEHAVIOR_ID) {
-            Some(Behavior::Wandering(end)) => return wander(game, oid, end, units),
+            Some(Behavior::Attacking(defender)) => return attack(game, oid, defender, units),
             Some(Behavior::Sleeping) => return None, // TODO: implement this?
+            Some(Behavior::Wandering(end)) => return wander(game, oid, end, units),
             None => (),
         }
         panic!("{obj} is scheduled but has no ai handler");
+    }
+}
+
+fn attack(game: &mut Game, attacker: Oid, defender: Oid, units: Time) -> Option<(Time, Time)> {
+    if units >= time::BASE_ATTACK {
+        let attacker_loc = game.loc(attacker).unwrap();
+        let defender_loc = game.loc(defender).unwrap();
+        game.do_melee_attack(&attacker_loc, &defender_loc);
+        Some((time::BASE_ATTACK, Time::zero())) // TODO: should be scaled by weapon speed
+    } else {
+        None
     }
 }
 

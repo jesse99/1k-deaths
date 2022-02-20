@@ -26,7 +26,6 @@ use super::ai;
 use super::time;
 use super::{Game, Oid, Time};
 use rand::rngs::SmallRng;
-use rand::Rng;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::io::{Error, Write};

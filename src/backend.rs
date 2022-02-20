@@ -4,6 +4,7 @@ mod ai;
 mod interactions;
 mod level;
 mod make;
+mod melee;
 mod message;
 mod object;
 mod old_pov;
@@ -205,7 +206,7 @@ impl Game {
     /// If this returns true then the UI should call command, otherwise the UI should call
     /// advance_time.
     pub fn players_turn(&self) -> bool {
-        self.players_move
+        self.players_move || self.game_over()
     }
 
     // Either we need to allow the player to move or we need to re-render because an
@@ -228,7 +229,7 @@ impl Game {
                 assert!(dx >= -1 && dx <= 1);
                 assert!(dy >= -1 && dy <= 1);
                 assert!(dx != 0 || dy != 0);
-                if self.lost_game() {
+                if !self.game_over() {
                     let player = self.player_loc();
                     let new_loc = Point::new(player.x + dx, player.y + dy);
                     let duration = match self.try_interact(&player, &new_loc) {
@@ -434,8 +435,8 @@ impl Game {
         PoV::refresh(self);
     }
 
-    fn lost_game(&self) -> bool {
-        !matches!(self.state, State::LostGame)
+    fn game_over(&self) -> bool {
+        matches!(self.state, State::LostGame | State::WonGame)
     }
 
     // TODO: Not sure we'll need this in the future.
@@ -521,7 +522,8 @@ impl Game {
 
     fn add_object(&mut self, loc: &Point, obj: Object) {
         trace!("adding {obj} to {loc}");
-        let scheduled = obj.has(SCHEDULED_ID);
+        let behavior = obj.value(BEHAVIOR_ID);
+        let scheduled = obj.has(SCHEDULED_ID) && !matches!(behavior, Some(Behavior::Sleeping));
         let oid = self.level.add(obj, Some(*loc));
         if scheduled {
             self.schedule_new_obj(oid);

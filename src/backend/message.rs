@@ -12,23 +12,24 @@ pub enum Topic {
     /// A significant announcement.
     Important,
     NPCSpeaks,
-    // /// NPC was damaged (but not by the player).
-    // NpcIsDamaged, // TODO: might want to have a separate Topic for player allies
 
-    // /// NPC was attacked but not damaged (but not by the player).
-    // NpcIsNotDamaged,
+    /// NPC was damaged (but not by the player).
+    NpcIsDamaged, // TODO: might want to have a separate Topic for player allies
 
-    // /// The player has caused damage.
-    // PlayerDidDamage,
+    /// NPC was attacked but not damaged (but not by the player).
+    NpcIsNotDamaged,
 
-    // /// The player attacked but did no damage.
-    // PlayerDidNoDamage,
+    /// The player has caused damage.
+    PlayerDidDamage,
 
-    // /// The player has taken damage.
-    // PlayerIsDamaged,
+    /// The player attacked but did no damage.
+    PlayerDidNoDamage,
 
-    // /// The player was attacked but took no damage.
-    // PlayerIsNotDamaged,
+    /// The player has taken damage.
+    PlayerIsDamaged,
+
+    /// The player was attacked but took no damage.
+    PlayerIsNotDamaged,
 
     // /// The player will operate less well.
     // PlayerIsImpaired, // TODO: probably also want a PlayerEnchanced

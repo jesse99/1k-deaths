@@ -158,6 +158,20 @@ impl TagValue<Color> for Object {
     }
 }
 
+impl TagValue<Disposition> for Object {
+    fn value(&self, id: Tid) -> Option<Disposition> {
+        for candidate in &self.tags {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Disposition(value) => return Some(*value),
+                    _ => panic!("{} tag doesn't have a Disposition", candidate),
+                }
+            }
+        }
+        None
+    }
+}
+
 impl TagValue<Durability> for Object {
     fn value(&self, id: Tid) -> Option<Durability> {
         for candidate in &self.tags {
