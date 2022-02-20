@@ -116,7 +116,7 @@ Wizard mode commands:
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
-        game.player_acted(Action::Move { dx, dy }, false);
+        game.player_acted(Action::Move { dx, dy });
         InputAction::UpdatedGame
     }
 

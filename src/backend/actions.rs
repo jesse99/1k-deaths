@@ -1,5 +1,10 @@
 use super::*;
 
+pub enum Scheduled {
+    Yes,
+    No,
+}
+
 impl Game {
     pub fn do_dig(&mut self, _oid: Oid, obj_loc: &Point, obj_oid: Oid, damage: i32) {
         assert!(damage > 0);
@@ -33,7 +38,7 @@ impl Game {
         }
     }
 
-    pub fn do_flood_deep(&mut self, oid: Oid, loc: Point) {
+    pub fn do_flood_deep(&mut self, oid: Oid, loc: Point) -> Scheduled {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
             self.level.get(candidate, GROUND_ID).is_some() || self.level.get(candidate, SHALLOW_WATER_ID).is_some()
         }) {
@@ -73,20 +78,24 @@ impl Game {
                     self.state = State::LostGame;
                 }
             }
+            Scheduled::Yes
         } else {
             // No where left to flood.
             self.scheduler.remove(oid);
+            Scheduled::No
         }
     }
 
-    pub fn do_flood_shallow(&mut self, oid: Oid, loc: Point) {
+    pub fn do_flood_shallow(&mut self, oid: Oid, loc: Point) -> Scheduled {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.level.get(candidate, GROUND_ID).is_some()) {
             debug!("flood shallow from {loc} to {new_loc}");
             let bad_oid = self.level.get(&new_loc, TERRAIN_ID).unwrap().0;
             self.replace_object(&new_loc, bad_oid, make::shallow_water());
+            Scheduled::Yes
         } else {
             // No where left to flood.
             self.scheduler.remove(oid);
+            Scheduled::No
         }
     }
 

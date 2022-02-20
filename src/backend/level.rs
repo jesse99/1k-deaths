@@ -56,21 +56,6 @@ impl Level {
         self.player_loc
     }
 
-    // pub fn has(&self, loc: &Point, tag: Tid) -> bool {
-    //     if let Some(oids) = self.cells.get(loc) {
-    //         for oid in oids {
-    //             let entry = self
-    //                 .objects
-    //                 .get(oid)
-    //                 .expect("All objects in the level should still exist");
-    //             if entry.obj.has(tag) {
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //     self.default.has(tag)
-    // }
-
     pub fn get(&self, loc: &Point, tag: Tid) -> Option<(Oid, &Object)> {
         if let Some(oids) = self.cells.get(loc) {
             for oid in oids.iter().rev() {
@@ -157,6 +142,16 @@ impl Level {
     pub fn obj(&self, oid: Oid) -> (&Object, Option<Point>) {
         let entry = self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"));
         (&entry.obj, entry.loc)
+    }
+
+    pub fn try_obj(&self, oid: Oid) -> Option<&Object> {
+        let entry = self.objects.get(&oid);
+        entry.map(|e| &e.obj)
+    }
+
+    pub fn try_loc(&self, oid: Oid) -> Option<Point> {
+        let entry = self.objects.get(&oid);
+        entry.map(|e| e.loc).flatten()
     }
 
     pub fn cell(&self, loc: &Point) -> &Vec<Oid> {

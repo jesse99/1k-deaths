@@ -63,6 +63,9 @@ pub enum Action {
     /// cells that are not in the player's PoV will have either an unhelpful description or
     /// a stale description.
     Examine { loc: Point, wizard: bool },
+
+    /// Something other than the player did something.
+    Object,
     // Be sure to add new actions to the end (or saved games will break).
 }
 
@@ -203,8 +206,8 @@ impl Game {
         self.level.player_loc()
     }
 
-    /// If this returns true then the UI should call command, otherwise the UI should call
-    /// advance_time.
+    /// If this returns true then the UI should call player_acted, otherwise the UI should
+    /// call advance_time.
     pub fn players_turn(&self) -> bool {
         self.players_move || self.game_over()
     }
@@ -220,7 +223,11 @@ impl Game {
         }
     }
 
-    pub fn player_acted(&mut self, action: Action, replay: bool) {
+    pub fn player_acted(&mut self, action: Action) {
+        self.do_player_acted(action, false);
+    }
+
+    fn do_player_acted(&mut self, action: Action, replay: bool) {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
         trace!("player is doing {action:?}");
@@ -262,6 +269,7 @@ impl Game {
             Action::Examine { loc, wizard } => {
                 self.examine(&loc, wizard);
             }
+            Action::Object => panic!("Action::Object should only be used with replay_action"),
         }
 
         if !replay {
@@ -272,6 +280,14 @@ impl Game {
         }
         while self.messages.len() > MAX_MESSAGES {
             self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
+        }
+    }
+
+    pub fn replay_action(&mut self, action: Action) {
+        if let Action::Object = action {
+            self.advance_time();
+        } else {
+            self.do_player_acted(action, true);
         }
     }
 
@@ -441,7 +457,7 @@ impl Game {
 
     // TODO: Not sure we'll need this in the future.
     fn loc(&self, oid: Oid) -> Option<Point> {
-        self.level.obj(oid).1
+        self.level.try_loc(oid)
     }
 
     fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {

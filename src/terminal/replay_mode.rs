@@ -58,10 +58,11 @@ impl Mode for ReplayMode {
 
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
         if self.replay.is_empty() {
+            info!("done replaying");
             InputAction::Pop
         } else if key == Key::Null {
             let action = self.replay.remove(0);
-            game.player_acted(action, true);
+            game.replay_action(action);
             InputAction::UpdatedGame
         } else {
             match self.commands.get(&key).cloned() {
@@ -102,8 +103,9 @@ impl ReplayMode {
         // events to a temp file and swap the two files if the user aborts.
         let actions = std::mem::take(&mut self.replay);
         for action in actions.into_iter() {
-            game.player_acted(action, true);
+            game.replay_action(action);
         }
+        info!("done replaying");
         InputAction::Pop
     }
 
@@ -127,7 +129,7 @@ impl ReplayMode {
     fn do_step(&mut self, game: &mut Game) -> InputAction {
         self.replaying = Replaying::SingleStep;
         let action = self.replay.remove(0);
-        game.player_acted(action, true);
+        game.replay_action(action);
         InputAction::UpdatedGame
     }
 

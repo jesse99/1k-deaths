@@ -59,13 +59,10 @@ impl Mode for ExamineMode {
 impl ExamineMode {
     fn do_examine(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
         self.examined = Point::new(self.examined.x + dx, self.examined.y + dy);
-        game.player_acted(
-            Action::Examine {
-                loc: self.examined,
-                wizard: super::wizard_mode(),
-            },
-            false,
-        );
+        game.player_acted(Action::Examine {
+            loc: self.examined,
+            wizard: super::wizard_mode(),
+        });
         InputAction::UpdatedGame
     }
 
@@ -100,13 +97,10 @@ The focus can be moved with the usual keys:
     fn do_tab_target(&mut self, game: &mut Game, delta: i32) -> InputAction {
         if let Some(loc) = game.target_next(&self.examined, delta) {
             self.examined = loc;
-            game.player_acted(
-                Action::Examine {
-                    loc,
-                    wizard: super::wizard_mode(),
-                },
-                false,
-            );
+            game.player_acted(Action::Examine {
+                loc,
+                wizard: super::wizard_mode(),
+            });
         }
         InputAction::UpdatedGame
     }

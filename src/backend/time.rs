@@ -12,7 +12,7 @@ pub const DIAGNOL_MOVE: Time = Time {
 };
 pub const DESTROY_EMP_SWORD: Time = Time { t: 24 * SECS_TO_TIME };
 pub const DIG_STONE: Time = Time { t: 32 * SECS_TO_TIME };
-pub const FLOOD: Time = Time { t: 16 * SECS_TO_TIME };
+pub const FLOOD: Time = Time { t: 32 * SECS_TO_TIME };
 pub const MOVE_THRU_SHALLOW_WATER: Time = Time { t: 2 * SECS_TO_TIME };
 pub const OPEN_DOOR: Time = Time { t: 10 * SECS_TO_TIME };
 pub const PICK_UP: Time = Time { t: 4 * SECS_TO_TIME };
@@ -58,14 +58,6 @@ impl Time {
 /// above (e.g. CARDINAL_MOVE).
 pub fn secs(s: i64) -> Time {
     Time { t: s * SECS_TO_TIME }
-}
-
-/// In general this only should be used for "extra" time. For the most part use the constants
-/// above (e.g. CARDINAL_MOVE).
-pub fn mins(m: i64) -> Time {
-    Time {
-        t: m * 60 * SECS_TO_TIME,
-    }
 }
 
 // ---- Time traits ----------------------------------------------------------------------

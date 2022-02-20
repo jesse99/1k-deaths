@@ -19,27 +19,33 @@
 //
 // To work around those icky sorts of issues I've moved towards a more traditional energy
 // based system: objects accumulate time units and when they have enough time units they
-// perform an action. When an object does an action the time it takes is given to all the
-// other objects. So a wizard who casts a long spell may have to wait a while to cast it
-// and once it goes off everything else will be able to do quite a lot.
-use super::ai;
+// perform an action. When an object does an action it decrements its time units accordingly.
+// When all objects have had a chance to move time is advanced an all objects are given
+// that bit of extra time. So a wizard who casts a long spell may have to wait a while to
+// cast it and once it goes off everything else will be able to do quite a lot while the
+// wizard is recovering.
+use super::ai::{self, Acted};
 use super::time;
-use super::{Game, Oid, Time};
+use super::{Action, Game, Oid, Time};
+use fnv::FnvHashMap;
+use rand::prelude::SliceRandom;
 use rand::rngs::SmallRng;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::io::{Error, Write};
 
 pub struct Scheduler {
-    entries: Vec<Entry>,
+    entries: FnvHashMap<Oid, Time>,
     now: Time,
+    round: Vec<Entry>, // objects who are given a chance to move before time advances
 }
 
 impl Scheduler {
     pub fn new() -> Scheduler {
         Scheduler {
-            entries: Vec::new(),
+            entries: FnvHashMap::default(),
             now: Time::zero(),
+            round: Vec::new(),
         }
     }
 
@@ -51,10 +57,6 @@ impl Scheduler {
     /// units. That way the player will always have the first move. Other objects may
     /// start out with a negative time so that they execute some time in the future.
     pub fn add(&mut self, oid: Oid, initial: Time) {
-        debug_assert!(
-            !self.entries.iter().any(|entry| entry.oid == oid),
-            "{oid} is already scheduled!"
-        );
         if oid.0 == 0 {
             assert!(
                 initial >= time::MIN_TIME,
@@ -67,77 +69,93 @@ impl Scheduler {
             );
         }
         // info!("added {oid} to the scheduler");
-        self.entries.push(Entry { oid, units: initial });
+        let old = self.entries.insert(oid, initial);
+        debug_assert!(old.is_none(), "{oid} is already scheduled!");
     }
 
     pub fn remove(&mut self, oid: Oid) {
-        // We can't just unwrap this because objects can elect to remove themselves from
-        // scheduling if they have done everything they want to do.
-        if let Some(index) = self.entries.iter().position(|entry| entry.oid == oid) {
-            // info!("removing {oid} from the scheduler");
-            self.entries.remove(index);
-        }
+        // Note that objects can remove themselves from scheduling if they have nothing
+        // left to do so this may be a no-op.
+        self.entries.remove(&oid);
     }
 
-    /// Find the next object with enough time units to perform the action it wants to do.
+    /// Iterates through all objects in the current round until one performs an action.
     pub fn player_is_ready(game: &mut Game) -> bool {
-        // We want the scheduler to be fair so we'll keep it simple and schedule which ever
-        // object has the most time available.
-        game.scheduler
-            .entries
-            .sort_by(|a, b| b.units.partial_cmp(&a.units).unwrap());
-        for index in 0..game.scheduler.entries.len() {
-            let entry = game.scheduler.entries[index];
-            if entry.units >= time::MIN_TIME {
-                if entry.oid.0 == 0 {
-                    // The player can move whenever he has a bit of time. This may once
-                    // in a while matter but he will go into negative time units which
-                    // will allow NPCs to do more.
-                    return true;
-                } else if let Some((duration, extra)) = ai::acted(game, entry.oid, entry.units) {
-                    assert!(duration >= time::MIN_TIME);
-                    assert!(duration <= entry.units);
-                    assert!(extra >= Time::zero());
-                    game.scheduler.obj_acted(entry.oid, duration, extra, &game.rng);
-                    return false;
+        // To ensure fairness all objects with the minimum action time are collected
+        // together into a "round". Once they have all had a chance to move time advances
+        // and a new round starts.
+        if game.scheduler.round.is_empty() {
+            let mut items: Vec<Entry> = game
+                .scheduler
+                .entries
+                .iter()
+                .filter_map(|(&oid, &units)| {
+                    if units >= time::MIN_TIME {
+                        Some(Entry { oid, units })
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            items.shuffle(&mut *game.rng());
+            game.scheduler.round = items;
+        }
+        while !game.scheduler.round.is_empty() {
+            let entry = game.scheduler.round.pop().unwrap();
+            if entry.oid.0 == 0 {
+                // The player can move whenever he has a bit of time. This may once in a
+                // while matter but he will go into negative time units which will allow
+                // NPCs to do more.
+                return true;
+            } else {
+                match ai::acted(game, entry.oid, entry.units) {
+                    Acted::Acted(duration) => {
+                        assert!(duration >= time::MIN_TIME);
+                        assert!(duration <= entry.units);
+                        game.stream.push(Action::Object);
+                        game.scheduler.obj_acted(entry.oid, duration, &game.rng);
+                        return false;
+                    }
+                    Acted::DidntAct => (),
+                    Acted::Removed => {
+                        game.stream.push(Action::Object);
+                        return false; // there's been some sort of state change so the UI may need to update
+                    }
                 }
             }
         }
-        game.scheduler.not_acted();
-        true
+        game.scheduler.advance_time();
+        false
     }
 
     pub fn player_acted(&mut self, taken: Time, rng: &RefCell<SmallRng>) {
         assert!(taken >= time::MIN_TIME);
-
         let taken = taken.fuzz(rng);
-        let extra = Time::zero();
-        self.adjust_units(Oid(0), taken, extra);
+        let units = self.entries.get_mut(&Oid(0)).unwrap();
+        *units -= taken;
+        trace!("   player acted for {taken} and has {units}");
     }
 
-    /// This is used when an object causes another object to use up some of it's time.
+    /// This is used when an object causes another object to use up some of its time.
     /// Examples of this include stunning a character or a stronger character shoving a
-    /// weaker one out of the way. Note that this just subtracts the time from oid: it does
-    /// not give time to other objects.
+    /// weaker one out of the way.
     pub fn force_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
         assert!(taken >= time::MIN_TIME);
-
         let taken = taken.fuzz(rng);
-        for entry in self.entries.iter_mut() {
-            if entry.oid == oid {
-                entry.units = entry.units - taken;
-                break;
-            }
+        if let Some(units) = self.entries.get_mut(&oid) {
+            *units -= taken;
+            trace!("   {oid} forced acted for {taken} and has {units}");
         }
     }
 
     pub fn dump<W: Write>(&self, writer: &mut W, game: &Game) -> Result<(), Error> {
         write!(writer, "scheduler is at {}\n", self.now)?;
 
-        let mut entries = self.entries.clone();
-        entries.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
+        let mut items: Vec<Entry> = self.entries.iter().map(|(&oid, &units)| Entry { oid, units }).collect();
+        items.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
+
         write!(writer, "   oid  units dname\n")?;
-        for entry in entries.iter().rev() {
+        for entry in items.iter().rev() {
             let obj = game.level.obj(entry.oid).0;
             write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
         }
@@ -147,60 +165,29 @@ impl Scheduler {
 
 // ---- Private methods ------------------------------------------------------------------
 impl Scheduler {
-    fn not_acted(&mut self) {
+    fn advance_time(&mut self) {
         self.now += time::DIAGNOL_MOVE;
-        for entry in self.entries.iter_mut() {
-            entry.units += time::DIAGNOL_MOVE;
+        for units in self.entries.values_mut() {
+            *units += time::DIAGNOL_MOVE;
         }
     }
 
-    fn obj_acted(&mut self, oid: Oid, taken: Time, extra: Time, rng: &RefCell<SmallRng>) {
+    fn obj_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
         assert!(taken >= time::MIN_TIME);
-        assert!(extra >= Time::zero());
+        assert!(oid.0 != 0);
 
-        let units = taken.fuzz(rng);
-        self.adjust_units(oid, units, extra);
-    }
-
-    fn adjust_units(&mut self, oid: Oid, taken: Time, extra: Time) {
-        self.now += taken;
-
-        for entry in self.entries.iter_mut() {
-            if entry.oid == oid {
-                entry.units -= taken + extra;
-            } else {
-                entry.units += taken;
-
-                // In theory the player can rest for an arbitrarily long time. NPCs can
-                // also elect to do nothing but if they don't do anything for a long time
-                // we'll assert because that's most likely a bug. TODO: we should be able
-                // to use a much tighter bound when we stop flooding.
-                if entry.oid.0 != 0 && entry.units > time::mins(100 * 60) {
-                    let mut mesg = String::new();
-                    for entry in &self.entries {
-                        mesg += &format!("{} has {}s\n", entry.oid, entry.units);
-                    }
-                    panic!("{mesg}");
-                }
-
-                if entry.units < time::mins(-100 * 60) {
-                    let mut mesg = String::new();
-                    for entry in &self.entries {
-                        mesg += &format!("{} has {}s\n", entry.oid, entry.units);
-                    }
-                    panic!("{mesg}");
-                }
-            }
-        }
+        let taken = taken.fuzz(rng);
+        let units = self.entries.get_mut(&oid).unwrap();
+        *units -= taken;
+        trace!("   {oid} acted for {taken} and has {units}");
     }
 }
 
 // ---- Entry struct ---------------------------------------------------------------------
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Entry {
     oid: Oid,
-    /// Amount of time this object currently has to perform an action. To allow the player
-    /// the first turn new objects start out with a negative time.
+    /// Amount of time this object currently has to perform an action.
     units: Time,
 }
 
