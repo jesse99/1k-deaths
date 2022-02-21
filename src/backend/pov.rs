@@ -35,9 +35,13 @@ impl PoV {
     }
 
     /// Returns true if loc is visible from origin.
-    pub fn visible(&self, loc: &Point) -> bool {
+    pub fn visible(&self, game: &Game, loc: &Point) -> bool {
         assert!(!self.dirty);
-        self.visible.contains(loc)
+        if loc.distance2(&game.player_loc()) <= RADIUS * RADIUS {
+            self.visible.contains(loc)
+        } else {
+            false
+        }
     }
 
     // This can't be an ordinary method or we run into all sorts of borrowing grief.

@@ -112,7 +112,6 @@ impl Scheduler {
                     Acted::Acted(duration) => {
                         assert!(duration >= time::MIN_TIME);
                         assert!(duration <= entry.units);
-                        game.stream.push(Action::Object);
                         game.scheduler.obj_acted(entry.oid, duration, &game.rng);
                         return false;
                     }

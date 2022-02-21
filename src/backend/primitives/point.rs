@@ -1,7 +1,8 @@
 use std::fmt::{self, Formatter};
+use std::hash::{Hash, Hasher};
 
 /// Represents a point in cartesian space, typically a location within a level.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
@@ -39,5 +40,15 @@ impl Point {
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+impl Hash for Point {
+    // This should be quite a bit better than simply folding x onto y.
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let mut s = self.x as i64;
+        s <<= 32;
+        s |= self.y as i64;
+        s.hash(state);
     }
 }

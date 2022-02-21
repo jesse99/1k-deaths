@@ -8,6 +8,14 @@ pub struct MapView {
     pub size: Size,
 }
 
+// MapView::render is a major bottle-neck so we go to some effort to ensure that it's as
+// efficient as possible.
+#[derive(Eq, PartialEq)]
+pub struct Run {
+    tile: Tile,
+    focused: bool,
+}
+
 impl MapView {
     pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game, examined: Option<Point>) {
         let start_loc = Point::new(
@@ -15,87 +23,101 @@ impl MapView {
             game.player_loc().y - self.size.height / 2,
         );
         for y in 0..self.size.height {
+            let v = (self.origin.y + y + 1) as u16;
+            let _ = write!(stdout, "{}", cursor::Goto(1, v),);
+
+            let mut run = Run {
+                tile: Tile::NotVisible,
+                focused: false,
+            };
+            let mut count = 0;
             for x in 0..self.size.width {
                 let pt = Point::new(start_loc.x + x, start_loc.y + y);
-                let h = (self.origin.x + x + 1) as u16; // termion is 1-based
-                let v = (self.origin.y + y + 1) as u16;
-                let tile = game.tile(&pt);
-                let (bg, fg, symbol) = match tile {
-                    Tile::Visible {
-                        bg: b,
-                        fg: f,
-                        symbol: s,
-                    } => (b, f, s), // TODO: use black if there is a character or item?
-                    Tile::Stale(s) => (Color::LightGrey, Color::DarkGray, s),
-                    Tile::NotVisible => (Color::Black, Color::Black, Symbol::Unseen),
+                let candidate = Run {
+                    tile: game.tile(&pt),
+                    focused: examined.map_or(false, |loc| loc == pt),
                 };
-                let _ = write!(
-                    stdout,
-                    "{}{}{}",
-                    cursor::Goto(h, v),
-                    color::Bg(super::color::to_termion(bg)),
-                    color::Fg(super::color::to_termion(fg))
-                );
-                let focused = examined.map_or(false, |loc| loc == pt);
-                if focused {
-                    let _ = write!(stdout, "{}", style::Invert);
+                if candidate == run {
+                    count += 1;
+                } else {
+                    self.render_run(stdout, &run, count);
+                    run = candidate;
+                    count = 1;
                 }
-                self.render_symbol(stdout, symbol);
-                if focused {
-                    let _ = write!(stdout, "{}", style::Reset);
-                }
+            }
+            if count > 0 {
+                self.render_run(stdout, &run, count);
             }
         }
     }
 
-    // let _ = write!(stdout, "\u{25FC}\u{FE0E}"); // BLACK MEDIUM SQUARE
-    fn render_symbol(&self, stdout: &mut Box<dyn Write>, symbol: Symbol) {
+    fn render_run(&self, stdout: &mut Box<dyn Write>, run: &Run, count: usize) {
+        let (bg, fg, symbol) = match run.tile {
+            Tile::Visible {
+                bg: b,
+                fg: f,
+                symbol: s,
+            } => (b, f, s), // TODO: use black if there is a character or item?
+            Tile::Stale(s) => (Color::LightGrey, Color::DarkGray, s),
+            Tile::NotVisible => (Color::Black, Color::Black, Symbol::Unseen),
+        };
+        let text = self.symbols(symbol, count);
+        if run.focused {
+            let _ = write!(
+                stdout,
+                "{}{}{}{}{}",
+                color::Bg(super::color::to_termion(bg)),
+                color::Fg(super::color::to_termion(fg)),
+                style::Invert,
+                text,
+                style::Reset
+            );
+        } else {
+            let _ = write!(
+                stdout,
+                "{}{}{}",
+                color::Bg(super::color::to_termion(bg)),
+                color::Fg(super::color::to_termion(fg)),
+                text
+            );
+        }
+    }
+
+    fn symbols(&self, symbol: Symbol, count: usize) -> String {
         use Symbol::*;
         match symbol {
-            ClosedDoor => {
-                let _ = write!(stdout, "+");
-            }
+            ClosedDoor => "+".repeat(count),
             DeepLiquid => {
-                let _ = write!(stdout, "\u{224B}"); // TRIPLE TILDE
+                "\u{224B}".repeat(count) // TRIPLE TILDE
             }
-            Dirt => {
-                let _ = write!(stdout, ".");
-            }
-            Npc(ch) => {
-                let _ = write!(stdout, "{}", ch);
-            }
-            OpenDoor => {
-                let _ = write!(stdout, ":");
-            }
+            Dirt => ".".repeat(count),
+            Npc(ch) => format!("{}", ch).repeat(count),
+            OpenDoor => ":".repeat(count),
             PickAxe => {
-                let _ = write!(stdout, "\u{26CF}"); // pick
+                "\u{26CF}".repeat(count) // pick
             }
             Player => {
-                let _ = write!(stdout, "\u{265D}"); // BLACK CHESS BISHOP
+                "\u{265D}".repeat(count) // BLACK CHESS BISHOP
             }
             Rubble => {
-                let _ = write!(stdout, "\u{2237}"); // PROPORTION
+                "\u{2237}".repeat(count) // PROPORTION
             }
-            ShallowLiquid => {
-                let _ = write!(stdout, "~");
-            }
+            ShallowLiquid => "~".repeat(count),
             Sign => {
-                let _ = write!(stdout, "\u{261E}"); // WHITE RIGHT POINTING INDEX
+                "\u{261E}".repeat(count) // WHITE RIGHT POINTING INDEX
             }
             StrongSword => {
-                let _ = write!(stdout, "\u{2694}\u{FE0F}"); // crossed swords
+                "\u{2694}\u{FE0F}".repeat(count) // crossed swords
             }
             Tree => {
-                let _ = write!(stdout, "\u{2B06}\u{FE0E}"); // UPWARDS BLACK ARROW
+                "\u{2B06}\u{FE0E}".repeat(count) // UPWARDS BLACK ARROW
             }
-            Unseen => {
-                let _ = write!(stdout, " ");
-            }
+            Unseen => " ".repeat(count),
             Wall => {
-                let _ = write!(stdout, "\u{25FC}\u{FE0E}"); // BLACK MEDIUM SQUARE
+                "\u{25FC}\u{FE0E}".repeat(count) // BLACK MEDIUM SQUARE
             }
             WeakSword => {
-                let _ = write!(stdout, "\u{1F5E1}"); // dagger
+                "\u{1F5E1}".repeat(count) // dagger
             }
         }
     }

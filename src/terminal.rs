@@ -69,7 +69,8 @@ impl Terminal {
             if self.game.players_turn() {
                 state = self.ui.handle_input(&mut self.stdout, &mut self.game);
             } else {
-                self.game.advance_time();
+                let replaying = self.ui.replaying();
+                self.game.advance_time(replaying);
             }
         }
     }

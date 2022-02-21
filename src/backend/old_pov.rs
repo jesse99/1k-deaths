@@ -18,18 +18,7 @@ impl OldPoV {
         }
     }
 
-    // TODO: need to do something like this
-    // pub fn posting(&mut self, _game: &Game2, event: &Event) {
-    //     match event {
-    //         Event::BeginConstructLevel | Event::EndConstructLevel => {
-    //             self.old.clear();
-    //             self.edition = 0;
-    //         }
-    //         _ => (),
-    //     };
-    // }
-
-    // This can't me an ordinary method or we run into all sorts of borrowing grief.
+    // This can't be an ordinary method or we run into all sorts of borrowing grief.
     pub fn update(game: &mut Game) {
         if game.pov.edition() != game.old_pov.edition {
             for loc in game.pov.locations() {

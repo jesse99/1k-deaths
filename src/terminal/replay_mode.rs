@@ -3,6 +3,7 @@ use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
 use super::{Action, Game};
 use fnv::FnvHashMap;
+use std::time::Instant;
 use termion::event::Key;
 
 type KeyHandler = fn(&mut ReplayMode, &mut Game) -> InputAction;
@@ -19,6 +20,7 @@ pub struct ReplayMode {
     replaying: Replaying,
     timeout: i32, // ms
     commands: CommandTable,
+    start_time: Instant,
 }
 
 const REPLAY_DELTA: i32 = 20;
@@ -37,13 +39,18 @@ impl ReplayMode {
         Box::new(ReplayMode {
             replay,
             replaying: Replaying::Running,
-            timeout: 20,
+            timeout: 10,
             commands,
+            start_time: Instant::now(),
         })
     }
 }
 
 impl Mode for ReplayMode {
+    fn replaying(&self) -> bool {
+        true
+    }
+
     fn render(&self, _context: &mut RenderContext) -> bool {
         false
     }
@@ -58,7 +65,8 @@ impl Mode for ReplayMode {
 
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
         if self.replay.is_empty() {
-            info!("done replaying");
+            let elapsed = self.start_time.elapsed();
+            info!("done replaying after {elapsed:.1?} secs");
             InputAction::Pop
         } else if key == Key::Null {
             let action = self.replay.remove(0);
@@ -105,7 +113,8 @@ impl ReplayMode {
         for action in actions.into_iter() {
             game.replay_action(action);
         }
-        info!("done replaying");
+        let elapsed = self.start_time.elapsed();
+        info!("done replaying after {elapsed:.1?} secs");
         InputAction::Pop
     }
 

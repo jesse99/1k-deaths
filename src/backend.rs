@@ -69,6 +69,7 @@ pub enum Action {
     // Be sure to add new actions to the end (or saved games will break).
 }
 
+#[derive(Eq, PartialEq)]
 pub enum Tile {
     /// player can see this
     Visible { bg: Color, fg: Color, symbol: Symbol },
@@ -214,10 +215,14 @@ impl Game {
 
     // Either we need to allow the player to move or we need to re-render because an
     // obhect did something.
-    pub fn advance_time(&mut self) {
+    pub fn advance_time(&mut self, replay: bool) {
         if Scheduler::player_is_ready(self) {
             self.players_move = true;
         } else {
+            if !replay {
+                info!("advance_time queued object action");
+                self.stream.push(Action::Object);
+            }
             OldPoV::update(self);
             PoV::refresh(self);
         }
@@ -273,6 +278,7 @@ impl Game {
         }
 
         if !replay {
+            info!("do_player_acted queued {action:?}");
             self.stream.push(action);
             if self.stream.len() >= MAX_QUEUED_EVENTS {
                 self.save_actions();
@@ -285,7 +291,7 @@ impl Game {
 
     pub fn replay_action(&mut self, action: Action) {
         if let Action::Object = action {
-            self.advance_time();
+            self.advance_time(true);
         } else {
             self.do_player_acted(action, true);
         }
@@ -293,7 +299,7 @@ impl Game {
 
     fn examine(&mut self, loc: &Point, wizard: bool) {
         let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
-        if self.pov.visible(&loc) {
+        if self.pov.visible(self, &loc) {
             let descs: Vec<String> = self
                 .level
                 .cell_iter(&loc)
@@ -339,7 +345,7 @@ impl Game {
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
     /// Otherwise return None.
     pub fn tile(&self, loc: &Point) -> Tile {
-        let tile = if self.pov.visible(loc) {
+        let tile = if self.pov.visible(self, loc) {
             let (_, obj) = self.level.get_bottom(loc);
             let bg = obj.to_bg_color();
 
@@ -371,7 +377,7 @@ impl Game {
                     None
                 }
             })
-            .filter(|loc| self.pov.visible(&loc))
+            .filter(|loc| self.pov.visible(self, &loc))
             .collect();
 
         // Find the Character closest to old_loc.
@@ -692,7 +698,7 @@ impl Game {
                 } else if !obj.has(TERRAIN_ID) {
                     write!(writer, "{:>3}", objs.len())?;
                     objs.push(loc);
-                } else if self.pov.visible(&loc) {
+                } else if self.pov.visible(self, &loc) {
                     write!(writer, "...")?;
                 } else {
                     write!(writer, "   ")?;

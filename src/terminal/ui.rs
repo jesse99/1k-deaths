@@ -39,6 +39,15 @@ impl UI {
         UI { modes, recv }
     }
 
+    pub fn replaying(&self) -> bool {
+        for mode in self.modes.iter() {
+            if mode.replaying() {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game) {
         let mut context = RenderContext {
             stdout,

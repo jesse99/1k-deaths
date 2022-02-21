@@ -30,4 +30,8 @@ pub trait Mode {
     fn input_timeout_ms(&self) -> Option<i32>;
 
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction;
+
+    fn replaying(&self) -> bool {
+        false
+    }
 }
