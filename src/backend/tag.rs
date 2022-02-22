@@ -1,4 +1,4 @@
-use super::{Color, Oid, Time};
+use super::{Color, Oid, Point, Time};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
@@ -27,6 +27,10 @@ pub enum Disposition {
 pub enum Behavior {
     /// NPC is attempting to attack.
     Attacking(Oid),
+
+    /// NPC is moving towards the point. Typically this is because it heard noise from
+    /// there.
+    MovingTo(Point),
 
     /// NPC isn't doing anything but may wake up if there are noises.
     Sleeping,

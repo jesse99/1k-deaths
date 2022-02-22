@@ -99,15 +99,6 @@ impl Game {
         }
     }
 
-    pub fn do_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
-        debug!("{oid} moving from {old_loc} to {new_loc}");
-
-        self.level.moved(oid, old_loc, new_loc);
-        if oid.0 == 0 {
-            self.pov.dirty();
-        }
-    }
-
     pub fn do_force_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
         self.do_move(oid, old_loc, new_loc);
 
@@ -118,6 +109,15 @@ impl Game {
         };
         let taken = taken + self.interact_post_move(new_loc);
         self.scheduler.force_acted(oid, taken, &self.rng);
+    }
+
+    pub fn do_move(&mut self, oid: Oid, old_loc: &Point, new_loc: &Point) {
+        debug!("{oid} moving from {old_loc} to {new_loc}");
+
+        self.level.moved(oid, old_loc, new_loc);
+        if oid.0 == 0 {
+            self.pov.dirty();
+        }
     }
 
     pub fn do_open_door(&mut self, oid: Oid, ch_loc: &Point, obj_loc: &Point, obj_oid: Oid) {

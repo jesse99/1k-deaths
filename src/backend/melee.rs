@@ -128,14 +128,9 @@ impl Game {
     }
 
     fn react_to_attack(&mut self, attacker_id: Oid, defender_loc: &Point) {
-        let (defender_id, defender) = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap();
+        let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
         let attack = match defender.value(BEHAVIOR_ID) {
-            Some(Behavior::Sleeping) => {
-                if defender.has(SCHEDULED_ID) {
-                    self.scheduler.add(defender_id, Time::zero());
-                }
-                true
-            }
+            Some(Behavior::Sleeping) => true,
             Some(Behavior::Attacking(_)) => {
                 // TODO: If the old attacker is no longer visible (or maybe too far away)
                 // then switch to attacking attacker_id.
@@ -151,8 +146,7 @@ impl Game {
             }
         };
         if attack {
-            let behavior = Tag::Behavior(Behavior::Attacking(attacker_id));
-            defender.replace(behavior);
+            self.replace_behavior(defender_loc, Behavior::Attacking(attacker_id));
         }
     }
 

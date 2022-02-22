@@ -3,7 +3,7 @@ use rand::Rng;
 use rand_distr::StandardNormal;
 use std::cell::RefCell;
 use std::fmt::{self, Formatter};
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
 
 pub const BASE_ATTACK: Time = Time { t: 1 * SECS_TO_TIME };
 pub const CARDINAL_MOVE: Time = Time { t: 8 * SECS_TO_TIME };
@@ -102,5 +102,13 @@ impl AddAssign for Time {
 impl SubAssign for Time {
     fn sub_assign(&mut self, rhs: Self) {
         *self = Self { t: self.t - rhs.t };
+    }
+}
+
+impl Mul<i64> for Time {
+    type Output = Self;
+
+    fn mul(self, rhs: i64) -> Self::Output {
+        Time { t: self.t * rhs }
     }
 }

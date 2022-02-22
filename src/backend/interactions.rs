@@ -10,7 +10,7 @@ use rand::prelude::*;
 pub enum PreResult {
     /// The player has interacted with an object at the new cell and the scheduler should
     /// run again.
-    Acted(Time),
+    Acted(Time, Sound),
 
     /// The player did something that didn't take any time so he should have a chance to
     /// act again.
@@ -93,7 +93,7 @@ fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> 
         let mesg = Message::new(Topic::Important, "You have won the game!!");
         game.messages.push(mesg);
         game.state = State::WonGame;
-        PreResult::Acted(time::DESTROY_EMP_SWORD)
+        PreResult::Acted(time::DESTROY_EMP_SWORD, sound::QUIET)
     } else {
         PreResult::DidntAct
     }
@@ -106,7 +106,7 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Pr
         Some(Material::Stone) => {
             let damage = 6;
             game.do_dig(Oid(0), new_loc, oid, damage);
-            PreResult::Acted(time::DIG_STONE)
+            PreResult::Acted(time::DIG_STONE, sound::LOUD)
         }
         Some(Material::Metal) => {
             let mesg = Message::new(
@@ -114,7 +114,7 @@ fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> Pr
                 "Your pick-axe bounces off the metal wall doing no damage.",
             );
             game.messages.push(mesg);
-            PreResult::Acted(time::SCRATCH_METAL)
+            PreResult::Acted(time::SCRATCH_METAL, sound::QUIET)
         }
         None => panic!("Walls should always have a Material"),
     }
@@ -124,8 +124,10 @@ fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
     let obj = game.level.get(new_loc, CHARACTER_ID).unwrap().1;
     match obj.value(DISPOSITION_ID) {
         Some(Disposition::Aggressive) => {
+            // This is QUIET because normally both parties will be making combat noises so
+            // the probability is twice as high as just QUIET alone.
             game.do_melee_attack(player_loc, new_loc);
-            PreResult::Acted(time::BASE_ATTACK) // TODO: should be scaled by weapon speed
+            PreResult::Acted(time::BASE_ATTACK, sound::QUIET) // TODO: should be scaled by weapon speed
         }
         Some(Disposition::Friendly) => {
             let mesg = Message::new(Topic::Normal, "Why would you attack a friend?");
@@ -137,7 +139,7 @@ fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
             let disposition = Tag::Disposition(Disposition::Aggressive);
             obj.replace(disposition);
             game.do_melee_attack(player_loc, new_loc);
-            PreResult::Acted(time::BASE_ATTACK)
+            PreResult::Acted(time::BASE_ATTACK, sound::QUIET)
         }
         None => panic!("{obj} didn't have a Disposition!"),
     }
@@ -158,7 +160,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
         let (oid, doorman) = game.level.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = game.find_empty_cell(doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
-            PreResult::Acted(time::SHOVE_DOORMAN)
+            PreResult::Acted(time::SHOVE_DOORMAN, sound::QUIET)
         } else {
             PreResult::ZeroAction
         }
@@ -189,7 +191,7 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 
     let mesg = Message::new(Topic::NPCSpeaks, text);
     game.messages.push(mesg);
-    PreResult::Acted(time::SPEAK_TO_SPECTATOR)
+    PreResult::Acted(time::SPEAK_TO_SPECTATOR, sound::QUIET)
 }
 
 fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
@@ -216,7 +218,7 @@ fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreR
 fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
     let oid = game.level.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
     game.do_open_door(Oid(0), player_loc, new_loc, oid);
-    PreResult::Acted(time::OPEN_DOOR)
+    PreResult::Acted(time::OPEN_DOOR, sound::VERY_QUIET)
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------

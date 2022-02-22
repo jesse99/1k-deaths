@@ -183,6 +183,11 @@ impl Level {
 
     pub fn add(&mut self, obj: Object, loc: Option<Point>) -> Oid {
         let oid = self.next_oid(&obj);
+        if let Some(loc) = loc {
+            trace!("adding {obj} {oid} to {loc}");
+        } else {
+            trace!("adding {obj} {oid} (no loc)");
+        }
 
         if obj.has(CHARACTER_ID) {
             assert!(loc.is_some(), "Characters should be on the map: {obj:?}");
@@ -214,10 +219,13 @@ impl Level {
     pub fn remove(&mut self, oid: Oid) {
         let entry = self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"));
         if let Some(loc) = entry.loc {
+            trace!("removing {} {oid} which was at {loc}", entry.obj);
             let oids = self.cells.get_mut(&loc).unwrap();
             let index = oids.iter().position(|id| *id == oid).unwrap();
             oids.remove(index);
             self.changed = loc;
+        } else {
+            trace!("removing {} {oid} which had no loc", entry.obj);
         }
 
         if oid.0 != 0 && entry.obj.has(CHARACTER_ID) {
@@ -260,6 +268,7 @@ impl Level {
     pub fn replace(&mut self, loc: &Point, old_oid: Oid, new_obj: Object) -> Oid {
         // Fix up npcs.
         let old_obj = &self.objects.get(&old_oid).unwrap().obj;
+        let old_name = old_obj.dname();
         if old_obj.has(CHARACTER_ID) {
             assert!(old_oid.0 > 1);
             let mut oids = self.npcs.borrow_mut();
@@ -268,6 +277,7 @@ impl Level {
         }
 
         let new_oid = self.next_oid(&new_obj);
+        trace!("replacing {old_name} {old_oid} with {new_obj} {new_oid} at {loc}");
         if new_obj.has(CHARACTER_ID) {
             assert!(new_oid.0 > 1);
             self.npcs.borrow_mut().push(new_oid);

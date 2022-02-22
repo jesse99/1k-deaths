@@ -12,6 +12,7 @@ mod persistence;
 mod pov;
 mod primitives;
 mod scheduler;
+mod sound;
 mod tag;
 mod time;
 
@@ -31,6 +32,7 @@ use rand::prelude::*;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use scheduler::Scheduler;
+use sound::Sound;
 use std::cell::{RefCell, RefMut};
 use std::cmp::{max, min};
 use std::fs::File;
@@ -220,7 +222,6 @@ impl Game {
             self.players_move = true;
         } else {
             if !replay {
-                info!("advance_time queued object action");
                 self.stream.push(Action::Object);
             }
             OldPoV::update(self);
@@ -245,8 +246,9 @@ impl Game {
                     let player = self.player_loc();
                     let new_loc = Point::new(player.x + dx, player.y + dy);
                     let duration = match self.try_interact(&player, &new_loc) {
-                        Some(PreResult::Acted(taken)) => {
+                        Some(PreResult::Acted(taken, sound)) => {
                             assert!(taken > Time::zero());
+                            self.handle_noise(&self.player_loc(), sound);
                             taken
                         }
                         Some(PreResult::ZeroAction) => Time::zero(),
@@ -254,6 +256,7 @@ impl Game {
                         None => {
                             let old_loc = self.player_loc();
                             self.do_move(Oid(0), &old_loc, &new_loc);
+                            self.handle_noise(&new_loc, sound::QUIET);
                             if old_loc.diagnol(&new_loc) {
                                 time::DIAGNOL_MOVE + self.interact_post_move(&new_loc)
                             } else {
@@ -278,7 +281,6 @@ impl Game {
         }
 
         if !replay {
-            info!("do_player_acted queued {action:?}");
             self.stream.push(action);
             if self.stream.len() >= MAX_QUEUED_EVENTS {
                 self.save_actions();
@@ -543,7 +545,6 @@ impl Game {
     }
 
     fn add_object(&mut self, loc: &Point, obj: Object) {
-        trace!("adding {obj} to {loc}");
         let behavior = obj.value(BEHAVIOR_ID);
         let scheduled = obj.has(SCHEDULED_ID) && !matches!(behavior, Some(Behavior::Sleeping));
         let oid = self.level.add(obj, Some(*loc));
@@ -564,11 +565,26 @@ impl Game {
         self.scheduler.add(oid, initial);
     }
 
+    fn replace_behavior(&mut self, loc: &Point, new_behavior: Behavior) {
+        let (oid, obj) = self.level.get_mut(&loc, BEHAVIOR_ID).unwrap();
+        let old_behavior = obj.value(BEHAVIOR_ID).unwrap();
+        assert_ne!(old_behavior, new_behavior);
+        obj.replace(Tag::Behavior(new_behavior));
+
+        if obj.has(SCHEDULED_ID) {
+            if let Behavior::Sleeping = old_behavior {
+                self.scheduler.add(oid, Time::zero())
+            }
+            if let Behavior::Sleeping = new_behavior {
+                self.scheduler.remove(oid);
+            }
+        }
+    }
+
     fn destroy_object(&mut self, loc: &Point, old_oid: Oid) {
         let (obj, pos) = self.level.obj(old_oid);
         assert_eq!(pos.unwrap(), *loc);
 
-        trace!("destroying {obj} at {loc}");
         if obj.has(SCHEDULED_ID) {
             self.scheduler.remove(old_oid);
         }
