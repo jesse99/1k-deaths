@@ -6,7 +6,7 @@ use fnv::FnvHashMap;
 
 struct Entry {
     obj: Object,
-    loc: Option<Point>, // some objects are in Inventory tags
+    loc: Option<Point>, // None for objects within Inventory tags
 }
 
 pub struct Level {
@@ -18,8 +18,8 @@ pub struct Level {
     player_loc: Point,
     default: Object,
     default_oids: Vec<Oid>,
-    changed: Point,     // the loc that was last modified, used for cheap invariants
     constructing: bool, // level is in the process of being constructed
+    changed: Point,     // the loc that was last modified, used for cheap invariants
     #[cfg(debug_assertions)]
     invariants: bool, // if true then expensive checks are enabled
 }

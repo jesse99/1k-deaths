@@ -22,7 +22,7 @@ pub const SPEAK_TO_SPECTATOR: Time = Time { t: 2 * SECS_TO_TIME };
 
 pub const MIN_TIME: Time = Time { t: 1 * SECS_TO_TIME };
 
-#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Time {
     t: i64,
 }
