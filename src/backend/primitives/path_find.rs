@@ -72,7 +72,7 @@ where
         }
     }
 
-    // #[cfg(test)]
+    #[cfg(test)]
     pub fn path(&mut self) -> &Vec<Point> {
         &self.path
     }

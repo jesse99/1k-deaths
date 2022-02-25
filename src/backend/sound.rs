@@ -4,7 +4,7 @@ use super::*;
 use rand::rngs::SmallRng;
 use rand::Rng;
 use std::cell::RefCell;
-use std::ops::Mul;
+use std::ops::{Add, AddAssign, Mul};
 
 /// Volume represents the percent chance that an NPC will wake up if it is on top of the
 /// noise source. The probability goes down according to 0.75^distance so there is always
@@ -13,6 +13,8 @@ use std::ops::Mul;
 pub struct Sound {
     volume: i32,
 }
+
+pub const NONE: Sound = Sound { volume: 0 };
 
 // /// This corresponds to something like resting. Percentages for this work out to:
 // /// 1.5 1.1 0.8 0.6 0.5 0.4 0.3 0.2 0.2.
@@ -59,6 +61,24 @@ impl Mul<f64> for Sound {
     }
 }
 
+impl Add for Sound {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        Sound {
+            volume: self.volume + rhs.volume,
+        }
+    }
+}
+
+impl AddAssign for Sound {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Self {
+            volume: self.volume + rhs.volume,
+        };
+    }
+}
+
 impl Game {
     pub fn handle_noise(&mut self, origin: &Point, noise: Sound) {
         // Almost all noises are going to be in the vicinity of the player so we can use
@@ -94,25 +114,25 @@ impl Game {
                             // and is in sight. But we need to make that check anyway each
                             // time we handle MovingTo so there's little point in doing that
                             // here to.
-                            info!(
+                            debug!(
                                 "{obj} heard a noise and is now moving to {origin}, prob={p:.2}, dist={:.1}",
                                 (distance10 as f64) / 10.0
                             );
                             self.replace_behavior(&loc, Behavior::MovingTo(*origin));
                         } else {
-                            info!(
-                                "{obj} heard a noise but ignored it, prob={p:.2}, dist={:.1}",
-                                (distance10 as f64) / 10.0
-                            );
+                            // info!(
+                            //     "{obj} heard a noise but ignored it, prob={p:.2}, dist={:.1}",
+                            //     (distance10 as f64) / 10.0
+                            // );
                         }
                     }
                 } else {
-                    if let Some((_, obj)) = self.level.get(&loc, CHARACTER_ID) {
-                        info!(
-                            "{obj} did not hear a noise, prob={p:.2}, dist={:.1}",
-                            (distance10 as f64) / 10.0
-                        );
-                    }
+                    // if let Some((_, obj)) = self.level.get(&loc, CHARACTER_ID) {
+                    //     info!(
+                    //         "{obj} did not hear a noise, prob={p:.2}, dist={:.1}",
+                    //         (distance10 as f64) / 10.0
+                    //     );
+                    // }
                 }
             }
         }

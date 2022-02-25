@@ -2,6 +2,7 @@
 //! Characters and between items. It's structured as a lookup table of
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
 use super::object::TagValue;
+use super::sound::*;
 use super::tag::*;
 use super::*;
 use fnv::FnvHashMap;
@@ -22,7 +23,7 @@ pub enum PreResult {
 
 // ---- struct Interaction -------------------------------------------------
 pub type PreHandler = fn(&mut Game, &Point, &Point) -> PreResult;
-pub type PostHandler = fn(&mut Game, &Point) -> Time;
+pub type PostHandler = fn(&mut Game, &Point) -> (Time, Sound);
 
 // TODO:
 // do we need any other handlers? or maybe just comment missing ones?
@@ -222,27 +223,27 @@ fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------
-fn player_vs_portable(game: &mut Game, loc: &Point) -> Time {
+fn player_vs_portable(game: &mut Game, loc: &Point) -> (Time, Sound) {
     let oid = game.level.get(loc, PORTABLE_ID).unwrap().0;
     game.do_pick_up(Oid(0), loc, oid);
-    time::PICK_UP
+    (time::PICK_UP, sound::NONE)
 }
 
-fn player_vs_shallow_water(game: &mut Game, _loc: &Point) -> Time {
+fn player_vs_shallow_water(game: &mut Game, _loc: &Point) -> (Time, Sound) {
     let mesg = Message::new(Topic::Normal, "You splash through the water.");
     game.messages.push(mesg);
 
     // TODO: Some NPCs should not have a penalty (or maybe even be faster)
     // TODO: May change for the player as well (especially if we have any small races)
-    time::MOVE_THRU_SHALLOW_WATER // just a little slower
+    (time::MOVE_THRU_SHALLOW_WATER, sound::QUIET) // just a little slower and a little louder
 }
 
-fn player_vs_sign(game: &mut Game, loc: &Point) -> Time {
+fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {
     let (_, obj) = game.level.get(loc, SIGN_ID).unwrap();
     let mesg = Message {
         topic: Topic::Normal,
         text: format!("You see a sign {}.", obj.description()),
     };
     game.messages.push(mesg);
-    Time::zero()
+    (Time::zero(), sound::NONE)
 }

@@ -107,7 +107,7 @@ impl Game {
         } else {
             time::CARDINAL_MOVE
         };
-        let taken = taken + self.interact_post_move(new_loc);
+        let taken = taken + self.interact_post_move(new_loc).0;
         self.scheduler.force_acted(oid, taken, &self.rng);
     }
 

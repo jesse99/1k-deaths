@@ -256,11 +256,12 @@ impl Game {
                         None => {
                             let old_loc = self.player_loc();
                             self.do_move(Oid(0), &old_loc, &new_loc);
-                            self.handle_noise(&new_loc, sound::QUIET);
+                            let (duration, volume) = self.interact_post_move(&new_loc);
+                            self.handle_noise(&new_loc, sound::QUIET + volume);
                             if old_loc.diagnol(&new_loc) {
-                                time::DIAGNOL_MOVE + self.interact_post_move(&new_loc)
+                                time::DIAGNOL_MOVE + duration
                             } else {
-                                time::CARDINAL_MOVE + self.interact_post_move(&new_loc)
+                                time::CARDINAL_MOVE + duration
                             }
                         }
                     };
@@ -523,7 +524,7 @@ impl Game {
     }
 
     // Player interacting with a cell he has just moved into.
-    fn interact_post_move(&mut self, new_loc: &Point) -> Time {
+    fn interact_post_move(&mut self, new_loc: &Point) -> (Time, Sound) {
         let mut handlers = Vec::new();
         {
             let oids = self.level.cell(new_loc);
@@ -537,11 +538,14 @@ impl Game {
             }
         }
 
-        let mut extra = Time::zero();
+        let mut duration = Time::zero();
+        let mut volume = sound::NONE;
         for handler in handlers.into_iter() {
-            extra = extra + handler(self, new_loc);
+            let (d, v) = handler(self, new_loc);
+            duration += d;
+            volume += v;
         }
-        extra
+        (duration, volume)
     }
 
     fn add_object(&mut self, loc: &Point, obj: Object) {
