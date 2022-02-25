@@ -11,17 +11,22 @@ parser.add_argument('--volume', metavar='N', type=int, default=100,
 
 options = parser.parse_args()
 
-for i in range(1, options.radius):
-    p = options.volume*math.pow(0.75, i)
-    if options.summarize:
-        if p > 100.0:
-            print(f"{100.0:.1f} ", end = '')
-        else:
-            print(f"{p:.1f} ", end = '')
+def s(p, pad=True):
+    if p > 100.0:
+        return "100.0"
+    elif pad:
+        return f"{p:5.1f}"
     else:
-        if p > 100.0:
-            print(f"{i}: {100.0:.1f}")
-        else:
-            print(f"{i}: {p:.1f}")
+        return f"{p:.1f}"
+
 if options.summarize:
+    for dist in range(1, options.radius):
+        p = options.volume/math.pow(dist, 1.2)
+        print(f"{s(p, pad=False)} ", end = '')
     print("")
+else:
+    for dist in range(1, options.radius+1):
+        p1 = options.volume*math.pow(0.75, dist)
+        p2 = options.volume/(dist*dist)
+        p3 = options.volume/math.pow(dist, 1.2)
+        print(f"{dist:>2}: {s(p1)} {s(p2)} {s(p3)}")
