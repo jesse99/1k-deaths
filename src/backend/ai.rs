@@ -28,7 +28,6 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
         } else if obj.has(SHALLOW_WATER_ID) {
             shallow_flood(game, oid, units)
         } else {
-            info!("handing ai for {obj} {oid}");
             match obj.value(BEHAVIOR_ID) {
                 Some(Behavior::Attacking(defender)) => attack(game, oid, defender, units),
                 Some(Behavior::MovingTo(loc)) => move_towards(game, oid, &loc, units),

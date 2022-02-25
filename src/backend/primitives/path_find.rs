@@ -10,26 +10,31 @@ use super::Size;
 use fnv::FnvHashMap;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use std::marker::PhantomData;
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign};
 
 /// Dijkstra's path finding algorithm, see http://www.roguebasin.com/index.php/Pathfinding
 /// and https://en.wikipedia.org/wiki/Pathfinding.
 pub struct PathFind<C, S>
 where
-    C: Copy + Ord + AddAssign + Default, // for movement C will be Time
-    S: Fn(Point, &mut Vec<(Point, C)>),  // push neighbors of the point onto the vector
+    // It'd be a lot nicer to require Add instead of AddAssign but it's tough to make the
+    // compiler happy doing that.
+    C: Copy + Ord + Add + AddAssign + Default, // for movement C will be Time
+    S: Fn(Point, &mut Vec<(Point, C)>),        // push neighbors of the point onto the vector
 {
     start: Point,
     target: Point,
     successors: S,
     path: Vec<Point>,
-    phantom: PhantomData<*const C>,
+    total_cost: C,
 }
 
+// In a lot of ways Dijkstra Maps would be better (see http://www.roguebasin.com/index.php/The_Incredible_Power_of_Dijkstra_Maps
+// and http://www.roguebasin.com/index.php/Dijkstra_Maps_Visualized). However they work best
+// with relatively small compact maps and we're currently being very general with the sort
+// of maps we support (that's why we're using a hashmap for levels instead of Vec2d).
 impl<C, S> PathFind<C, S>
 where
-    C: Copy + Ord + AddAssign + Default,
+    C: Copy + Ord + Add + AddAssign + Default,
     S: Fn(Point, &mut Vec<(Point, C)>),
 {
     /// Successors should push the neighbors of the provided point onto the provided
@@ -40,7 +45,7 @@ where
             target,
             successors,
             path: Vec::new(),
-            phantom: PhantomData,
+            total_cost: C::default(),
         };
         find.compute();
         find
@@ -48,26 +53,26 @@ where
 
     /// Returns the distance of the shortest path from start to target (or None if a path
     /// could not be found).
-    pub fn distance(&mut self) -> Option<i32> {
+    pub fn distance(&mut self) -> Option<C> {
         // TODO: need to somehow apply a penalty for stuff like closed doors
         if self.path.is_empty() {
             None
         } else {
-            Some(self.path.len() as i32)
+            Some(self.total_cost)
         }
     }
 
     /// Returns the next point on the shortest path from start to target (or None if a
     /// path could not be found).
     pub fn next(&mut self) -> Option<Point> {
-        if self.path.is_empty() {
+        if self.path.len() > 1 {
             None
         } else {
-            Some(self.path[0])
+            Some(self.path[1]) // first entry is start
         }
     }
 
-    #[cfg(test)]
+    // #[cfg(test)]
     pub fn path(&mut self) -> &Vec<Point> {
         &self.path
     }
@@ -75,7 +80,7 @@ where
 
 impl<C, S> PathFind<C, S>
 where
-    C: Copy + Ord + AddAssign + Default,
+    C: Copy + Ord + Add + AddAssign + Default,
     S: Fn(Point, &mut Vec<(Point, C)>),
 {
     fn compute(&mut self) {
@@ -99,6 +104,7 @@ where
         let mut neighbors = Vec::new();
         while let Some(State { cost, loc }) = queue.pop() {
             if loc == self.target {
+                self.total_cost = dist.get(&self.target).unwrap().cost;
                 self.build_path(dist);
                 return;
             }
@@ -113,7 +119,7 @@ where
             neighbors.clear();
             (self.successors)(loc, &mut neighbors);
             for (next_loc, edge_cost) in &neighbors {
-                let mut new_cost = cost;
+                let mut new_cost = cost; // can't use + or compiler gets upset
                 new_cost += *edge_cost;
                 let next = State {
                     cost: new_cost,
@@ -146,7 +152,7 @@ where
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct State<C>
 where
-    C: Copy + Ord + AddAssign + Default,
+    C: Copy + Ord + Add + AddAssign + Default,
 {
     cost: C,
     loc: Point,
@@ -154,7 +160,7 @@ where
 
 impl<C> Ord for State<C>
 where
-    C: Copy + Ord + AddAssign + Default,
+    C: Copy + Ord + Add + AddAssign + Default,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         // Order is flipped so that we get a min priority queue. We fall back onto comparing
@@ -168,7 +174,7 @@ where
 
 impl<C> PartialOrd for State<C>
 where
-    C: Copy + Ord + AddAssign + Default,
+    C: Copy + Ord + Add + AddAssign + Default,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
