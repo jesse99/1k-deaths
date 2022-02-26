@@ -23,10 +23,10 @@ pub enum Disposition {
     Aggressive,
 }
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Behavior {
-    /// NPC is attempting to attack.
-    Attacking(Oid),
+    /// NPC is attempting to attack oid at its last known location.
+    Attacking(Oid, Point),
 
     /// NPC is moving towards the point. Typically this is because it heard noise from
     /// there.
@@ -238,6 +238,17 @@ impl fmt::Display for Tag {
             Tag::Disposition(dis) => write!(f, "Disposition({dis})"),
             Tag::Icarium => write!(f, "Icarium"),
             Tag::Behavior(b) => write!(f, "Behavior({b})"),
+        }
+    }
+}
+
+impl fmt::Display for Behavior {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Behavior::Attacking(oid, pt) => write!(f, "Behavior::Attacking({oid}, {pt})"),
+            Behavior::MovingTo(pt) => write!(f, "Behavior::MovingTo({pt})"),
+            Behavior::Sleeping => write!(f, "Behavior::Sleeping"),
+            Behavior::Wandering(t) => write!(f, "Behavior::Wandering({t})"),
         }
     }
 }

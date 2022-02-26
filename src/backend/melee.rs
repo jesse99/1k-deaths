@@ -7,7 +7,7 @@ impl Game {
         let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().0;
         debug!("{attacker} is meleeing {defender}");
 
-        self.react_to_attack(attacker, defender_loc);
+        self.react_to_attack(attacker_loc, attacker, defender_loc);
 
         let attacker_name = self.attacker_name(attacker);
         let defender_name = self.defender_name(defender);
@@ -127,11 +127,11 @@ impl Game {
         }
     }
 
-    fn react_to_attack(&mut self, attacker_id: Oid, defender_loc: &Point) {
+    fn react_to_attack(&mut self, attacker_loc: &Point, attacker_id: Oid, defender_loc: &Point) {
         let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
         let attack = match defender.value(BEHAVIOR_ID) {
             Some(Behavior::Sleeping) => true,
-            Some(Behavior::Attacking(_)) => {
+            Some(Behavior::Attacking(_, _)) => {
                 // TODO: If the old attacker is no longer visible (or maybe too far away)
                 // then switch to attacking attacker_id.
                 false
@@ -146,7 +146,7 @@ impl Game {
             }
         };
         if attack {
-            self.replace_behavior(defender_loc, Behavior::Attacking(attacker_id));
+            self.replace_behavior(defender_loc, Behavior::Attacking(attacker_id, *attacker_loc));
         }
     }
 

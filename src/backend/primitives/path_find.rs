@@ -66,9 +66,9 @@ where
     /// path could not be found).
     pub fn next(&mut self) -> Option<Point> {
         if self.path.len() > 1 {
-            None
-        } else {
             Some(self.path[1]) // first entry is start
+        } else {
+            None
         }
     }
 

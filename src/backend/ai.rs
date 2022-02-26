@@ -1,4 +1,5 @@
 use super::actions::Scheduled;
+use super::primitives::PathFind;
 use super::time::*;
 use super::*;
 
@@ -28,8 +29,11 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
         } else if obj.has(SHALLOW_WATER_ID) {
             shallow_flood(game, oid, units)
         } else {
+            // TODO: will have to special case alternate goals, eg
+            // whether to go grab a good item that is in los
+            // whether to move closer to group/pack leader
             match obj.value(BEHAVIOR_ID) {
-                Some(Behavior::Attacking(defender)) => attack(game, oid, defender, units),
+                Some(Behavior::Attacking(defender, defender_loc)) => attack(game, oid, defender, defender_loc, units),
                 Some(Behavior::MovingTo(loc)) => move_towards(game, oid, &loc, units),
                 Some(Behavior::Sleeping) => Acted::DidntAct, // NPCs transition out of this via handle_noise
                 Some(Behavior::Wandering(end)) => wander(game, oid, end, units),
@@ -41,29 +45,44 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
     }
 }
 
-fn attack(game: &mut Game, attacker: Oid, defender: Oid, units: Time) -> Acted {
+fn attack(game: &mut Game, attacker: Oid, defender: Oid, old_defender_loc: Point, units: Time) -> Acted {
     let attacker_loc = game.loc(attacker).unwrap();
     let defender_loc = game.loc(defender).unwrap();
-    if attacker_loc.adjacent(&defender_loc) {
-        if units >= time::BASE_ATTACK {
-            game.do_melee_attack(&attacker_loc, &defender_loc);
-            Acted::Acted(time::BASE_ATTACK) // TODO: should be scaled by weapon speed
-        } else {
-            Acted::DidntAct
+    // TODO: this assumes that the defender is the player (or the pair are in the player's pov)
+    if game.pov.visible(game, &defender_loc) {
+        // If the defender can be seen then update where the defender thinks he is,
+        if defender_loc != old_defender_loc {
+            let behavior = Behavior::Attacking(defender, defender_loc);
+            game.replace_behavior(&attacker_loc, behavior);
         }
-    } else {
-        if units >= time::DIAGNOL_MOVE {
-            if let Some(acted) = try_move_towards(game, attacker, &defender_loc) {
-                acted
+
+        // and either attack him or move towards his actual location.
+        if attacker_loc.adjacent(&defender_loc) {
+            if units >= time::BASE_ATTACK {
+                game.do_melee_attack(&attacker_loc, &defender_loc);
+                Acted::Acted(time::BASE_ATTACK) // TODO: should be scaled by weapon speed
             } else {
-                debug!("{attacker} stopping attacking {defender} and started wandering");
-                let duration = time::DIAGNOL_MOVE * 8;
-                game.replace_behavior(&attacker_loc, Behavior::Wandering(duration));
                 Acted::DidntAct
             }
         } else {
-            Acted::DidntAct
+            if units >= time::DIAGNOL_MOVE {
+                if let Some(acted) = try_move_towards(game, attacker, &defender_loc) {
+                    acted
+                } else {
+                    debug!("{attacker} couldn't attack {defender} and started wandering");
+                    let duration = time::DIAGNOL_MOVE * 8;
+                    game.replace_behavior(&attacker_loc, Behavior::Wandering(duration));
+                    Acted::DidntAct
+                }
+            } else {
+                Acted::DidntAct
+            }
         }
+    } else {
+        // If the defender cannot be seen then move towards his last known location.
+        let behavior = Behavior::MovingTo(old_defender_loc);
+        game.replace_behavior(&attacker_loc, behavior);
+        Acted::DidntAct
     }
 }
 
@@ -96,6 +115,31 @@ fn deep_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
     }
 }
 
+/// Returns the next location from start to target using the lowest Time path.
+fn find_next_loc_to(game: &Game, ch: &Object, start: &Point, target: &Point) -> Option<Point> {
+    let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(game, ch, loc, target, neighbors);
+    let mut find = PathFind::new(*start, *target, callback);
+    find.next()
+}
+
+fn successors(game: &Game, ch: &Object, loc: Point, target: &Point, neighbors: &mut Vec<(Point, Time)>) {
+    let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+    for delta in deltas {
+        let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+        let character = &game.level.get(&new_loc, CHARACTER_ID);
+        if character.is_none() || new_loc == *target {
+            let (_, terrain) = game.level.get_bottom(&new_loc);
+            if ch.impassible_terrain(terrain).is_none() {
+                if loc.diagnol(&new_loc) {
+                    neighbors.push((new_loc, time::DIAGNOL_MOVE)); // TODO: should also factor in a post-move handler
+                } else {
+                    neighbors.push((new_loc, time::CARDINAL_MOVE));
+                }
+            }
+        }
+    }
+}
+
 fn move_towards(game: &mut Game, oid: Oid, target_loc: &Point, units: Time) -> Acted {
     if let Some(acted) = switched_to_attacking(game, oid, units) {
         info!("{oid} switched to attacking");
@@ -114,16 +158,6 @@ fn move_towards(game: &mut Game, oid: Oid, target_loc: &Point, units: Time) -> A
     } else {
         info!("{oid} didn't have enough time to move: {units}");
         Acted::DidntAct
-    }
-}
-
-fn can_move(game: &Game, oid: Oid, new_loc: &Point) -> bool {
-    if game.level.get(&new_loc, CHARACTER_ID).is_none() {
-        let obj = &game.level.obj(oid).0;
-        let (_, terrain) = game.level.get_bottom(&new_loc);
-        obj.impassible_terrain(terrain).is_none()
-    } else {
-        false
     }
 }
 
@@ -156,8 +190,8 @@ fn switched_to_attacking(game: &mut Game, oid: Oid, units: Time) -> Option<Acted
             if let Some(Disposition::Aggressive) = obj.value(DISPOSITION_ID) {
                 // we're treating visibility as a symmetric operation, TODO: which is probably not quite right
                 debug!("{obj} switched to attacking player");
-                game.replace_behavior(&loc, Behavior::Attacking(Oid(0)));
-                return Some(attack(game, oid, Oid(0), units));
+                game.replace_behavior(&loc, Behavior::Attacking(Oid(0), game.player_loc()));
+                return Some(attack(game, oid, Oid(0), game.player_loc(), units));
             }
         }
     }
@@ -165,24 +199,9 @@ fn switched_to_attacking(game: &mut Game, oid: Oid, units: Time) -> Option<Acted
 }
 
 fn try_move_towards(game: &mut Game, oid: Oid, target_loc: &Point) -> Option<Acted> {
+    let ch = &game.level.obj(oid).0;
     let old_loc = game.loc(oid).unwrap();
-    let dx = if target_loc.x > old_loc.x {
-        // TODO: need to avoid obstacles
-        1
-    } else if target_loc.x < old_loc.x {
-        -1
-    } else {
-        0
-    };
-    let dy = if target_loc.y > old_loc.y {
-        1
-    } else if target_loc.y < old_loc.y {
-        -1
-    } else {
-        0
-    };
-    let new_loc = Point::new(old_loc.x + dx, old_loc.y + dy);
-    if can_move(game, oid, &new_loc) {
+    if let Some(new_loc) = find_next_loc_to(game, ch, &old_loc, target_loc) {
         game.do_move(oid, &old_loc, &new_loc);
         if old_loc.diagnol(&new_loc) {
             Some(Acted::Acted(DIAGNOL_MOVE)) // TODO: probably should do post move interactions

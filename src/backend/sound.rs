@@ -174,7 +174,7 @@ fn responded_to_noise(obj: &Object, origin: &Point) -> bool {
         return false;
     }
     match obj.value(BEHAVIOR_ID) {
-        Some(Behavior::Attacking(_)) => false,
+        Some(Behavior::Attacking(_, _)) => false,
         Some(Behavior::MovingTo(_)) => false, // TODO: change target if the new noise is louder?
         Some(Behavior::Sleeping) => {
             debug!("{obj} stopped sleeping and is moving towards noise at {origin}");
