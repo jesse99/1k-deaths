@@ -57,18 +57,25 @@ pub struct Oid(u64);
 /// remaining time units, but some like (Examine) don't take any time.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Action {
-    /// Move the player to empty cells (or attempt to interact with an object at that cell).
-    /// dx and dy must be 0, +1, or -1.
-    Move { dx: i32, dy: i32 },
-
     /// Print descriptions for objects at the cell. Note that any cell can be examined but
     /// cells that are not in the player's PoV will have either an unhelpful description or
     /// a stale description.
-    Examine { loc: Point, wizard: bool },
+    Examine {
+        loc: Point,
+        wizard: bool,
+    },
+
+    /// Move the player to empty cells (or attempt to interact with an object at that cell).
+    /// dx and dy must be 0, +1, or -1.
+    Move {
+        dx: i32,
+        dy: i32,
+    },
 
     /// Something other than the player did something.
     Object,
     // Be sure to add new actions to the end (or saved games will break).
+    Rest,
 }
 
 #[derive(Eq, PartialEq)]
@@ -238,6 +245,9 @@ impl Game {
         // TODO: maybe something fine grained, like only need to update messages
         trace!("player is doing {action:?}");
         match action {
+            Action::Examine { loc, wizard } => {
+                self.examine(&loc, wizard);
+            }
             Action::Move { dx, dy } => {
                 assert!(dx >= -1 && dx <= 1);
                 assert!(dy >= -1 && dy <= 1);
@@ -275,10 +285,11 @@ impl Game {
                     }
                 }
             }
-            Action::Examine { loc, wizard } => {
-                self.examine(&loc, wizard);
-            }
             Action::Object => panic!("Action::Object should only be used with replay_action"),
+            Action::Rest => {
+                self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
+                self.players_move = false;
+            }
         }
 
         if !replay {

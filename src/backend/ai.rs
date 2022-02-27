@@ -52,7 +52,7 @@ fn attack(game: &mut Game, attacker: Oid, defender: Oid, old_defender_loc: Point
     let defender_loc = game.loc(defender).unwrap();
 
     if wants_to_flee(game, &attacker_loc) {
-        if start_fleeing(game, attacker, &attacker_loc, defender) {
+        if start_fleeing(game, attacker, &attacker_loc, defender, &defender_loc) {
             return Acted::DidntAct;
         }
     }
@@ -193,24 +193,33 @@ fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
     }
 }
 
-fn find_flee_loc(game: &Game, attacker_loc: &Point) -> Option<Point> {
+fn find_flee_loc(game: &Game, attacker_loc: &Point, defender_loc: &Point) -> Option<Point> {
     let mut loc = None;
-    let mut max_dist2 = 0;
+    let mut def_dist2 = 0;
+    let mut total_dist2 = 0;
     let attacker = game.level.get(attacker_loc, CHARACTER_ID).unwrap().1;
-    for _ in 0..20 {
+
+    // TODO: this isn't great because it's possible that the only place to flee is a relatively
+    // small portion of the level. Though that's not the worst thing in the world because it'll
+    // look like the NPC simply decided not to flee.
+    for _ in 0..40 {
         let candidate = game.level.random_loc(&game.rng);
         let d2 = attacker_loc.distance2(&candidate);
         // don't bother fleeing to a really close point
         if d2 > 4 * 4 {
-            if d2 > max_dist2 {
-                let callback = |new_loc: Point, neighbors: &mut Vec<(Point, Time)>| {
-                    successors(game, attacker, new_loc, &candidate, neighbors)
-                };
-                let find = PathFind::new(*attacker_loc, candidate, callback);
-                if find.next().is_some() {
+            let callback = |new_loc: Point, neighbors: &mut Vec<(Point, Time)>| {
+                successors(game, attacker, new_loc, &candidate, neighbors)
+            };
+            let find = PathFind::new(*attacker_loc, candidate, callback);
+            if let Some(next_loc) = find.next() {
+                // Prefer points where the attacker flees away from the defender (as opposed
+                // to sliding around the defender).
+                let dd2 = defender_loc.distance2(&next_loc);
+                if dd2 > def_dist2 || (dd2 == def_dist2 && d2 > total_dist2) {
                     loc = Some(candidate);
-                    max_dist2 = d2;
-                    if d2 > (3 * pov::RADIUS) * (3 * pov::RADIUS) {
+                    def_dist2 = dd2;
+                    total_dist2 = d2;
+                    if dd2 > 2 && d2 > (3 * pov::RADIUS) * (3 * pov::RADIUS) {
                         // We've found something plenty far enough away.
                         break;
                     }
@@ -221,8 +230,8 @@ fn find_flee_loc(game: &Game, attacker_loc: &Point) -> Option<Point> {
     loc
 }
 
-fn start_fleeing(game: &mut Game, attacker: Oid, attacker_loc: &Point, defender: Oid) -> bool {
-    if let Some(flee_loc) = find_flee_loc(game, attacker_loc) {
+fn start_fleeing(game: &mut Game, attacker: Oid, attacker_loc: &Point, defender: Oid, defender_loc: &Point) -> bool {
+    if let Some(flee_loc) = find_flee_loc(game, attacker_loc, defender_loc) {
         debug!("{attacker} is hurt and has started fleeing from {defender}");
         let behavior = Behavior::MovingTo(flee_loc);
         game.replace_behavior(&attacker_loc, behavior);

@@ -33,6 +33,7 @@ impl MainMode {
         commands.insert(Key::Char('2'), Box::new(|s, game| s.do_move(game, 0, 1)));
         commands.insert(Key::Char('3'), Box::new(|s, game| s.do_move(game, 1, 1)));
         commands.insert(Key::Char('4'), Box::new(|s, game| s.do_move(game, -1, 0)));
+        commands.insert(Key::Char('5'), Box::new(|s, game| s.do_rest(game)));
         commands.insert(Key::Char('6'), Box::new(|s, game| s.do_move(game, 1, 0)));
         commands.insert(Key::Char('7'), Box::new(|s, game| s.do_move(game, -1, -1)));
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
@@ -96,6 +97,7 @@ Movement is done using the numeric keypad or arrow keys:
 [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
 [[1]] [[2]] [[3]]                 [[down-arrow]]
 
+[[5]] rest for one turn.
 [[x]] examine visible cells.
 [[control-p]] show recent messages.
 [[?]] show this help.
@@ -122,6 +124,11 @@ Wizard mode commands:
 
     fn do_quit(&mut self, _game: &mut Game) -> InputAction {
         InputAction::Quit
+    }
+
+    fn do_rest(&mut self, game: &mut Game) -> InputAction {
+        game.player_acted(Action::Rest);
+        InputAction::UpdatedGame
     }
 
     fn state_path(&self, base: &str) -> String {

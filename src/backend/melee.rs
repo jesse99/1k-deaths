@@ -75,7 +75,6 @@ impl Game {
                 }
             }
         }
-        info!("{attacker} base damage is {damage}");
         damage
     }
 
