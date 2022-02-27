@@ -109,7 +109,7 @@ impl Game {
             if let Some(distance10) = self.find_distance10(origin, loc) {
                 let hearing: i32 = {
                     if let Some((_, obj)) = self.level.get(&loc, HEARING_ID) {
-                        obj.value(HEARING_ID).unwrap()
+                        object::hearing_value(obj).unwrap()
                     } else {
                         100
                     }
@@ -121,7 +121,7 @@ impl Game {
                             // We could switch to attacking here if an enemy made the noise
                             // and is in sight. But we need to make that check anyway each
                             // time we handle MovingTo so there's little point in doing that
-                            // here to.
+                            // here too.
                             debug!(
                                 "{obj} heard a noise and is now moving to {origin}, prob={p:.2}, dist={:.1}",
                                 (distance10 as f64) / 10.0

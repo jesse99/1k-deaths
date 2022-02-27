@@ -126,6 +126,34 @@ impl Object {
     }
 }
 
+// TODO: need to generate these instead of using the Value trait
+pub fn damage_value(obj: &Object) -> Option<i32> {
+    for candidate in &obj.tags {
+        if let Tag::Damage(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
+pub fn flees_value(obj: &Object) -> Option<i32> {
+    for candidate in &obj.tags {
+        if let Tag::Flees(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
+pub fn hearing_value(obj: &Object) -> Option<i32> {
+    for candidate in &obj.tags {
+        if let Tag::Hearing(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
 pub trait TagValue<T> {
     fn value(&self, id: Tid) -> Option<T>;
 }
@@ -179,22 +207,6 @@ impl TagValue<Durability> for Object {
                 match candidate {
                     Tag::Durability(value) => return Some(*value),
                     _ => panic!("{} tag doesn't have a Durability", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl TagValue<i32> for Object {
-    // TODO: this could become ambiguous, hopefully we can generate these and do better
-    fn value(&self, id: Tid) -> Option<i32> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Flees(value) => return Some(*value),
-                    Tag::Hearing(value) => return Some(*value),
-                    _ => panic!("{candidate} tag doesn't have a Flees or Hearing"),
                 }
             }
         }

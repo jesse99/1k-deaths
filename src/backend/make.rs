@@ -342,6 +342,7 @@ fn guard_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Neutral),
         Tag::Behavior(Behavior::Sleeping),
+        Tag::Damage(10),
         Tag::Flees(50),
         Tag::Hearing(0),
         Tag::Durability(Durability { current: 80, max: 80 }),
@@ -356,6 +357,7 @@ fn icarium_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Neutral),
         Tag::Behavior(Behavior::Wandering(Time::max())),
+        Tag::Damage(40),
         Tag::Durability(Durability { current: 500, max: 500 }),
         Tag::Name("Icarium"),
         Tag::Icarium,
@@ -368,7 +370,8 @@ fn rhulad_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Aggressive),
         Tag::Behavior(Behavior::Sleeping),
-        Tag::Durability(Durability { current: 80, max: 80 }),
+        Tag::Damage(20),
+        Tag::Durability(Durability { current: 100, max: 100 }),
         Tag::Name("Rhulad"),
         Tag::Rhulad,
         Tag::Scheduled,
@@ -392,6 +395,7 @@ fn spectator_tags() -> Vec<Tag> {
 fn player_tags() -> Vec<Tag> {
     vec![
         Tag::Durability(Durability { current: 100, max: 100 }),
+        Tag::Damage(20),
         Tag::Inventory(Vec::new()),
         Tag::Name("yourself"),
         Tag::CanOpenDoor,
@@ -402,11 +406,11 @@ fn player_tags() -> Vec<Tag> {
 }
 
 fn weak_sword_tags(name: &'static str) -> Vec<Tag> {
-    vec![Tag::Name(name), Tag::Portable]
+    vec![Tag::Name(name), Tag::Portable, Tag::Damage(25)]
 }
 
 fn mighty_sword_tags() -> Vec<Tag> {
-    vec![Tag::Name("Sword of Impending Doom"), Tag::Portable]
+    vec![Tag::Name("Sword of Impending Doom"), Tag::Portable, Tag::Damage(30)]
 }
 
 fn pick_axe_tags() -> Vec<Tag> {
@@ -414,7 +418,12 @@ fn pick_axe_tags() -> Vec<Tag> {
 }
 
 fn emp_sword_tags() -> Vec<Tag> {
-    vec![Tag::Name("Sword of the Crippled God"), Tag::Portable, Tag::EmpSword]
+    vec![
+        Tag::Name("Sword of the Crippled God"),
+        Tag::Portable,
+        Tag::EmpSword,
+        Tag::Damage(40),
+    ]
 }
 
 fn sign_tags() -> Vec<Tag> {

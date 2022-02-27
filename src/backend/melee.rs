@@ -65,13 +65,18 @@ impl Game {
     // TODO: use strength/weapon skill
     fn base_damage(&self, attacker_id: Oid) -> i32 {
         let attacker = self.level.obj(attacker_id).0;
-        if attacker.has(PLAYER_ID) {
-            25
-        } else if attacker.has(ICARIUM_ID) {
-            40
-        } else {
-            20
+        // TODO: this should be using what is eqiupped instead of a max of unarmed and inv weapon damage
+        let mut damage = object::damage_value(attacker).expect(&format!("{attacker_id} should have a damage tag"));
+        if let Some(oids) = attacker.as_ref(INVENTORY_ID) {
+            for oid in oids {
+                let obj = self.level.obj(*oid).0;
+                if let Some(candidate) = object::damage_value(obj) {
+                    damage = max(damage, candidate);
+                }
+            }
         }
+        info!("{attacker} base damage is {damage}");
+        damage
     }
 
     fn defender_name(&self, defender_id: Oid) -> String {

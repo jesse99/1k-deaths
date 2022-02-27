@@ -83,6 +83,9 @@ where
     C: Copy + Ord + Add + AddAssign + Default,
     S: Fn(Point, &mut Vec<(Point, C)>),
 {
+    // TODO: this could be expensive. We could amortize this by re-using a few moves at a
+    // time if they still are available. More interesting option is to speculatively
+    // evaluate AI in another thread in repsponse to likely player moves.
     fn compute(&mut self) {
         let mut queue = BinaryHeap::new();
         let mut dist = FnvHashMap::default(); // loc => cost to reach loc from start, predecessor of loc

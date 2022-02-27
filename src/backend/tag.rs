@@ -54,9 +54,9 @@ pub struct Durability {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when players try to
-    /// move into them. These will have a Name tag. Often they will also have  Scheduled,
-    /// Durability, Flees, Hearing, Inventory, and CanOpenDoor tags. NPCs will also have
-    /// Disposition and Behavior tags.
+    /// move into them. These will have a Name tag. Often they will also have Scheduled,
+    /// and CanOpenDoor tags. NPCs will also have Behavior, Damage, Disposition,
+    /// Durability, Flees, Hearing, and Inventory tags.
     Character,
 
     Player,
@@ -68,6 +68,9 @@ pub enum Tag {
 
     /// Present for objects that perform actions using the Scheduler.
     Scheduled,
+
+    /// This is typically a base damage and is scaled by things like skill and strength.
+    Damage(i32),
 
     /// Objects that a Character has picked up.
     Inventory(Vec<Oid>),
@@ -183,6 +186,7 @@ pub const BEHAVIOR_ID: Tid = Tid(27);
 pub const GUARD_ID: Tid = Tid(28);
 pub const FLEES_ID: Tid = Tid(29);
 pub const HEARING_ID: Tid = Tid(30);
+pub const DAMAGE_ID: Tid = Tid(31);
 
 impl Tag {
     pub fn to_id(&self) -> Tid {
@@ -218,6 +222,7 @@ impl Tag {
             Tag::Behavior(_) => BEHAVIOR_ID,
             Tag::Flees(_) => FLEES_ID,
             Tag::Hearing(_) => HEARING_ID,
+            Tag::Damage(_) => DAMAGE_ID,
         }
     }
 }
@@ -256,6 +261,7 @@ impl fmt::Display for Tag {
             Tag::Behavior(b) => write!(f, "Behavior({b})"),
             Tag::Flees(p) => write!(f, "Flees({p})"),
             Tag::Hearing(p) => write!(f, "Hearing({p})"),
+            Tag::Damage(p) => write!(f, "Damage({p})"),
         }
     }
 }

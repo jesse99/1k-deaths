@@ -32,6 +32,8 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
             // TODO: will have to special case alternate goals, eg
             // whether to go grab a good item that is in los
             // whether to move closer to group/pack leader
+            //
+            // Currently NPCs don't make noise which is probably OK.
             match obj.value(BEHAVIOR_ID) {
                 Some(Behavior::Attacking(defender, defender_loc)) => attack(game, oid, defender, defender_loc, units),
                 Some(Behavior::MovingTo(loc)) => move_towards(game, oid, &loc, units),
@@ -248,6 +250,10 @@ fn switched_to_attacking(game: &mut Game, oid: Oid, units: Time) -> Option<Acted
 fn try_move_towards(game: &mut Game, oid: Oid, target_loc: &Point) -> Option<Acted> {
     let ch = &game.level.obj(oid).0;
     let old_loc = game.loc(oid).unwrap();
+    if old_loc == *target_loc {
+        return None; // we're at the target so we're no longer moving towards it
+    }
+
     if let Some(new_loc) = find_next_loc_to(game, ch, &old_loc, target_loc) {
         game.do_move(oid, &old_loc, &new_loc);
         if old_loc.diagnol(&new_loc) {
@@ -286,8 +292,7 @@ fn wander(game: &mut Game, oid: Oid, end: Time, units: Time) -> Acted {
 
 fn wants_to_flee(game: &Game, attacker_loc: &Point) -> bool {
     let attacker = game.level.get(attacker_loc, CHARACTER_ID).unwrap().1;
-    if let Some(percent2) = attacker.value(FLEES_ID) {
-        let percent: i32 = percent2;
+    if let Some(percent) = object::flees_value(attacker) {
         let durability: Durability = attacker.value(DURABILITY_ID).unwrap();
         let x = (durability.current as f64) / (durability.max as f64);
         x <= (percent as f64) / 100.0
