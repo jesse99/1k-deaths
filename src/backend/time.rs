@@ -1,6 +1,4 @@
 use rand::rngs::SmallRng;
-use rand::Rng;
-use rand_distr::StandardNormal;
 use std::cell::RefCell;
 use std::fmt::{self, Formatter};
 use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
@@ -41,14 +39,7 @@ impl Time {
 
     /// Used by the scheduler.
     pub fn fuzz(&self, rng: &RefCell<SmallRng>) -> Time {
-        let rng = &mut *rng.borrow_mut();
-        let delta: f64 = rng.sample(StandardNormal); // most are in -2..2
-        let delta = delta / 2.0; // most are in -1..1
-        let delta = delta * 0.15 * ((self.t / SECS_TO_TIME) as f64); // most are in +/- 15% of units
-        let max_delta = 0.3 * (self.t as f64);
-        let delta = f64::clamp(delta, -max_delta, max_delta); // no more than +/- 30% of units
-
-        let taken = self.t + (SECS_TO_TIME * delta as i64);
+        let taken = super::rand_normal64(self.t, 20, rng);
         let taken = i64::max(taken, 1); // time has to advance
         Time { t: taken }
     }

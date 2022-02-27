@@ -16,12 +16,13 @@ impl Game {
             let mesg = Message::new(Topic::Normal, &msg);
             self.messages.push(mesg);
         } else {
-            let damage = self.base_damage(attacker);
+            let (damage, crit) = self.base_damage(attacker);
             let damage = self.mitigate_damage(attacker, defender, damage);
             let (new_hps, max_hps) = self.hps(defender, damage);
-            debug!("   hit for {damage}, new HPs are {new_hps}");
+            let hit = if crit { "critcally hit" } else { "hit" };
+            debug!("   {hit} for {damage}, new HPs are {new_hps}");
             let msg = if damage == 0 {
-                format!("{attacker_name} hit {defender_name} for no damage.")
+                format!("{attacker_name} {hit} {defender_name} for no damage.")
             } else if new_hps <= 0 {
                 if defender.0 == 0 {
                     let msg = "You've lost the game!";
@@ -31,10 +32,14 @@ impl Game {
                 } else {
                     self.npc_died(defender_loc, defender);
                 }
-                format!(
-                    "{attacker_name} hit {defender_name} for {damage} damage ({} over kill).",
-                    -new_hps
-                )
+                if new_hps < 0 {
+                    format!(
+                        "{attacker_name} {hit} {defender_name} for {damage} damage ({} over kill).",
+                        -new_hps
+                    )
+                } else {
+                    format!("{attacker_name} {hit} {defender_name} for {damage} damage.",)
+                }
             } else {
                 let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
                 let durability = Tag::Durability(Durability {
@@ -43,7 +48,7 @@ impl Game {
                 });
                 defender.replace(durability);
 
-                format!("{attacker_name} hit {defender_name} for {damage} damage.")
+                format!("{attacker_name} {hit} {defender_name} for {damage} damage.")
             };
 
             let topic = self.topic(attacker, defender, damage);
@@ -64,10 +69,8 @@ impl Game {
         }
     }
 
-    // TODO: randomise with a normal distribution, if result is too big or too small then
-    // use the mode
     // TODO: use strength/weapon skill
-    fn base_damage(&self, attacker_id: Oid) -> i32 {
+    fn base_damage(&self, attacker_id: Oid) -> (i32, bool) {
         let attacker = self.level.obj(attacker_id).0;
         // TODO: this should be using what is eqiupped instead of a max of unarmed and inv weapon damage
         let mut damage = object::damage_value(attacker).expect(&format!("{attacker_id} should have a damage tag"));
@@ -79,7 +82,11 @@ impl Game {
                 }
             }
         }
-        damage
+        let crit = self.rng.borrow_mut().gen_bool(0.05); // TODO: should be scaled by skill
+        if crit {
+            damage *= 2;
+        }
+        (super::rand_normal32(damage, 20, &self.rng), crit)
     }
 
     fn defender_name(&self, defender_id: Oid) -> String {
