@@ -139,6 +139,11 @@ impl Game {
         if is_rhulad {
             self.add_object(defender_loc, make::emp_sword()); // TODO: should drop inv items
             self.state = State::KilledRhulad;
+
+            let msg = "The Crippled God whispers, 'You shall pay for this mortal'.";
+            let mesg = Message::new(Topic::Important, &msg);
+            self.messages.push(mesg);
+            self.spawn_the_broken();
         }
     }
 
@@ -162,6 +167,23 @@ impl Game {
         };
         if attack {
             self.replace_behavior(defender_loc, Behavior::Attacking(attacker_id, *attacker_loc));
+        }
+    }
+
+    fn spawn_the_broken(&mut self) {
+        for i in 0..7 {
+            let loc = self.level.random_loc(&self.rng);
+            let existing = &self.level.get(&loc, CHARACTER_ID);
+            if existing.is_none() {
+                let ch = make::broken(i);
+                let (_, terrain) = self.level.get_bottom(&loc);
+                if ch.impassible_terrain(terrain).is_none() {
+                    self.add_object(&loc, ch);
+
+                    let target = Point::new(46, 35); // they all head for the Vitr lake
+                    self.replace_behavior(&loc, Behavior::MovingTo(target));
+                }
+            }
         }
     }
 

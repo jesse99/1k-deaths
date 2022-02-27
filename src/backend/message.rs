@@ -4,13 +4,17 @@ use derive_more::Display;
 pub enum Topic {
     /// An operation could not be completed.
     Error,
+
     /// An un-important message. Typically something that doesn't affect
     /// game play, e.g. bumping into a wall.
     Normal,
+
     /// Player tried to do something but was stopped, e.g. move into deep water.
     Failed,
+
     /// A significant announcement.
     Important,
+
     NPCSpeaks,
 
     /// NPC was damaged (but not by the player).

@@ -152,11 +152,11 @@ fn successors(game: &Game, ch: &Object, loc: Point, target: &Point, neighbors: &
 
 fn move_towards(game: &mut Game, oid: Oid, target_loc: &Point, units: Time) -> Acted {
     if let Some(acted) = switched_to_attacking(game, oid, units) {
-        info!("{oid} was moving towards {target_loc} but switched to attacking");
+        debug!("{oid} was moving towards {target_loc} but switched to attacking");
         acted
     } else if units >= time::DIAGNOL_MOVE {
         if let Some(acted) = try_move_towards(game, oid, target_loc) {
-            info!("{oid} did move towards {target_loc}");
+            debug!("{oid} did move towards {target_loc}");
             acted
         } else {
             let old_loc = game.loc(oid).unwrap();
@@ -260,6 +260,7 @@ fn try_move_towards(game: &mut Game, oid: Oid, target_loc: &Point) -> Option<Act
     let ch = &game.level.obj(oid).0;
     let old_loc = game.loc(oid).unwrap();
     if old_loc == *target_loc {
+        debug!("didn't move because already at {target_loc}");
         return None; // we're at the target so we're no longer moving towards it
     }
 
@@ -271,6 +272,7 @@ fn try_move_towards(game: &mut Game, oid: Oid, target_loc: &Point) -> Option<Act
             Some(Acted::Acted(CARDINAL_MOVE))
         }
     } else {
+        debug!("didn't move because can't find a path from {old_loc} to {target_loc}");
         None
     }
 }

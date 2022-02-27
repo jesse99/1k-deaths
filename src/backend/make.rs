@@ -201,6 +201,20 @@ fn guard() -> Object {
     )
 }
 
+// https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock
+pub fn broken(i: usize) -> Object {
+    let names = vec![
+        "Beroke Soft Voice",
+        "Halad Rack Bearer",
+        "Imroth the Cruel",
+        "Kahlb the Silent Hunter",
+        "Siballe the Unfound",
+        "Thenik the Shattered",
+        "Urugal the Woven",
+    ];
+    Object::new(names[i], unbound_tags(names[i]), Symbol::Npc('u'), Color::Red, names[i])
+}
+
 fn rhulad() -> Object {
     Object::new(
         "rhulad",
@@ -347,6 +361,19 @@ fn guard_tags() -> Vec<Tag> {
         Tag::Hearing(0),
         Tag::Durability(Durability { current: 80, max: 80 }),
         Tag::Name("a guard"),
+        Tag::Guard,
+        Tag::Scheduled,
+        Tag::Character,
+    ]
+}
+
+fn unbound_tags(name: &'static str) -> Vec<Tag> {
+    vec![
+        Tag::Disposition(Disposition::Aggressive),
+        Tag::Behavior(Behavior::Wandering(Time::max())),
+        Tag::Damage(20),
+        Tag::Durability(Durability { current: 80, max: 80 }),
+        Tag::Name(name),
         Tag::Guard,
         Tag::Scheduled,
         Tag::Character,
