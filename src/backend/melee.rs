@@ -31,7 +31,10 @@ impl Game {
                 } else {
                     self.npc_died(defender_loc, defender);
                 }
-                format!("{attacker_name} fatally hit {defender_name} for {damage} damage.")
+                format!(
+                    "{attacker_name} hit {defender_name} for {damage} damage ({} over kill).",
+                    -new_hps
+                )
             } else {
                 let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
                 let durability = Tag::Durability(Durability {
