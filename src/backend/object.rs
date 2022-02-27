@@ -154,6 +154,15 @@ pub fn hearing_value(obj: &Object) -> Option<i32> {
     None
 }
 
+pub fn durability_value(obj: &Object) -> Option<Durability> {
+    for candidate in &obj.tags {
+        if let Tag::Durability(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
 pub trait TagValue<T> {
     fn value(&self, id: Tid) -> Option<T>;
 }

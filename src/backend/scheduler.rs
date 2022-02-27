@@ -25,8 +25,11 @@
 // cast it and once it goes off everything else will be able to do quite a lot while the
 // wizard is recovering.
 use super::ai::{self, Acted};
+use super::tag::CHARACTER_ID;
 use super::time;
 use super::{Action, Game, Oid, Time};
+use crate::backend::object;
+use crate::backend::{Durability, Tag};
 use fnv::FnvHashMap;
 use rand::prelude::SliceRandom;
 use rand::rngs::SmallRng;
@@ -123,12 +126,17 @@ impl Scheduler {
                 }
             }
         }
-        game.scheduler.advance_time();
+        advance_time(game);
         false
     }
 
     pub fn player_acted(&mut self, taken: Time, rng: &RefCell<SmallRng>) {
         assert!(taken >= time::MIN_TIME);
+
+        // The player and objects will act, and those actions typically take some time to
+        // execute, but that doesn't affect scheduler time. It merely reduces the amount
+        // of time that object has to do things. Time only advances after all the objects
+        // have had a chance to move.
         let taken = taken.fuzz(rng);
         let units = self.entries.get_mut(&Oid(0)).unwrap();
         *units -= taken;
@@ -164,13 +172,6 @@ impl Scheduler {
 
 // ---- Private methods ------------------------------------------------------------------
 impl Scheduler {
-    fn advance_time(&mut self) {
-        self.now += time::DIAGNOL_MOVE;
-        for units in self.entries.values_mut() {
-            *units += time::DIAGNOL_MOVE;
-        }
-    }
-
     fn obj_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
         assert!(taken >= time::MIN_TIME);
         assert!(oid.0 != 0);
@@ -179,6 +180,28 @@ impl Scheduler {
         let units = self.entries.get_mut(&oid).unwrap();
         *units -= taken;
         trace!("   {oid} acted for {taken} and has {units}");
+    }
+}
+
+fn advance_time(game: &mut Game) {
+    game.scheduler.now += time::DIAGNOL_MOVE;
+    for units in game.scheduler.entries.values_mut() {
+        *units += time::DIAGNOL_MOVE;
+    }
+
+    for oid in game.scheduler.entries.keys() {
+        if let Some(loc) = game.loc(*oid) {
+            if let Some((_, obj)) = game.level.get_mut(&loc, CHARACTER_ID) {
+                if let Some(durability) = object::durability_value(obj) {
+                    if durability.current < durability.max {
+                        obj.replace(Tag::Durability(Durability {
+                            current: durability.current + 1, // TODO: should scale differently
+                            ..durability
+                        }));
+                    }
+                }
+            }
+        }
     }
 }
 
