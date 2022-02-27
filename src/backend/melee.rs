@@ -56,7 +56,8 @@ impl Game {
             "You".to_string()
         } else {
             let attacker = self.level.obj(attacker_id).0;
-            format!("{attacker}")
+            let name: &'static str = attacker.value(NAME_ID).unwrap();
+            format!("{name}")
         }
     }
 
