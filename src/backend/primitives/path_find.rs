@@ -53,7 +53,7 @@ where
 
     /// Returns the distance of the shortest path from start to target (or None if a path
     /// could not be found).
-    pub fn distance(&mut self) -> Option<C> {
+    pub fn distance(&self) -> Option<C> {
         // TODO: need to somehow apply a penalty for stuff like closed doors
         if self.path.is_empty() {
             None
@@ -64,7 +64,7 @@ where
 
     /// Returns the next point on the shortest path from start to target (or None if a
     /// path could not be found).
-    pub fn next(&mut self) -> Option<Point> {
+    pub fn next(&self) -> Option<Point> {
         if self.path.len() > 1 {
             Some(self.path[1]) // first entry is start
         } else {
@@ -73,7 +73,7 @@ where
     }
 
     #[cfg(test)]
-    pub fn path(&mut self) -> &Vec<Point> {
+    pub fn path(&self) -> &Vec<Point> {
         &self.path
     }
 }
@@ -202,7 +202,7 @@ mod tests {
         ];
         let (start, target, map) = build_map(rows);
         let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(&map, loc, neighbors);
-        let mut find = PathFind::new(start, target, callback);
+        let find = PathFind::new(start, target, callback);
         let actual = find.path();
 
         let expected = Vec::new();
@@ -226,7 +226,7 @@ mod tests {
         ];
         let (start, target, map) = build_map(rows);
         let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(&map, loc, neighbors);
-        let mut find = PathFind::new(start, target, callback);
+        let find = PathFind::new(start, target, callback);
         let actual = find.path();
 
         let expected = vec![Point::new(1, 5), Point::new(2, 5)];
@@ -250,7 +250,7 @@ mod tests {
         ];
         let (start, _, map) = build_map(rows);
         let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(&map, loc, neighbors);
-        let mut find = PathFind::new(start, start, callback);
+        let find = PathFind::new(start, start, callback);
         let actual = find.path();
 
         let expected = vec![Point::new(1, 5)];
@@ -274,7 +274,7 @@ mod tests {
         ];
         let (start, target, map) = build_map(rows);
         let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(&map, loc, neighbors);
-        let mut find = PathFind::new(start, target, callback);
+        let find = PathFind::new(start, target, callback);
         let actual = find.path();
 
         let expected = vec![
@@ -308,7 +308,7 @@ mod tests {
         ];
         let (start, target, map) = build_map(rows);
         let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(&map, loc, neighbors);
-        let mut find = PathFind::new(start, target, callback);
+        let find = PathFind::new(start, target, callback);
         let actual = find.path();
 
         let expected = vec![
@@ -341,7 +341,7 @@ mod tests {
         ];
         let (start, target, map) = build_map(rows);
         let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(&map, loc, neighbors);
-        let mut find = PathFind::new(start, target, callback);
+        let find = PathFind::new(start, target, callback);
         let actual = find.path();
 
         let expected = vec![

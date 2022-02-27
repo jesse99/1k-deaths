@@ -1,4 +1,6 @@
 use crate::backend::tag::CHARACTER_ID;
+use rand::prelude::*;
+use rand::rngs::SmallRng;
 use std::cell::{Cell, RefCell};
 
 use super::*;
@@ -14,6 +16,7 @@ pub struct Level {
     cells: FnvHashMap<Point, Vec<Oid>>, // objects within each cell on the map
     npcs: RefCell<Vec<Oid>>,            // all NPCs sorted so that the first is closest to the player
     sorted: Cell<bool>,                 // false if npcs needs to be re-sorted
+    locations: RefCell<Vec<Point>>,     // locations on the level
     next_id: u64,                       // 0 is the player, 1 is the default object
     player_loc: Point,
     default: Object,
@@ -30,6 +33,7 @@ impl Level {
             objects: FnvHashMap::default(),
             cells: FnvHashMap::default(),
             npcs: RefCell::new(Vec::new()),
+            locations: RefCell::new(Vec::new()),
             sorted: Cell::new(true),
             next_id: 2,
             player_loc: Point::new(0, 0),
@@ -181,6 +185,15 @@ impl Level {
         NpcsIterator { level: self, index: -1 }
     }
 
+    /// Returns a random cell on the map.
+    pub fn random_loc(&self, rng: &RefCell<SmallRng>) -> Point {
+        if self.locations.borrow().is_empty() {
+            self.locations.borrow_mut().extend(self.cells.keys());
+        }
+        // We could use cells.keys() here but the performance would be O(N) if we did that.
+        *self.locations.borrow().iter().choose(&mut *rng.borrow_mut()).unwrap()
+    }
+
     pub fn add(&mut self, obj: Object, loc: Option<Point>) -> Oid {
         let oid = self.next_oid(&obj);
         if let Some(loc) = loc {
@@ -204,12 +217,14 @@ impl Level {
 
         if let Some(loc) = loc {
             let oids = self.cells.entry(loc).or_insert_with(Vec::new);
+            if oids.is_empty() {
+                self.locations.borrow_mut().clear();
+            }
             oids.push(oid);
             self.changed = loc;
         }
 
-        {
-            #[cfg(debug_assertions)]
+        if cfg!(debug_assertions) {
             self.invariant();
         }
 
@@ -321,17 +336,19 @@ impl Level {
         oids.remove(index);
 
         let oids = self.cells.entry(*to).or_insert_with(Vec::new);
+        if oids.is_empty() {
+            self.locations.borrow_mut().clear();
+        }
         oids.push(oid);
 
-        self.sorted.set(false);
+        self.sorted.set(false); // technically we should do this only if oid has a CHARACTER_ID, but very little moves other than characters
         self.changed = *to;
 
         if oid.0 == 0 {
             self.player_loc = *to;
         }
 
-        {
-            #[cfg(debug_assertions)]
+        if cfg!(debug_assertions) {
             self.invariant();
         }
     }
@@ -342,6 +359,7 @@ impl Level {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             if !self.cells.contains_key(&new_loc) {
                 self.add_default(&new_loc);
+                self.locations.borrow_mut().clear();
             }
         }
     }
@@ -359,13 +377,16 @@ impl Level {
     fn add_default(&mut self, new_loc: &Point) {
         let oid = Oid(self.next_id);
         self.next_id += 1;
-        self.objects.insert(
+        let old = self.objects.insert(
             oid,
             Entry {
                 obj: self.default.clone(),
                 loc: Some(*new_loc),
             },
         );
+        if old.is_none() {
+            self.locations.borrow_mut().clear();
+        }
         let old_oids = self.cells.insert(*new_loc, vec![oid]);
         assert!(old_oids.is_none());
     }
@@ -399,6 +420,8 @@ impl Level {
             "player isn't at {}",
             self.player_loc
         );
+
+        assert!(self.locations.borrow().is_empty() || self.locations.borrow().len() == self.cells.len());
 
         self.cheap_invariants(&self.changed);
         if self.invariants {

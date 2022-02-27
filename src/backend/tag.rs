@@ -46,6 +46,7 @@ pub struct Durability {
 }
 
 // TODO: generate this file (Display trait may require some sort of escape hatch)
+// TODO: can we also generate something like the Object value methods?
 
 /// Object state and properties consist of a list of these tags. Objects can
 /// be classified as Terrain, Weapon, etc but note that this is a fuzzy
@@ -54,12 +55,13 @@ pub struct Durability {
 pub enum Tag {
     /// Player, monsters, special entities. Triggers an interaction when players try to
     /// move into them. These will have a Name tag. Often they will also have  Scheduled,
-    /// Durability, Inventory, and CanOpenDoor tags. NPCs will also have Disposition and
-    /// Behavior tags.
+    /// Durability, Flees, Hearing, Inventory, and CanOpenDoor tags. NPCs will also have
+    /// Disposition and Behavior tags.
     Character,
 
     Player,
     Doorman,
+    Guard,
     Icarium,
     Rhulad,
     Spectator,
@@ -69,6 +71,13 @@ pub enum Tag {
 
     /// Objects that a Character has picked up.
     Inventory(Vec<Oid>),
+
+    /// Used for Characters that start fleeing when their HPs is at the specified percent.
+    Flees(i32), // TODO: should this be smarter? or maybe a second type of flee tag that considers both attacker and defender HPs
+
+    /// Scaling factor applied to the probability of responding to noise. 100 is no scaling,
+    /// 120 is 20% more likely, and 80 is 20% less likely.
+    Hearing(i32),
 
     CanOpenDoor,
 
@@ -171,6 +180,9 @@ pub const SCHEDULED_ID: Tid = Tid(24);
 pub const DISPOSITION_ID: Tid = Tid(25);
 pub const ICARIUM_ID: Tid = Tid(26);
 pub const BEHAVIOR_ID: Tid = Tid(27);
+pub const GUARD_ID: Tid = Tid(28);
+pub const FLEES_ID: Tid = Tid(29);
+pub const HEARING_ID: Tid = Tid(30);
 
 impl Tag {
     pub fn to_id(&self) -> Tid {
@@ -202,7 +214,10 @@ impl Tag {
             Tag::Scheduled => SCHEDULED_ID,
             Tag::Disposition(_) => DISPOSITION_ID,
             Tag::Icarium => ICARIUM_ID,
+            Tag::Guard => GUARD_ID,
             Tag::Behavior(_) => BEHAVIOR_ID,
+            Tag::Flees(_) => FLEES_ID,
+            Tag::Hearing(_) => HEARING_ID,
         }
     }
 }
@@ -237,7 +252,10 @@ impl fmt::Display for Tag {
             Tag::Scheduled => write!(f, "Scheduled"),
             Tag::Disposition(dis) => write!(f, "Disposition({dis})"),
             Tag::Icarium => write!(f, "Icarium"),
+            Tag::Guard => write!(f, "Guard"),
             Tag::Behavior(b) => write!(f, "Behavior({b})"),
+            Tag::Flees(p) => write!(f, "Flees({p})"),
+            Tag::Hearing(p) => write!(f, "Hearing({p})"),
         }
     }
 }

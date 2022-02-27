@@ -186,6 +186,22 @@ impl TagValue<Durability> for Object {
     }
 }
 
+impl TagValue<i32> for Object {
+    // TODO: this could become ambiguous, hopefully we can generate these and do better
+    fn value(&self, id: Tid) -> Option<i32> {
+        for candidate in &self.tags {
+            if candidate.to_id() == id {
+                match candidate {
+                    Tag::Flees(value) => return Some(*value),
+                    Tag::Hearing(value) => return Some(*value),
+                    _ => panic!("{candidate} tag doesn't have a Flees or Hearing"),
+                }
+            }
+        }
+        None
+    }
+}
+
 impl TagValue<Material> for Object {
     fn value(&self, id: Tid) -> Option<Material> {
         for candidate in &self.tags {

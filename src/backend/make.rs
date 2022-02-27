@@ -28,6 +28,10 @@ pub fn level(game: &mut Game, map: &str) {
                 game.add_object(&loc, dirt());
                 game.add_object(&loc, icarium());
             }
+            'g' => {
+                game.add_object(&loc, dirt());
+                game.add_object(&loc, guard());
+            }
             'o' => {
                 game.add_object(&loc, dirt());
                 game.add_object(&loc, spectator());
@@ -187,6 +191,16 @@ fn icarium() -> Object {
     )
 }
 
+fn guard() -> Object {
+    Object::new(
+        "a guard",
+        guard_tags(),
+        Symbol::Npc('g'),
+        Color::Green,
+        "a low level guard",
+    )
+}
+
 fn rhulad() -> Object {
     Object::new(
         "rhulad",
@@ -324,6 +338,20 @@ fn doorman_tags() -> Vec<Tag> {
     ]
 }
 
+fn guard_tags() -> Vec<Tag> {
+    vec![
+        Tag::Disposition(Disposition::Neutral),
+        Tag::Behavior(Behavior::Sleeping),
+        Tag::Flees(50),
+        Tag::Hearing(0),
+        Tag::Durability(Durability { current: 80, max: 80 }),
+        Tag::Name("a guard"),
+        Tag::Guard,
+        Tag::Scheduled,
+        Tag::Character,
+    ]
+}
+
 fn icarium_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Neutral),
@@ -340,7 +368,7 @@ fn rhulad_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Aggressive),
         Tag::Behavior(Behavior::Sleeping),
-        Tag::Durability(Durability { current: 100, max: 100 }),
+        Tag::Durability(Durability { current: 80, max: 80 }),
         Tag::Name("Rhulad"),
         Tag::Rhulad,
         Tag::Scheduled,
@@ -352,6 +380,7 @@ fn spectator_tags() -> Vec<Tag> {
     vec![
         Tag::Disposition(Disposition::Neutral),
         Tag::Behavior(Behavior::Sleeping),
+        Tag::Hearing(0),
         Tag::Durability(Durability { current: 33, max: 33 }),
         Tag::Name("Spectator"),
         Tag::Spectator,

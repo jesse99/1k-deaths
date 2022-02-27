@@ -41,9 +41,11 @@ pub const LOUD: Sound = Sound { volume: 500 };
 // pub const VERY_LOUD: Sound = Sound { volume: 1000 };
 
 impl Sound {
-    pub fn was_heard(&self, rng: &RefCell<SmallRng>, distance10: i32) -> (bool, f64) {
+    fn was_heard(&self, rng: &RefCell<SmallRng>, distance10: i32, hearing: i32) -> (bool, f64) {
+        let scaling = (hearing as f64) / 100.0;
         let distance = (distance10 as f64) / 10.0;
         let p = (self.volume as f64) / distance.powf(1.2);
+        let p = p * scaling;
 
         let rng = &mut *rng.borrow_mut();
         let x: f64 = rng.gen();
@@ -105,7 +107,14 @@ impl Game {
 
         for loc in &npcs {
             if let Some(distance10) = self.find_distance10(origin, loc) {
-                let (was_heard, p) = noise.was_heard(&self.rng, distance10);
+                let hearing: i32 = {
+                    if let Some((_, obj)) = self.level.get(&loc, HEARING_ID) {
+                        obj.value(HEARING_ID).unwrap()
+                    } else {
+                        100
+                    }
+                };
+                let (was_heard, p) = noise.was_heard(&self.rng, distance10, hearing);
                 if was_heard {
                     if let Some((_, obj)) = self.level.get_mut(&loc, BEHAVIOR_ID) {
                         if responded_to_noise(obj, origin) {
@@ -118,20 +127,20 @@ impl Game {
                                 (distance10 as f64) / 10.0
                             );
                             self.replace_behavior(&loc, Behavior::MovingTo(*origin));
-                        } else {
-                            info!(
-                                "{obj} heard a noise but ignored it, prob={p:.2}, dist={:.1}",
-                                (distance10 as f64) / 10.0
-                            );
+                            // } else {
+                            //     info!(
+                            //         "{obj} heard a noise but ignored it, prob={p:.2}, dist={:.1}",
+                            //         (distance10 as f64) / 10.0
+                            //     );
                         }
                     }
-                } else {
-                    if let Some((_, obj)) = self.level.get(&loc, CHARACTER_ID) {
-                        info!(
-                            "{obj} did not hear a noise, prob={p:.2}, dist={:.1}",
-                            (distance10 as f64) / 10.0
-                        );
-                    }
+                    // } else {
+                    //     if let Some((_, obj)) = self.level.get(&loc, CHARACTER_ID) {
+                    //         info!(
+                    //             "{obj} did not hear a noise, prob={p:.2}, dist={:.1}",
+                    //             (distance10 as f64) / 10.0
+                    //         );
+                    //     }
                 }
             }
         }
@@ -143,7 +152,7 @@ impl Game {
     // the distance is artificially extended).
     fn find_distance10(&self, start: &Point, target: &Point) -> Option<i32> {
         let callback = |loc: Point, neighbors: &mut Vec<(Point, i32)>| self.successors(loc, neighbors);
-        let mut find = PathFind::new(*start, *target, callback);
+        let find = PathFind::new(*start, *target, callback);
         find.distance()
     }
 

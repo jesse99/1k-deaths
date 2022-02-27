@@ -48,9 +48,16 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
 fn attack(game: &mut Game, attacker: Oid, defender: Oid, old_defender_loc: Point, units: Time) -> Acted {
     let attacker_loc = game.loc(attacker).unwrap();
     let defender_loc = game.loc(defender).unwrap();
+
+    if wants_to_flee(game, &attacker_loc) {
+        if start_fleeing(game, attacker, &attacker_loc, defender) {
+            return Acted::DidntAct;
+        }
+    }
+
     // TODO: this assumes that the defender is the player (or the pair are in the player's pov)
     if game.pov.visible(game, &defender_loc) {
-        // If the defender can be seen then update where the defender thinks he is,
+        // If the defender can be seen then update where the attacker thinks he is,
         if defender_loc != old_defender_loc {
             let behavior = Behavior::Attacking(defender, defender_loc);
             game.replace_behavior(&attacker_loc, behavior);
@@ -80,6 +87,7 @@ fn attack(game: &mut Game, attacker: Oid, defender: Oid, old_defender_loc: Point
         }
     } else {
         // If the defender cannot be seen then move towards his last known location.
+        debug!("{attacker} can no longer see {defender} and has started moving towards his last known location");
         let behavior = Behavior::MovingTo(old_defender_loc);
         game.replace_behavior(&attacker_loc, behavior);
         Acted::DidntAct
@@ -118,7 +126,7 @@ fn deep_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
 /// Returns the next location from start to target using the lowest Time path.
 fn find_next_loc_to(game: &Game, ch: &Object, start: &Point, target: &Point) -> Option<Point> {
     let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(game, ch, loc, target, neighbors);
-    let mut find = PathFind::new(*start, *target, callback);
+    let find = PathFind::new(*start, *target, callback);
     find.next()
 }
 
@@ -142,7 +150,7 @@ fn successors(game: &Game, ch: &Object, loc: Point, target: &Point, neighbors: &
 
 fn move_towards(game: &mut Game, oid: Oid, target_loc: &Point, units: Time) -> Acted {
     if let Some(acted) = switched_to_attacking(game, oid, units) {
-        info!("{oid} switched to attacking");
+        info!("{oid} was moving towards {target_loc} but switched to attacking");
         acted
     } else if units >= time::DIAGNOL_MOVE {
         if let Some(acted) = try_move_towards(game, oid, target_loc) {
@@ -183,13 +191,52 @@ fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
     }
 }
 
+fn find_flee_loc(game: &Game, attacker_loc: &Point) -> Option<Point> {
+    let mut loc = None;
+    let mut max_dist2 = 0;
+    let attacker = game.level.get(attacker_loc, CHARACTER_ID).unwrap().1;
+    for _ in 0..20 {
+        let candidate = game.level.random_loc(&game.rng);
+        let d2 = attacker_loc.distance2(&candidate);
+        // don't bother fleeing to a really close point
+        if d2 > 4 * 4 {
+            if d2 > max_dist2 {
+                let callback = |new_loc: Point, neighbors: &mut Vec<(Point, Time)>| {
+                    successors(game, attacker, new_loc, &candidate, neighbors)
+                };
+                let find = PathFind::new(*attacker_loc, candidate, callback);
+                if find.next().is_some() {
+                    loc = Some(candidate);
+                    max_dist2 = d2;
+                    if d2 > (3 * pov::RADIUS) * (3 * pov::RADIUS) {
+                        // We've found something plenty far enough away.
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    loc
+}
+
+fn start_fleeing(game: &mut Game, attacker: Oid, attacker_loc: &Point, defender: Oid) -> bool {
+    if let Some(flee_loc) = find_flee_loc(game, attacker_loc) {
+        debug!("{attacker} is hurt and has started fleeing from {defender}");
+        let behavior = Behavior::MovingTo(flee_loc);
+        game.replace_behavior(&attacker_loc, behavior);
+        true
+    } else {
+        debug!("{attacker} is hurt and wanted to flee but was unable to");
+        false
+    }
+}
+
 fn switched_to_attacking(game: &mut Game, oid: Oid, units: Time) -> Option<Acted> {
     if let Some(loc) = game.loc(oid) {
-        if game.pov.visible(game, &loc) {
+        if game.pov.visible(game, &loc) && !wants_to_flee(game, &loc) {
             let obj = game.level.get_mut(&loc, BEHAVIOR_ID).unwrap().1;
             if let Some(Disposition::Aggressive) = obj.value(DISPOSITION_ID) {
                 // we're treating visibility as a symmetric operation, TODO: which is probably not quite right
-                debug!("{obj} switched to attacking player");
                 game.replace_behavior(&loc, Behavior::Attacking(Oid(0), game.player_loc()));
                 return Some(attack(game, oid, Oid(0), game.player_loc(), units));
             }
@@ -215,6 +262,7 @@ fn try_move_towards(game: &mut Game, oid: Oid, target_loc: &Point) -> Option<Act
 
 fn wander(game: &mut Game, oid: Oid, end: Time, units: Time) -> Acted {
     if let Some(acted) = switched_to_attacking(game, oid, units) {
+        info!("{oid} was wandering but switched to attacking");
         return acted;
     }
     let loc = game.loc(oid).unwrap();
@@ -234,4 +282,16 @@ fn wander(game: &mut Game, oid: Oid, end: Time, units: Time) -> Acted {
         }
     }
     Acted::DidntAct
+}
+
+fn wants_to_flee(game: &Game, attacker_loc: &Point) -> bool {
+    let attacker = game.level.get(attacker_loc, CHARACTER_ID).unwrap().1;
+    if let Some(percent2) = attacker.value(FLEES_ID) {
+        let percent: i32 = percent2;
+        let durability: Durability = attacker.value(DURABILITY_ID).unwrap();
+        let x = (durability.current as f64) / (durability.max as f64);
+        x <= (percent as f64) / 100.0
+    } else {
+        false
+    }
 }
