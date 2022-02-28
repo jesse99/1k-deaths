@@ -21,6 +21,7 @@ pub use object::Symbol;
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
+pub use tag::Disposition;
 
 use derive_more::Display;
 use interactions::{Interactions, PreHandler, PreResult};
@@ -216,6 +217,12 @@ impl Game {
 
     pub fn player_loc(&self) -> Point {
         self.level.player_loc()
+    }
+
+    pub fn player_hps(&self) -> (i32, i32) {
+        let obj = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let durability: Durability = obj.value(DURABILITY_ID).unwrap();
+        (durability.current, durability.max)
     }
 
     /// If this returns true then the UI should call player_acted, otherwise the UI should

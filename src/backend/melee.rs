@@ -23,32 +23,34 @@ impl Game {
             debug!("   {hit} for {damage}, new HPs are {new_hps}");
             let msg = if damage == 0 {
                 format!("{attacker_name} {hit} {defender_name} for no damage.")
-            } else if new_hps <= 0 {
-                if defender.0 == 0 {
-                    let msg = "You've lost the game!";
-                    let mesg = Message::new(Topic::Important, msg);
-                    self.messages.push(mesg);
-                    self.state = State::LostGame;
-                } else {
-                    self.npc_died(defender_loc, defender);
-                }
-                if new_hps < 0 {
-                    format!(
-                        "{attacker_name} {hit} {defender_name} for {damage} damage ({} over kill).",
-                        -new_hps
-                    )
-                } else {
-                    format!("{attacker_name} {hit} {defender_name} for {damage} damage.",)
-                }
             } else {
-                let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
+                let (oid, defender) = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap();
                 let durability = Tag::Durability(Durability {
                     current: new_hps,
                     max: max_hps,
                 });
                 defender.replace(durability);
 
-                format!("{attacker_name} {hit} {defender_name} for {damage} damage.")
+                if new_hps <= 0 {
+                    if oid.0 == 0 {
+                        let msg = "You've lost the game!";
+                        let mesg = Message::new(Topic::Important, msg);
+                        self.messages.push(mesg);
+                        self.state = State::LostGame;
+                    } else {
+                        self.npc_died(defender_loc, oid);
+                    }
+                    if new_hps < 0 {
+                        format!(
+                            "{attacker_name} {hit} {defender_name} for {damage} damage ({} over kill).",
+                            -new_hps
+                        )
+                    } else {
+                        format!("{attacker_name} {hit} {defender_name} for {damage} damage.",)
+                    }
+                } else {
+                    format!("{attacker_name} {hit} {defender_name} for {damage} damage.")
+                }
             };
 
             let topic = self.topic(attacker, defender, damage);

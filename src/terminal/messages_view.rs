@@ -20,7 +20,7 @@ impl MessagesView {
             // color of the line is correct.
             let mut text = message.text.clone();
             if self.size.width as usize > text.len() {
-                text.push_str(&String::from(' ').repeat(self.size.width as usize - text.len()));
+                text.push_str(&String::from(' ').repeat(self.size.width as usize - text.len() - 1));
             }
             let _ = write!(
                 stdout,

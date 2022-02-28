@@ -88,7 +88,7 @@ pub enum Tag {
     Character,
 
     Player,
-    Doorman,
+    Doorman, // TODO: might want to use a UniqueNpc for these
     Guard,
     Icarium,
     Rhulad,

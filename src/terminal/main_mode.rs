@@ -1,3 +1,4 @@
+use super::details_view::DetailsView;
 use super::help::{format_help, validate_help};
 use super::map_view::MapView;
 use super::messages_view::{self, MessagesView};
@@ -18,6 +19,7 @@ type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
 pub struct MainMode {
     map: MapView,
+    details: DetailsView,
     messages: MessagesView,
     commands: CommandTable,
 }
@@ -48,10 +50,15 @@ impl MainMode {
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
 
+        let details_width = 20;
         Box::new(MainMode {
             map: MapView {
                 origin: Point::new(0, 0),
-                size: Size::new(width, height - NUM_MESSAGES),
+                size: Size::new(width - details_width, height - NUM_MESSAGES),
+            },
+            details: DetailsView {
+                origin: Point::new(width - details_width, 0),
+                size: Size::new(details_width, height - NUM_MESSAGES),
             },
             messages: MessagesView {
                 origin: Point::new(0, height - NUM_MESSAGES),
@@ -65,6 +72,7 @@ impl MainMode {
 impl Mode for MainMode {
     fn render(&self, context: &mut RenderContext) -> bool {
         self.map.render(context.stdout, context.game, context.examined); // TODO: views should probably take context
+        self.details.render(context.stdout, context.game);
         self.messages.render(context.stdout, context.game);
         true
     }
