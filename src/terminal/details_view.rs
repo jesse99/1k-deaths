@@ -1,5 +1,5 @@
 use super::color;
-use crate::backend::{Color, Game, Point, Size};
+use crate::backend::{Color, Disposition, Game, Point, Size};
 use std::io::Write;
 
 /// Shows info about the player and nearby NPCs.
@@ -14,48 +14,91 @@ impl DetailsView {
         let mut v = 1;
 
         self.render_player(h, &mut v, stdout, game);
+        self.render_npcs(h, &mut v, stdout, game);
         self.render_trailer(h, v, stdout);
     }
 
     fn render_player(&self, h: u16, v: &mut u16, stdout: &mut Box<dyn Write>, game: &Game) {
         let (current, max) = game.player_hps();
         let percent = (current as f64) / (max as f64);
-
         let fg = self.player_color(percent);
+        let n = (10.0 * percent).round() as usize;
+
+        let bar1 = format!(" {}", "*".repeat(n));
+        let bar2 = "*".repeat(10 - n);
+        let suffix = format!("{current}/{max}");
+        self.render_char(h, *v, &bar1, &bar2, &suffix, fg, stdout);
+        *v += 1;
+
+        self.render_char(h, *v, "", "", "", fg, stdout);
+        *v += 1;
+    }
+
+    // TODO: Should be an indication if the NPC is really dangerous, maybe use bold
+    // or do something on the map.
+    fn render_npcs(&self, h: u16, v: &mut u16, stdout: &mut Box<dyn Write>, game: &Game) {
+        let npcs = game.npcs(super::wizard_mode());
+
+        for npc in npcs.iter().take(5) {
+            let current = npc.observed_hps.0 as usize;
+            let max = npc.observed_hps.1 as usize;
+
+            let (bar1, bar2) = if npc.is_sleeping {
+                (" ".to_string(), "sleeping".to_string())
+            } else {
+                (format!(" {}", "*".repeat(current)), "*".repeat(max - current))
+            };
+            let fg = match npc.disposition {
+                Disposition::Aggressive => Color::Red,
+                Disposition::Neutral => Color::Blue,
+                Disposition::Friendly => Color::Green,
+            };
+            self.render_char(h, *v, &bar1, &bar2, npc.name, fg, stdout);
+
+            *v += 1;
+        }
+    }
+
+    fn render_char(
+        &self,
+        h: u16,
+        v: u16,
+        bar1: &str,
+        bar2: &str,
+        suffix: &str,
+        fg: Color,
+        stdout: &mut Box<dyn Write>,
+    ) {
         let bg = Color::White;
 
-        let n = (10.0 * percent).round() as usize;
-        let text = format!(" {}", "*".repeat(n));
         let _ = write!(
             stdout,
             "{}{}{}{}",
-            termion::cursor::Goto(h, *v),
+            termion::cursor::Goto(h, v),
             termion::color::Bg(color::to_termion(bg)),
             termion::color::Fg(color::to_termion(fg)),
-            text
+            bar1
         );
 
-        let text2 = "*".repeat(10 - n);
         let _ = write!(
             stdout,
             "{}{}{}",
             termion::color::Bg(color::to_termion(bg)),
             termion::color::Fg(color::to_termion(Color::LightGrey)),
-            text2
+            bar2
         );
 
-        let text3 = format!(" {current}/{max}");
         let _ = write!(
             stdout,
-            "{}{}{}",
+            " {}{}{}",
             termion::color::Bg(color::to_termion(bg)),
             termion::color::Fg(color::to_termion(fg)),
-            text3
+            suffix
         );
 
         // Pad the string out to the full terminal width so that the back
         // color of the line is correct.
-        let count = text.len() + text2.len() + text3.len();
+        let count = bar1.len() + bar2.len() + suffix.len() + 1; // +1 because we inserted a space before the suffix
         if self.size.width as usize > count {
             let padding = " ".repeat(self.size.width as usize - count);
             let _ = write!(
@@ -66,7 +109,6 @@ impl DetailsView {
                 padding
             );
         }
-        *v += 1;
     }
 
     fn render_trailer(&self, h: u16, in_v: u16, stdout: &mut Box<dyn Write>) {

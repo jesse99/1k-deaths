@@ -136,6 +136,15 @@ impl Object {
 }
 
 // TODO: need to generate these instead of using the Value trait
+pub fn behavior_value(obj: &Object) -> Option<Behavior> {
+    for candidate in &obj.tags {
+        if let Tag::Behavior(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
 pub fn damage_value(obj: &Object) -> Option<i32> {
     for candidate in &obj.tags {
         if let Tag::Damage(value) = candidate {
@@ -163,9 +172,27 @@ pub fn hearing_value(obj: &Object) -> Option<i32> {
     None
 }
 
+pub fn disposition_value(obj: &Object) -> Option<Disposition> {
+    for candidate in &obj.tags {
+        if let Tag::Disposition(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
 pub fn durability_value(obj: &Object) -> Option<Durability> {
     for candidate in &obj.tags {
         if let Tag::Durability(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
+pub fn name_value(obj: &Object) -> Option<&'static str> {
+    for candidate in &obj.tags {
+        if let Tag::Name(value) = candidate {
             return Some(*value);
         }
     }

@@ -71,8 +71,8 @@ impl MainMode {
 
 impl Mode for MainMode {
     fn render(&self, context: &mut RenderContext) -> bool {
-        self.map.render(context.stdout, context.game, context.examined); // TODO: views should probably take context
-        self.details.render(context.stdout, context.game);
+        self.details.render(context.stdout, context.game); // TODO: views should probably take context
+        self.map.render(context.stdout, context.game, context.examined); // TODO: details can write into the next line so this will fix up (which may cause flashing)
         self.messages.render(context.stdout, context.game);
         true
     }

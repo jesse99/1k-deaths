@@ -131,7 +131,17 @@ fn deep_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
 fn find_next_loc_to(game: &Game, ch: &Object, start: &Point, target: &Point) -> Option<Point> {
     let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(game, ch, loc, target, neighbors);
     let find = PathFind::new(*start, *target, callback);
-    find.next()
+    if let Some(loc) = find.next() {
+        let character = &game.level.get(&loc, CHARACTER_ID);
+        if character.is_none() {
+            Some(loc)
+        } else {
+            // We want to allow moving towards a character, but not into it.
+            None
+        }
+    } else {
+        None
+    }
 }
 
 fn successors(game: &Game, ch: &Object, loc: Point, target: &Point, neighbors: &mut Vec<(Point, Time)>) {

@@ -47,6 +47,8 @@ use time::Time;
 #[cfg(debug_assertions)]
 use fnv::FnvHashSet;
 
+use self::object::durability_value;
+
 const MAX_MESSAGES: usize = 1000;
 const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
@@ -97,6 +99,15 @@ pub enum State {
     KilledRhulad,
     WonGame,
     LostGame,
+}
+
+/// Used for NPCs visible to the player.
+pub struct Npc {
+    pub observed_hps: (i32, i32), // current and max where max is in [1, 10] (based on perception)
+    pub actual_hps: Option<(i32, i32)>, // set if wizard mode
+    pub name: &'static str,
+    pub disposition: Disposition,
+    pub is_sleeping: bool,
 }
 
 /// Top-level backend object encapsulating the game state.
@@ -435,6 +446,54 @@ impl Game {
             // We'll only land here in the unusual case of the player not able to see himself.
             None
         }
+    }
+
+    fn to_npc(&self, loc: &Point, wizard: bool) -> Npc {
+        let granularity = 5; // TODO: base this on perception
+
+        let obj = self.level.get(loc, CHARACTER_ID).unwrap().1;
+        let durability = durability_value(obj).unwrap_or(Durability { current: 10, max: 10 }); // Doorman doesn't have HPs
+        let current_observed = (durability.current as f64) / (durability.max as f64);
+        let current_observed = current_observed * (granularity as f64);
+        let observed_hps = ((current_observed as i32), granularity);
+
+        let is_sleeping = object::behavior_value(obj).map_or_else(
+            || false,
+            |v| {
+                let hearing = object::hearing_value(obj).unwrap_or(100);
+                v == Behavior::Sleeping && hearing > 0 // don't consider them sleeping if they'll never wake up
+            },
+        );
+
+        Npc {
+            observed_hps,
+            actual_hps: if wizard {
+                Some((durability.current, durability.max))
+            } else {
+                None
+            },
+            name: object::name_value(obj).unwrap(),
+            disposition: object::disposition_value(obj).unwrap(),
+            is_sleeping,
+        }
+    }
+
+    /// Returns all the NPCs visible to the player sorted by distance from the player.
+    pub fn npcs(&self, wizard: bool) -> Vec<Npc> {
+        self.level
+            .npcs()
+            .map_while(|oid| {
+                let loc = self.level.obj(oid).1.unwrap();
+                let dist = loc.distance2(&self.player_loc());
+                if dist <= pov::RADIUS * pov::RADIUS {
+                    Some(loc)
+                } else {
+                    None
+                }
+            })
+            .filter(|loc| self.pov.visible(self, &loc))
+            .map(|loc| self.to_npc(&loc, wizard))
+            .collect()
     }
 
     #[cfg(debug_assertions)]
