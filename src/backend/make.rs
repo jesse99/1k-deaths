@@ -286,29 +286,27 @@ pub fn pick_axe() -> Object {
 
 // --- tags ------------------------------------------------------------------------------
 fn ground_tags(bg: Color) -> Vec<Tag> {
-    vec![Tag::Ground, Tag::Background(bg), Tag::Terrain]
+    vec![Tag::Terrain(Terrain::Ground), Tag::Background(bg)]
 }
 
 fn shallow_water_tags() -> Vec<Tag> {
     vec![
-        Tag::ShallowWater,
+        Tag::Terrain(Terrain::ShallowWater),
         Tag::Background(Color::LightBlue),
-        Tag::Terrain,
         Tag::Scheduled,
     ]
 }
 
 fn deep_water_tags() -> Vec<Tag> {
     vec![
-        Tag::DeepWater,
+        Tag::Terrain(Terrain::DeepWater),
         Tag::Background(Color::LightBlue),
-        Tag::Terrain,
         Tag::Scheduled,
     ]
 }
 
 fn vitr_tags() -> Vec<Tag> {
-    vec![Tag::Vitr, Tag::Background(Color::Black), Tag::Terrain]
+    vec![Tag::Terrain(Terrain::Vitr), Tag::Background(Color::Black)]
 }
 
 fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
@@ -319,14 +317,13 @@ fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
             max: durability,
         }),
         Tag::Material(material),
-        Tag::Wall,
+        Tag::Terrain(Terrain::Wall),
         Tag::Background(bg),
-        Tag::Terrain,
     ]
 }
 
 fn tree_tags() -> Vec<Tag> {
-    vec![Tag::Tree, Tag::Background(Color::Black), Tag::Terrain]
+    vec![Tag::Terrain(Terrain::Tree), Tag::Background(Color::Black)]
 }
 
 fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
@@ -337,9 +334,12 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
             max: durability,
         }),
         Tag::Material(material),
-        if open { Tag::OpenDoor } else { Tag::ClosedDoor },
+        if open {
+            Tag::Terrain(Terrain::OpenDoor)
+        } else {
+            Tag::Terrain(Terrain::ClosedDoor)
+        },
         Tag::Background(bg),
-        Tag::Terrain,
     ]
 }
 

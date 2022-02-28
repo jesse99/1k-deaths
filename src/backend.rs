@@ -33,6 +33,7 @@ use rand::rngs::SmallRng;
 use rand::RngCore;
 use rand_distr::StandardNormal;
 use scheduler::Scheduler;
+// use simplelog::TermLogger;
 use sound::Sound;
 use std::cell::{RefCell, RefMut};
 use std::cmp::{max, min};
@@ -257,14 +258,13 @@ impl Game {
                     let player = self.player_loc();
                     let new_loc = Point::new(player.x + dx, player.y + dy);
                     let duration = match self.try_interact(&player, &new_loc) {
-                        Some(PreResult::Acted(taken, sound)) => {
+                        PreResult::Acted(taken, sound) => {
                             assert!(taken > Time::zero());
                             self.handle_noise(&self.player_loc(), sound);
                             taken
                         }
-                        Some(PreResult::ZeroAction) => Time::zero(),
-                        Some(PreResult::DidntAct) => Time::zero(),
-                        None => {
+                        PreResult::ZeroAction => Time::zero(),
+                        PreResult::DidntAct => {
                             let old_loc = self.player_loc();
                             self.do_move(Oid(0), &old_loc, &new_loc);
                             let (duration, volume) = self.interact_post_move(&new_loc);
@@ -485,6 +485,18 @@ impl Game {
         InventoryIterator::new(self, &self.player_loc())
     }
 
+    pub fn in_inv(&self, ch: &Object, id: Tid) -> bool {
+        if let Some(oids) = ch.as_ref(INVENTORY_ID) {
+            for oid in oids {
+                let obj = self.level.obj(*oid).0;
+                if obj.has(id) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     // The RNG doesn't directly affect the game state so we use interior mutability for it.
     fn rng(&self) -> RefMut<'_, dyn RngCore> {
         self.rng.borrow_mut()
@@ -503,35 +515,12 @@ impl Game {
     }
 
     // Player attempting to interact with an adjacent cell.
-    fn try_interact(&mut self, player_loc: &Point, new_loc: &Point) -> Option<PreResult> {
-        let mut handler = None;
-
-        // First see if an inventory item can interact with the new cell.
-        {
-            'outer: for (_, obj) in self.player_inv_iter() {
-                for tag0 in obj.iter() {
-                    handler = self.find_interact_handler(tag0, new_loc);
-                    if handler.is_some() {
-                        break 'outer;
-                    }
-                }
-            }
-        }
-
+    fn try_interact(&mut self, player_loc: &Point, new_loc: &Point) -> PreResult {
+        let handler = self.find_interact_handler(&Tag::Player, new_loc);
         if handler.is_some() {
-            let result = Some(handler.unwrap()(self, player_loc, new_loc));
-            if !matches!(result, Some(PreResult::DidntAct)) {
-                return result;
-            }
-        }
-
-        // If we couldn't find a handler for an item or that handler returned None then
-        // see if the player itself can interact with the cell.
-        handler = self.find_interact_handler(&Tag::Player, new_loc);
-        if handler.is_some() {
-            Some(handler.unwrap()(self, player_loc, new_loc))
+            handler.unwrap()(self, player_loc, new_loc)
         } else {
-            None
+            PreResult::DidntAct
         }
     }
 
@@ -571,9 +560,12 @@ impl Game {
 
     fn schedule_new_obj(&mut self, oid: Oid) {
         let obj = self.level.obj(oid).0;
+        let terrain = object::terrain_value(obj);
         let initial = if oid.0 == 0 {
             time::DIAGNOL_MOVE
-        } else if obj.has(SHALLOW_WATER_ID) || obj.has(DEEP_WATER_ID) {
+        } else if terrain.is_some()
+            && (terrain.unwrap() == Terrain::ShallowWater || terrain.unwrap() == Terrain::DeepWater)
+        {
             Time::zero() - ai::extra_flood_delay(self)
         } else {
             Time::zero()
@@ -605,9 +597,9 @@ impl Game {
             self.scheduler.remove(old_oid);
         }
 
-        if obj.has(TERRAIN_ID) {
+        if let Some(terrain) = object::terrain_value(obj) {
             // Terrain cannot be destroyed but has to be mutated into something else.
-            let new_obj = if obj.has(WALL_ID) {
+            let new_obj = if terrain == Terrain::Wall {
                 make::rubble()
             } else {
                 error!("Need to better handle destroying Tid {obj}"); // Doors, trees, etc

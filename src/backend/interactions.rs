@@ -39,20 +39,14 @@ impl Interactions {
             post_table: FnvHashMap::default(),
         };
 
-        i.pre_ins(EMP_SWORD_ID, VITR_ID, emp_sword_vs_vitr);
-        i.pre_ins(PICK_AXE_ID, WALL_ID, pick_axe_vs_wall);
-        i.pre_ins(PLAYER_ID, DEEP_WATER_ID, player_vs_deep_water);
         i.pre_ins(PLAYER_ID, DOORMAN_ID, player_vs_doorman);
         i.pre_ins(PLAYER_ID, SPECTATOR_ID, player_vs_spectator);
-        i.pre_ins(PLAYER_ID, TREE_ID, player_vs_tree);
-        i.pre_ins(PLAYER_ID, VITR_ID, player_vs_vitr);
-        i.pre_ins(PLAYER_ID, WALL_ID, player_vs_wall);
-        i.pre_ins(PLAYER_ID, CLOSED_DOOR_ID, player_vs_closed_door);
         i.pre_ins(PLAYER_ID, CHARACTER_ID, player_vs_charactor);
+        i.pre_ins(PLAYER_ID, TERRAIN_ID, player_vs_terrain_pre);
 
         i.post_ins(PLAYER_ID, PORTABLE_ID, player_vs_portable);
-        i.post_ins(PLAYER_ID, SHALLOW_WATER_ID, player_vs_shallow_water);
         i.post_ins(PLAYER_ID, SIGN_ID, player_vs_sign);
+        i.post_ins(PLAYER_ID, TERRAIN_ID, player_vs_terrain_post);
 
         i
     }
@@ -83,41 +77,61 @@ impl Interactions {
 }
 
 // ---- Pre-move handlers ----------------------------------------------------------------
-fn emp_sword_vs_vitr(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> PreResult {
-    if !matches!(game.state, State::WonGame) {
-        let mesg = Message::new(
-            Topic::Important,
-            "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
-        );
-        game.messages.push(mesg);
+fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
+    let (oid, obj) = game.level.get_bottom(new_loc);
+    let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
 
-        let mesg = Message::new(Topic::Important, "You have won the game!!");
+    // A few terrain types are special cased.
+    let terrain = object::terrain_value(obj).unwrap();
+    match terrain {
+        Terrain::ClosedDoor => {
+            game.do_open_door(Oid(0), player_loc, new_loc, oid);
+            return PreResult::Acted(time::OPEN_DOOR, sound::VERY_QUIET);
+        }
+        Terrain::Vitr => {
+            if game.in_inv(player, EMP_SWORD_ID) {
+                let mesg = Message::new(
+                    Topic::Important,
+                    "You carefully place the Emperor's sword into the vitr and watch it dissolve.",
+                );
+                game.messages.push(mesg);
+
+                let mesg = Message::new(Topic::Important, "You have won the game!!");
+                game.messages.push(mesg);
+                game.state = State::WonGame;
+                return PreResult::Acted(time::DESTROY_EMP_SWORD, sound::QUIET);
+            }
+        }
+        Terrain::Wall => {
+            if game.in_inv(player, PICK_AXE_ID) {
+                let material: Option<Material> = obj.value(MATERIAL_ID);
+                match material {
+                    Some(Material::Stone) => {
+                        let damage = 6;
+                        game.do_dig(Oid(0), new_loc, oid, damage);
+                        return PreResult::Acted(time::DIG_STONE, sound::LOUD);
+                    }
+                    Some(Material::Metal) => {
+                        let mesg = Message::new(
+                            Topic::Normal,
+                            "Your pick-axe bounces off the metal wall doing no damage.",
+                        );
+                        game.messages.push(mesg);
+                        return PreResult::Acted(time::SCRATCH_METAL, sound::QUIET);
+                    }
+                    None => panic!("Walls should always have a Material"),
+                }
+            }
+        }
+        _ => (),
+    }
+
+    // But for most we just check to see if they are impassible or not.
+    if let Some(mesg) = player.impassible_terrain_type(terrain) {
         game.messages.push(mesg);
-        game.state = State::WonGame;
-        PreResult::Acted(time::DESTROY_EMP_SWORD, sound::QUIET)
+        PreResult::ZeroAction
     } else {
         PreResult::DidntAct
-    }
-}
-
-fn pick_axe_vs_wall(game: &mut Game, _player_loc: &Point, new_loc: &Point) -> PreResult {
-    let (oid, obj) = game.level.get(new_loc, WALL_ID).unwrap();
-    let material: Option<Material> = obj.value(MATERIAL_ID);
-    match material {
-        Some(Material::Stone) => {
-            let damage = 6;
-            game.do_dig(Oid(0), new_loc, oid, damage);
-            PreResult::Acted(time::DIG_STONE, sound::LOUD)
-        }
-        Some(Material::Metal) => {
-            let mesg = Message::new(
-                Topic::Normal,
-                "Your pick-axe bounces off the metal wall doing no damage.",
-            );
-            game.messages.push(mesg);
-            PreResult::Acted(time::SCRATCH_METAL, sound::QUIET)
-        }
-        None => panic!("Walls should always have a Material"),
     }
 }
 
@@ -144,13 +158,6 @@ fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
         }
         None => panic!("{obj} didn't have a Disposition!"),
     }
-}
-
-fn player_vs_deep_water(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = player.impassible_terrain_tag(&Tag::DeepWater).unwrap();
-    game.messages.push(mesg);
-    PreResult::ZeroAction
 }
 
 fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) -> PreResult {
@@ -195,47 +202,11 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
     PreResult::Acted(time::SPEAK_TO_SPECTATOR, sound::QUIET)
 }
 
-fn player_vs_tree(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = player.impassible_terrain_tag(&Tag::Tree).unwrap();
-    game.messages.push(mesg);
-    PreResult::ZeroAction
-}
-
-fn player_vs_vitr(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = player.impassible_terrain_tag(&Tag::Vitr).unwrap();
-    game.messages.push(mesg);
-    PreResult::ZeroAction
-}
-
-fn player_vs_wall(game: &mut Game, player_loc: &Point, _new_loc: &Point) -> PreResult {
-    let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
-    let mesg = player.impassible_terrain_tag(&Tag::Wall).unwrap();
-    game.messages.push(mesg);
-    PreResult::ZeroAction
-}
-
-fn player_vs_closed_door(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
-    let oid = game.level.get(new_loc, CLOSED_DOOR_ID).unwrap().0;
-    game.do_open_door(Oid(0), player_loc, new_loc, oid);
-    PreResult::Acted(time::OPEN_DOOR, sound::VERY_QUIET)
-}
-
 // ---- Post-move handlers ---------------------------------------------------------------
 fn player_vs_portable(game: &mut Game, loc: &Point) -> (Time, Sound) {
     let oid = game.level.get(loc, PORTABLE_ID).unwrap().0;
     game.do_pick_up(Oid(0), loc, oid);
     (time::PICK_UP, sound::NONE)
-}
-
-fn player_vs_shallow_water(game: &mut Game, _loc: &Point) -> (Time, Sound) {
-    let mesg = Message::new(Topic::Normal, "You splash through the water.");
-    game.messages.push(mesg);
-
-    // TODO: Some NPCs should not have a penalty (or maybe even be faster)
-    // TODO: May change for the player as well (especially if we have any small races)
-    (time::MOVE_THRU_SHALLOW_WATER, sound::QUIET) // just a little slower and a little louder
 }
 
 fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {
@@ -246,4 +217,24 @@ fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {
     };
     game.messages.push(mesg);
     (Time::zero(), sound::NONE)
+}
+
+fn player_vs_terrain_post(game: &mut Game, loc: &Point) -> (Time, Sound) {
+    let (_, obj) = game.level.get(loc, TERRAIN_ID).unwrap();
+    match object::terrain_value(obj).unwrap() {
+        Terrain::Rubble => {
+            let mesg = Message::new(Topic::Normal, "You pick your way through the rubble.");
+            game.messages.push(mesg);
+            (time::MOVE_THRU_SHALLOW_WATER * 2, sound::QUIET)
+        }
+        Terrain::ShallowWater => {
+            let mesg = Message::new(Topic::Normal, "You splash through the water.");
+            game.messages.push(mesg);
+
+            // TODO: Some NPCs should not have a penalty (or maybe even be faster)
+            // TODO: May change for the player as well (especially if we have any small races)
+            (time::MOVE_THRU_SHALLOW_WATER, sound::QUIET) // just a little slower and a little louder
+        }
+        _ => (Time::zero(), sound::NONE),
+    }
 }

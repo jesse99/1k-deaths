@@ -88,7 +88,17 @@ impl Object {
     }
 
     pub fn blocks_los(&self) -> bool {
-        self.has(CLOSED_DOOR_ID) || self.has(TREE_ID) || self.has(WALL_ID)
+        match terrain_value(self).unwrap_or(Terrain::ShallowWater) {
+            Terrain::ClosedDoor => true,
+            Terrain::DeepWater => false,
+            Terrain::Ground => false,
+            Terrain::OpenDoor => false,
+            Terrain::Rubble => false,
+            Terrain::ShallowWater => false,
+            Terrain::Tree => true,
+            Terrain::Vitr => false,
+            Terrain::Wall => true,
+        }
     }
 
     pub fn to_bg_color(&self) -> Color {
@@ -99,29 +109,28 @@ impl Object {
         (self.color, self.symbol)
     }
 
-    pub fn impassible_terrain(&self, terrain: &Object) -> Option<Message> {
-        for tag in terrain.iter() {
-            let mesg = self.impassible_terrain_tag(tag);
-            if mesg.is_some() {
-                return mesg;
-            }
-        }
-        None
+    pub fn impassible_terrain(&self, obj: &Object) -> Option<Message> {
+        let terrain = terrain_value(obj).unwrap();
+        obj.impassible_terrain_type(terrain)
     }
 
-    pub fn impassible_terrain_tag(&self, tag: &Tag) -> Option<Message> {
-        match tag {
-            Tag::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
-            Tag::Tree => Some(Message::new(
+    pub fn impassible_terrain_type(&self, terrain: Terrain) -> Option<Message> {
+        match terrain {
+            Terrain::ClosedDoor if !self.has(CAN_OPEN_DOOR_ID) => {
+                Some(Message::new(Topic::Failed, "You fail to open the door."))
+            }
+            Terrain::ClosedDoor => None,
+            Terrain::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
+            Terrain::Ground => None,
+            Terrain::OpenDoor => None,
+            Terrain::Rubble => None,
+            Terrain::ShallowWater => None,
+            Terrain::Tree => Some(Message::new(
                 Topic::Failed,
                 "The tree's are too thick to travel through.",
             )),
-            Tag::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
-            Tag::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
-            Tag::ClosedDoor if !self.has(CAN_OPEN_DOOR_ID) => {
-                Some(Message::new(Topic::Failed, "You fail to open the door."))
-            }
-            _ => None,
+            Terrain::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
+            Terrain::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
         }
     }
 }
@@ -157,6 +166,15 @@ pub fn hearing_value(obj: &Object) -> Option<i32> {
 pub fn durability_value(obj: &Object) -> Option<Durability> {
     for candidate in &obj.tags {
         if let Tag::Durability(value) = candidate {
+            return Some(*value);
+        }
+    }
+    None
+}
+
+pub fn terrain_value(obj: &Object) -> Option<Terrain> {
+    for candidate in &obj.tags {
+        if let Tag::Terrain(value) = candidate {
             return Some(*value);
         }
     }
@@ -294,41 +312,21 @@ impl Object {
             );
             assert!(!self.has(PORTABLE_ID), "Terrain objects cannot be Portable: {self:?}");
 
-            // TODO: May want to add similar checks: one sort of character, one sort of
-            // portable.
-            let count = self
-                .tags
-                .iter()
-                .filter(|t| {
-                    matches!(
-                        t,
-                        Tag::Wall
-                            | Tag::ClosedDoor
-                            | Tag::Ground
-                            | Tag::ShallowWater
-                            | Tag::DeepWater
-                            | Tag::Tree
-                            | Tag::Vitr
-                            | Tag::OpenDoor
-                    )
-                })
-                .count();
-            assert!(count == 1, "Terrain objects must be one sort of terrain: {self:?}");
-        }
-        if self.has(CLOSED_DOOR_ID) {
-            if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
-                assert!(
-                    durability.current > 0,
-                    "Destroyed doors should change to Ground: {self:?}"
-                );
-            }
-        }
-        if self.has(WALL_ID) {
-            if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
-                assert!(
-                    durability.current > 0,
-                    "Destroyed walls should change to Ground: {self:?}"
-                );
+            let terrain = terrain_value(self).unwrap();
+            if terrain == Terrain::ClosedDoor {
+                if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
+                    assert!(
+                        durability.current > 0,
+                        "Destroyed doors should change to Ground: {self:?}"
+                    );
+                }
+            } else if terrain == Terrain::Wall {
+                if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
+                    assert!(
+                        durability.current > 0,
+                        "Destroyed walls should change to Ground: {self:?}"
+                    );
+                }
             }
         }
         if self.has(CHARACTER_ID) {

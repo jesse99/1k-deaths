@@ -45,6 +45,34 @@ pub struct Durability {
     pub max: i32,
 }
 
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+pub enum Terrain {
+    /// Will have Durability (and usually Material) if the door can be broken down.
+    /// If it has a Binding tag then it can only be opened by characters that
+    /// have a matching Binding object in their inventory (i.e. a key).
+    ClosedDoor,
+
+    DeepWater,
+
+    /// Grass, dirt, etc.
+    Ground,
+
+    OpenDoor,
+
+    /// Will have a Material tag.
+    Rubble,
+
+    ShallowWater,
+
+    /// TODO: may want Material and Durability but burnt trees should probably remain impassible
+    Tree,
+
+    Vitr,
+
+    /// Will normally have Durability and Material tags. At zero durability changes to Rubble.
+    Wall,
+}
+
 // TODO: generate this file (Display trait may require some sort of escape hatch)
 // TODO: can we also generate something like the Object value methods?
 
@@ -96,42 +124,10 @@ pub enum Tag {
     Sign,
     EmpSword, // TODO: do we want UniqueNPC and UniqueItem?
 
-    /// Normally also has a terrain tag.
-    /// Will have Durability (and usually Material) if the door can be broken down.
-    /// If it has a Binding tag then it can only be opened by characters that
-    /// have a matching Binding object in their inventory (i.e. a key).
-    ClosedDoor,
-
-    /// Each level will have one of these. Will also have the Character tag.
-    /// Grass, dirt, etc. Will have a Terrain tag,
-    Ground,
-
-    /// Will have a Terrain tag,
-    ShallowWater,
-
-    /// Will have a Terrain tag,
-    DeepWater,
-
-    /// Will have a Terrain tag,
-    Vitr,
-
-    /// Normally also has a terrain tag. This will also share tags with
-    /// ClosedDoor so that they can be preserved as doors transition from
-    /// open to closed.
-    OpenDoor,
-
     /// Used for objects that are the lowest layer in a Cell, e.g. grassy ground.
     /// Note that this can be used for unusual objects such as a ballista. Will
     /// have a Background tag.
-    Terrain,
-
-    /// Will have a terrain tag. TODO: may want Material and Durability but
-    /// burnt trees should probably remain impassible
-    Tree,
-
-    /// Will have a terrain tag and normally Durability and Material tags.
-    /// At zero durability the wall is broken through.
-    Wall,
+    Terrain(Terrain),
 
     /// Normally only used with Terrain.
     Background(Color),
@@ -165,15 +161,7 @@ pub const PORTABLE_ID: Tid = Tid(6);
 pub const PICK_AXE_ID: Tid = Tid(7);
 pub const SIGN_ID: Tid = Tid(8);
 pub const EMP_SWORD_ID: Tid = Tid(9);
-pub const CLOSED_DOOR_ID: Tid = Tid(10);
-pub const GROUND_ID: Tid = Tid(11);
-pub const SHALLOW_WATER_ID: Tid = Tid(12);
-pub const DEEP_WATER_ID: Tid = Tid(13);
-pub const VITR_ID: Tid = Tid(14);
-pub const OPEN_DOOR_ID: Tid = Tid(15);
 pub const TERRAIN_ID: Tid = Tid(16);
-pub const TREE_ID: Tid = Tid(17);
-pub const WALL_ID: Tid = Tid(18);
 pub const BACKGROUND_ID: Tid = Tid(19);
 pub const DURABILITY_ID: Tid = Tid(20);
 pub const MATERIAL_ID: Tid = Tid(21);
@@ -201,15 +189,7 @@ impl Tag {
             Tag::EmpSword => EMP_SWORD_ID,
             Tag::PickAxe => PICK_AXE_ID,
             Tag::Sign => SIGN_ID,
-            Tag::ClosedDoor => CLOSED_DOOR_ID,
-            Tag::Ground => GROUND_ID,
-            Tag::ShallowWater => SHALLOW_WATER_ID,
-            Tag::DeepWater => DEEP_WATER_ID,
-            Tag::Vitr => VITR_ID,
-            Tag::OpenDoor => OPEN_DOOR_ID,
-            Tag::Terrain => TERRAIN_ID,
-            Tag::Tree => TREE_ID,
-            Tag::Wall => WALL_ID,
+            Tag::Terrain(_) => TERRAIN_ID,
             Tag::Background(_) => BACKGROUND_ID,
             Tag::Durability(_) => DURABILITY_ID,
             Tag::Material(_) => MATERIAL_ID,
@@ -240,15 +220,7 @@ impl fmt::Display for Tag {
             Tag::EmpSword => write!(f, "EmpSword"),
             Tag::PickAxe => write!(f, "PickAxe"),
             Tag::Sign => write!(f, "Sign"),
-            Tag::ClosedDoor => write!(f, "ClosedDoor"),
-            Tag::Ground => write!(f, "Ground"),
-            Tag::ShallowWater => write!(f, "ShallowWater"),
-            Tag::DeepWater => write!(f, "DeepWater"),
-            Tag::Vitr => write!(f, "Vitr"),
-            Tag::OpenDoor => write!(f, "OpenDoor"),
-            Tag::Terrain => write!(f, "Terrain"),
-            Tag::Tree => write!(f, "Tree"),
-            Tag::Wall => write!(f, "Wall"),
+            Tag::Terrain(t) => write!(f, "Terrain({t})"),
             Tag::Background(color) => write!(f, "Background({color})"),
             Tag::Durability(durability) => write!(f, "Durability({}, {})", durability.current, durability.max),
             Tag::Material(material) => write!(f, "Material({material})"),

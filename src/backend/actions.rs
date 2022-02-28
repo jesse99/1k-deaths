@@ -10,7 +10,7 @@ impl Game {
         assert!(damage > 0);
 
         let (damage, durability) = {
-            let obj = self.level.get(&obj_loc, WALL_ID).unwrap().1;
+            let obj = self.level.get(&obj_loc, TERRAIN_ID).unwrap().1;
             let durability: Durability = obj.value(DURABILITY_ID).unwrap();
             (durability.max / damage, durability)
         };
@@ -23,7 +23,7 @@ impl Game {
             );
             self.messages.push(mesg);
 
-            let obj = self.level.get(&obj_loc, WALL_ID).unwrap().1;
+            let obj = self.level.get(&obj_loc, TERRAIN_ID).unwrap().1;
             let mut obj = obj.clone();
             obj.replace(Tag::Durability(Durability {
                 current: durability.current - damage,
@@ -40,7 +40,9 @@ impl Game {
 
     pub fn do_flood_deep(&mut self, oid: Oid, loc: Point) -> Scheduled {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
-            self.level.get(candidate, GROUND_ID).is_some() || self.level.get(candidate, SHALLOW_WATER_ID).is_some()
+            let obj = self.level.get(&candidate, TERRAIN_ID).unwrap().1;
+            let terrain = object::terrain_value(obj).unwrap();
+            terrain == Terrain::ShallowWater || terrain == Terrain::Ground || terrain == Terrain::Rubble
         }) {
             debug!("flood deep from {loc} to {new_loc}");
             let bad_oid = self.level.get(&new_loc, TERRAIN_ID).unwrap().0;
@@ -48,9 +50,12 @@ impl Game {
 
             if new_loc == self.player_loc() {
                 if let Some(newer_loc) = self.find_neighbor(&self.player_loc(), |candidate| {
-                    self.level.get(candidate, GROUND_ID).is_some()
-                        || self.level.get(candidate, SHALLOW_WATER_ID).is_some()
-                        || self.level.get(candidate, OPEN_DOOR_ID).is_some()
+                    let obj = self.level.get(&candidate, TERRAIN_ID).unwrap().1;
+                    let terrain = object::terrain_value(obj).unwrap();
+                    terrain == Terrain::OpenDoor
+                        || terrain == Terrain::ShallowWater
+                        || terrain == Terrain::Ground
+                        || terrain == Terrain::Rubble
                 }) {
                     let mesg = Message {
                         topic: Topic::Normal,
@@ -87,7 +92,11 @@ impl Game {
     }
 
     pub fn do_flood_shallow(&mut self, oid: Oid, loc: Point) -> Scheduled {
-        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| self.level.get(candidate, GROUND_ID).is_some()) {
+        if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
+            let obj = self.level.get(&candidate, TERRAIN_ID).unwrap().1;
+            let terrain = object::terrain_value(obj).unwrap();
+            terrain == Terrain::Ground || terrain == Terrain::Rubble
+        }) {
             debug!("flood shallow from {loc} to {new_loc}");
             let bad_oid = self.level.get(&new_loc, TERRAIN_ID).unwrap().0;
             self.replace_object(&new_loc, bad_oid, make::shallow_water());

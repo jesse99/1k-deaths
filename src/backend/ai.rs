@@ -22,12 +22,14 @@ pub enum Acted {
 /// the future than would normally be the case).
 pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
     if let Some(obj) = game.level.try_obj(oid) {
-        if obj.has(DEEP_WATER_ID) {
-            deep_flood(game, oid, units)
-        } else if obj.has(SHALLOW_WATER_ID) {
-            shallow_flood(game, oid, units)
-        } else if obj.has(SHALLOW_WATER_ID) {
-            shallow_flood(game, oid, units)
+        if let Some(terrain) = object::terrain_value(obj) {
+            if terrain == Terrain::DeepWater {
+                deep_flood(game, oid, units)
+            } else if terrain == Terrain::ShallowWater {
+                shallow_flood(game, oid, units)
+            } else {
+                panic!("{oid} is a scheduled terrain but not shallow or deep water!");
+            }
         } else {
             // TODO: will have to special case alternate goals, eg
             // whether to go grab a good item that is in los

@@ -160,15 +160,18 @@ impl Game {
         let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let (_, terrain) = self.level.get_bottom(&new_loc);
-            let mut d = if terrain.has(WALL_ID) {
-                100 // sound travels through everything but can be very attenuated
-            } else if terrain.has(CLOSED_DOOR_ID) {
-                50
-            } else if terrain.has(TREE_ID) {
-                15
-            } else {
-                10
+            let (_, obj) = self.level.get_bottom(&new_loc);
+            let mut d = match object::terrain_value(obj).unwrap() {
+                // sound travels through everything but can be very attenuated
+                Terrain::ClosedDoor => 50,
+                Terrain::DeepWater => 10,
+                Terrain::Ground => 10,
+                Terrain::OpenDoor => 10,
+                Terrain::Rubble => 10,
+                Terrain::ShallowWater => 10,
+                Terrain::Tree => 15,
+                Terrain::Vitr => 10,
+                Terrain::Wall => 100,
             };
             if loc.diagnol(&new_loc) {
                 d += 12 * d / 10;
