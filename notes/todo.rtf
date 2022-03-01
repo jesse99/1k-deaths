@@ -1,6 +1,6 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2580
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Bold;
-\f3\fswiss\fcharset0 Helvetica-Oblique;}
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Oblique;
+\f3\fswiss\fcharset0 Helvetica-Bold;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red2\green2\blue2;}
 {\*\expandedcolortbl;;\csgray\c0;\csgenericrgb\c784\c784\c784;}
 \deftab720
@@ -26,69 +26,42 @@ https://www.gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguel
 https://crawl.kelbi.org/#lobby\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 Step 6 - It's alive! Alive!\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95\'a0Look at these:\
-	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday \
-\'95\'a0Need a way to rest\
-	- also add a health bar for the player\
-	- and maybe targeted and near by NPCs\
-\'95 Should be a wizard command to get combat details\
-	- maybe also a wizard mode examine command to get full cell details\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f3\i \cf3 	
-\f1\i0 \cf3 \
-enum ObjectTag\
+\cf3 enum ObjectTag\
 	Weapon\
 	MinDamage(i32)  \
 	MaxDamage(i32)\
 	Range(i32)          
-\f3\i \cf3 ranged weapon, spell, etc
+\f2\i \cf3 ranged weapon, spell, etc
 \f1\i0 \cf3 \
 	Brand(element)\
 	\
 	Inventory([Objects]),   
-\f3\i \cf3 or ids?
+\f2\i \cf3 or ids?
 \f1\i0 \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\i \cf3 	
+\f2\i \cf3 	
 \f1\i0 \cf3 Binding(String) 
-\f3\i \cf3 used to associate objects, eg a key and a door
+\f2\i \cf3 used to associate objects, eg a key and a door
 \f1\i0 \cf3 	\
 	Fountain(type)   
-\f3\i \cf3 water or blood\
+\f2\i \cf3 water or blood\
 	
 \f1\i0 \cf3 Key                    
-\f3\i \cf3 keys should have a binding\
-	Chest(contents) has a binding if a key is required
+\f2\i \cf3 keys should have a binding\
+	
+\f1\i0 \cf3 Chest(contents)
+\f2\i \cf3  has a binding if a key is required
 \f1\i0 \cf3 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf3 \
-Step 7 - Interaction\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95 Add stats\
-\'95 Maybe also races\
-\'95\'a0Add an info view:\
-	- player stats\
-	- top N NPCs\
-		` color code these: red for aggresive and dangerous, orange, blue, green\
-\'95 Try underlining dangerous NPCs (both aggresive and neutral)\
-	- could add Icarium\
-	- neutral dangerous NPC\
-	- maybe confirm that you want to attack\
-\'95\'a0May want a benchmark to test combat\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f2\b \cf3 \
+\f3\b \cf3 \
 Step 8 - Data files\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf3 \'95 Generate tag.rs\
+\f1\b0 \cf3 \'95\'a0Look at these:\
+	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday \
+\'95 Generate tag.rs\
 	- probably from some sort of config file\
 	- be sure to add a comment that it is a generated file, along with a timestamp\
 \'95 Do we want to generate make.rs too?\
@@ -97,9 +70,24 @@ Step 8 - Data files\
 \'95 Run descriptions through a spell checker\
 \'95\'a0Make it easier to create new objects\
 	- this would probably involve something like a macro rather than a config file
-\f2\b \cf3 \
+\f3\b \cf3 \
 \
+Step 7 - Interaction\
+
+\f1\b0 \cf3 \'95 Add stats\
+\'95 Maybe also races\
+\'95\'a0Update details view:\
+	- player stats\
+\'95 Try underlining dangerous NPCs (both aggresive and neutral)\
+	- neutral dangerous NPC\
+	- maybe confirm that you want to attack\
+\'95\'a0May want a benchmark to test combat, or possibly write out info in wizard mode\
+	- maybe also a wizard mode examine command to get full cell details\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f3\b \cf3 \
 Step 9 - Items\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Randomly place items on the level\
 \'95\'a0Add inventory management\
@@ -115,14 +103,14 @@ Step 9 - Items\
 \'95 Related skills should go up together (albeit more slowly)\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf3 \
+\f3\b \cf3 \
 Step 10 - Magic\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Add some basic spells \
 \'95\'a0Maybe just a few from one warren\
 \'95\'a0NPCs should also be able to cast spells (or use a particular ability that amounts to a spell)
-\f2\b \cf3 \
+\f3\b \cf3 \
 
 \f1\b0 \cf3 \'95 Not sure about these\
 	- magic requires either free hands or focus weapon\
@@ -132,7 +120,7 @@ Step 10 - Magic\
 	- can melee with focus weapons\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf3 \
+\f3\b \cf3 \
 Step 11 - Simple game\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
@@ -158,7 +146,7 @@ Step 11 - Simple game\
 	- if die with it on then speed and craziness increase, non-melee stats decrease\
 	- crazy 1: "You feel like you're being watched", few others like that\
 	- crazy 2: chance of seeing things that aren't there
-\f2\b \cf3 \
+\f3\b \cf3 \
 
 \f1\b0 \cf3 	- crazy 3: often see things that aren't there, including seeing things that are there as something else\
 	- crazy 4: make random movements, miss messages (getting hit, walking into walls)\
@@ -175,7 +163,7 @@ Step 11 - Simple game\
 	- these don\'92t require any allocations\
 	- might use pefect hashing too (eg with an enum key)\
 	- kinda doubt hash map lookup is a bottleneck tho
-\f2\b \cf3 \
+\f3\b \cf3 \
 \
 Step 12 - Levels\
 
@@ -196,7 +184,7 @@ Step 12 - Levels\
 		` may want some sort of warning before it engulfs a new square\
 		` don't think this needs to happen when player is not on that level\
 		  because chaos levels change on entry
-\f2\b \cf3 \
+\f3\b \cf3 \
 \
 Step 13 - Experience\
 
@@ -204,7 +192,7 @@ Step 13 - Experience\
 \'95 NPCs should have levels as well\
 \'95 Should be able to look at an NPC and get a sense of how powerful they are\
 \'95 Add support for different character classes
-\f2\b \cf3 \
+\f3\b \cf3 \
 \
 Step 14 - Citizens\
 
@@ -212,13 +200,13 @@ Step 14 - Citizens\
    or NPCs that have unique items to sell. Maybe even roaming Trygalle trade guild\
    could have special items.\
 \'95\'a0May want to add support for quests. Would be cool to be sent to regions in the real world.
-\f2\b \cf3 \
+\f3\b \cf3 \
 \
 Step 15 - Free at last
 \f1\b0 \cf3 \
 \'95\'a0Switch to a web UI.\
 \'95\'a0Setup a server to allow others to play. Can maybe just host this locally.
-\f2\b \cf3 \
+\f3\b \cf3 \
 
 \f1\b0 \cf3 \'95 Need some sort of alert system:\
 	- for errors and warnings (with pointer to saved off event stream)\
