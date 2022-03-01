@@ -26,7 +26,7 @@ pub use tag::Disposition;
 use derive_more::Display;
 use interactions::{Interactions, PreHandler, PreResult};
 use level::Level;
-use object::{Object, TagValue};
+use object::Object;
 use old_pov::OldPoV;
 use pov::PoV;
 use rand::prelude::*;
@@ -232,7 +232,7 @@ impl Game {
 
     pub fn player_hps(&self) -> (i32, i32) {
         let obj = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
-        let durability: Durability = obj.value(DURABILITY_ID).unwrap();
+        let durability = object::durability_value(obj).unwrap();
         (durability.current, durability.max)
     }
 
@@ -552,7 +552,7 @@ impl Game {
     }
 
     pub fn in_inv(&self, ch: &Object, id: Tid) -> bool {
-        if let Some(oids) = ch.as_ref(INVENTORY_ID) {
+        if let Some(oids) = object::inventory_value(ch) {
             for oid in oids {
                 let obj = self.level.obj(*oid).0;
                 if obj.has(id) {
@@ -616,7 +616,7 @@ impl Game {
     }
 
     fn add_object(&mut self, loc: &Point, obj: Object) {
-        let behavior = obj.value(BEHAVIOR_ID);
+        let behavior = object::behavior_value(&obj);
         let scheduled = obj.has(SCHEDULED_ID) && !matches!(behavior, Some(Behavior::Sleeping));
         let oid = self.level.add(obj, Some(*loc));
         if scheduled {
@@ -641,7 +641,7 @@ impl Game {
 
     fn replace_behavior(&mut self, loc: &Point, new_behavior: Behavior) {
         let (oid, obj) = self.level.get_mut(&loc, BEHAVIOR_ID).unwrap();
-        let old_behavior = obj.value(BEHAVIOR_ID).unwrap();
+        let old_behavior = object::behavior_value(obj).unwrap();
         assert_ne!(old_behavior, new_behavior);
         obj.replace(Tag::Behavior(new_behavior));
 
@@ -850,7 +850,7 @@ struct InventoryIterator<'a> {
 impl<'a> InventoryIterator<'a> {
     fn new(game: &'a Game, loc: &Point) -> InventoryIterator<'a> {
         let (_, inv) = game.level.get(loc, INVENTORY_ID).unwrap();
-        let oids = inv.as_ref(INVENTORY_ID).unwrap();
+        let oids = object::inventory_value(inv).unwrap();
         InventoryIterator {
             game,
             oids,

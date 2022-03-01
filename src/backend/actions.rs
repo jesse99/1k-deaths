@@ -11,7 +11,7 @@ impl Game {
 
         let (damage, durability) = {
             let obj = self.level.get(&obj_loc, TERRAIN_ID).unwrap().1;
-            let durability: Durability = obj.value(DURABILITY_ID).unwrap();
+            let durability = object::durability_value(obj).unwrap();
             (durability.max / damage, durability)
         };
         debug!("digging at {obj_loc} for {damage} damage");
@@ -139,7 +139,7 @@ impl Game {
     pub fn do_pick_up(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid) {
         let obj = self.level.obj(obj_oid).0;
         debug!("{oid} is picking up {obj_oid}/{obj} at {obj_loc}");
-        let name: &'static str = obj.value(NAME_ID).unwrap();
+        let name: &'static str = object::name_value(obj).unwrap();
         let mesg = Message {
             topic: Topic::Normal,
             text: format!("You pick up the {name}."),

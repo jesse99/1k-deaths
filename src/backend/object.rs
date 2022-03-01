@@ -102,7 +102,7 @@ impl Object {
     }
 
     pub fn to_bg_color(&self) -> Color {
-        self.value(BACKGROUND_ID).expect("Expected a Background tag")
+        background_value(self).expect("Expected a Background tag")
     }
 
     pub fn to_fg_symbol(&self) -> (Color, Symbol) {
@@ -135,194 +135,6 @@ impl Object {
     }
 }
 
-// TODO: need to generate these instead of using the Value trait
-pub fn behavior_value(obj: &Object) -> Option<Behavior> {
-    for candidate in &obj.tags {
-        if let Tag::Behavior(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn damage_value(obj: &Object) -> Option<i32> {
-    for candidate in &obj.tags {
-        if let Tag::Damage(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn flees_value(obj: &Object) -> Option<i32> {
-    for candidate in &obj.tags {
-        if let Tag::Flees(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn hearing_value(obj: &Object) -> Option<i32> {
-    for candidate in &obj.tags {
-        if let Tag::Hearing(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn disposition_value(obj: &Object) -> Option<Disposition> {
-    for candidate in &obj.tags {
-        if let Tag::Disposition(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn durability_value(obj: &Object) -> Option<Durability> {
-    for candidate in &obj.tags {
-        if let Tag::Durability(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn name_value(obj: &Object) -> Option<&'static str> {
-    for candidate in &obj.tags {
-        if let Tag::Name(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub fn terrain_value(obj: &Object) -> Option<Terrain> {
-    for candidate in &obj.tags {
-        if let Tag::Terrain(value) = candidate {
-            return Some(*value);
-        }
-    }
-    None
-}
-
-pub trait TagValue<T> {
-    fn value(&self, id: Tid) -> Option<T>;
-}
-
-impl TagValue<Behavior> for Object {
-    fn value(&self, id: Tid) -> Option<Behavior> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Behavior(value) => return Some(*value),
-                    _ => panic!("{} tag doesn't have a Behavior", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl TagValue<Color> for Object {
-    fn value(&self, id: Tid) -> Option<Color> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Background(value) => return Some(*value),
-                    _ => panic!("{} tag doesn't have a Color", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl TagValue<Disposition> for Object {
-    fn value(&self, id: Tid) -> Option<Disposition> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Disposition(value) => return Some(*value),
-                    _ => panic!("{} tag doesn't have a Disposition", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl TagValue<Durability> for Object {
-    fn value(&self, id: Tid) -> Option<Durability> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Durability(value) => return Some(*value),
-                    _ => panic!("{} tag doesn't have a Durability", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl TagValue<Material> for Object {
-    fn value(&self, id: Tid) -> Option<Material> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Material(value) => return Some(*value),
-                    _ => panic!("{} tag doesn't have a Material", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl TagValue<&'static str> for Object {
-    fn value(&self, id: Tid) -> Option<&'static str> {
-        for candidate in &self.tags {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Name(value) => return Some(value),
-                    _ => panic!("{} tag doesn't have a String", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
-impl Object {
-    // TODO: add a trait for these?
-    pub fn as_ref(&self, id: Tid) -> Option<&Vec<Oid>> {
-        for candidate in self.tags.iter() {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Inventory(value) => return Some(value),
-                    _ => panic!("{} tag doesn't have a Vec<Oid>", candidate),
-                }
-            }
-        }
-        None
-    }
-
-    pub fn as_mut_ref(&mut self, id: Tid) -> Option<&mut Vec<Oid>> {
-        for candidate in self.tags.iter_mut() {
-            if candidate.to_id() == id {
-                match candidate {
-                    Tag::Inventory(value) => return Some(value),
-                    _ => panic!("{} tag doesn't have a Vec<Oid>", candidate),
-                }
-            }
-        }
-        None
-    }
-}
-
 // Debug support
 impl Object {
     #[cfg(debug_assertions)]
@@ -341,14 +153,14 @@ impl Object {
 
             let terrain = terrain_value(self).unwrap();
             if terrain == Terrain::ClosedDoor {
-                if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
+                if let Some(durability) = durability_value(self) {
                     assert!(
                         durability.current > 0,
                         "Destroyed doors should change to Ground: {self:?}"
                     );
                 }
             } else if terrain == Terrain::Wall {
-                if let Some::<Durability>(durability) = self.value(DURABILITY_ID) {
+                if let Some(durability) = durability_value(self) {
                     assert!(
                         durability.current > 0,
                         "Destroyed walls should change to Ground: {self:?}"
@@ -396,3 +208,8 @@ impl fmt::Debug for Object {
         write!(f, "dname: {} tags: {}", self.dname, tags)
     }
 }
+
+// Generated by build.rs, will be at a path like ./target/debug/build/one-thousand-deaths-f4f54e60e59b18ad/out/obj.rs
+// It contains functions to extract the value for Tag's that have values. The functions look like this:
+// pub fn damage_value(obj: &Object) -> Option<i32>
+include!(concat!(env!("OUT_DIR"), "/obj.rs"));

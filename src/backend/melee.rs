@@ -66,7 +66,7 @@ impl Game {
             "You".to_string()
         } else {
             let attacker = self.level.obj(attacker_id).0;
-            let name: &'static str = attacker.value(NAME_ID).unwrap();
+            let name: &'static str = object::name_value(attacker).unwrap();
             format!("{name}")
         }
     }
@@ -76,7 +76,7 @@ impl Game {
         let attacker = self.level.obj(attacker_id).0;
         // TODO: this should be using what is eqiupped instead of a max of unarmed and inv weapon damage
         let mut damage = object::damage_value(attacker).expect(&format!("{attacker_id} should have a damage tag"));
-        if let Some(oids) = attacker.as_ref(INVENTORY_ID) {
+        if let Some(oids) = object::inventory_value(attacker) {
             for oid in oids {
                 let obj = self.level.obj(*oid).0;
                 if let Some(candidate) = object::damage_value(obj) {
@@ -102,7 +102,7 @@ impl Game {
 
     fn hps(&self, defender_id: Oid, damage: i32) -> (i32, i32) {
         let defender = self.level.obj(defender_id).0;
-        let durability: Durability = defender.value(DURABILITY_ID).unwrap();
+        let durability = object::durability_value(defender).unwrap();
         (durability.current - damage, durability.max)
     }
 
@@ -151,7 +151,7 @@ impl Game {
 
     fn react_to_attack(&mut self, attacker_loc: &Point, attacker_id: Oid, defender_loc: &Point) {
         let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
-        let attack = match defender.value(BEHAVIOR_ID) {
+        let attack = match object::behavior_value(defender) {
             Some(Behavior::Sleeping) => true,
             Some(Behavior::Attacking(_, _)) => {
                 // TODO: If the old attacker is no longer visible (or maybe too far away)

@@ -185,7 +185,7 @@ fn responded_to_noise(obj: &Object, origin: &Point) -> bool {
     if obj.has(SPECTATOR_ID) {
         return false;
     }
-    match obj.value(BEHAVIOR_ID) {
+    match object::behavior_value(obj) {
         Some(Behavior::Attacking(_, _)) => false,
         Some(Behavior::MovingTo(_)) => false, // TODO: change target if the new noise is louder?
         Some(Behavior::Sleeping) => {

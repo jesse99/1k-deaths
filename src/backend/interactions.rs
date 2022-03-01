@@ -1,7 +1,6 @@
 //! This is where the bulk of the logic exists to handle interactions between
 //! Characters and between items. It's structured as a lookup table of
 //! (tag1, tag2) => handler. For example (Player, Sign) => function_to_print_sign.
-use super::object::TagValue;
 use super::sound::*;
 use super::tag::*;
 use super::*;
@@ -104,7 +103,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
         }
         Terrain::Wall => {
             if game.in_inv(player, PICK_AXE_ID) {
-                let material: Option<Material> = obj.value(MATERIAL_ID);
+                let material = object::material_value(obj);
                 match material {
                     Some(Material::Stone) => {
                         let damage = 6;
@@ -137,7 +136,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
 
 fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
     let obj = game.level.get(new_loc, CHARACTER_ID).unwrap().1;
-    match obj.value(DISPOSITION_ID) {
+    match object::disposition_value(obj) {
         Some(Disposition::Aggressive) => {
             // This is QUIET because normally both parties will be making combat noises so
             // the probability is twice as high as just QUIET alone.

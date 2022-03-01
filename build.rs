@@ -93,9 +93,7 @@ fn capitilize(s: &str) -> String {
     result.to_uppercase()
 }
 
-// See https://doc.rust-lang.org/cargo/reference/build-scripts.html.
-fn main() -> Result<(), std::io::Error> {
-    let out_dir = env::var("OUT_DIR").unwrap();
+fn generate_tag_file(out_dir: &str) -> Result<(), std::io::Error> {
     let dest_path = Path::new(&out_dir).join("tag.rs");
     let mut f = File::create(&dest_path)?;
 
@@ -157,11 +155,63 @@ fn main() -> Result<(), std::io::Error> {
     f.write_all(b"    }\n")?;
     f.write_all(b"}\n")?;
 
-    // TODO:
-    // write out stuff like behavior_value (probably into a separate file)
-    // get rid of the old value trait impls
-    // write out how this was generated?
-    // write out a timestamp?
+    Ok(())
+}
+
+fn generate_obj_file(out_dir: &str) -> Result<(), std::io::Error> {
+    let dest_path = Path::new(&out_dir).join("obj.rs");
+    let mut f = File::create(&dest_path)?;
+
+    let tags = tags();
+    for tag in &tags {
+        match tag {
+            Tag::S(_) => (),
+            Tag::P(name, arg) => {
+                let lname = name.to_lowercase();
+                if arg.contains('<') {
+                    // If the argument is a collection then we want to return a reference
+                    // to the value (and a mutable version).
+                    f.write_all(format!("pub fn {lname}_value(obj: &Object) -> Option<&{arg}> {{\n").as_bytes())?;
+                    f.write_all(b"    for candidate in &obj.tags {\n")?;
+                    f.write_all(format!("        if let Tag::{name}(value) = candidate {{\n").as_bytes())?;
+                    f.write_all(b"            return Some(value);\n")?;
+                    f.write_all(b"        }\n")?;
+                    f.write_all(b"    }\n")?;
+                    f.write_all(b"    None\n")?;
+                    f.write_all(b"}\n\n")?;
+
+                    f.write_all(
+                        format!("pub fn {lname}_value_mut(obj: &mut Object) -> Option<&mut {arg}> {{\n").as_bytes(),
+                    )?;
+                    f.write_all(b"    for candidate in &mut obj.tags {\n")?;
+                    f.write_all(format!("        if let Tag::{name}(value) = candidate {{\n").as_bytes())?;
+                    f.write_all(b"            return Some(value);\n")?;
+                    f.write_all(b"        }\n")?;
+                    f.write_all(b"    }\n")?;
+                    f.write_all(b"    None\n")?;
+                    f.write_all(b"}\n\n")?;
+                } else {
+                    f.write_all(format!("pub fn {lname}_value(obj: &Object) -> Option<{arg}> {{\n").as_bytes())?;
+                    f.write_all(b"    for candidate in &obj.tags {\n")?;
+                    f.write_all(format!("        if let Tag::{name}(value) = candidate {{\n").as_bytes())?;
+                    f.write_all(b"            return Some(*value);\n")?;
+                    f.write_all(b"        }\n")?;
+                    f.write_all(b"    }\n")?;
+                    f.write_all(b"    None\n")?;
+                    f.write_all(b"}\n\n")?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+// See https://doc.rust-lang.org/cargo/reference/build-scripts.html.
+fn main() -> Result<(), std::io::Error> {
+    let out_dir = env::var("OUT_DIR").unwrap();
+    generate_tag_file(&out_dir)?;
+    generate_obj_file(&out_dir)?;
 
     Ok(())
 }
