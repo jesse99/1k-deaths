@@ -212,6 +212,7 @@ fn main() -> Result<(), std::io::Error> {
     let out_dir = env::var("OUT_DIR").unwrap();
     generate_tag_file(&out_dir)?;
     generate_obj_file(&out_dir)?;
+    // TODO: could use rustc-env=VAR=VALUE to embed a git hash into the exe
 
     Ok(())
 }

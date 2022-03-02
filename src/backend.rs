@@ -103,6 +103,8 @@ pub enum State {
 
 /// Used for NPCs visible to the player.
 pub struct Npc {
+    pub letter: char,
+    pub color: Color,
     pub observed_hps: (i32, i32), // current and max where max is in [1, 10] (based on perception)
     pub actual_hps: Option<(i32, i32)>, // set if wizard mode
     pub name: &'static str,
@@ -465,7 +467,15 @@ impl Game {
             },
         );
 
+        let (color, symbol) = obj.to_fg_symbol();
+        let letter = match symbol {
+            Symbol::Npc(c) => c,
+            _ => ' ',
+        };
+
         Npc {
+            letter,
+            color,
             observed_hps,
             actual_hps: if wizard {
                 Some((durability.current, durability.max))

@@ -27,10 +27,10 @@ impl DetailsView {
         let bar1 = format!(" {}", "*".repeat(n));
         let bar2 = "*".repeat(10 - n);
         let suffix = format!("{current}/{max}");
-        self.render_char(h, *v, &bar1, &bar2, &suffix, fg, stdout);
+        self.render_char(h, *v, ' ', Color::Black, &bar1, &bar2, &suffix, fg, stdout);
         *v += 1;
 
-        self.render_char(h, *v, "", "", "", fg, stdout);
+        self.render_char(h, *v, ' ', Color::Black, "", "", "", fg, stdout);
         *v += 1;
     }
 
@@ -53,7 +53,7 @@ impl DetailsView {
                 Disposition::Neutral => Color::Blue,
                 Disposition::Friendly => Color::Green,
             };
-            self.render_char(h, *v, &bar1, &bar2, npc.name, fg, stdout);
+            self.render_char(h, *v, npc.letter, npc.color, &bar1, &bar2, npc.name, fg, stdout);
 
             *v += 1;
         }
@@ -63,6 +63,8 @@ impl DetailsView {
         &self,
         h: u16,
         v: u16,
+        letter: char,
+        color: Color,
         bar1: &str,
         bar2: &str,
         suffix: &str,
@@ -73,12 +75,19 @@ impl DetailsView {
 
         let _ = write!(
             stdout,
-            "{}{}{}{}",
+            "{}{}",
             termion::cursor::Goto(h, v),
             termion::color::Bg(color::to_termion(bg)),
-            termion::color::Fg(color::to_termion(fg)),
-            bar1
         );
+
+        let extra = if letter != ' ' {
+            let _ = write!(stdout, " {}{}", termion::color::Fg(color::to_termion(color)), letter);
+            2
+        } else {
+            0
+        };
+
+        let _ = write!(stdout, "{}{}", termion::color::Fg(color::to_termion(fg)), bar1);
 
         let _ = write!(
             stdout,
@@ -98,7 +107,7 @@ impl DetailsView {
 
         // Pad the string out to the full terminal width so that the back
         // color of the line is correct.
-        let count = bar1.len() + bar2.len() + suffix.len() + 1; // +1 because we inserted a space before the suffix
+        let count = extra + bar1.len() + bar2.len() + suffix.len() + 1; // +1 because we inserted a space before the suffix
         if self.size.width as usize > count {
             let padding = " ".repeat(self.size.width as usize - count);
             let _ = write!(
