@@ -80,124 +80,163 @@ pub fn level(game: &mut Game, map: &str) {
 pub fn dirt() -> Object {
     Object::new(
         "dirt",
-        ground_tags(Color::Black),
+        "a patch of dirt",
         Symbol::Dirt,
         Color::LightSlateGray,
-        "a patch of dirt",
+        vec![Tag::Terrain(Terrain::Ground), Tag::Background(Color::Black)],
     )
 }
 
 pub fn rubble() -> Object {
     Object::new(
         "rubble",
-        ground_tags(Color::Black),
+        "a destroyed wall",
         Symbol::Rubble,
         Color::Chocolate,
-        "a destroyed wall",
+        vec![Tag::Terrain(Terrain::Ground), Tag::Background(Color::Black)],
     )
 }
 
 pub fn stone_wall() -> Object {
     Object::new(
         "stone wall",
-        wall_tags(Color::Black, Material::Stone),
+        "a stone wall",
         Symbol::Wall,
         Color::Chocolate,
-        "a stone wall",
+        wall_tags(Color::Black, Material::Stone),
     )
 }
 
 pub fn metal_wall() -> Object {
     Object::new(
         "metal wall",
-        wall_tags(Color::Black, Material::Metal),
+        "a metal wall",
         Symbol::Wall,
         Color::Silver,
-        "a metal wall",
+        wall_tags(Color::Black, Material::Metal),
     )
 }
 
 pub fn tree() -> Object {
-    Object::new("tree", tree_tags(), Symbol::Tree, Color::ForestGreen, "a tree")
+    Object::new(
+        "tree",
+        "a tree",
+        Symbol::Tree,
+        Color::ForestGreen,
+        vec![Tag::Terrain(Terrain::Tree), Tag::Background(Color::Black)],
+    )
 }
 
 pub fn closed_door() -> Object {
     Object::new(
         "closed door",
-        door_tags(Color::Black, Material::Stone, false),
+        "a closed door",
         Symbol::ClosedDoor,
         Color::Yellow,
-        "a closed door",
+        door_tags(Color::Black, Material::Stone, false),
     )
 }
 
 pub fn open_door() -> Object {
     Object::new(
         "open door",
-        door_tags(Color::Black, Material::Stone, true),
+        "an open door",
         Symbol::OpenDoor,
         Color::Yellow,
-        "an open door",
+        door_tags(Color::Black, Material::Stone, true),
     )
 }
 
 pub fn shallow_water() -> Object {
     Object::new(
         "shallow water",
-        shallow_water_tags(),
+        "shallow water",
         Symbol::ShallowLiquid,
         Color::Blue,
-        "shallow water",
+        vec![
+            Tag::Terrain(Terrain::ShallowWater),
+            Tag::Background(Color::LightBlue),
+            Tag::Scheduled,
+        ],
     )
 }
 
 pub fn deep_water() -> Object {
     Object::new(
         "deep water",
-        deep_water_tags(),
+        "deep water",
         Symbol::DeepLiquid,
         Color::Blue,
-        "deep water",
+        vec![
+            Tag::Terrain(Terrain::DeepWater),
+            Tag::Background(Color::LightBlue),
+            Tag::Scheduled,
+        ],
     )
 }
 
 pub fn vitr() -> Object {
     Object::new(
         "vitr",
-        vitr_tags(),
+        "a pool of chaotic acid",
         Symbol::DeepLiquid,
         Color::Gold,
-        "a pool of chaotic acid",
+        vec![Tag::Terrain(Terrain::Vitr), Tag::Background(Color::Black)],
     )
 }
 
 fn doorman() -> Object {
     Object::new(
         "doorman",
-        doorman_tags(),
+        "a royal guard",
         Symbol::Npc('D'),
         Color::Green,
-        "a royal guard",
+        vec![
+            Tag::Disposition(Disposition::Friendly),
+            Tag::Name("Doorman"),
+            Tag::Doorman,
+            Tag::Character,
+        ],
     )
 }
 
 fn icarium() -> Object {
     Object::new(
         "icarium",
-        icarium_tags(),
+        "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
         Symbol::Npc('I'),
         Color::LightGrey,
-        "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
+        vec![
+            Tag::Disposition(Disposition::Neutral),
+            Tag::Behavior(Behavior::Wandering(Time::max())),
+            Tag::Damage(40),
+            Tag::Durability(Durability { current: 500, max: 500 }),
+            Tag::Name("Icarium"),
+            Tag::Icarium,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
     )
 }
 
 fn guard() -> Object {
     Object::new(
         "a guard",
-        guard_tags(),
+        "a low level guard",
         Symbol::Npc('g'),
         Color::Green,
-        "a low level guard",
+        vec![
+            Tag::Disposition(Disposition::Neutral),
+            Tag::Behavior(Behavior::Sleeping),
+            Tag::Damage(10),
+            Tag::Flees(50),
+            Tag::Hearing(0),
+            Tag::Durability(Durability { current: 80, max: 80 }),
+            Tag::Name("a guard"),
+            Tag::Guard,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
     )
 }
 
@@ -212,44 +251,97 @@ pub fn broken(i: usize) -> Object {
         "Thenik the Shattered",
         "Urugal the Woven",
     ];
-    Object::new(names[i], unbound_tags(names[i]), Symbol::Npc('u'), Color::Red, names[i])
+    Object::new(
+        names[i],
+        names[i],
+        Symbol::Npc('u'),
+        Color::Red,
+        vec![
+            Tag::Disposition(Disposition::Aggressive),
+            Tag::Behavior(Behavior::Wandering(Time::max())),
+            Tag::Damage(20),
+            Tag::Durability(Durability { current: 80, max: 80 }),
+            Tag::Name(names[i]),
+            Tag::Guard,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
 }
 
 fn rhulad() -> Object {
     Object::new(
         "rhulad",
-        rhulad_tags(),
+        "the Emperor of a Thousand Deaths",
         Symbol::Npc('R'),
         Color::Red,
-        "the Emperor of a Thousand Deaths",
+        vec![
+            Tag::Disposition(Disposition::Aggressive),
+            Tag::Behavior(Behavior::Sleeping),
+            Tag::Damage(20),
+            Tag::Durability(Durability { current: 100, max: 100 }),
+            Tag::Name("Rhulad"),
+            Tag::Rhulad,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
     )
 }
 
 fn spectator() -> Object {
     Object::new(
         "spectator",
-        spectator_tags(),
+        "a spectator",
         Symbol::Npc('s'),
         Color::Plum,
-        "a spectator",
+        vec![
+            Tag::Disposition(Disposition::Neutral),
+            Tag::Behavior(Behavior::Sleeping),
+            Tag::Hearing(0),
+            Tag::Durability(Durability { current: 33, max: 33 }),
+            Tag::Name("Spectator"),
+            Tag::Spectator,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
     )
 }
 
 fn player() -> Object {
-    Object::new("player", player_tags(), Symbol::Player, Color::Gold, "yourself")
+    Object::new(
+        "player",
+        "yourself",
+        Symbol::Player,
+        Color::Gold,
+        vec![
+            Tag::Durability(Durability { current: 100, max: 100 }),
+            Tag::Damage(20),
+            Tag::Inventory(Vec::new()),
+            Tag::Name("yourself"),
+            Tag::CanOpenDoor,
+            Tag::Player,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
 }
 
 pub fn sign(text: &'static str) -> Object {
-    Object::new("sign", sign_tags(), Symbol::Sign, Color::Pink, text)
+    Object::new("sign", text, Symbol::Sign, Color::Pink, vec![Tag::Sign])
 }
 
 pub fn emp_sword() -> Object {
     Object::new(
         "emp sword",
-        emp_sword_tags(),
+        "the Sword of the Crippled God",
         Symbol::StrongSword,
         Color::Silver,
-        "the Sword of the Crippled God",
+        vec![
+            Tag::Name("Sword of the Crippled God"),
+            Tag::Portable,
+            Tag::EmpSword,
+            Tag::Damage(40),
+        ],
     )
 }
 
@@ -263,52 +355,34 @@ pub fn weak_sword(game: &Game) -> Object {
     let sword = swords.iter().choose(&mut *game.rng()).unwrap();
     Object::new(
         "weak sword",
-        weak_sword_tags(sword.0),
+        sword.1,
         Symbol::WeakSword,
         Color::Silver,
-        sword.1,
+        vec![Tag::Name(sword.0), Tag::Portable, Tag::Damage(25)],
     )
 }
 
 pub fn mighty_sword() -> Object {
     Object::new(
         "mighty sword",
-        mighty_sword_tags(),
+        "the Sword of Impending Doom",
         Symbol::StrongSword,
         Color::Silver,
-        "the Sword of Impending Doom",
+        vec![Tag::Name("Sword of Impending Doom"), Tag::Portable, Tag::Damage(30)],
     )
 }
 
 pub fn pick_axe() -> Object {
-    Object::new("pick-axe", pick_axe_tags(), Symbol::PickAxe, Color::Tan, "a pick-axe")
+    Object::new(
+        "pick-axe",
+        "a pick-axe",
+        Symbol::PickAxe,
+        Color::Tan,
+        vec![Tag::Name("a pick-axe"), Tag::PickAxe, Tag::Portable],
+    )
 }
 
 // --- tags ------------------------------------------------------------------------------
-fn ground_tags(bg: Color) -> Vec<Tag> {
-    vec![Tag::Terrain(Terrain::Ground), Tag::Background(bg)]
-}
-
-fn shallow_water_tags() -> Vec<Tag> {
-    vec![
-        Tag::Terrain(Terrain::ShallowWater),
-        Tag::Background(Color::LightBlue),
-        Tag::Scheduled,
-    ]
-}
-
-fn deep_water_tags() -> Vec<Tag> {
-    vec![
-        Tag::Terrain(Terrain::DeepWater),
-        Tag::Background(Color::LightBlue),
-        Tag::Scheduled,
-    ]
-}
-
-fn vitr_tags() -> Vec<Tag> {
-    vec![Tag::Terrain(Terrain::Vitr), Tag::Background(Color::Black)]
-}
-
 fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
     let durability = 5 * to_durability(material); // walls are quite a bit tougher than something like a door
     vec![
@@ -320,10 +394,6 @@ fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
         Tag::Terrain(Terrain::Wall),
         Tag::Background(bg),
     ]
-}
-
-fn tree_tags() -> Vec<Tag> {
-    vec![Tag::Terrain(Terrain::Tree), Tag::Background(Color::Black)]
 }
 
 fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
@@ -341,120 +411,6 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
         },
         Tag::Background(bg),
     ]
-}
-
-fn doorman_tags() -> Vec<Tag> {
-    vec![
-        Tag::Disposition(Disposition::Friendly),
-        Tag::Name("Doorman"),
-        Tag::Doorman,
-        Tag::Character,
-    ]
-}
-
-fn guard_tags() -> Vec<Tag> {
-    vec![
-        Tag::Disposition(Disposition::Neutral),
-        Tag::Behavior(Behavior::Sleeping),
-        Tag::Damage(10),
-        Tag::Flees(50),
-        Tag::Hearing(0),
-        Tag::Durability(Durability { current: 80, max: 80 }),
-        Tag::Name("a guard"),
-        Tag::Guard,
-        Tag::Scheduled,
-        Tag::Character,
-    ]
-}
-
-fn unbound_tags(name: &'static str) -> Vec<Tag> {
-    vec![
-        Tag::Disposition(Disposition::Aggressive),
-        Tag::Behavior(Behavior::Wandering(Time::max())),
-        Tag::Damage(20),
-        Tag::Durability(Durability { current: 80, max: 80 }),
-        Tag::Name(name),
-        Tag::Guard,
-        Tag::Scheduled,
-        Tag::Character,
-    ]
-}
-
-fn icarium_tags() -> Vec<Tag> {
-    vec![
-        Tag::Disposition(Disposition::Neutral),
-        Tag::Behavior(Behavior::Wandering(Time::max())),
-        Tag::Damage(40),
-        Tag::Durability(Durability { current: 500, max: 500 }),
-        Tag::Name("Icarium"),
-        Tag::Icarium,
-        Tag::Scheduled,
-        Tag::Character,
-    ]
-}
-
-fn rhulad_tags() -> Vec<Tag> {
-    vec![
-        Tag::Disposition(Disposition::Aggressive),
-        Tag::Behavior(Behavior::Sleeping),
-        Tag::Damage(20),
-        Tag::Durability(Durability { current: 100, max: 100 }),
-        Tag::Name("Rhulad"),
-        Tag::Rhulad,
-        Tag::Scheduled,
-        Tag::Character,
-    ]
-}
-
-fn spectator_tags() -> Vec<Tag> {
-    vec![
-        Tag::Disposition(Disposition::Neutral),
-        Tag::Behavior(Behavior::Sleeping),
-        Tag::Hearing(0),
-        Tag::Durability(Durability { current: 33, max: 33 }),
-        Tag::Name("Spectator"),
-        Tag::Spectator,
-        Tag::Scheduled,
-        Tag::Character,
-    ]
-}
-
-fn player_tags() -> Vec<Tag> {
-    vec![
-        Tag::Durability(Durability { current: 100, max: 100 }),
-        Tag::Damage(20),
-        Tag::Inventory(Vec::new()),
-        Tag::Name("yourself"),
-        Tag::CanOpenDoor,
-        Tag::Player,
-        Tag::Scheduled,
-        Tag::Character,
-    ]
-}
-
-fn weak_sword_tags(name: &'static str) -> Vec<Tag> {
-    vec![Tag::Name(name), Tag::Portable, Tag::Damage(25)]
-}
-
-fn mighty_sword_tags() -> Vec<Tag> {
-    vec![Tag::Name("Sword of Impending Doom"), Tag::Portable, Tag::Damage(30)]
-}
-
-fn pick_axe_tags() -> Vec<Tag> {
-    vec![Tag::Name("a pick-axe"), Tag::PickAxe, Tag::Portable]
-}
-
-fn emp_sword_tags() -> Vec<Tag> {
-    vec![
-        Tag::Name("Sword of the Crippled God"),
-        Tag::Portable,
-        Tag::EmpSword,
-        Tag::Damage(40),
-    ]
-}
-
-fn sign_tags() -> Vec<Tag> {
-    vec![Tag::Sign]
 }
 
 fn to_durability(material: Material) -> i32 {

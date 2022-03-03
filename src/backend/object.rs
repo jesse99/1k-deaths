@@ -43,7 +43,7 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(dname: &'static str, tags: Vec<Tag>, symbol: Symbol, color: Color, description: &'static str) -> Object {
+    pub fn new(dname: &'static str, description: &'static str, symbol: Symbol, color: Color, tags: Vec<Tag>) -> Object {
         Object {
             dname,
             tags,
