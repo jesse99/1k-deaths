@@ -56,20 +56,16 @@ https://crawl.kelbi.org/#lobby\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\b \cf3 \
-Step 8 - Data files\
+Step 7 - Interaction\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Look at these:\
 	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday \
-\'95 Run descriptions through a spell checker\
-\'95\'a0Make it easier to create new objects\
-	- this would probably involve something like a macro rather than a config file
-\f3\b \cf3 \
-\
-Step 7 - Interaction\
-
-\f1\b0 \cf3 \'95 Add stats\
-\'95 Maybe also races\
+\'95 Add stats (and skills?)\
+	- both to the player and NPCs\
+	- but no experience so player stats are fixed (tho we can adjust when we add items)\
+\'95\'a0Tag value functions should be Object methods.\
+\'95 Pickace should use the duration tag\
 \'95\'a0Update details view:\
 	- player stats\
 \'95 Try underlining dangerous NPCs (both aggresive and neutral)\
@@ -90,11 +86,20 @@ Step 9 - Items\
 \'95 Health pots\
 \'95 Support wielding a weapon\
 	- implicit action should use a weapon if it's equipped\
+	- should have a min str level for some armor and weapons\
+		` probably want to allow them to be equipped but with a warning message\
+		` or maybe a status effect warning (or both)\
+\'95 Support armor\
+	- these should have a (min) strength tag\
+	- if char is strong enough then no penalties\
+		or maybe just a movement penalty until str is a fair amount higher than min str\
+	- otherwise reduce speed of all actions, eg if char has half needed str then everything takes 2x as long\
+	- weapon and armor str penalties need to be summed\
+		ie min str for both is weapon.min_str + armor.min_str\
 \'95 If an NPC is killed it should drop whatever was in its inventory\
 \'95\'a0May want to support stacking\
 	- arrows? food? javelins? munitions?\
 \'95\'a0May want a config file to configure which are auto-picked up\
-\'95 Related skills should go up together (albeit more slowly)\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\b \cf3 \
@@ -183,6 +188,38 @@ Step 12 - Levels\
 Step 13 - Experience\
 
 \f1\b0 \cf3 \'95\'a0Player should level up and gain more power and new skills.\
+	http://www.roguebasin.com/index.php/Thoughts_on_Combat_Models\
+\'95\'a0Skills should be a big deal:\
+	- provide a way to unlock new abilities\
+	- should only be able to max out a few skill trees, do we want real trees?\
+	- in general stats just allow you to do more of what you can already do, eg mana\
+\'95\'a0Maybe weapon skill should be something like\
+	- bad, big to_hit penalty, medium damage penalty\
+	- poor, smaller hit\
+	- novice, just a small to_hit penalty\
+	- journeyman, no penalties\
+	- skilled, small damage bonus, start getting special attacks (maybe like crits below)\
+	- master, small to_hit bonus, medium damage bonus, more special attacks\
+	- could have 3 or 4 steps in each level\
+\'95 Could we do something similar with evasion/dodging?\
+	- maybe a chance at a riposte? or unbalance sttacker (effect would be like a stun)?\
+	- at high levels riposte could have a high crit chance\
+	- could also dodge bolt spells at high levels\
+\'95 What would armor skill do?\
+	- maybe heavy armor always has a speed penalty that is lessened?\
+	- or allow more dodging?\
+	- even better if we can unlock new abilities\
+		reduce crit chance?\
+		auto-repair armor?\
+		identify armor?\
+		faster armor swapping?\
+		reduce str penalty? this could unlock ability to use heavy armor with a medium or heavy weapon\
+		better resist some magic attacks?\
+\'95\'a0Better crits:\
+	http://www.roguebasin.com/index.php/Interesting_Critical_Hits\
+\'95 Might want some messages to appear as a popup that fades away\
+	- eg \'93You\'92ve stunned the Jaghut!\'94\
+\'95 Related skills should go up together (albeit more slowly)\
 \'95 NPCs should have levels as well\
 \'95 Should be able to look at an NPC and get a sense of how powerful they are\
 \'95 Add support for different character classes
@@ -198,6 +235,7 @@ Step 14 - Citizens\
 \
 Step 15 - Free at last
 \f1\b0 \cf3 \
+\'95 Add player races\
 \'95\'a0Switch to a web UI.\
 \'95\'a0Setup a server to allow others to play. Can maybe just host this locally.
 \f3\b \cf3 \

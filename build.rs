@@ -31,6 +31,12 @@ fn tags() -> Vec<Tag> {
         // This is typically a base damage and is scaled by things like skill and strength.
         P("Damage", "i32"),
 
+        // Percentage of strikes that'll do critical damage.
+        P("Crit", "i32"),
+
+        // Amount of time it takes to use an item. TODO: may also want to use this for base character movement speed
+        P("Delay", "Time"),
+
         // Objects that a Character has picked up.
         P("Inventory", "Vec<Oid>"),
 
@@ -77,6 +83,20 @@ fn tags() -> Vec<Tag> {
 
         // Characters and portable objects all have names.
         P("Name", "&'static str"),
+
+        // ---- Stats --------------------------------------------------------------------
+        // These don't confer any extra abilities (that's skills). Stats merely allow you
+        // to do more of what you can already do.
+
+        // Multiplies damage according to how much stronger the character is than the min
+        // weapon strength up to a maximum (so more strength only helps damage for heavy
+        // weapons). Also eliminates penalties for wearing armor that is too heavy.
+        P("Strength", "i32"),
+
+        // Increases the chance of crits and acts as multiplier for dodge. Better for light
+        // weapons and armor beause heavy weapons have a very small crit chance and heavy
+        // armor significantly reduces dodge.
+        P("Dexterity", "i32"),
     ]
 }
 

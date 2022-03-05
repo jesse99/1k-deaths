@@ -140,8 +140,8 @@ fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
         Some(Disposition::Aggressive) => {
             // This is QUIET because normally both parties will be making combat noises so
             // the probability is twice as high as just QUIET alone.
-            game.do_melee_attack(player_loc, new_loc);
-            PreResult::Acted(time::BASE_ATTACK, sound::QUIET) // TODO: should be scaled by weapon speed
+            let delay = game.do_melee_attack(player_loc, new_loc);
+            PreResult::Acted(delay, sound::QUIET)
         }
         Some(Disposition::Friendly) => {
             let mesg = Message::new(Topic::Normal, "Why would you attack a friend?");
@@ -152,8 +152,8 @@ fn player_vs_charactor(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
             let obj = game.level.get_mut(new_loc, CHARACTER_ID).unwrap().1;
             let disposition = Tag::Disposition(Disposition::Aggressive);
             obj.replace(disposition);
-            game.do_melee_attack(player_loc, new_loc);
-            PreResult::Acted(time::BASE_ATTACK, sound::QUIET)
+            let delay = game.do_melee_attack(player_loc, new_loc);
+            PreResult::Acted(delay, sound::QUIET)
         }
         None => panic!("{obj} didn't have a Disposition!"),
     }

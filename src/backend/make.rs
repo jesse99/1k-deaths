@@ -77,6 +77,245 @@ pub fn level(game: &mut Game, map: &str) {
     }
 }
 
+// -- characters -------------------------------------------------------------------------
+// https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock
+pub fn broken(i: usize) -> Object {
+    let names = vec![
+        "Beroke Soft Voice",
+        "Halad Rack Bearer",
+        "Imroth the Cruel",
+        "Kahlb the Silent Hunter",
+        "Siballe the Unfound",
+        "Thenik the Shattered",
+        "Urugal the Woven",
+    ];
+    Object::new(
+        names[i],
+        names[i],
+        Symbol::Npc('u'),
+        Color::Red,
+        vec![
+            Tag::Strength(10),
+            Tag::Dexterity(10),
+            Tag::Disposition(Disposition::Aggressive),
+            Tag::Behavior(Behavior::Wandering(Time::max())),
+            Tag::Damage(35),
+            Tag::Delay(time::secs(5)),
+            Tag::Durability(Durability { current: 80, max: 80 }),
+            Tag::Name(names[i]),
+            Tag::Guard,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
+}
+
+fn doorman() -> Object {
+    Object::new(
+        "doorman",
+        "a royal guard",
+        Symbol::Npc('D'),
+        Color::Green,
+        vec![
+            Tag::Disposition(Disposition::Friendly),
+            Tag::Name("Doorman"),
+            Tag::Doorman,
+            Tag::Character,
+        ],
+    )
+}
+
+fn guard() -> Object {
+    Object::new(
+        "a guard",
+        "a low level guard",
+        Symbol::Npc('g'),
+        Color::Green,
+        vec![
+            Tag::Strength(10),
+            Tag::Dexterity(10),
+            Tag::Disposition(Disposition::Neutral),
+            Tag::Behavior(Behavior::Sleeping),
+            Tag::Damage(6),
+            Tag::Delay(time::secs(3)),
+            Tag::Flees(50),
+            Tag::Hearing(0),
+            Tag::Durability(Durability { current: 80, max: 80 }),
+            Tag::Name("a guard"),
+            Tag::Guard,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
+}
+
+fn icarium() -> Object {
+    Object::new(
+        "icarium",
+        "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
+        Symbol::Npc('I'),
+        Color::LightGrey,
+        vec![
+            Tag::Strength(10),
+            Tag::Dexterity(20),
+            Tag::Disposition(Disposition::Neutral),
+            Tag::Behavior(Behavior::Wandering(Time::max())),
+            Tag::Damage(45),
+            Tag::Delay(time::secs(3)),
+            Tag::Durability(Durability { current: 500, max: 500 }),
+            Tag::Name("Icarium"),
+            Tag::Icarium,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
+}
+
+fn player() -> Object {
+    Object::new(
+        "player",
+        "yourself",
+        Symbol::Player,
+        Color::Gold,
+        vec![
+            Tag::Strength(10),
+            Tag::Dexterity(10),
+            Tag::Durability(Durability { current: 100, max: 100 }),
+            Tag::Damage(6),
+            Tag::Delay(time::secs(2)),
+            Tag::Inventory(Vec::new()),
+            Tag::Name("yourself"),
+            Tag::CanOpenDoor,
+            Tag::Player,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
+}
+
+fn rhulad() -> Object {
+    Object::new(
+        "rhulad",
+        "the Emperor of a Thousand Deaths",
+        Symbol::Npc('R'),
+        Color::Red,
+        vec![
+            Tag::Strength(10),
+            Tag::Dexterity(10),
+            Tag::Disposition(Disposition::Aggressive),
+            Tag::Behavior(Behavior::Sleeping),
+            Tag::Damage(24),
+            Tag::Delay(time::secs(4)),
+            Tag::Durability(Durability { current: 100, max: 100 }),
+            Tag::Name("Rhulad"),
+            Tag::Rhulad,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
+}
+
+fn spectator() -> Object {
+    Object::new(
+        "spectator",
+        "a spectator",
+        Symbol::Npc('s'),
+        Color::Plum,
+        vec![
+            Tag::Strength(10),
+            Tag::Dexterity(10),
+            Tag::Disposition(Disposition::Neutral),
+            Tag::Behavior(Behavior::Sleeping),
+            Tag::Hearing(0),
+            Tag::Durability(Durability { current: 33, max: 33 }),
+            Tag::Name("Spectator"),
+            Tag::Spectator,
+            Tag::Scheduled,
+            Tag::Character,
+        ],
+    )
+}
+
+// -- items ------------------------------------------------------------------------------
+pub fn sign(text: &'static str) -> Object {
+    Object::new("sign", text, Symbol::Sign, Color::Pink, vec![Tag::Sign])
+}
+
+pub fn emp_sword() -> Object {
+    Object::new(
+        "emp sword",
+        "the Sword of the Crippled God",
+        Symbol::StrongSword,
+        Color::Silver,
+        vec![
+            Tag::Name("Sword of the Crippled God"),
+            Tag::Portable,
+            Tag::EmpSword,
+            Tag::Damage(50),
+            Tag::Delay(time::secs(5)),
+            Tag::Crit(3),
+            Tag::Strength(7),
+            Tag::Dexterity(20),
+        ],
+    )
+}
+
+// TODO: there should be different functions for these, eg swords and daggers should have
+// different stats
+pub fn weak_sword(game: &Game) -> Object {
+    let swords = vec![
+        ("long sword", "a nicked long sword"),
+        ("broadsword", "a dull broadsword"),
+        ("long knife", "a shiny long knife"),
+        ("dagger", "a pointy dagger"),
+    ];
+    let sword = swords.iter().choose(&mut *game.rng()).unwrap();
+    Object::new(
+        "weak sword",
+        sword.1,
+        Symbol::WeakSword,
+        Color::Silver,
+        vec![
+            Tag::Name(sword.0),
+            Tag::Portable,
+            Tag::Damage(12),
+            Tag::Delay(time::secs(3)),
+            Tag::Strength(4),
+            Tag::Dexterity(8),
+            Tag::Crit(10),
+        ],
+    )
+}
+
+pub fn mighty_sword() -> Object {
+    Object::new(
+        "mighty sword",
+        "the Sword of Impending Doom",
+        Symbol::StrongSword,
+        Color::Silver,
+        vec![
+            Tag::Name("Sword of Impending Doom"),
+            Tag::Portable,
+            Tag::Damage(40),
+            Tag::Delay(time::secs(5)),
+            Tag::Strength(6),
+            Tag::Dexterity(15),
+            Tag::Crit(2),
+        ],
+    )
+}
+
+pub fn pick_axe() -> Object {
+    Object::new(
+        "pick-axe",
+        "a pick-axe",
+        Symbol::PickAxe,
+        Color::Tan,
+        vec![Tag::Name("a pick-axe"), Tag::PickAxe, Tag::Portable],
+    )
+}
+
+// -- terrain ----------------------------------------------------------------------------
 pub fn dirt() -> Object {
     Object::new(
         "dirt",
@@ -182,203 +421,6 @@ pub fn vitr() -> Object {
         Symbol::DeepLiquid,
         Color::Gold,
         vec![Tag::Terrain(Terrain::Vitr), Tag::Background(Color::Black)],
-    )
-}
-
-fn doorman() -> Object {
-    Object::new(
-        "doorman",
-        "a royal guard",
-        Symbol::Npc('D'),
-        Color::Green,
-        vec![
-            Tag::Disposition(Disposition::Friendly),
-            Tag::Name("Doorman"),
-            Tag::Doorman,
-            Tag::Character,
-        ],
-    )
-}
-
-fn icarium() -> Object {
-    Object::new(
-        "icarium",
-        "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
-        Symbol::Npc('I'),
-        Color::LightGrey,
-        vec![
-            Tag::Disposition(Disposition::Neutral),
-            Tag::Behavior(Behavior::Wandering(Time::max())),
-            Tag::Damage(40),
-            Tag::Durability(Durability { current: 500, max: 500 }),
-            Tag::Name("Icarium"),
-            Tag::Icarium,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn guard() -> Object {
-    Object::new(
-        "a guard",
-        "a low level guard",
-        Symbol::Npc('g'),
-        Color::Green,
-        vec![
-            Tag::Disposition(Disposition::Neutral),
-            Tag::Behavior(Behavior::Sleeping),
-            Tag::Damage(10),
-            Tag::Flees(50),
-            Tag::Hearing(0),
-            Tag::Durability(Durability { current: 80, max: 80 }),
-            Tag::Name("a guard"),
-            Tag::Guard,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-// https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock
-pub fn broken(i: usize) -> Object {
-    let names = vec![
-        "Beroke Soft Voice",
-        "Halad Rack Bearer",
-        "Imroth the Cruel",
-        "Kahlb the Silent Hunter",
-        "Siballe the Unfound",
-        "Thenik the Shattered",
-        "Urugal the Woven",
-    ];
-    Object::new(
-        names[i],
-        names[i],
-        Symbol::Npc('u'),
-        Color::Red,
-        vec![
-            Tag::Disposition(Disposition::Aggressive),
-            Tag::Behavior(Behavior::Wandering(Time::max())),
-            Tag::Damage(20),
-            Tag::Durability(Durability { current: 80, max: 80 }),
-            Tag::Name(names[i]),
-            Tag::Guard,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn rhulad() -> Object {
-    Object::new(
-        "rhulad",
-        "the Emperor of a Thousand Deaths",
-        Symbol::Npc('R'),
-        Color::Red,
-        vec![
-            Tag::Disposition(Disposition::Aggressive),
-            Tag::Behavior(Behavior::Sleeping),
-            Tag::Damage(20),
-            Tag::Durability(Durability { current: 100, max: 100 }),
-            Tag::Name("Rhulad"),
-            Tag::Rhulad,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn spectator() -> Object {
-    Object::new(
-        "spectator",
-        "a spectator",
-        Symbol::Npc('s'),
-        Color::Plum,
-        vec![
-            Tag::Disposition(Disposition::Neutral),
-            Tag::Behavior(Behavior::Sleeping),
-            Tag::Hearing(0),
-            Tag::Durability(Durability { current: 33, max: 33 }),
-            Tag::Name("Spectator"),
-            Tag::Spectator,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn player() -> Object {
-    Object::new(
-        "player",
-        "yourself",
-        Symbol::Player,
-        Color::Gold,
-        vec![
-            Tag::Durability(Durability { current: 100, max: 100 }),
-            Tag::Damage(20),
-            Tag::Inventory(Vec::new()),
-            Tag::Name("yourself"),
-            Tag::CanOpenDoor,
-            Tag::Player,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-pub fn sign(text: &'static str) -> Object {
-    Object::new("sign", text, Symbol::Sign, Color::Pink, vec![Tag::Sign])
-}
-
-pub fn emp_sword() -> Object {
-    Object::new(
-        "emp sword",
-        "the Sword of the Crippled God",
-        Symbol::StrongSword,
-        Color::Silver,
-        vec![
-            Tag::Name("Sword of the Crippled God"),
-            Tag::Portable,
-            Tag::EmpSword,
-            Tag::Damage(40),
-        ],
-    )
-}
-
-pub fn weak_sword(game: &Game) -> Object {
-    let swords = vec![
-        ("long sword", "a nicked long sword"),
-        ("broadsword", "a dull broadsword"),
-        ("long knife", "a shiny long knife"),
-        ("dagger", "a pointy dagger"),
-    ];
-    let sword = swords.iter().choose(&mut *game.rng()).unwrap();
-    Object::new(
-        "weak sword",
-        sword.1,
-        Symbol::WeakSword,
-        Color::Silver,
-        vec![Tag::Name(sword.0), Tag::Portable, Tag::Damage(25)],
-    )
-}
-
-pub fn mighty_sword() -> Object {
-    Object::new(
-        "mighty sword",
-        "the Sword of Impending Doom",
-        Symbol::StrongSword,
-        Color::Silver,
-        vec![Tag::Name("Sword of Impending Doom"), Tag::Portable, Tag::Damage(30)],
-    )
-}
-
-pub fn pick_axe() -> Object {
-    Object::new(
-        "pick-axe",
-        "a pick-axe",
-        Symbol::PickAxe,
-        Color::Tan,
-        vec![Tag::Name("a pick-axe"), Tag::PickAxe, Tag::Portable],
     )
 }
 

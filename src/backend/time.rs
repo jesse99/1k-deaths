@@ -3,10 +3,9 @@ use std::cell::RefCell;
 use std::fmt::{self, Formatter};
 use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
 
-pub const BASE_ATTACK: Time = Time { t: 1 * SECS_TO_TIME };
 pub const CARDINAL_MOVE: Time = Time { t: 8 * SECS_TO_TIME };
 pub const DIAGNOL_MOVE: Time = Time {
-    t: 11 * SECS_TO_TIME + 3 * SEC_TENTHS_TO_TIME,
+    t: 11 * SECS_TO_TIME + 314 * MS_TO_TIME,
 };
 pub const DESTROY_EMP_SWORD: Time = Time { t: 24 * SECS_TO_TIME };
 pub const DIG_STONE: Time = Time { t: 32 * SECS_TO_TIME };
@@ -51,19 +50,31 @@ pub fn secs(s: i64) -> Time {
     Time { t: s * SECS_TO_TIME }
 }
 
+// /// In general this only should be used for "extra" time. For the most part use the constants
+// /// above (e.g. CARDINAL_MOVE).
+// pub fn ms(s: i64) -> Time {
+//     Time { t: s * MS_TO_TIME }
+// }
+
 // ---- Time traits ----------------------------------------------------------------------
-const SEC_TENTHS_TO_TIME: i64 = 10;
-const SECS_TO_TIME: i64 = 10 * SEC_TENTHS_TO_TIME;
+const MS_TO_TIME: i64 = 1;
+const SECS_TO_TIME: i64 = 1000 * MS_TO_TIME;
 
 impl fmt::Display for Time {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let secs = (self.t as f64) / (SECS_TO_TIME as f64);
-        if f64::abs(secs) < 60.0 {
-            write!(f, "{secs:.1}s")
-        } else if f64::abs(secs) < 60.0 * 60.0 {
-            write!(f, "{:.1}m", secs / 60.0)
+        if i64::abs(self.t) < SECS_TO_TIME {
+            write!(f, "{} ms", self.t)
+        } else if i64::abs(self.t) < 60 * SECS_TO_TIME {
+            let x = (self.t as f64) / (SECS_TO_TIME as f64);
+            write!(f, "{x:.1} secs")
+        } else if i64::abs(self.t) < 60 * 60 * SECS_TO_TIME {
+            let x = (self.t as f64) / (SECS_TO_TIME as f64);
+            let x = x / 60.0;
+            write!(f, "{x:.1} mins")
         } else {
-            write!(f, "{:.1}h", secs / (60.0 * 60.0))
+            let x = (self.t as f64) / (SECS_TO_TIME as f64);
+            let x = x / (60.0 * 60.0);
+            write!(f, "{x:.1} hours")
         }
     }
 }
