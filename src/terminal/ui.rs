@@ -1,7 +1,8 @@
 use super::main_mode::MainMode;
 use super::mode::{InputAction, Mode, RenderContext};
 use super::replay_mode::ReplayMode;
-use super::{Action, Game, GameState};
+use super::GameState;
+use one_thousand_deaths::{Action, Game};
 use std::io::{self, Write};
 use std::sync::mpsc::{self, Receiver};
 use std::thread;

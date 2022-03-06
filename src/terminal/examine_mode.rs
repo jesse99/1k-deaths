@@ -1,8 +1,8 @@
 use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
-use crate::backend::{Action, Game, Point};
 use fnv::FnvHashMap;
+use one_thousand_deaths::{Action, Game, Point};
 use termion::event::Key;
 
 type KeyHandler = fn(&mut ExamineMode, &mut Game) -> InputAction;

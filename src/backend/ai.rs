@@ -69,8 +69,9 @@ fn attack(game: &mut Game, attacker: Oid, defender: Oid, old_defender_loc: Point
 
         // and either attack him or move towards his actual location.
         if attacker_loc.adjacent(&defender_loc) {
-            if units >= time::MIN_TIME {
-                let delay = game.do_melee_attack(&attacker_loc, &defender_loc);
+            let delay = game.melee_delay(&attacker_loc);
+            if delay <= units {
+                game.do_melee_attack(&attacker_loc, &defender_loc);
                 Acted::Acted(delay)
             } else {
                 Acted::DidntAct

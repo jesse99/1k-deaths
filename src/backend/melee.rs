@@ -3,7 +3,17 @@ use super::*;
 const MAX_STAT: i32 = 30; // this is a soft limit: stats can go higher than this but with diminishing (or no) returns
 
 impl Game {
-    pub fn do_melee_attack(&mut self, attacker_loc: &Point, defender_loc: &Point) -> Time {
+    pub fn melee_delay(&self, attacker_loc: &Point) -> Time {
+        let attacker_id = self.level.get(attacker_loc, CHARACTER_ID).unwrap().0;
+        let attacker = self.level.obj(attacker_id).0;
+        if let Some(weapon) = self.find_equipped_weapon(attacker) {
+            object::delay_value(weapon).unwrap()
+        } else {
+            object::delay_value(attacker).unwrap()
+        }
+    }
+
+    pub fn do_melee_attack(&mut self, attacker_loc: &Point, defender_loc: &Point) {
         // It'd be more efficient to use Objects here but the borrow checker whines a lot.
         let attacker = self.level.get(attacker_loc, CHARACTER_ID).unwrap().0;
         let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().0;
@@ -13,7 +23,7 @@ impl Game {
 
         let attacker_name = self.attacker_name(attacker);
         let defender_name = self.defender_name(defender);
-        let (damage, crit, delay) = self.base_damage(attacker);
+        let (damage, crit) = self.base_damage(attacker);
         if self.hit_defender(attacker, defender) {
             let damage = self.mitigate_damage(attacker, defender, damage);
             let (new_hps, max_hps) = self.hps(defender, damage);
@@ -59,7 +69,6 @@ impl Game {
             let mesg = Message::new(Topic::Normal, &msg);
             self.messages.push(mesg);
         };
-        delay
     }
 }
 
@@ -74,25 +83,14 @@ impl Game {
         }
     }
 
-    // TODO: use weapon skill
-    fn base_damage(&self, attacker_id: Oid) -> (i32, bool, Time) {
+    pub fn base_damage(&self, attacker_id: Oid) -> (i32, bool) {
         let attacker = self.level.obj(attacker_id).0;
-        let (damage, delay, min_str, min_dex, crit_percent) = if let Some(weapon) = self.find_equipped_weapon(attacker)
-        {
-            (
-                object::damage_value(weapon).unwrap(),
-                object::delay_value(weapon).unwrap(),
-                object::strength_value(weapon),
-                object::dexterity_value(weapon),
-                object::crit_value(weapon).unwrap_or(0),
-            )
+        let (damage, min_str) = if let Some(weapon) = self.find_equipped_weapon(attacker) {
+            (object::damage_value(weapon).unwrap(), object::strength_value(weapon))
         } else {
             (
                 object::damage_value(attacker).expect(&format!("{attacker} should have an (unarmed) damage tag")),
-                object::delay_value(attacker).unwrap(),
                 Some(MAX_STAT / 6), // strength helps quite a bit with unarmed
-                Some(MAX_STAT / 2), // hard to crit more with unarmed
-                2,                  // and a low chance of critting at all
             )
         };
 
@@ -111,17 +109,32 @@ impl Game {
 
         // Crit chance is based on the weapon scaled by how much more dexterity the
         // character has then the min dexterity required by the weapon to begin criting.
-        let mut crit = false;
-        if let Some(min_dex) = min_dex {
-            let dex = object::dexterity_value(attacker).unwrap() - min_dex;
-            let scaling = linear_scale(dex, 0, MAX_STAT, 1.0, 4.0);
-            let p = scaling * (crit_percent as f64) / 100.0;
-            crit = self.rng.borrow_mut().gen_bool(p);
-        }
+        let p = self.crit_prob(attacker_id);
+        let crit = self.rng.borrow_mut().gen_bool(p);
         if crit {
             damage *= 2;
         }
-        (super::rand_normal32(damage, 20, &self.rng), crit, delay)
+        (super::rand_normal32(damage, 20, &self.rng), crit)
+    }
+
+    pub fn crit_prob(&self, attacker_id: Oid) -> f64 {
+        let attacker = self.level.obj(attacker_id).0;
+        let (min_dex, crit_percent) = if let Some(weapon) = self.find_equipped_weapon(attacker) {
+            (object::dexterity_value(weapon), object::crit_value(weapon).unwrap_or(0))
+        } else {
+            (
+                Some(MAX_STAT / 2), // hard to crit more with unarmed
+                2,                  // and a low chance of critting at all
+            )
+        };
+
+        if let Some(min_dex) = min_dex {
+            let dex = object::dexterity_value(attacker).unwrap() - min_dex;
+            let scaling = linear_scale(dex, 0, MAX_STAT, 1.0, 4.0);
+            scaling * (crit_percent as f64) / 100.0
+        } else {
+            0.0
+        }
     }
 
     fn defender_name(&self, defender_id: Oid) -> String {
@@ -157,18 +170,21 @@ impl Game {
         (durability.current - damage, durability.max)
     }
 
-    // TODO: use dexterity/evasion
     fn hit_defender(&self, attacker_id: Oid, defender_id: Oid) -> bool {
+        let p = self.hit_prob(attacker_id, defender_id);
+        let rng = &mut *self.rng();
+        rng.gen_bool(p)
+    }
+
+    // TODO: use dexterity/evasion
+    pub fn hit_prob(&self, attacker_id: Oid, defender_id: Oid) -> f64 {
         let attacker = self.level.obj(attacker_id).0;
         let defender = self.level.obj(defender_id).0;
 
         let adex = object::dexterity_value(attacker).unwrap(); // TODO: this should be adjusted by heavy gear
         let ddex = object::dexterity_value(defender).unwrap();
         let max_delta = (2 * MAX_STAT) / 3;
-        let p = linear_scale(adex - ddex, -max_delta, max_delta, 0.1, 1.0);
-
-        let rng = &mut *self.rng();
-        rng.gen_bool(p)
+        linear_scale(adex - ddex, -max_delta, max_delta, 0.1, 1.0)
     }
 
     // TODO: use skill and armor

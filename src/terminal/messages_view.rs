@@ -1,5 +1,5 @@
 use super::color;
-use crate::backend::{Color, Game, Point, Size, Topic};
+use one_thousand_deaths::{Color, Game, Point, Size, Topic};
 use std::io::Write;
 
 /// Responsible for drawing the last few messages.

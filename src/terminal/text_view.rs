@@ -1,5 +1,5 @@
 use super::color;
-use crate::backend::{Color, Point, Size};
+use one_thousand_deaths::{Color, Point, Size};
 use std::io::Write;
 
 #[derive(Debug)]

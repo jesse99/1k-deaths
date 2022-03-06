@@ -1,6 +1,7 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod actions;
 mod ai;
+mod arena;
 mod interactions;
 mod level;
 mod make;
@@ -16,6 +17,7 @@ mod sound;
 mod tag;
 mod time;
 
+pub use arena::*;
 pub use message::{Message, Topic};
 pub use object::Symbol;
 pub use primitives::Color;
@@ -535,12 +537,11 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
         };
-        game.init_game();
+        game.init_game(include_str!("backend/maps/start.txt"));
         game
     }
 
-    fn init_game(&mut self) {
-        let map = include_str!("backend/maps/start.txt");
+    fn init_game(&mut self, map: &'static str) {
         make::level(self, map);
         self.level.set_constructing(false);
 
@@ -625,13 +626,14 @@ impl Game {
         (duration, volume)
     }
 
-    fn add_object(&mut self, loc: &Point, obj: Object) {
+    fn add_object(&mut self, loc: &Point, obj: Object) -> Oid {
         let behavior = object::behavior_value(&obj);
         let scheduled = obj.has(SCHEDULED_ID) && !matches!(behavior, Some(Behavior::Sleeping));
         let oid = self.level.add(obj, Some(*loc));
         if scheduled {
             self.schedule_new_obj(oid);
         }
+        oid
     }
 
     fn schedule_new_obj(&mut self, oid: Oid) {

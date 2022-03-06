@@ -42,6 +42,10 @@ impl Time {
         let taken = i64::max(taken, 1); // time has to advance
         Time { t: taken }
     }
+
+    pub fn as_ms(&self) -> i64 {
+        self.t
+    }
 }
 
 /// In general this only should be used for "extra" time. For the most part use the constants

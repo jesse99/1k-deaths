@@ -7,7 +7,7 @@ pub fn level(game: &mut Game, map: &str) {
         // TODO: If we keep these level files we may want to add a symbol
         // mapping section so that characters can do things like refer to
         // different uniques.
-        match ch {
+        let _ = match ch {
             ' ' => game.add_object(&loc, dirt()),
             '#' => game.add_object(&loc, stone_wall()),
             'M' => game.add_object(&loc, metal_wall()),
@@ -18,57 +18,57 @@ pub fn level(game: &mut Game, map: &str) {
             'W' => game.add_object(&loc, deep_water()),
             'P' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, player());
+                game.add_object(&loc, player())
             }
             'D' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, doorman());
+                game.add_object(&loc, doorman())
             }
             'I' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, icarium());
+                game.add_object(&loc, icarium())
             }
             'g' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, guard());
+                game.add_object(&loc, guard())
             }
             'o' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, spectator());
+                game.add_object(&loc, spectator())
             }
             'R' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, rhulad());
+                game.add_object(&loc, rhulad())
             }
             's' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, weak_sword(game));
+                game.add_object(&loc, weak_sword(game))
             }
             'p' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, pick_axe());
+                game.add_object(&loc, pick_axe())
             }
             'S' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, mighty_sword());
+                game.add_object(&loc, mighty_sword())
             }
             'a' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, sign("a sign that says 'the Lesser Armory'"));
+                game.add_object(&loc, sign("a sign that says 'the Lesser Armory'"))
             }
             'b' => {
                 game.add_object(&loc, dirt());
-                game.add_object(&loc, sign("a sign that says 'the Greater Armory'"));
+                game.add_object(&loc, sign("a sign that says 'the Greater Armory'"))
             }
-            '\n' => (),
+            '\n' => Oid(0),
             _ => {
-                game.add_object(&loc, dirt());
                 game.messages.push(Message {
                     topic: Topic::Error,
                     text: format!("Ignoring map char '{ch}'"),
                 });
+                game.add_object(&loc, dirt())
             }
-        }
+        };
         if ch == '\n' {
             loc = Point::new(0, loc.y + 1);
         } else {
@@ -125,7 +125,7 @@ fn doorman() -> Object {
     )
 }
 
-fn guard() -> Object {
+pub fn guard() -> Object {
     Object::new(
         "a guard",
         "a low level guard",
@@ -171,7 +171,7 @@ fn icarium() -> Object {
     )
 }
 
-fn player() -> Object {
+pub fn player() -> Object {
     Object::new(
         "player",
         "yourself",
@@ -193,7 +193,7 @@ fn player() -> Object {
     )
 }
 
-fn rhulad() -> Object {
+pub fn rhulad() -> Object {
     Object::new(
         "rhulad",
         "the Emperor of a Thousand Deaths",

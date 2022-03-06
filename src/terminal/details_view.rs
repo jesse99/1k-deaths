@@ -1,5 +1,5 @@
 use super::color;
-use crate::backend::{Color, Disposition, Game, Point, Size};
+use one_thousand_deaths::{Color, Disposition, Game, Point, Size};
 use std::io::Write;
 
 /// Shows info about the player and nearby NPCs.

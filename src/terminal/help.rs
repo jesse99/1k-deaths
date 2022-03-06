@@ -1,6 +1,6 @@
 use super::text_view::{Line, TextRun};
-use crate::backend::Color;
 use fnv::FnvHashSet;
+use one_thousand_deaths::Color;
 use termion::event::Key;
 
 /// Asserts if the help text is missing a command.

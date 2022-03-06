@@ -3,6 +3,7 @@ name = "one-thousand-deaths"
 version = "0.1.0"       # also Header::major_version and minor_version
 edition = "2021"
 build = "build.rs"      # we generate source code to work with Tag's
+default-run = "one-thousand-deaths"
 
 [profile.dev]
 opt-level = 1           # this is noticeably faster and hopefully doesn't slow down compiles much

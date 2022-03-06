@@ -2,14 +2,11 @@ extern crate derive_more;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
-#[macro_use]
-extern crate serde_derive;
 
-mod backend;
 mod terminal;
 
-use backend::Game;
 use clap::{ArgEnum, Parser};
+use one_thousand_deaths::Game;
 use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
 use std::path::Path;
@@ -74,7 +71,7 @@ fn configure_logging(level: LevelFilter) {
 
     let local = chrono::Local::now();
     info!(
-        "started up on {} with version {}",
+        "started up on {} with version {} ----------------------------------------------",
         local.to_rfc2822(),
         env!("CARGO_PKG_VERSION")
     );

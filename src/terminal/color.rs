@@ -1,4 +1,4 @@
-use crate::backend::Color;
+use one_thousand_deaths::Color;
 use termion::color::AnsiValue;
 
 // See https://camo.githubusercontent.com/18622d6a234413cbc0aba27a09146797bf1eef4d/68747470733a2f2f692e696d6775722e636f6d2f4b696c72306d432e706e673f31

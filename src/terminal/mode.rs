@@ -1,4 +1,4 @@
-use crate::backend::{Game, Point};
+use one_thousand_deaths::{Game, Point};
 use std::io::Write;
 use termion::event::Key;
 

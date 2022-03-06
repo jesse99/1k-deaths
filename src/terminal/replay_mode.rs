@@ -1,8 +1,8 @@
 use super::help::{format_help, validate_help};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
-use super::{Action, Game};
 use fnv::FnvHashMap;
+use one_thousand_deaths::{Action, Game};
 use std::time::Instant;
 use termion::event::Key;
 

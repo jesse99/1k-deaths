@@ -1,4 +1,4 @@
-use crate::backend::{Color, Game, Point, Size, Symbol, Tile};
+use one_thousand_deaths::{Color, Game, Point, Size, Symbol, Tile};
 use std::io::Write;
 use termion::{color, cursor, style};
 

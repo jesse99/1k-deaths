@@ -12,7 +12,7 @@ mod text_mode;
 mod text_view;
 mod ui;
 
-use super::backend::{Action, Game};
+use one_thousand_deaths::{Action, Game};
 use std::cell::RefCell;
 use std::io::{self, Write};
 use std::process;
