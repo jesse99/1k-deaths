@@ -23,6 +23,9 @@ pub enum Symbol {
     WeakSword,
 }
 
+// TODO: Should define a custom Clone for Object (and probably Tag) because stuff like
+// InventoryTag won't clone properly. Not sure if this should do a deep clone or assert.
+
 /// Objects are a very general concept: they contain state that may be combined
 /// in arbitrary ways (e.g. in theory a cobra could be both a Character and a
 /// wieldable Weapon). But note that it's the Action objects that encapsulate

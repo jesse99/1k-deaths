@@ -1,33 +1,129 @@
 //! This code is for the arena binary which is used to simulate the results of combat.
 use super::*;
+use fnv::FnvHashMap;
+use std::io::{Error, Write};
 
-pub enum Weapon {
-    None,
-    WeakSword,
-    MightySword,
-    EmpSword,
+#[derive(Clone, Copy, Debug)]
+enum Opponents {
+    PlayerVsGuard,
+    PlayerVsRhulad,
+    PlayerVsBroken,
 }
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
-pub enum Opponent {
-    Guard,
-    Rhulad,
-}
-
-pub struct Stats {
-    pub dps: f64,
-    pub hits: f64,
-    pub crits: f64,
+struct Stats {
+    dps: f64,
+    hits: f64,
+    crits: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct ArenaResult {
-    pub player_won: bool,
-    pub turns: i32,
+struct ArenaResult {
+    player_won: bool,
+    turns: i32,
+}
+
+// TODO: add a wizard command to run arena for player vs examined target
+// clone player and target and pass them in as a new Opponents variant
+//    cloning player wouldn't work quite right for inv items (opponent too for that matter)
+//    unless we changed Object and Tag clone to do a deep clone
+//    tho even that wouldn't be quite right because the oids won't make sense in the arena level
+// may want to set HPs to full
+// write results to a file (message should say where)
+pub fn run_arena_matches(
+    writer: &mut dyn Write,
+    num_rounds: i32,
+    seed: u64,
+    filter: Option<String>,
+) -> Result<(), Box<Error>> {
+    // TODO:
+    // try some custom setups, eg high dex vs high str build
+    // review results, especially rounds
+    run_arena_match(writer, num_rounds, seed, &filter, Opponents::PlayerVsGuard)?;
+    run_arena_match(writer, num_rounds, seed, &filter, Opponents::PlayerVsRhulad)?;
+    run_arena_match(writer, num_rounds, seed, &filter, Opponents::PlayerVsBroken)?;
+    Ok(())
+}
+
+fn run_arena_match(
+    writer: &mut dyn Write,
+    num_rounds: i32,
+    seed: u64,
+    filter: &Option<String>,
+    opponents: Opponents,
+) -> Result<(), Box<Error>> {
+    let name = format!("{opponents:?}");
+    if filter.is_none() || name.contains(filter.as_ref().unwrap()) {
+        let mut player_wins = 0;
+        let mut results = Vec::new();
+
+        writeln!(writer, "---- {name} {}", "-".repeat(50))?;
+        for i in 0..num_rounds {
+            let result = run_arena(writer, i, seed, opponents)?;
+            if result.player_won {
+                player_wins += 1;
+            }
+            results.push(result);
+        }
+        print_turns(writer, &results)?;
+
+        let p = 100.0 * (player_wins as f64) / (num_rounds as f64);
+        writeln!(writer, "player won {player_wins} out of {num_rounds} times ({p:.1}%)\n")?;
+    }
+    Ok(())
+}
+
+fn run_arena(writer: &mut dyn Write, round: i32, seed: u64, opponents: Opponents) -> Result<ArenaResult, Box<Error>> {
+    let mut game = Game::new_arena(seed + (round as u64));
+    let (oid, pstats, ostats) = game.setup_arena(opponents);
+    if round == 0 {
+        print_stats(writer, "player", pstats)?;
+        writeln!(writer, "")?;
+
+        let obj = game.level.obj(oid).0;
+        print_stats(writer, &format!("{obj}"), ostats)?;
+    }
+    Ok(game.run_arena(oid))
+}
+
+fn print_stats(writer: &mut dyn Write, name: &str, stats: Stats) -> Result<(), Box<Error>> {
+    writeln!(writer, "{name} dps:   {:.1}", stats.dps)?;
+    writeln!(writer, "{name} hits:  {}%", (100.0 * stats.hits).round() as i32)?;
+    writeln!(writer, "{name} crits: {}%", (100.0 * stats.crits).round() as i32)?;
+    Ok(())
+}
+
+fn print_turns(writer: &mut dyn Write, results: &Vec<ArenaResult>) -> Result<(), Box<Error>> {
+    let limit = 30;
+
+    let mut counts = FnvHashMap::default();
+    for result in results {
+        let count = counts.entry(result.turns).or_insert_with(|| 0);
+        *count = *count + 1;
+    }
+
+    let mut turns: Vec<i32> = counts.keys().copied().collect();
+    turns.sort_by(|a, b| a.partial_cmp(&b).unwrap());
+
+    let max_count = *counts.values().max().unwrap();
+    let scaling = if max_count > limit {
+        (max_count as f64) / (limit as f64)
+    } else {
+        1.0
+    };
+
+    let max_stars = ((*counts.values().max().unwrap() as f64) / scaling).round() as usize;
+    for turn in turns {
+        let n = counts[&turn];
+        let count = ((n as f64) / scaling).round() as usize;
+        let stars = "*".repeat(count);
+        let padding = " ".repeat(max_stars - count + 2);
+        writeln!(writer, "{turn:>2}: {stars}{padding}{n}")?;
+    }
+    Ok(())
 }
 
 impl Game {
-    pub fn new_arena(seed: u64) -> Game {
+    fn new_arena(seed: u64) -> Game {
         let mut game = Game {
             stream: Vec::new(),
             file: None,
@@ -48,30 +144,39 @@ impl Game {
         game
     }
 
-    pub fn setup_arena(&mut self, weapon: Weapon, opponent: Opponent) -> (Oid, Stats, Stats) {
-        let oid = match weapon {
-            Weapon::None => None,
-            Weapon::WeakSword => Some(self.level.add(make::weak_sword(self), None)),
-            Weapon::MightySword => Some(self.level.add(make::mighty_sword(), None)),
-            Weapon::EmpSword => Some(self.level.add(make::emp_sword(), None)),
-        };
-        if let Some(oid) = oid {
-            let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
-            let inv = object::inventory_value_mut(player).unwrap();
-            inv.push(oid);
-        }
+    fn setup_arena(&mut self, opponents: Opponents) -> (Oid, Stats, Stats) {
+        let (oid1, oid2) = match opponents {
+            Opponents::PlayerVsGuard => {
+                let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
+                let oid = self.add_object(&loc, make::guard());
+                (Oid(0), oid)
+            }
+            Opponents::PlayerVsRhulad => {
+                let oid = self.level.add(make::mighty_sword(), None);
+                let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
+                let inv = object::inventory_value_mut(player).unwrap();
+                inv.push(oid);
 
-        let obj = match opponent {
-            Opponent::Guard => make::guard(),
-            Opponent::Rhulad => make::rhulad(),
-        };
-        let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-        let oid = self.add_object(&loc, obj);
+                let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
+                let oid = self.add_object(&loc, make::rhulad());
+                (Oid(0), oid)
+            }
+            Opponents::PlayerVsBroken => {
+                let oid = self.level.add(make::emp_sword(), None);
+                let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
+                let inv = object::inventory_value_mut(player).unwrap();
+                inv.push(oid);
 
-        (oid, self.compute_stats(Oid(0), oid), self.compute_stats(oid, Oid(0)))
+                let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
+                let oid = self.add_object(&loc, make::broken(0));
+                (Oid(0), oid)
+            }
+        };
+
+        (oid2, self.compute_stats(oid1, oid2), self.compute_stats(oid2, oid1))
     }
 
-    pub fn run_arena(&mut self, opponent: Oid) -> ArenaResult {
+    fn run_arena(&mut self, opponent: Oid) -> ArenaResult {
         let mut turns = 0;
         while self.active_arena(opponent) {
             if self.players_turn() {

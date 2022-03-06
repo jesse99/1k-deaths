@@ -24,30 +24,30 @@ pub enum LoggingLevel {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)] // TODO: could do better here but terminal support wil go away at some point
 struct Args {
-    /// ignore any saved files
-    #[clap(long)]
-    new_game: bool,
-
-    /// path to saved file
-    #[clap(long, value_name = "PATH")]
-    load: Option<String>,
-
-    /// fixed random number seed (defaults to random)
-    #[clap(long, value_name = "N")]
-    seed: Option<u64>,
-
-    /// logging verbosity
-    #[clap(long, arg_enum, value_name = "NAME", default_value_t = LoggingLevel::Info)]
-    log_level: LoggingLevel,
-
-    /// enable special developer commands
-    #[clap(long)]
-    wizard: bool,
-
-    /// enable slow debug checks
+    /// Enable slow debug checks
     #[cfg(debug_assertions)]
     #[clap(long)]
     invariants: bool,
+
+    /// Path to saved file
+    #[clap(long, value_name = "PATH")]
+    load: Option<String>,
+
+    /// Logging verbosity
+    #[clap(long, arg_enum, value_name = "NAME", default_value_t = LoggingLevel::Info)]
+    log_level: LoggingLevel,
+
+    /// Ignore any saved files
+    #[clap(long)]
+    new_game: bool,
+
+    /// Fixed random number seed (defaults to random)
+    #[clap(long, value_name = "N")]
+    seed: Option<u64>,
+
+    /// Enable special developer commands
+    #[clap(long)]
+    wizard: bool,
 }
 
 fn to_filter(level: LoggingLevel) -> LevelFilter {
