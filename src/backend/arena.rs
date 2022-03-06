@@ -20,7 +20,8 @@ pub struct Stats {
     pub crits: f64,
 }
 
-pub struct Arena {
+#[derive(Clone, Copy, Debug)]
+pub struct ArenaResult {
     pub player_won: bool,
     pub turns: i32,
 }
@@ -70,7 +71,7 @@ impl Game {
         (oid, self.compute_stats(Oid(0), oid), self.compute_stats(oid, Oid(0)))
     }
 
-    pub fn run_arena(&mut self, opponent: Oid) -> Arena {
+    pub fn run_arena(&mut self, opponent: Oid) -> ArenaResult {
         let mut turns = 0;
         while self.active_arena(opponent) {
             if self.players_turn() {
@@ -81,7 +82,7 @@ impl Game {
             }
         }
 
-        Arena {
+        ArenaResult {
             player_won: self.state != State::LostGame,
             turns,
         }
