@@ -225,6 +225,7 @@ impl Game {
             match object::behavior_value(obj) {
                 Some(Behavior::Attacking(_, _)) => return true, // both still in combat
                 Some(Behavior::Sleeping) => return true,        // opponent hasn't been hit yet
+                Some(Behavior::Wandering(_)) => return true,    // opponent hasn't been hit yet
                 _ => false,                                     // typically opponent started fleeing
             }
         } else {

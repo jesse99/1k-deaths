@@ -61,9 +61,6 @@ Step 7 - Interaction\
 
 \f1\b0 \cf3 \'95\'a0Look at these:\
 	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday \
-\'95 Add stats (and skills?)\
-	- both to the player and NPCs\
-	- but no experience so player stats are fixed (tho we can adjust when we add items)\
 \'95\'a0Tag value functions should be Object methods.\
 \'95 Pickace should use the duration tag\
 \'95\'a0Update details view:\
@@ -96,7 +93,12 @@ Step 9 - Items\
 	- otherwise reduce speed of all actions, eg if char has half needed str then everything takes 2x as long\
 	- weapon and armor str penalties need to be summed\
 		ie min str for both is weapon.min_str + armor.min_str\
+\'95\'a0Add some more arena contests:\
+	- high str weapon vs high dex weapon\
+	- high str armor vs high dex dodge\
+	- try some bad scenarios too, eg weapon too heavy for player str\
 \'95 If an NPC is killed it should drop whatever was in its inventory\
+\'95 Would be nice if item description said what effect equipping would have on offense and defense\
 \'95\'a0May want to support stacking\
 	- arrows? food? javelins? munitions?\
 \'95\'a0May want a config file to configure which are auto-picked up\
@@ -154,6 +156,13 @@ Step 11 - Simple game\
 	- move to clicked spot\
 	- maybe examine if modifier held down\
 \'95 Add a weapon or two that'll allow you to kill Rhulad\
+\'95 Would be cool if Icarium powered up every N secs in combat\
+	- or maybe this happens when he takes damage\
+		maybe a dice roll\
+	- first jump turns aggressive towards everything\
+	- each jump str and dex increment (from a pretty high base line)\
+	- regen should increment too\
+	- probably want some sort of emote (ideally mention he\'92ll attack anything)\
 \'95 Add a vitr lake\
 	- description should say that it is eating away at the ground\
 	- use sword on lake and win the game\
@@ -187,7 +196,27 @@ Step 12 - Levels\
 \
 Step 13 - Experience\
 
-\f1\b0 \cf3 \'95\'a0Player should level up and gain more power and new skills.\
+\f1\b0 \cf3 Fighting\
+Long Blades\
+Unarmed Combat\
+\
+Bows\
+Crossbows\
+Munitions? reduce chance of blowing yourself up?\
+\
+Armor\
+Dodging\
+Shields\
+\
+Spellcasting\
+Different Warrens\
+\
+Invocations? for priests\
+Evocations? for items\
+Stealth\
+Perception  larger fov, detect invis, detect traps, id items\
+\
+\'95\'a0Player should level up and gain more power and new skills.\
 	http://www.roguebasin.com/index.php/Thoughts_on_Combat_Models\
 \'95\'a0Skills should be a big deal:\
 	- provide a way to unlock new abilities\
