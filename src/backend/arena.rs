@@ -11,6 +11,7 @@ enum Opponents {
 }
 
 struct Stats {
+    hps: i32,
     dps: f64,
     hits: f64,
     crits: f64,
@@ -67,7 +68,10 @@ fn run_arena_match(
         print_turns(writer, &results)?;
 
         let p = 100.0 * (player_wins as f64) / (num_rounds as f64);
-        writeln!(writer, "player won {player_wins} out of {num_rounds} times ({p:.1}%)\n")?;
+        writeln!(
+            writer,
+            "\nplayer won {player_wins} out of {num_rounds} times ({p:.1}%)\n"
+        )?;
     }
     Ok(())
 }
@@ -76,19 +80,38 @@ fn run_arena(writer: &mut dyn Write, round: i32, seed: u64, opponents: Opponents
     let mut game = Game::new_arena(seed + (round as u64));
     let (oid, pstats, ostats) = game.setup_arena(opponents);
     if round == 0 {
-        print_stats(writer, "player", pstats)?;
-        writeln!(writer, "")?;
-
         let obj = game.level.obj(oid).0;
-        print_stats(writer, &format!("{obj}"), ostats)?;
+        print_stats(writer, "player", pstats, &format!("{obj}"), ostats)?;
+        writeln!(writer, "")?;
     }
     Ok(game.run_arena(oid))
 }
 
-fn print_stats(writer: &mut dyn Write, name: &str, stats: Stats) -> Result<(), Box<Error>> {
-    writeln!(writer, "{name} dps:   {:.1}", stats.dps)?;
-    writeln!(writer, "{name} hits:  {}%", (100.0 * stats.hits).round() as i32)?;
-    writeln!(writer, "{name} crits: {}%", (100.0 * stats.crits).round() as i32)?;
+fn print_stats(
+    writer: &mut dyn Write,
+    pname: &str,
+    pstats: Stats,
+    oname: &str,
+    ostats: Stats,
+) -> Result<(), Box<Error>> {
+    writeln!(writer, "{} hps   dps  hits  crits", " ".repeat(oname.len()))?;
+    writeln!(
+        writer,
+        "{pname}{} {:>3}  {:>4.1}  {:>3}%  {:>4.1}%",
+        " ".repeat(oname.len() - pname.len()),
+        pstats.hps,
+        pstats.dps,
+        (100.0 * pstats.hits).round() as i32,
+        (100.0 * pstats.crits).round() as i32,
+    )?;
+    writeln!(
+        writer,
+        "{oname} {:>3}  {:>4.1}  {:>3}%  {:>4.1}%",
+        ostats.hps,
+        ostats.dps,
+        (100.0 * ostats.hits).round() as i32,
+        (100.0 * ostats.crits).round() as i32,
+    )?;
     Ok(())
 }
 
@@ -117,7 +140,7 @@ fn print_turns(writer: &mut dyn Write, results: &Vec<ArenaResult>) -> Result<(),
         let count = ((n as f64) / scaling).round() as usize;
         let stars = "*".repeat(count);
         let padding = " ".repeat(max_stars - count + 2);
-        writeln!(writer, "{turn:>2}: {stars}{padding}{n}")?;
+        writeln!(writer, "{turn:<2}: {stars}{padding}{n}")?;
     }
     Ok(())
 }
@@ -210,12 +233,16 @@ impl Game {
     }
 
     fn compute_stats(&self, attacker: Oid, defender: Oid) -> Stats {
+        let obj = self.level.obj(attacker).0;
+        let hps = object::durability_value(obj).unwrap().current;
+
         let loc = self.loc(attacker).unwrap();
         let delay = self.melee_delay(&loc);
         let damage = self.base_damage(attacker).0;
         let crits = self.crit_prob(attacker);
         let hits = self.hit_prob(attacker, defender);
         Stats {
+            hps,
             dps: (damage as f64) / ((delay.as_ms() as f64) / 1000.0),
             hits,
             crits,
