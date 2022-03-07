@@ -49,8 +49,6 @@ use time::Time;
 #[cfg(debug_assertions)]
 use fnv::FnvHashSet;
 
-use self::object::durability_value;
-
 const MAX_MESSAGES: usize = 1000;
 const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 
@@ -236,7 +234,7 @@ impl Game {
 
     pub fn player_hps(&self) -> (i32, i32) {
         let obj = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
-        let durability = object::durability_value(obj).unwrap();
+        let durability = obj.durability_value().unwrap();
         (durability.current, durability.max)
     }
 
@@ -456,15 +454,15 @@ impl Game {
         let granularity = 5; // TODO: base this on perception
 
         let obj = self.level.get(loc, CHARACTER_ID).unwrap().1;
-        let durability = durability_value(obj).unwrap_or(Durability { current: 10, max: 10 }); // Doorman doesn't have HPs
+        let durability = obj.durability_value().unwrap_or(Durability { current: 10, max: 10 }); // Doorman doesn't have HPs
         let current_observed = (durability.current as f64) / (durability.max as f64);
         let current_observed = current_observed * (granularity as f64);
         let observed_hps = ((current_observed as i32), granularity);
 
-        let is_sleeping = object::behavior_value(obj).map_or_else(
+        let is_sleeping = obj.behavior_value().map_or_else(
             || false,
             |v| {
-                let hearing = object::hearing_value(obj).unwrap_or(100);
+                let hearing = obj.hearing_value().unwrap_or(100);
                 v == Behavior::Sleeping && hearing > 0 // don't consider them sleeping if they'll never wake up
             },
         );
@@ -484,8 +482,8 @@ impl Game {
             } else {
                 None
             },
-            name: object::name_value(obj).unwrap(),
-            disposition: object::disposition_value(obj).unwrap(),
+            name: obj.name_value().unwrap(),
+            disposition: obj.disposition_value().unwrap(),
             is_sleeping,
         }
     }
@@ -563,7 +561,7 @@ impl Game {
     }
 
     pub fn in_inv(&self, ch: &Object, id: Tid) -> bool {
-        if let Some(oids) = object::inventory_value(ch) {
+        if let Some(oids) = ch.inventory_value() {
             for oid in oids {
                 let obj = self.level.obj(*oid).0;
                 if obj.has(id) {
@@ -627,7 +625,7 @@ impl Game {
     }
 
     fn add_object(&mut self, loc: &Point, obj: Object) -> Oid {
-        let behavior = object::behavior_value(&obj);
+        let behavior = obj.behavior_value();
         let scheduled = obj.has(SCHEDULED_ID) && !matches!(behavior, Some(Behavior::Sleeping));
         let oid = self.level.add(obj, Some(*loc));
         if scheduled {
@@ -638,7 +636,7 @@ impl Game {
 
     fn schedule_new_obj(&mut self, oid: Oid) {
         let obj = self.level.obj(oid).0;
-        let terrain = object::terrain_value(obj);
+        let terrain = obj.terrain_value();
         let initial = if oid.0 == 0 {
             time::DIAGNOL_MOVE
         } else if terrain.is_some()
@@ -653,7 +651,7 @@ impl Game {
 
     fn replace_behavior(&mut self, loc: &Point, new_behavior: Behavior) {
         let (oid, obj) = self.level.get_mut(&loc, BEHAVIOR_ID).unwrap();
-        let old_behavior = object::behavior_value(obj).unwrap();
+        let old_behavior = obj.behavior_value().unwrap();
         assert_ne!(old_behavior, new_behavior);
         obj.replace(Tag::Behavior(new_behavior));
 
@@ -675,7 +673,7 @@ impl Game {
             self.scheduler.remove(old_oid);
         }
 
-        if let Some(terrain) = object::terrain_value(obj) {
+        if let Some(terrain) = obj.terrain_value() {
             // Terrain cannot be destroyed but has to be mutated into something else.
             let new_obj = if terrain == Terrain::Wall {
                 make::rubble()
@@ -862,7 +860,7 @@ struct InventoryIterator<'a> {
 impl<'a> InventoryIterator<'a> {
     fn new(game: &'a Game, loc: &Point) -> InventoryIterator<'a> {
         let (_, inv) = game.level.get(loc, INVENTORY_ID).unwrap();
-        let oids = object::inventory_value(inv).unwrap();
+        let oids = inv.inventory_value().unwrap();
         InventoryIterator {
             game,
             oids,

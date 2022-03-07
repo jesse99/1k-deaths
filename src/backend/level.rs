@@ -271,7 +271,7 @@ impl Level {
         assert!(!entry.obj.has(CHARACTER_ID));
 
         let obj = self.get_mut(loc, INVENTORY_ID).unwrap().1;
-        let inv = object::inventory_value_mut(obj).unwrap();
+        let inv = obj.inventory_value_mut().unwrap();
         inv.push(oid);
 
         {
@@ -496,7 +496,7 @@ impl Level {
         }
 
         for entry in self.objects.values() {
-            if let Some(oids) = object::inventory_value(&entry.obj) {
+            if let Some(oids) = entry.obj.inventory_value() {
                 for oid in oids {
                     assert!(
                         all_oids.insert(oid),

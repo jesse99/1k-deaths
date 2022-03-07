@@ -177,7 +177,7 @@ impl Game {
             Opponents::PlayerVsRhulad => {
                 let oid = self.level.add(make::mighty_sword(), None);
                 let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
-                let inv = object::inventory_value_mut(player).unwrap();
+                let inv = player.inventory_value_mut().unwrap();
                 inv.push(oid);
 
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
@@ -187,7 +187,7 @@ impl Game {
             Opponents::PlayerVsBroken => {
                 let oid = self.level.add(make::emp_sword(), None);
                 let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
-                let inv = object::inventory_value_mut(player).unwrap();
+                let inv = player.inventory_value_mut().unwrap();
                 inv.push(oid);
 
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
@@ -222,7 +222,7 @@ impl Game {
         }
 
         if let Some(obj) = self.level.try_obj(oid) {
-            match object::behavior_value(obj) {
+            match obj.behavior_value() {
                 Some(Behavior::Attacking(_, _)) => return true, // both still in combat
                 Some(Behavior::Sleeping) => return true,        // opponent hasn't been hit yet
                 Some(Behavior::Wandering(_)) => return true,    // opponent hasn't been hit yet
@@ -235,7 +235,7 @@ impl Game {
 
     fn compute_stats(&self, attacker: Oid, defender: Oid) -> Stats {
         let obj = self.level.obj(attacker).0;
-        let hps = object::durability_value(obj).unwrap().current;
+        let hps = obj.durability_value().unwrap().current;
 
         let loc = self.loc(attacker).unwrap();
         let delay = self.melee_delay(&loc);

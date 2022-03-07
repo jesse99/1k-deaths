@@ -28,7 +28,6 @@ use super::ai::{self, Acted};
 use super::tag::CHARACTER_ID;
 use super::time;
 use super::{Action, Game, Oid, Time};
-use crate::backend::object;
 use crate::backend::{Durability, Tag};
 use fnv::FnvHashMap;
 use rand::prelude::SliceRandom;
@@ -192,7 +191,7 @@ fn advance_time(game: &mut Game) {
     for oid in game.scheduler.entries.keys() {
         if let Some(loc) = game.loc(*oid) {
             if let Some((_, obj)) = game.level.get_mut(&loc, CHARACTER_ID) {
-                if let Some(durability) = object::durability_value(obj) {
+                if let Some(durability) = obj.durability_value() {
                     if durability.current < durability.max {
                         obj.replace(Tag::Durability(Durability {
                             current: durability.current + 1, // TODO: should scale differently

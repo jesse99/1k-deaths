@@ -109,7 +109,7 @@ impl Game {
             if let Some(distance10) = self.find_distance10(origin, loc) {
                 let hearing: i32 = {
                     if let Some((_, obj)) = self.level.get(&loc, HEARING_ID) {
-                        object::hearing_value(obj).unwrap()
+                        obj.hearing_value().unwrap()
                     } else {
                         100
                     }
@@ -161,7 +161,7 @@ impl Game {
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
             let (_, obj) = self.level.get_bottom(&new_loc);
-            let mut d = match object::terrain_value(obj).unwrap() {
+            let mut d = match obj.terrain_value().unwrap() {
                 // sound travels through everything but can be very attenuated
                 Terrain::ClosedDoor => 50,
                 Terrain::DeepWater => 10,
@@ -185,7 +185,7 @@ fn responded_to_noise(obj: &Object, origin: &Point) -> bool {
     if obj.has(SPECTATOR_ID) {
         return false;
     }
-    match object::behavior_value(obj) {
+    match obj.behavior_value() {
         Some(Behavior::Attacking(_, _)) => false,
         Some(Behavior::MovingTo(_)) => false, // TODO: change target if the new noise is louder?
         Some(Behavior::Sleeping) => {

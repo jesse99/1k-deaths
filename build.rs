@@ -118,20 +118,20 @@ fn generate_tag_file(out_dir: &str) -> Result<(), std::io::Error> {
     let mut f = File::create(&dest_path)?;
 
     // Write out the Tag enum.
-    f.write_all(b"#[derive(Clone, Debug, Eq, PartialEq)]\n")?;
-    f.write_all(b"pub enum Tag {\n")?;
+    writeln!(f, "#[derive(Clone, Debug, Eq, PartialEq)]")?;
+    writeln!(f, "pub enum Tag {{")?;
     let tags = tags();
     for tag in &tags {
         match tag {
             Tag::S(name) => {
-                f.write_all(format!("    {name},\n").as_bytes())?;
+                writeln!(f, "    {name},")?;
             }
             Tag::P(name, arg) => {
-                f.write_all(format!("    {name}({arg}),\n").as_bytes())?;
+                writeln!(f, "    {name}({arg}),")?;
             }
         }
     }
-    f.write_all(b"}\n\n")?;
+    writeln!(f, "}}\n")?;
 
     // Write out Tid constants for each tag.
     for (i, tag) in tags.iter().enumerate() {
@@ -140,40 +140,40 @@ fn generate_tag_file(out_dir: &str) -> Result<(), std::io::Error> {
             Tag::P(name, _) => name,
         };
         let name = capitilize(name);
-        f.write_all(format!("pub const {name}_ID: Tid = Tid({i});\n").as_bytes())?;
+        writeln!(f, "pub const {name}_ID: Tid = Tid({i});")?;
     }
-    f.write_all(b"\n")?;
+    writeln!(f, "")?;
 
     // Write out the to_id function.
-    f.write_all(b"impl Tag {\n")?;
-    f.write_all(b"    pub fn to_id(&self) -> Tid {\n")?;
-    f.write_all(b"        match self {\n")?;
+    writeln!(f, "impl Tag {{")?;
+    writeln!(f, "    pub fn to_id(&self) -> Tid {{")?;
+    writeln!(f, "        match self {{")?;
     for tag in &tags {
         let (name, suffix) = match tag {
             Tag::S(name) => (name, ""),
             Tag::P(name, _) => (name, "(_)"),
         };
         let uname = capitilize(name);
-        f.write_all(format!("            Tag::{name}{suffix} => {uname}_ID,\n").as_bytes())?;
+        writeln!(f, "            Tag::{name}{suffix} => {uname}_ID,")?;
     }
-    f.write_all(b"        }\n")?;
-    f.write_all(b"    }\n")?;
-    f.write_all(b"}\n\n")?;
+    writeln!(f, "        }}")?;
+    writeln!(f, "    }}")?;
+    writeln!(f, "}}\n")?;
 
     // Write out the Display trait.
-    f.write_all(b"impl fmt::Display for Tag {\n")?;
-    f.write_all(b"    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {\n")?;
-    f.write_all(b"        match self {\n")?;
+    writeln!(f, "impl fmt::Display for Tag {{")?;
+    writeln!(f, "    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {{")?;
+    writeln!(f, "        match self {{")?;
     for tag in &tags {
         let (name, suffix) = match tag {
             Tag::S(name) => (name, ""),
             Tag::P(name, _) => (name, "(_)"),
         };
-        f.write_all(format!("            Tag::{name}{suffix} => write!(f, \"{name}\"),\n").as_bytes())?;
+        writeln!(f, "            Tag::{name}{suffix} => write!(f, \"{name}\"),")?;
     }
-    f.write_all(b"        }\n")?;
-    f.write_all(b"    }\n")?;
-    f.write_all(b"}\n")?;
+    writeln!(f, "        }}")?;
+    writeln!(f, "    }}")?;
+    writeln!(f, "}}")?;
 
     Ok(())
 }
@@ -183,6 +183,7 @@ fn generate_obj_file(out_dir: &str) -> Result<(), std::io::Error> {
     let mut f = File::create(&dest_path)?;
 
     let tags = tags();
+    writeln!(f, "impl Object {{")?;
     for tag in &tags {
         match tag {
             Tag::S(_) => (),
@@ -191,38 +192,37 @@ fn generate_obj_file(out_dir: &str) -> Result<(), std::io::Error> {
                 if arg.contains('<') {
                     // If the argument is a collection then we want to return a reference
                     // to the value (and a mutable version).
-                    f.write_all(format!("pub fn {lname}_value(obj: &Object) -> Option<&{arg}> {{\n").as_bytes())?;
-                    f.write_all(b"    for candidate in &obj.tags {\n")?;
-                    f.write_all(format!("        if let Tag::{name}(value) = candidate {{\n").as_bytes())?;
-                    f.write_all(b"            return Some(value);\n")?;
-                    f.write_all(b"        }\n")?;
-                    f.write_all(b"    }\n")?;
-                    f.write_all(b"    None\n")?;
-                    f.write_all(b"}\n\n")?;
+                    writeln!(f, "    pub fn {lname}_value(&self) -> Option<&{arg}> {{")?;
+                    writeln!(f, "        for candidate in &self.tags {{")?;
+                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                    writeln!(f, "                return Some(value);")?;
+                    writeln!(f, "            }}")?;
+                    writeln!(f, "        }}")?;
+                    writeln!(f, "        None")?;
+                    writeln!(f, "    }}\n")?;
 
-                    f.write_all(
-                        format!("pub fn {lname}_value_mut(obj: &mut Object) -> Option<&mut {arg}> {{\n").as_bytes(),
-                    )?;
-                    f.write_all(b"    for candidate in &mut obj.tags {\n")?;
-                    f.write_all(format!("        if let Tag::{name}(value) = candidate {{\n").as_bytes())?;
-                    f.write_all(b"            return Some(value);\n")?;
-                    f.write_all(b"        }\n")?;
-                    f.write_all(b"    }\n")?;
-                    f.write_all(b"    None\n")?;
-                    f.write_all(b"}\n\n")?;
+                    writeln!(f, "    pub fn {lname}_value_mut(&mut self) -> Option<&mut {arg}> {{",)?;
+                    writeln!(f, "        for candidate in &mut self.tags {{")?;
+                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                    writeln!(f, "                return Some(value);")?;
+                    writeln!(f, "            }}")?;
+                    writeln!(f, "        }}")?;
+                    writeln!(f, "        None")?;
+                    writeln!(f, "    }}\n")?;
                 } else {
-                    f.write_all(format!("pub fn {lname}_value(obj: &Object) -> Option<{arg}> {{\n").as_bytes())?;
-                    f.write_all(b"    for candidate in &obj.tags {\n")?;
-                    f.write_all(format!("        if let Tag::{name}(value) = candidate {{\n").as_bytes())?;
-                    f.write_all(b"            return Some(*value);\n")?;
-                    f.write_all(b"        }\n")?;
-                    f.write_all(b"    }\n")?;
-                    f.write_all(b"    None\n")?;
-                    f.write_all(b"}\n\n")?;
+                    writeln!(f, "    pub fn {lname}_value(&self) -> Option<{arg}> {{")?;
+                    writeln!(f, "        for candidate in &self.tags {{")?;
+                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                    writeln!(f, "                return Some(*value);")?;
+                    writeln!(f, "            }}")?;
+                    writeln!(f, "        }}")?;
+                    writeln!(f, "        None")?;
+                    writeln!(f, "    }}\n")?;
                 }
             }
         }
     }
+    writeln!(f, "}}")?;
 
     Ok(())
 }

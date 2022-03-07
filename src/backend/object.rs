@@ -91,7 +91,7 @@ impl Object {
     }
 
     pub fn blocks_los(&self) -> bool {
-        match terrain_value(self).unwrap_or(Terrain::ShallowWater) {
+        match self.terrain_value().unwrap_or(Terrain::ShallowWater) {
             Terrain::ClosedDoor => true,
             Terrain::DeepWater => false,
             Terrain::Ground => false,
@@ -105,7 +105,7 @@ impl Object {
     }
 
     pub fn to_bg_color(&self) -> Color {
-        background_value(self).expect("Expected a Background tag")
+        self.background_value().expect("Expected a Background tag")
     }
 
     pub fn to_fg_symbol(&self) -> (Color, Symbol) {
@@ -113,7 +113,7 @@ impl Object {
     }
 
     pub fn impassible_terrain(&self, obj: &Object) -> Option<Message> {
-        let terrain = terrain_value(obj).unwrap();
+        let terrain = obj.terrain_value().unwrap();
         obj.impassible_terrain_type(terrain)
     }
 
@@ -154,16 +154,16 @@ impl Object {
             );
             assert!(!self.has(PORTABLE_ID), "Terrain objects cannot be Portable: {self:?}");
 
-            let terrain = terrain_value(self).unwrap();
+            let terrain = self.terrain_value().unwrap();
             if terrain == Terrain::ClosedDoor {
-                if let Some(durability) = durability_value(self) {
+                if let Some(durability) = self.durability_value() {
                     assert!(
                         durability.current > 0,
                         "Destroyed doors should change to Ground: {self:?}"
                     );
                 }
             } else if terrain == Terrain::Wall {
-                if let Some(durability) = durability_value(self) {
+                if let Some(durability) = self.durability_value() {
                     assert!(
                         durability.current > 0,
                         "Destroyed walls should change to Ground: {self:?}"

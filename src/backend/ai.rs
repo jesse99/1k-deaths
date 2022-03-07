@@ -22,7 +22,7 @@ pub enum Acted {
 /// the future than would normally be the case).
 pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
     if let Some(obj) = game.level.try_obj(oid) {
-        if let Some(terrain) = object::terrain_value(obj) {
+        if let Some(terrain) = obj.terrain_value() {
             if terrain == Terrain::DeepWater {
                 deep_flood(game, oid, units)
             } else if terrain == Terrain::ShallowWater {
@@ -36,7 +36,7 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
             // whether to move closer to group/pack leader
             //
             // Currently NPCs don't make noise which is probably OK.
-            match object::behavior_value(obj) {
+            match obj.behavior_value() {
                 Some(Behavior::Attacking(defender, defender_loc)) => attack(game, oid, defender, defender_loc, units),
                 Some(Behavior::MovingTo(loc)) => move_towards(game, oid, &loc, units),
                 Some(Behavior::Sleeping) => Acted::DidntAct, // NPCs transition out of this via handle_noise
@@ -259,7 +259,7 @@ fn switched_to_attacking(game: &mut Game, oid: Oid, units: Time) -> Option<Acted
     if let Some(loc) = game.loc(oid) {
         if game.pov.visible(game, &loc) && !wants_to_flee(game, &loc) {
             let obj = game.level.get_mut(&loc, BEHAVIOR_ID).unwrap().1;
-            if let Some(Disposition::Aggressive) = object::disposition_value(obj) {
+            if let Some(Disposition::Aggressive) = obj.disposition_value() {
                 // we're treating visibility as a symmetric operation, TODO: which is probably not quite right
                 game.replace_behavior(&loc, Behavior::Attacking(Oid(0), game.player_loc()));
                 return Some(attack(game, oid, Oid(0), game.player_loc(), units));
@@ -316,8 +316,8 @@ fn wander(game: &mut Game, oid: Oid, end: Time, units: Time) -> Acted {
 
 fn wants_to_flee(game: &Game, attacker_loc: &Point) -> bool {
     let attacker = game.level.get(attacker_loc, CHARACTER_ID).unwrap().1;
-    if let Some(percent) = object::flees_value(attacker) {
-        let durability = object::durability_value(attacker).unwrap();
+    if let Some(percent) = attacker.flees_value() {
+        let durability = attacker.durability_value().unwrap();
         let x = (durability.current as f64) / (durability.max as f64);
         x <= (percent as f64) / 100.0
     } else {

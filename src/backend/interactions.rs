@@ -81,7 +81,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
     let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
 
     // A few terrain types are special cased.
-    let terrain = object::terrain_value(obj).unwrap();
+    let terrain = obj.terrain_value().unwrap();
     match terrain {
         Terrain::ClosedDoor => {
             game.do_open_door(Oid(0), player_loc, new_loc, oid);
@@ -103,7 +103,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
         }
         Terrain::Wall => {
             if game.in_inv(player, PICK_AXE_ID) {
-                let material = object::material_value(obj);
+                let material = obj.material_value();
                 match material {
                     Some(Material::Stone) => {
                         let damage = 6;
@@ -136,7 +136,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
 
 fn player_vs_character(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
     let obj = game.level.get(new_loc, CHARACTER_ID).unwrap().1;
-    match object::disposition_value(obj) {
+    match obj.disposition_value() {
         Some(Disposition::Aggressive) => {
             // This is QUIET because normally both parties will be making combat noises so
             // the probability is twice as high as just QUIET alone.
@@ -222,7 +222,7 @@ fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {
 
 fn player_vs_terrain_post(game: &mut Game, loc: &Point) -> (Time, Sound) {
     let (_, obj) = game.level.get(loc, TERRAIN_ID).unwrap();
-    match object::terrain_value(obj).unwrap() {
+    match obj.terrain_value().unwrap() {
         Terrain::Rubble => {
             let mesg = Message::new(Topic::Normal, "You pick your way through the rubble.");
             game.messages.push(mesg);

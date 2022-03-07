@@ -11,7 +11,7 @@ impl Game {
 
         let (damage, durability) = {
             let obj = self.level.get(&obj_loc, TERRAIN_ID).unwrap().1;
-            let durability = object::durability_value(obj).unwrap();
+            let durability = obj.durability_value().unwrap();
             (durability.max / damage, durability)
         };
         debug!("digging at {obj_loc} for {damage} damage");
@@ -41,7 +41,7 @@ impl Game {
     pub fn do_flood_deep(&mut self, oid: Oid, loc: Point) -> Scheduled {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
             let obj = self.level.get(&candidate, TERRAIN_ID).unwrap().1;
-            let terrain = object::terrain_value(obj).unwrap();
+            let terrain = obj.terrain_value().unwrap();
             terrain == Terrain::ShallowWater || terrain == Terrain::Ground || terrain == Terrain::Rubble
         }) {
             debug!("flood deep from {loc} to {new_loc}");
@@ -51,7 +51,7 @@ impl Game {
             if new_loc == self.player_loc() {
                 if let Some(newer_loc) = self.find_neighbor(&self.player_loc(), |candidate| {
                     let obj = self.level.get(&candidate, TERRAIN_ID).unwrap().1;
-                    let terrain = object::terrain_value(obj).unwrap();
+                    let terrain = obj.terrain_value().unwrap();
                     terrain == Terrain::OpenDoor
                         || terrain == Terrain::ShallowWater
                         || terrain == Terrain::Ground
@@ -94,7 +94,7 @@ impl Game {
     pub fn do_flood_shallow(&mut self, oid: Oid, loc: Point) -> Scheduled {
         if let Some(new_loc) = self.find_neighbor(&loc, |candidate| {
             let obj = self.level.get(&candidate, TERRAIN_ID).unwrap().1;
-            let terrain = object::terrain_value(obj).unwrap();
+            let terrain = obj.terrain_value().unwrap();
             terrain == Terrain::Ground || terrain == Terrain::Rubble
         }) {
             debug!("flood shallow from {loc} to {new_loc}");
@@ -139,7 +139,7 @@ impl Game {
     pub fn do_pick_up(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid) {
         let obj = self.level.obj(obj_oid).0;
         debug!("{oid} is picking up {obj_oid}/{obj} at {obj_loc}");
-        let name: &'static str = object::name_value(obj).unwrap();
+        let name: &'static str = obj.name_value().unwrap();
         let mesg = Message {
             topic: Topic::Normal,
             text: format!("You pick up the {name}."),

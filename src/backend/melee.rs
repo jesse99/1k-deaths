@@ -7,9 +7,9 @@ impl Game {
         let attacker_id = self.level.get(attacker_loc, CHARACTER_ID).unwrap().0;
         let attacker = self.level.obj(attacker_id).0;
         if let Some(weapon) = self.find_equipped_weapon(attacker) {
-            object::delay_value(weapon).unwrap()
+            weapon.delay_value().unwrap()
         } else {
-            object::delay_value(attacker).unwrap()
+            attacker.delay_value().unwrap()
         }
     }
 
@@ -78,7 +78,7 @@ impl Game {
             "You".to_string()
         } else {
             let attacker = self.level.obj(attacker_id).0;
-            let name: &'static str = object::name_value(attacker).unwrap();
+            let name: &'static str = attacker.name_value().unwrap();
             format!("{name}")
         }
     }
@@ -86,10 +86,12 @@ impl Game {
     pub fn base_damage(&self, attacker_id: Oid) -> (i32, bool) {
         let attacker = self.level.obj(attacker_id).0;
         let (damage, min_str) = if let Some(weapon) = self.find_equipped_weapon(attacker) {
-            (object::damage_value(weapon).unwrap(), object::strength_value(weapon))
+            (weapon.damage_value().unwrap(), weapon.strength_value())
         } else {
             (
-                object::damage_value(attacker).expect(&format!("{attacker} should have an (unarmed) damage tag")),
+                attacker
+                    .damage_value()
+                    .expect(&format!("{attacker} should have an (unarmed) damage tag")),
                 Some(MAX_STAT / 6), // strength helps quite a bit with unarmed
             )
         };
@@ -100,7 +102,7 @@ impl Game {
         // that are too heavy for a character. TODO: need some sort of indication for these
         // penalties, maybe status effect warning.
         let mut damage = if let Some(min_str) = min_str {
-            let cur_str = object::strength_value(attacker).unwrap();
+            let cur_str = attacker.strength_value().unwrap();
             let scaling = f64::max((cur_str as f64) / (min_str as f64), 2.0);
             ((damage as f64) * scaling) as i32
         } else {
@@ -120,7 +122,7 @@ impl Game {
     pub fn crit_prob(&self, attacker_id: Oid) -> f64 {
         let attacker = self.level.obj(attacker_id).0;
         let (min_dex, crit_percent) = if let Some(weapon) = self.find_equipped_weapon(attacker) {
-            (object::dexterity_value(weapon), object::crit_value(weapon).unwrap_or(0))
+            (weapon.dexterity_value(), weapon.crit_value().unwrap_or(0))
         } else {
             (
                 Some(MAX_STAT / 2), // hard to crit more with unarmed
@@ -129,7 +131,7 @@ impl Game {
         };
 
         if let Some(min_dex) = min_dex {
-            let dex = object::dexterity_value(attacker).unwrap() - min_dex;
+            let dex = attacker.dexterity_value().unwrap() - min_dex;
             let scaling = linear_scale(dex, 0, MAX_STAT, 1.0, 4.0);
             scaling * (crit_percent as f64) / 100.0
         } else {
@@ -150,10 +152,10 @@ impl Game {
     fn find_equipped_weapon(&self, attacker: &Object) -> Option<&Object> {
         let mut weapon = None;
         let mut damage = None;
-        if let Some(inv) = object::inventory_value(attacker) {
+        if let Some(inv) = attacker.inventory_value() {
             for oid in inv {
                 let candidate = self.level.obj(*oid).0;
-                if let Some(dam) = object::damage_value(candidate) {
+                if let Some(dam) = candidate.damage_value() {
                     if damage.is_none() || damage.unwrap() < dam {
                         damage = Some(dam);
                         weapon = Some(candidate);
@@ -166,7 +168,7 @@ impl Game {
 
     fn hps(&self, defender_id: Oid, damage: i32) -> (i32, i32) {
         let defender = self.level.obj(defender_id).0;
-        let durability = object::durability_value(defender).unwrap();
+        let durability = defender.durability_value().unwrap();
         (durability.current - damage, durability.max)
     }
 
@@ -181,8 +183,8 @@ impl Game {
         let attacker = self.level.obj(attacker_id).0;
         let defender = self.level.obj(defender_id).0;
 
-        let adex = object::dexterity_value(attacker).unwrap(); // TODO: this should be adjusted by heavy gear
-        let ddex = object::dexterity_value(defender).unwrap();
+        let adex = attacker.dexterity_value().unwrap(); // TODO: this should be adjusted by heavy gear
+        let ddex = defender.dexterity_value().unwrap();
         let max_delta = (2 * MAX_STAT) / 3;
         linear_scale(adex - ddex, -max_delta, max_delta, 0.1, 1.0)
     }
@@ -219,7 +221,7 @@ impl Game {
 
     fn react_to_attack(&mut self, attacker_loc: &Point, attacker_id: Oid, defender_loc: &Point) {
         let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
-        let attack = match object::behavior_value(defender) {
+        let attack = match defender.behavior_value() {
             Some(Behavior::Sleeping) => true,
             Some(Behavior::Attacking(_, _)) => {
                 // TODO: If the old attacker is no longer visible (or maybe too far away)
