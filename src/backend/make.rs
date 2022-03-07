@@ -310,7 +310,12 @@ pub fn pick_axe() -> Object {
         "a pick-axe",
         Symbol::PickAxe,
         Color::Tan,
-        vec![Tag::Name("a pick-axe"), Tag::PickAxe, Tag::Portable],
+        vec![
+            Tag::Name("a pick-axe"),
+            Tag::PickAxe,
+            Tag::Delay(time::secs(32)),
+            Tag::Portable,
+        ],
     )
 }
 

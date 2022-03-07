@@ -104,11 +104,15 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
         Terrain::Wall => {
             if game.in_inv(player, PICK_AXE_ID) {
                 let material = obj.material_value();
+                let delay = {
+                    let item = game.inv_item(player, PICK_AXE_ID).unwrap();
+                    item.delay_value().unwrap()
+                };
                 match material {
                     Some(Material::Stone) => {
                         let damage = 6;
                         game.do_dig(Oid(0), new_loc, oid, damage);
-                        return PreResult::Acted(time::DIG_STONE, sound::LOUD);
+                        return PreResult::Acted(delay, sound::LOUD);
                     }
                     Some(Material::Metal) => {
                         let mesg = Message::new(
@@ -116,7 +120,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
                             "Your pick-axe bounces off the metal wall doing no damage.",
                         );
                         game.messages.push(mesg);
-                        return PreResult::Acted(time::SCRATCH_METAL, sound::QUIET);
+                        return PreResult::Acted(delay / 4, sound::QUIET);
                     }
                     None => panic!("Walls should always have a Material"),
                 }

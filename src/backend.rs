@@ -560,16 +560,20 @@ impl Game {
         InventoryIterator::new(self, &self.player_loc())
     }
 
-    pub fn in_inv(&self, ch: &Object, id: Tid) -> bool {
+    pub fn inv_item(&self, ch: &Object, tid: Tid) -> Option<&Object> {
         if let Some(oids) = ch.inventory_value() {
             for oid in oids {
                 let obj = self.level.obj(*oid).0;
-                if obj.has(id) {
-                    return true;
+                if obj.has(tid) {
+                    return Some(obj);
                 }
             }
         }
-        false
+        None
+    }
+
+    pub fn in_inv(&self, ch: &Object, tid: Tid) -> bool {
+        self.inv_item(ch, tid).is_some()
     }
 
     // The RNG doesn't directly affect the game state so we use interior mutability for it.

@@ -86,8 +86,8 @@ impl Object {
     //     self.invariant();
     // }
 
-    pub fn has(&self, id: Tid) -> bool {
-        self.tags.iter().any(|candidate| candidate.to_id() == id)
+    pub fn has(&self, tid: Tid) -> bool {
+        self.tags.iter().any(|candidate| candidate.to_id() == tid)
     }
 
     pub fn blocks_los(&self) -> bool {
