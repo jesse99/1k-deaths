@@ -18,6 +18,17 @@ pub enum Armor {
     Feet,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Equipped {
+    pub main_hand: Oid,
+    pub off_hand: Oid,
+    pub head: Oid,
+    pub chest: Oid,
+    pub hands: Oid,
+    pub legs: Oid,
+    pub feet: Oid,
+}
+
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]

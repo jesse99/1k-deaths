@@ -37,8 +37,11 @@ fn tags() -> Vec<Tag> {
         // Amount of time it takes to use an item. TODO: may also want to use this for base character movement speed
         P("Delay", "Time"),
 
-        // Objects that a Character has picked up.
+        // Objects that a Character has picked up but not equipped yet.
         P("Inventory", "Vec<Oid>"),
+
+        // Objects that a Character is actively using.
+        P("Equipped", "Equipped"),
 
         // Used for Characters that start fleeing when their HPs is at the specified percent.
         P("Flees", "i32"), // TODO: should this be smarter? or maybe a second type of flee tag that considers both attacker and defender HPs

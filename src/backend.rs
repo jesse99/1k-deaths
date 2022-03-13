@@ -262,119 +262,12 @@ impl Game {
         self.do_player_acted(action, false);
     }
 
-    fn do_player_acted(&mut self, action: Action, replay: bool) {
-        // TODO: probably want to return something to indicate whether a UI refresh is neccesary
-        // TODO: maybe something fine grained, like only need to update messages
-        trace!("player is doing {action:?}");
-        match action {
-            Action::Examine { loc, wizard } => {
-                self.examine(&loc, wizard);
-            }
-            Action::Move { dx, dy } => {
-                assert!(dx >= -1 && dx <= 1);
-                assert!(dy >= -1 && dy <= 1);
-                assert!(dx != 0 || dy != 0);
-                if !self.game_over() {
-                    let player = self.player_loc();
-                    let new_loc = Point::new(player.x + dx, player.y + dy);
-                    let duration = match self.try_interact(&player, &new_loc) {
-                        PreResult::Acted(taken, sound) => {
-                            assert!(taken > Time::zero());
-                            self.handle_noise(&self.player_loc(), sound);
-                            taken
-                        }
-                        PreResult::ZeroAction => Time::zero(),
-                        PreResult::DidntAct => {
-                            let old_loc = self.player_loc();
-                            self.do_move(Oid(0), &old_loc, &new_loc);
-                            let (duration, volume) = self.interact_post_move(&new_loc);
-                            self.handle_noise(&new_loc, sound::QUIET + volume);
-                            if old_loc.diagnol(&new_loc) {
-                                time::DIAGNOL_MOVE + duration
-                            } else {
-                                time::CARDINAL_MOVE + duration
-                            }
-                        }
-                    };
-
-                    if duration > Time::zero() {
-                        self.scheduler.player_acted(duration, &self.rng);
-                        self.players_move = false;
-
-                        OldPoV::update(self);
-                        PoV::refresh(self);
-                    }
-                }
-            }
-            Action::Object => panic!("Action::Object should only be used with replay_action"),
-            Action::Rest => {
-                self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
-                self.players_move = false;
-            }
-        }
-
-        if !replay {
-            self.stream.push(action);
-            if self.stream.len() >= MAX_QUEUED_EVENTS {
-                self.save_actions();
-            }
-        }
-        while self.messages.len() > MAX_MESSAGES {
-            self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
-        }
-    }
-
     pub fn replay_action(&mut self, action: Action) {
         if let Action::Object = action {
             self.advance_time(true);
         } else {
             self.do_player_acted(action, true);
         }
-    }
-
-    fn examine(&mut self, loc: &Point, wizard: bool) {
-        let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
-        if self.pov.visible(self, &loc) {
-            let descs: Vec<String> = self
-                .level
-                .cell_iter(&loc)
-                .map(|(_, obj)| {
-                    if wizard {
-                        format!("{} {obj:?}", obj.description())
-                    } else {
-                        obj.description().to_string()
-                    }
-                })
-                .collect();
-            if descs.len() == 1 {
-                self.messages.push(Message {
-                    topic: Topic::Normal,
-                    text: format!("You see {}{suffix}.", descs[0]),
-                });
-            } else {
-                self.messages.push(Message {
-                    topic: Topic::Normal,
-                    text: format!("You see{suffix}"),
-                });
-                for desc in descs {
-                    // TODO: at some point we'll want to cap the number of lines
-                    self.messages.push(Message {
-                        topic: Topic::Normal,
-                        text: format!("   {desc}."),
-                    });
-                }
-            }
-        } else if self.old_pov.get(&loc).is_some() {
-            self.messages.push(Message {
-                topic: Topic::Normal,
-                text: format!("You can no longer see there{suffix}."),
-            });
-        } else {
-            self.messages.push(Message {
-                topic: Topic::Normal,
-                text: format!("You've never seen there{suffix}."),
-            });
-        };
     }
 
     /// If loc is valid and within the player's Field if View (FoV) then return the terrain.
@@ -450,44 +343,6 @@ impl Game {
         }
     }
 
-    fn to_npc(&self, loc: &Point, wizard: bool) -> Npc {
-        let granularity = 5; // TODO: base this on perception
-
-        let obj = self.level.get(loc, CHARACTER_ID).unwrap().1;
-        let durability = obj.durability_value().unwrap_or(Durability { current: 10, max: 10 }); // Doorman doesn't have HPs
-        let current_observed = (durability.current as f64) / (durability.max as f64);
-        let current_observed = current_observed * (granularity as f64);
-        let observed_hps = ((current_observed as i32), granularity);
-
-        let is_sleeping = obj.behavior_value().map_or_else(
-            || false,
-            |v| {
-                let hearing = obj.hearing_value().unwrap_or(100);
-                v == Behavior::Sleeping && hearing > 0 // don't consider them sleeping if they'll never wake up
-            },
-        );
-
-        let (color, symbol) = obj.to_fg_symbol();
-        let letter = match symbol {
-            Symbol::Npc(c) => c,
-            _ => ' ',
-        };
-
-        Npc {
-            letter,
-            color,
-            observed_hps,
-            actual_hps: if wizard {
-                Some((durability.current, durability.max))
-            } else {
-                None
-            },
-            name: obj.name_value().unwrap(),
-            disposition: obj.disposition_value().unwrap(),
-            is_sleeping,
-        }
-    }
-
     /// Returns all the NPCs visible to the player sorted by distance from the player.
     pub fn npcs(&self, wizard: bool) -> Vec<Npc> {
         self.level
@@ -551,6 +406,68 @@ impl Game {
         matches!(self.state, State::LostGame | State::WonGame)
     }
 
+    fn do_player_acted(&mut self, action: Action, replay: bool) {
+        // TODO: probably want to return something to indicate whether a UI refresh is neccesary
+        // TODO: maybe something fine grained, like only need to update messages
+        trace!("player is doing {action:?}");
+        match action {
+            Action::Examine { loc, wizard } => {
+                self.examine(&loc, wizard);
+            }
+            Action::Move { dx, dy } => {
+                assert!(dx >= -1 && dx <= 1);
+                assert!(dy >= -1 && dy <= 1);
+                assert!(dx != 0 || dy != 0);
+                if !self.game_over() {
+                    let player = self.player_loc();
+                    let new_loc = Point::new(player.x + dx, player.y + dy);
+                    let duration = match self.try_interact(&player, &new_loc) {
+                        PreResult::Acted(taken, sound) => {
+                            assert!(taken > Time::zero());
+                            self.handle_noise(&self.player_loc(), sound);
+                            taken
+                        }
+                        PreResult::ZeroAction => Time::zero(),
+                        PreResult::DidntAct => {
+                            let old_loc = self.player_loc();
+                            self.do_move(Oid(0), &old_loc, &new_loc);
+                            let (duration, volume) = self.interact_post_move(&new_loc);
+                            self.handle_noise(&new_loc, sound::QUIET + volume);
+                            if old_loc.diagnol(&new_loc) {
+                                time::DIAGNOL_MOVE + duration
+                            } else {
+                                time::CARDINAL_MOVE + duration
+                            }
+                        }
+                    };
+
+                    if duration > Time::zero() {
+                        self.scheduler.player_acted(duration, &self.rng);
+                        self.players_move = false;
+
+                        OldPoV::update(self);
+                        PoV::refresh(self);
+                    }
+                }
+            }
+            Action::Object => panic!("Action::Object should only be used with replay_action"),
+            Action::Rest => {
+                self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
+                self.players_move = false;
+            }
+        }
+
+        if !replay {
+            self.stream.push(action);
+            if self.stream.len() >= MAX_QUEUED_EVENTS {
+                self.save_actions();
+            }
+        }
+        while self.messages.len() > MAX_MESSAGES {
+            self.messages.remove(0); // TODO: this is an O(N) operation for Vec, may want to switch to circular_queue
+        }
+    }
+
     // TODO: Not sure we'll need this in the future.
     fn loc(&self, oid: Oid) -> Option<Point> {
         self.level.try_loc(oid)
@@ -574,6 +491,89 @@ impl Game {
 
     pub fn in_inv(&self, ch: &Object, tid: Tid) -> bool {
         self.inv_item(ch, tid).is_some()
+    }
+
+    fn examine(&mut self, loc: &Point, wizard: bool) {
+        let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
+        if self.pov.visible(self, &loc) {
+            let descs: Vec<String> = self
+                .level
+                .cell_iter(&loc)
+                .map(|(_, obj)| {
+                    if wizard {
+                        format!("{} {obj:?}", obj.description())
+                    } else {
+                        obj.description().to_string()
+                    }
+                })
+                .collect();
+            if descs.len() == 1 {
+                self.messages.push(Message {
+                    topic: Topic::Normal,
+                    text: format!("You see {}{suffix}.", descs[0]),
+                });
+            } else {
+                self.messages.push(Message {
+                    topic: Topic::Normal,
+                    text: format!("You see{suffix}"),
+                });
+                for desc in descs {
+                    // TODO: at some point we'll want to cap the number of lines
+                    self.messages.push(Message {
+                        topic: Topic::Normal,
+                        text: format!("   {desc}."),
+                    });
+                }
+            }
+        } else if self.old_pov.get(&loc).is_some() {
+            self.messages.push(Message {
+                topic: Topic::Normal,
+                text: format!("You can no longer see there{suffix}."),
+            });
+        } else {
+            self.messages.push(Message {
+                topic: Topic::Normal,
+                text: format!("You've never seen there{suffix}."),
+            });
+        };
+    }
+
+    fn to_npc(&self, loc: &Point, wizard: bool) -> Npc {
+        let granularity = 5; // TODO: base this on perception
+
+        let obj = self.level.get(loc, CHARACTER_ID).unwrap().1;
+        let durability = obj.durability_value().unwrap_or(Durability { current: 10, max: 10 }); // Doorman doesn't have HPs
+        let current_observed = (durability.current as f64) / (durability.max as f64);
+        let current_observed = current_observed * (granularity as f64);
+        let observed_hps = ((current_observed as i32), granularity);
+
+        let is_sleeping = obj.behavior_value().map_or_else(
+            || false,
+            |v| {
+                let hearing = obj.hearing_value().unwrap_or(100);
+                v == Behavior::Sleeping && hearing > 0 // don't consider them sleeping if they'll never wake up
+            },
+        );
+
+        let (color, symbol) = obj.to_fg_symbol();
+        let letter = match symbol {
+            Symbol::Npc(c) => c,
+            _ => ' ',
+        };
+
+        Npc {
+            letter,
+            color,
+            observed_hps,
+            actual_hps: if wizard {
+                Some((durability.current, durability.max))
+            } else {
+                None
+            },
+            name: obj.name_value().unwrap(),
+            disposition: obj.disposition_value().unwrap(),
+            is_sleeping,
+        }
     }
 
     // The RNG doesn't directly affect the game state so we use interior mutability for it.
