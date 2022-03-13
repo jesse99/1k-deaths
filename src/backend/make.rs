@@ -75,6 +75,40 @@ pub fn level(game: &mut Game, map: &str) {
             loc = Point::new(loc.x + 1, loc.y);
         }
     }
+    add_extras(game);
+}
+
+fn add_extras(game: &mut Game) {
+    add_extra(game, leather_hat());
+    add_extra(game, leather_chest());
+    add_extra(game, leather_gloves());
+    add_extra(game, leather_legs());
+    add_extra(game, leather_sandals());
+}
+
+fn add_extra(game: &mut Game, obj: Object) {
+    let mut count = 0;
+    {
+        let rng = &mut *game.rng();
+        while rng.gen_bool(0.5) {
+            count += 1;
+        }
+    }
+
+    for _ in 0..count {
+        for _ in 0..5 {
+            // we'll try 5x to add count instances of obj
+            let loc = game.level.random_loc(&game.rng);
+            let has_char = game.level.get(&loc, CHARACTER_ID).is_some();
+            let terrain = game.level.get_bottom(&loc).1;
+            if Terrain::Ground == terrain.terrain_value().unwrap() {
+                if !has_char {
+                    game.add_object(&loc, obj.clone());
+                    break;
+                }
+            }
+        }
+    }
 }
 
 // -- characters -------------------------------------------------------------------------
@@ -175,7 +209,7 @@ pub fn player() -> Object {
         "player",
         "yourself",
         Symbol::Player,
-        Color::Gold,
+        Color::Linen,
         vec![
             Tag::Strength(10),
             Tag::Dexterity(10),
@@ -248,6 +282,7 @@ pub fn emp_sword() -> Object {
         Color::Silver,
         vec![
             Tag::Name("Sword of the Crippled God"),
+            Tag::Weapon(Weapon::TwoHander),
             Tag::Portable,
             Tag::EmpSword,
             Tag::Damage(50),
@@ -277,6 +312,7 @@ pub fn weak_sword(game: &Game) -> Object {
         vec![
             Tag::Name(sword.0),
             Tag::Portable,
+            Tag::Weapon(Weapon::OneHand),
             Tag::Damage(12),
             Tag::Delay(time::secs(3)),
             Tag::Strength(4),
@@ -295,11 +331,87 @@ pub fn mighty_sword() -> Object {
         vec![
             Tag::Name("Sword of Impending Doom"),
             Tag::Portable,
+            Tag::Weapon(Weapon::TwoHander),
             Tag::Damage(40),
             Tag::Delay(time::secs(5)),
             Tag::Strength(6),
             Tag::Dexterity(15),
             Tag::Crit(2),
+        ],
+    )
+}
+
+pub fn leather_hat() -> Object {
+    Object::new(
+        "leather hat",
+        "a leather hat",
+        Symbol::Armor,
+        Color::SandyBrown,
+        vec![
+            Tag::Name("leather hat"),
+            Tag::Portable,
+            Tag::Armor(Armor::Head),
+            Tag::Mitigation(3),
+        ],
+    )
+}
+
+pub fn leather_chest() -> Object {
+    Object::new(
+        "leather chest",
+        "a leather chest",
+        Symbol::Armor,
+        Color::SandyBrown,
+        vec![
+            Tag::Name("leather chest"),
+            Tag::Portable,
+            Tag::Armor(Armor::Chest),
+            Tag::Mitigation(5),
+        ],
+    )
+}
+
+pub fn leather_gloves() -> Object {
+    Object::new(
+        "leather gloves",
+        "a leather gloves",
+        Symbol::Armor,
+        Color::SandyBrown,
+        vec![
+            Tag::Name("leather gloves"),
+            Tag::Portable,
+            Tag::Armor(Armor::Hands),
+            Tag::Mitigation(3),
+        ],
+    )
+}
+
+pub fn leather_legs() -> Object {
+    Object::new(
+        "leather shin guards",
+        "leather shin guard",
+        Symbol::Armor,
+        Color::SandyBrown,
+        vec![
+            Tag::Name("leather shin guards"),
+            Tag::Portable,
+            Tag::Armor(Armor::Legs),
+            Tag::Mitigation(4),
+        ],
+    )
+}
+
+pub fn leather_sandals() -> Object {
+    Object::new(
+        "leather sandals",
+        "a leather sandals",
+        Symbol::Armor,
+        Color::SandyBrown,
+        vec![
+            Tag::Name("leather sandals"),
+            Tag::Portable,
+            Tag::Armor(Armor::Feet),
+            Tag::Mitigation(3),
         ],
     )
 }
@@ -311,7 +423,7 @@ pub fn pick_axe() -> Object {
         Symbol::PickAxe,
         Color::Tan,
         vec![
-            Tag::Name("a pick-axe"),
+            Tag::Name("pick-axe"),
             Tag::PickAxe,
             Tag::Delay(time::secs(32)),
             Tag::Portable,

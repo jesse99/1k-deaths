@@ -87,38 +87,21 @@ impl MapView {
         use Symbol::*;
         match symbol {
             ClosedDoor => "+".repeat(count),
-            DeepLiquid => {
-                "\u{224B}".repeat(count) // TRIPLE TILDE
-            }
+            DeepLiquid => "\u{224B}".repeat(count), // TRIPLE TILDE
             Dirt => ".".repeat(count),
             Npc(ch) => format!("{}", ch).repeat(count),
             OpenDoor => ":".repeat(count),
-            PickAxe => {
-                "\u{26CF}".repeat(count) // pick
-            }
-            Player => {
-                "\u{265D}".repeat(count) // BLACK CHESS BISHOP
-            }
-            Rubble => {
-                "\u{2237}".repeat(count) // PROPORTION
-            }
+            PickAxe => "\u{26CF}".repeat(count), // pick
+            Player => "\u{265D}".repeat(count),  // BLACK CHESS BISHOP
+            Rubble => "\u{2237}".repeat(count),  // PROPORTION
             ShallowLiquid => "~".repeat(count),
-            Sign => {
-                "\u{261E}".repeat(count) // WHITE RIGHT POINTING INDEX
-            }
-            StrongSword => {
-                "\u{2694}\u{FE0F}".repeat(count) // crossed swords
-            }
-            Tree => {
-                "\u{2B06}\u{FE0E}".repeat(count) // UPWARDS BLACK ARROW
-            }
+            Armor => "\u{2720}".repeat(count),               // MALTESE CROSS
+            Sign => "\u{261E}".repeat(count),                // WHITE RIGHT POINTING INDEX
+            StrongSword => "\u{2694}\u{FE0F}".repeat(count), // crossed swords
+            Tree => "\u{2B06}\u{FE0E}".repeat(count),        // UPWARDS BLACK ARROW
             Unseen => " ".repeat(count),
-            Wall => {
-                "\u{25FC}\u{FE0E}".repeat(count) // BLACK MEDIUM SQUARE
-            }
-            WeakSword => {
-                "\u{1F5E1}".repeat(count) // dagger
-            }
+            Wall => "\u{25FC}\u{FE0E}".repeat(count), // BLACK MEDIUM SQUARE
+            WeakSword => "\u{1F5E1}".repeat(count),   // dagger
         }
     }
 }

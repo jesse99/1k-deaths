@@ -28,8 +28,6 @@ https://crawl.kelbi.org/#lobby\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 \cf3 enum ObjectTag\
 	Weapon\
-	MinDamage(i32)  \
-	MaxDamage(i32)\
 	Range(i32)          
 \f2\i \cf3 ranged weapon, spell, etc
 \f1\i0 \cf3 \
@@ -61,15 +59,8 @@ Step 9 - Items\
 
 \f1\b0 \cf3 \'95\'a0Look at these:\
 	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday \
-\'95\'a0Most items shouldn\'92t be placed randomly\
-	- may want another room for potions (or elixers?)\
-	- armor should go somewhere\
-	- munitions too?\
-	- do we want to randomly place anything?\
 \'95\'a0Add inventory management\
 \'95\'a0Add support for equipping and un-equipping items\
-\'95 Support using items\
-\'95 Health pots\
 \'95 Support wielding a weapon\
 	- implicit action should use a weapon if it's equipped\
 	- should have a min str level for some armor and weapons\
@@ -82,15 +73,65 @@ Step 9 - Items\
 	- otherwise reduce speed of all actions, eg if char has half needed str then everything takes 2x as long\
 	- weapon and armor str penalties need to be summed\
 		ie min str for both is weapon.min_str + armor.min_str\
+\'95 Add some gear with effects?\
+	- adjust str or dex\
+	- adjust base damage or to hit?\
+	- maybe other effects? or wait until we add magic?\
+\'95\'a0May want to support stacking\
+	- arrows? food? javelins? munitions?\
+\'95 Support using items\
 \'95\'a0Add some more arena contests:\
 	- high str weapon vs high dex weapon\
 	- high str armor vs high dex dodge\
 	- try some bad scenarios too, eg weapon too heavy for player str\
 \'95 If an NPC is killed it should drop whatever was in its inventory\
 \'95 Would be nice if item description said what effect equipping would have on offense and defense\
-\'95\'a0May want to support stacking\
-	- arrows? food? javelins? munitions?\
+\'95\'a0Most items shouldn\'92t be placed randomly\
+	- may want another room for potions (or elixers?)\
+	- armor should go somewhere\
+	- munitions too? https://malazan.fandom.com/wiki/Moranth_munitions\
+		burner - fireball\
+		cracker - used for demolishing bridges\
+		cussers - large explosion, too big to throw\
+		flamer - engulf target in liquid fire\
+		melter - corrosive acid, used to melt walls\
+		sharper - small, has metal shards, can be thrown\
+		smoker - smoke cloud\
+	- do we want to randomly place anything?\
+\'95 Instead of potions/elixers could have items of the gods? https://malazan.fandom.com/wiki/Gods\
+	- maybe multiple levels? token, blessing\
+	- Soliel, heal percentage/heal + cure bad effects\
+	- Poliel, cause disease/disease cloud\
+	- Hood, protect against a bit of death/protect against death (ie some overkill or all overkill)\
+	- T\'92riss, show nearby items, show all items on level\
+	- Trake, dex and speed bonus\
+	- Fener, str and speed bonus\
+	- Shadowthrone, stealth and miss bonus\
+	- Cotililion, stealth and crit bonus\
+	- D\'92rek, stat decrease/aoe decrease\
+	- gedderone, stat incease?\
+	- Beru, lightning brand, lightning bolt (can hit multiples)\
+	- crippled god, various bad effects: blind, cripple limb, reduce int, etc\
+		cast on player after killing rhulad?\
+	- mowri, random gift\
+	- opponn, random bonus, smaller chance for random penalty\
+	- apsalar, invis\
+	- probably these should be stackable consumes\
+	- or perhaps not stackable so need to pick and choose?\
+\'95\'a0Add some wandering mercenaries?\
+	- they could pickup randomly placed gear?\
+	- maybe they\'92re neutral?\
 \'95\'a0May want a config file to configure which are auto-picked up\
+\'95 SlotMap would be faster for Oids\
+	- might be able to use SecondaryMap or SparseSecondaryMap to store\
+	  denormalized data\
+	- new_key_type! can be used to create type safe keys\
+\'95 Use an embedded database?\
+	- https://docs.rs/sled/latest/sled/doc/index.html\
+	- https://github.com/rusqlite/rusqlite\
+	  https://docs.rs/sqlite/latest/sqlite\
+		not sure we\'92d really need a full db\
+		tho we probably eventually will need persistence\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\b \cf3 \
@@ -211,6 +252,10 @@ Perception  larger fov, detect invis, detect traps, id items\
 	- provide a way to unlock new abilities\
 	- should only be able to max out a few skill trees, do we want real trees?\
 	- in general stats just allow you to do more of what you can already do, eg mana\
+	- better to be more like crawl than a skill tree\
+		` players can train at anything they want\
+		` after gaining enough experience they become better at the skill or unlock new abilities\
+		` race/character combos learn different skills at different speeds\
 \'95\'a0Maybe weapon skill should be something like\
 	- bad, big to_hit penalty, medium damage penalty\
 	- poor, smaller hit\

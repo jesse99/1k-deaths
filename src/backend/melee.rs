@@ -243,14 +243,19 @@ impl Game {
     }
 
     fn spawn_the_broken(&mut self) {
-        for i in 0..7 {
+        let mut bindex = 0;
+        for _ in 0..21 {
             let loc = self.level.random_loc(&self.rng);
             let existing = &self.level.get(&loc, CHARACTER_ID);
             if existing.is_none() {
-                let ch = make::broken(i);
+                let ch = make::broken(bindex);
                 let (_, terrain) = self.level.get_bottom(&loc);
                 if ch.impassible_terrain(terrain).is_none() {
                     self.add_object(&loc, ch);
+                    bindex += 1;
+                    if bindex == 7 {
+                        break;
+                    }
 
                     let target = Point::new(46, 35); // they all head for the Vitr lake
                     self.replace_behavior(&loc, Behavior::MovingTo(target));

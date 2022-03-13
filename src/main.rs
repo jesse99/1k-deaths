@@ -71,7 +71,7 @@ fn configure_logging(level: LevelFilter) {
 
     let local = chrono::Local::now();
     info!(
-        "started up on {} with version {} ----------------------------------------------",
+        "started up on {} with version {} ----------------------------",
         local.to_rfc2822(),
         env!("CARGO_PKG_VERSION")
     );

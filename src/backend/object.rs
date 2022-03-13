@@ -6,6 +6,7 @@ use std::fmt::{self, Formatter};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Symbol {
+    Armor,
     ClosedDoor,
     DeepLiquid,
     Dirt,

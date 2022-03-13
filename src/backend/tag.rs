@@ -2,6 +2,22 @@ use super::{Color, Oid, Point, Time};
 use derive_more::Display;
 use std::fmt::{self, Formatter};
 
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+pub enum Weapon {
+    TwoHander,
+    OneHand,
+    //Ranged,
+}
+
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+pub enum Armor {
+    Head,
+    Chest,
+    Hands,
+    Legs,
+    Feet,
+}
+
 /// Affects behavior of items like burning oil or a pick axe. Also affects
 /// spell behavior and whether characters can move through terrain.
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]

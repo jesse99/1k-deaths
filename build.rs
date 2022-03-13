@@ -53,6 +53,12 @@ fn tags() -> Vec<Tag> {
         // Character's inventory.
         S("Portable"),
 
+        P("Weapon", "Weapon"),
+        P("Armor", "Armor"),
+
+        // Percentage of damage reduction, normally used with Armor.
+        P("Mitigation", "i32"), // TODO: add a type? eg physical, fire, etc
+
         // Can be used to dig through wood or stone structures (i.e. doors and
         // walls). Ineffective against metal.
         S("PickAxe"),
