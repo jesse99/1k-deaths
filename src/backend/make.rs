@@ -415,6 +415,8 @@ pub fn leather_sandals() -> Object {
         ],
     )
 }
+// TODO: chain armor should be 10, 8, and 6%
+// TODO: plate armor should be 15, 12, and 9%
 
 pub fn pick_axe() -> Object {
     Object::new(

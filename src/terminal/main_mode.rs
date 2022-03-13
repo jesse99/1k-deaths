@@ -36,6 +36,7 @@ impl MainMode {
         commands.insert(Key::Char('3'), Box::new(|s, game| s.do_move(game, 1, 1)));
         commands.insert(Key::Char('4'), Box::new(|s, game| s.do_move(game, -1, 0)));
         commands.insert(Key::Char('5'), Box::new(|s, game| s.do_rest(game)));
+        commands.insert(Key::Char('s'), Box::new(|s, game| s.do_rest(game)));
         commands.insert(Key::Char('6'), Box::new(|s, game| s.do_move(game, 1, 0)));
         commands.insert(Key::Char('7'), Box::new(|s, game| s.do_move(game, -1, -1)));
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
@@ -105,7 +106,7 @@ Movement is done using the numeric keypad or arrow keys:
 [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
 [[1]] [[2]] [[3]]                 [[down-arrow]]
 
-[[5]] rest for one turn.
+[[5]] or [[s]] rest for one turn.
 [[x]] examine visible cells.
 [[control-p]] show recent messages.
 [[?]] show this help.
