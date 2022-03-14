@@ -22,6 +22,7 @@ pub struct MainMode {
     details: DetailsView,
     messages: MessagesView,
     commands: CommandTable,
+    screen_size: Size,
 }
 
 impl MainMode {
@@ -41,12 +42,13 @@ impl MainMode {
         commands.insert(Key::Char('7'), Box::new(|s, game| s.do_move(game, -1, -1)));
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
+        commands.insert(Key::Char('i'), Box::new(|s, game| s.do_inventory(game)));
         commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
         if super::wizard_mode() {
             commands.insert(Key::Ctrl('d'), Box::new(|s, game| s.do_save_state(game)));
         }
 
-        // We don't receive ctrl-m. We're using ctrl-p because that's what Crawl does.
+        // We don't receive ctrl-m so we use ctrl-p because that's what Crawl does.
         commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
@@ -66,6 +68,7 @@ impl MainMode {
                 size: Size::new(width, NUM_MESSAGES),
             },
             commands,
+            screen_size: Size::new(width, height),
         })
     }
 }
@@ -107,6 +110,7 @@ Movement is done using the numeric keypad or arrow keys:
 [[1]] [[2]] [[3]]                 [[down-arrow]]
 
 [[5]] or [[s]] rest for one turn.
+[[i]] manage inventory items.
 [[x]] examine visible cells.
 [[control-p]] show recent messages.
 [[?]] show this help.
@@ -124,6 +128,11 @@ Wizard mode commands:
 
         let lines = format_help(&help, self.commands.keys());
         InputAction::Push(TextMode::at_top().create(lines))
+    }
+
+    fn do_inventory(&mut self, game: &mut Game) -> InputAction {
+        let window = super::inventory_mode::InventoryMode::create(game, self.screen_size);
+        InputAction::Push(window)
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {

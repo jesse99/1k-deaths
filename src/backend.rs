@@ -83,6 +83,19 @@ pub enum Action {
     Rest,
 }
 
+pub struct InvItem {
+    pub name: &'static str,
+    pub description: &'static str,
+    pub equipped: bool,
+    oid: Oid, // used with commands like Action::Wield
+}
+
+pub struct InvItems {
+    pub weapons: Vec<InvItem>,
+    pub armor: Vec<InvItem>,
+    pub other: Vec<InvItem>,
+}
+
 #[derive(Eq, PartialEq)]
 pub enum Tile {
     /// player can see this
@@ -361,6 +374,37 @@ impl Game {
             .collect()
     }
 
+    pub fn inventory(&self) -> InvItems {
+        let mut weapons = Vec::new();
+        let mut armor = Vec::new();
+        let mut other = Vec::new();
+
+        let player = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let equipped = player.equipped_value().unwrap();
+        self.push_equipped_item(&mut weapons, equipped.main_hand);
+        self.push_equipped_item(&mut weapons, equipped.off_hand);
+        self.push_equipped_item(&mut armor, equipped.head);
+        self.push_equipped_item(&mut armor, equipped.chest);
+        self.push_equipped_item(&mut armor, equipped.hands);
+        self.push_equipped_item(&mut armor, equipped.legs);
+        self.push_equipped_item(&mut armor, equipped.feet);
+
+        for (oid, obj) in self.player_inv_iter() {
+            if obj.has(WEAPON_ID) {
+                self.push_inv_item(&mut weapons, oid, false);
+            }
+            if obj.has(ARMOR_ID) {
+                // in theory an item can be both a weapon and armor
+                self.push_inv_item(&mut armor, oid, false);
+            }
+            if !obj.has(WEAPON_ID) && !obj.has(ARMOR_ID) {
+                self.push_inv_item(&mut other, oid, false);
+            }
+        }
+
+        InvItems { weapons, armor, other }
+    }
+
     #[cfg(debug_assertions)]
     pub fn set_invariants(&mut self, enable: bool) {
         // TODO: might want a wizard command to enable these
@@ -475,6 +519,22 @@ impl Game {
 
     fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {
         InventoryIterator::new(self, &self.player_loc())
+    }
+
+    fn push_inv_item(&self, items: &mut Vec<InvItem>, oid: Oid, equipped: bool) {
+        let obj = self.level.obj(oid).0;
+        items.push(InvItem {
+            name: obj.name_value().unwrap(),
+            description: obj.description(),
+            equipped,
+            oid,
+        });
+    }
+
+    fn push_equipped_item(&self, items: &mut Vec<InvItem>, oid: Option<Oid>) {
+        if oid.is_some() {
+            self.push_inv_item(items, oid.unwrap(), true);
+        }
     }
 
     pub fn inv_item(&self, ch: &Object, tid: Tid) -> Option<&Object> {

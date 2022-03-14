@@ -217,6 +217,7 @@ pub fn player() -> Object {
             Tag::Damage(6),
             Tag::Delay(time::secs(2)),
             Tag::Inventory(Vec::new()),
+            Tag::Equipped(Equipped::default()),
             Tag::Name("yourself"),
             Tag::CanOpenDoor,
             Tag::Player,

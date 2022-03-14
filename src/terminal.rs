@@ -3,6 +3,8 @@ mod color;
 mod details_view;
 mod examine_mode;
 mod help;
+mod inventory_mode;
+mod inventory_view;
 mod main_mode;
 mod map_view;
 mod messages_view;
