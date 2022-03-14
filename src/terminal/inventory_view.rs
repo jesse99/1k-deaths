@@ -1,5 +1,6 @@
 use super::color;
 use one_thousand_deaths::{Color, Game, InvItem, Point, Size};
+use std::borrow::Cow;
 use std::io::Write;
 
 const WIDTH: u16 = 30;
@@ -53,7 +54,7 @@ impl InventoryView {
 
         for (i, item) in items.iter().enumerate() {
             let sel = selected == SelectedItem::Weapon(i as usize);
-            self.render_item(item, sel, "wielded", h, *v, stdout, h + WIDTH);
+            self.render_item(item, sel, "wielded", h, *v, stdout, WIDTH);
             *v += 1;
         }
     }
@@ -77,7 +78,7 @@ impl InventoryView {
 
         for (i, item) in items.iter().enumerate() {
             let sel = selected == SelectedItem::Armor(i as usize);
-            self.render_item(item, sel, "worn", h, *v, stdout, h + WIDTH);
+            self.render_item(item, sel, "worn", h, *v, stdout, WIDTH);
             *v += 1;
         }
     }
@@ -99,9 +100,10 @@ impl InventoryView {
         );
         *v += 1;
 
+        let max_width = (self.size.width as u16) - WIDTH - h;
         for (i, item) in items.iter().enumerate() {
             let sel = selected == SelectedItem::Other(i as usize);
-            self.render_item(item, sel, "worn", h, *v, stdout, h + WIDTH);
+            self.render_item(item, sel, "worn", h, *v, stdout, max_width);
             *v += 1;
         }
     }
@@ -121,6 +123,7 @@ impl InventoryView {
         } else {
             item.name.to_string()
         };
+        let text = truncate_middle(&text, max_width as usize);
         let fg = if selected { Color::SkyBlue } else { Color::White };
         let _ = write!(
             stdout,
@@ -144,5 +147,17 @@ impl InventoryView {
                 text,
             );
         }
+    }
+}
+
+pub fn truncate_middle(text: &str, max_width: usize) -> Cow<str> {
+    if text.len() <= max_width {
+        text.into()
+    } else {
+        let middle = max_width / 2;
+        let count = text.len() - max_width + 1; // +1 to account for the ellipsis
+        let mut str = text.to_string();
+        str.replace_range(middle..(middle + count), "…");
+        str.into()
     }
 }
