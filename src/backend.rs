@@ -55,7 +55,7 @@ const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
 // TODO: These numbers are not very intelligible. If that becomes an issue we could use
 // a newtype string (e.g. "wall 97") or a simple struct with a static string ref and a
 // counter.
-#[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Oid(u64);
 
 /// Represents what the player wants to do next. Most of these will use up the player's
@@ -79,15 +79,20 @@ pub enum Action {
 
     /// Something other than the player did something.
     Object,
+
+    Remove(Oid),
+
     // Be sure to add new actions to the end (or saved games will break).
     Rest,
+
+    Wield(Oid),
 }
 
 pub struct InvItem {
     pub name: &'static str,
     pub description: &'static str,
     pub equipped: bool,
-    oid: Oid, // used with commands like Action::Wield
+    pub oid: Oid, // used with commands like Action::Wield
 }
 
 pub struct InvItems {
@@ -454,9 +459,10 @@ impl Game {
         // TODO: probably want to return something to indicate whether a UI refresh is neccesary
         // TODO: maybe something fine grained, like only need to update messages
         trace!("player is doing {action:?}");
-        match action {
+        let duration = match action {
             Action::Examine { loc, wizard } => {
                 self.examine(&loc, wizard);
+                Time::zero()
             }
             Action::Move { dx, dy } => {
                 assert!(dx >= -1 && dx <= 1);
@@ -465,7 +471,7 @@ impl Game {
                 if !self.game_over() {
                     let player = self.player_loc();
                     let new_loc = Point::new(player.x + dx, player.y + dy);
-                    let duration = match self.try_interact(&player, &new_loc) {
+                    match self.try_interact(&player, &new_loc) {
                         PreResult::Acted(taken, sound) => {
                             assert!(taken > Time::zero());
                             self.handle_noise(&self.player_loc(), sound);
@@ -483,22 +489,48 @@ impl Game {
                                 time::CARDINAL_MOVE + duration
                             }
                         }
-                    };
-
-                    if duration > Time::zero() {
-                        self.scheduler.player_acted(duration, &self.rng);
-                        self.players_move = false;
-
-                        OldPoV::update(self);
-                        PoV::refresh(self);
                     }
+                } else {
+                    Time::zero()
                 }
             }
             Action::Object => panic!("Action::Object should only be used with replay_action"),
-            Action::Rest => {
-                self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
-                self.players_move = false;
+            Action::Remove(oid) => {
+                if !self.game_over() {
+                    self.remove(oid);
+                    time::DIAGNOL_MOVE / 2 // TODO: armor should probably take longer
+                } else {
+                    Time::zero()
+                }
             }
+            Action::Rest => {
+                if !self.game_over() {
+                    time::DIAGNOL_MOVE
+                } else {
+                    Time::zero()
+                }
+            }
+            Action::Wield(oid) => {
+                if !self.game_over() {
+                    if let Some(other) = self.wield_blocked_by() {
+                        self.remove(other);
+                        self.wield(oid);
+                        time::DIAGNOL_MOVE
+                    } else {
+                        self.wield(oid);
+                        time::DIAGNOL_MOVE / 2
+                    }
+                } else {
+                    Time::zero()
+                }
+            }
+        };
+        if duration > Time::zero() {
+            self.scheduler.player_acted(duration, &self.rng);
+            self.players_move = false;
+
+            OldPoV::update(self);
+            PoV::refresh(self);
         }
 
         if !replay {
@@ -515,6 +547,63 @@ impl Game {
     // TODO: Not sure we'll need this in the future.
     fn loc(&self, oid: Oid) -> Option<Point> {
         self.level.try_loc(oid)
+    }
+
+    fn wield_blocked_by(&mut self) -> Option<Oid> {
+        let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let equipped = player.equipped_value().unwrap();
+        equipped.main_hand
+    }
+
+    fn wield(&mut self, oid: Oid) {
+        {
+            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let mut equipped = player.equipped_value_mut().unwrap();
+            assert!(equipped.main_hand.is_none());
+            equipped.main_hand = Some(oid);
+            equipped.off_hand = None;
+
+            let inv = player.inventory_value_mut().unwrap();
+            let index = inv.iter().position(|x| *x == oid).unwrap();
+            inv.remove(index); // not using swap_remove because the UI cares about inv ordering
+
+            if cfg!(debug_assertions) {
+                player.invariant();
+            }
+        }
+
+        assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+    }
+
+    fn remove(&mut self, oid: Oid) {
+        {
+            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let equipped = player.equipped_value_mut().unwrap();
+            if equipped.main_hand == Some(oid) {
+                equipped.main_hand = None;
+            } else if equipped.off_hand == Some(oid) {
+                equipped.off_hand = None;
+            } else if equipped.head == Some(oid) {
+                equipped.head = None;
+            } else if equipped.chest == Some(oid) {
+                equipped.chest = None;
+            } else if equipped.hands == Some(oid) {
+                equipped.hands = None;
+            } else if equipped.legs == Some(oid) {
+                equipped.legs = None;
+            } else if equipped.feet == Some(oid) {
+                equipped.feet = None;
+            }
+
+            let inv = player.inventory_value_mut().unwrap();
+            inv.push(oid);
+
+            if cfg!(debug_assertions) {
+                player.invariant();
+            }
+        }
+
+        assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
     }
 
     fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {

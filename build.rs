@@ -218,6 +218,24 @@ fn generate_obj_file(out_dir: &str) -> Result<(), std::io::Error> {
                     writeln!(f, "        }}")?;
                     writeln!(f, "        None")?;
                     writeln!(f, "    }}\n")?;
+                } else if arg == &"Equipped" {
+                    writeln!(f, "    pub fn {lname}_value(&self) -> Option<&{arg}> {{")?;
+                    writeln!(f, "        for candidate in &self.tags {{")?;
+                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                    writeln!(f, "                return Some(value);")?;
+                    writeln!(f, "            }}")?;
+                    writeln!(f, "        }}")?;
+                    writeln!(f, "        None")?;
+                    writeln!(f, "    }}\n")?;
+
+                    writeln!(f, "    pub fn {lname}_value_mut(&mut self) -> Option<&mut {arg}> {{")?;
+                    writeln!(f, "        for candidate in &mut self.tags {{")?;
+                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                    writeln!(f, "                return Some(value);")?;
+                    writeln!(f, "            }}")?;
+                    writeln!(f, "        }}")?;
+                    writeln!(f, "        None")?;
+                    writeln!(f, "    }}\n")?;
                 } else {
                     writeln!(f, "    pub fn {lname}_value(&self) -> Option<{arg}> {{")?;
                     writeln!(f, "        for candidate in &self.tags {{")?;

@@ -1,18 +1,31 @@
+use std::task::Context;
+
+use super::context_menu::{ContextMenu, ContextResult};
 use super::help::{format_help, validate_help};
 use super::inventory_view::{InventoryView, SelectedItem};
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
+use derive_more::Display;
 use fnv::FnvHashMap;
-use one_thousand_deaths::{Game, InvItems, Point, Size};
+use one_thousand_deaths::{Action, Game, InvItems, Point, Size};
 use termion::event::Key;
 
 type KeyHandler = fn(&mut InventoryMode, &mut Game) -> InputAction;
 type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
+#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+enum ContextItem {
+    Describe,
+    Drop,
+    Remove,
+    Wield,
+}
+
 pub struct InventoryMode {
     commands: CommandTable,
     view: InventoryView,
     selected: SelectedItem,
+    menu: Option<ContextMenu<ContextItem>>,
 }
 
 impl InventoryMode {
@@ -31,6 +44,7 @@ impl InventoryMode {
         commands.insert(Key::Char('8'), Box::new(|s, game| s.do_select(game, 0, -1)));
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_select(game, 1, -1)));
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
+        commands.insert(Key::Char('\n'), Box::new(|s, game| s.do_create_menu(game)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
 
         let origin = Point::new(1, 1);
@@ -40,6 +54,7 @@ impl InventoryMode {
             commands,
             view,
             selected,
+            menu: None,
         };
         mode.do_select(game, 0, 1);
         Box::new(mode)
@@ -49,6 +64,9 @@ impl InventoryMode {
 impl Mode for InventoryMode {
     fn render(&self, context: &mut RenderContext) -> bool {
         self.view.render(self.selected, context.stdout, context.game);
+        if let Some(menu) = self.menu.as_ref() {
+            menu.render(context.stdout);
+        }
         true
     }
 
@@ -57,14 +75,94 @@ impl Mode for InventoryMode {
     }
 
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
-        match self.commands.get(&key).cloned() {
-            Some(handler) => handler(self, game),
-            None => InputAction::NotHandled,
+        if let Some(menu) = self.menu.as_mut() {
+            match menu.handle_input(key) {
+                ContextResult::Selected(ContextItem::Describe) => {
+                    self.describe_item(game);
+                    self.menu = None;
+                }
+                ContextResult::Selected(ContextItem::Drop) => {
+                    self.drop_item(game);
+                    self.menu = None;
+                }
+                ContextResult::Selected(ContextItem::Remove) => {
+                    self.remove_item(game);
+                    self.menu = None;
+                }
+                ContextResult::Selected(ContextItem::Wield) => {
+                    self.wield_item(game);
+                    self.menu = None;
+                }
+                ContextResult::Pop => self.menu = None,
+                ContextResult::Updated => (),
+                ContextResult::NotHandled => (),
+            }
+            InputAction::UpdatedGame
+        } else {
+            match self.commands.get(&key).cloned() {
+                Some(handler) => handler(self, game),
+                None => InputAction::NotHandled,
+            }
         }
     }
 }
 
 impl InventoryMode {
+    fn describe_item(&self, game: &mut Game) {
+        info!("describing item {:?}", self.selected);
+    }
+
+    fn drop_item(&self, game: &mut Game) {
+        info!("dropping item {:?}", self.selected);
+    }
+
+    fn remove_item(&self, game: &mut Game) {
+        let inv = game.inventory();
+        let oid = match self.selected {
+            SelectedItem::Armor(index) => inv.armor[index].oid,
+            SelectedItem::Other(_) => panic!("can't remove other items"),
+            SelectedItem::Weapon(index) => inv.weapons[index].oid,
+            SelectedItem::None => panic!("can't remove None item"),
+        };
+        game.player_acted(Action::Remove(oid));
+    }
+
+    fn wield_item(&self, game: &mut Game) {
+        if let SelectedItem::Weapon(index) = self.selected {
+            let inv = game.inventory();
+            game.player_acted(Action::Wield(inv.weapons[index].oid));
+        } else {
+            assert!(false);
+        }
+    }
+
+    fn do_create_menu(&mut self, game: &mut Game) -> InputAction {
+        let inv = game.inventory();
+        let mut items = vec![ContextItem::Describe, ContextItem::Drop];
+        let suffix = match self.selected {
+            SelectedItem::Armor(index) => inv.armor[index].name,
+            SelectedItem::Other(index) => inv.other[index].name,
+            SelectedItem::Weapon(index) => {
+                if inv.weapons[index].equipped {
+                    items.push(ContextItem::Remove);
+                } else {
+                    items.push(ContextItem::Wield);
+                }
+                inv.weapons[index].name
+            }
+            SelectedItem::None => return InputAction::NotHandled,
+        };
+        assert!(self.menu.is_none(), "if there's a menu it should have handled return");
+        self.menu = Some(ContextMenu {
+            parent_origin: self.view.origin,
+            parent_size: self.view.size,
+            items,
+            suffix: suffix.to_string(),
+            selected: 0,
+        });
+        InputAction::UpdatedGame
+    }
+
     fn do_help(&mut self, _game: &mut Game) -> InputAction {
         let help = r#"Used to manage the items you've picked up.
 
@@ -73,6 +171,7 @@ Selection can be moved using the numeric keypad or arrow keys:
 [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
 [[1]] [[2]] [[3]]                 [[down-arrow]]
 
+[[return]] operates on the selection.
 [[?]] shows this help.
 [[escape]] exits the inventory screen."#;
         validate_help("inventory", help, self.commands.keys());

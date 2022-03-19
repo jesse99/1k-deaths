@@ -74,8 +74,7 @@ impl Object {
         let index = self.tags.iter().position(|candidate| candidate.to_id() == id).unwrap();
         self.tags[index] = tag;
 
-        {
-            #[cfg(debug_assertions)]
+        if cfg!(debug_assertions) {
             self.invariant();
         }
     }
@@ -188,6 +187,57 @@ impl Object {
         }
         if self.has(PORTABLE_ID) {
             assert!(self.has(NAME_ID), "Portable objects must have a Name: {self:?}")
+        }
+
+        let mut ioids = FnvHashSet::default();
+        if let Some(inv) = self.inventory_value() {
+            for oid in inv {
+                assert!(
+                    !ioids.contains(&oid),
+                    "'{}' has duplicate inventory oid {oid}",
+                    self.dname
+                );
+                ioids.insert(oid);
+            }
+        }
+
+        if let Some(equipped) = self.equipped_value() {
+            let mut oids = FnvHashSet::default();
+            if let Some(oid) = equipped.main_hand {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
+            if let Some(oid) = equipped.off_hand {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
+            if let Some(oid) = equipped.head {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
+            if let Some(oid) = equipped.chest {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
+            if let Some(oid) = equipped.hands {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
+            if let Some(oid) = equipped.legs {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
+            if let Some(oid) = equipped.feet {
+                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                oids.insert(oid);
+            }
         }
 
         let mut ids = FnvHashSet::default();
