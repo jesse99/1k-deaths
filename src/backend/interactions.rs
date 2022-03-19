@@ -165,11 +165,16 @@ fn player_vs_character(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
     }
 }
 
+fn is_worthy(game: &Game) -> bool {
+    let player = game.level.get(&game.player_loc(), PLAYER_ID).unwrap().1;
+    if let Some(obj) = game.find_equipped_weapon(player) {
+        return obj.description().contains("Doom");
+    }
+    false
+}
+
 fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) -> PreResult {
-    if game
-        .player_inv_iter()
-        .any(|(_, obj)| obj.description().contains("Doom"))
-    {
+    if is_worthy(game) {
         let (oid, doorman) = game.level.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = game.find_empty_cell(doorman, doorman_loc) {
             game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);

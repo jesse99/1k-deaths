@@ -148,22 +148,13 @@ impl Game {
         }
     }
 
-    // TODO: should be using equipped weapon
-    fn find_equipped_weapon(&self, attacker: &Object) -> Option<&Object> {
-        let mut weapon = None;
-        let mut damage = None;
-        if let Some(inv) = attacker.inventory_value() {
-            for oid in inv {
-                let candidate = self.level.obj(*oid).0;
-                if let Some(dam) = candidate.damage_value() {
-                    if damage.is_none() || damage.unwrap() < dam {
-                        damage = Some(dam);
-                        weapon = Some(candidate);
-                    }
-                }
+    pub fn find_equipped_weapon(&self, attacker: &Object) -> Option<&Object> {
+        if let Some(equipped) = attacker.equipped_value() {
+            if let Some(oid) = equipped.main_hand {
+                return Some(self.level.obj(oid).0);
             }
         }
-        weapon
+        None
     }
 
     fn hps(&self, defender_id: Oid, damage: i32) -> (i32, i32) {
