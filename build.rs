@@ -41,7 +41,7 @@ fn tags() -> Vec<Tag> {
         P("Inventory", "Vec<Oid>"),
 
         // Objects that a Character is actively using.
-        P("Equipped", "Equipped"),
+        P("Equipped", "EnumMap<Slot, Option<Oid>>"),
 
         // Used for Characters that start fleeing when their HPs is at the specified percent.
         P("Flees", "i32"), // TODO: should this be smarter? or maybe a second type of flee tag that considers both attacker and defender HPs
@@ -57,7 +57,7 @@ fn tags() -> Vec<Tag> {
         S("Portable"),
 
         P("Weapon", "Weapon"),
-        P("Armor", "Armor"),
+        P("Armor", "Slot"),
 
         // Percentage of damage reduction, normally used with Armor.
         P("Mitigation", "i32"), // TODO: add a type? eg physical, fire, etc
@@ -211,24 +211,6 @@ fn generate_obj_file(out_dir: &str) -> Result<(), std::io::Error> {
                     writeln!(f, "    }}\n")?;
 
                     writeln!(f, "    pub fn {lname}_value_mut(&mut self) -> Option<&mut {arg}> {{",)?;
-                    writeln!(f, "        for candidate in &mut self.tags {{")?;
-                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
-                    writeln!(f, "                return Some(value);")?;
-                    writeln!(f, "            }}")?;
-                    writeln!(f, "        }}")?;
-                    writeln!(f, "        None")?;
-                    writeln!(f, "    }}\n")?;
-                } else if arg == &"Equipped" {
-                    writeln!(f, "    pub fn {lname}_value(&self) -> Option<&{arg}> {{")?;
-                    writeln!(f, "        for candidate in &self.tags {{")?;
-                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
-                    writeln!(f, "                return Some(value);")?;
-                    writeln!(f, "            }}")?;
-                    writeln!(f, "        }}")?;
-                    writeln!(f, "        None")?;
-                    writeln!(f, "    }}\n")?;
-
-                    writeln!(f, "    pub fn {lname}_value_mut(&mut self) -> Option<&mut {arg}> {{")?;
                     writeln!(f, "        for candidate in &mut self.tags {{")?;
                     writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
                     writeln!(f, "                return Some(value);")?;

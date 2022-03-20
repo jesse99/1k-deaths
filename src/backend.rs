@@ -23,7 +23,7 @@ pub use object::Symbol;
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
-pub use tag::Disposition;
+pub use tag::{Disposition, Slot};
 
 use derive_more::Display;
 use interactions::{Interactions, PreHandler, PreResult};
@@ -36,7 +36,6 @@ use rand::rngs::SmallRng;
 use rand::RngCore;
 use rand_distr::StandardNormal;
 use scheduler::Scheduler;
-// use simplelog::TermLogger;
 use sound::Sound;
 use std::cell::{RefCell, RefMut};
 use std::cmp::{max, min};
@@ -82,16 +81,16 @@ pub enum Action {
 
     Remove(Oid),
 
-    // Be sure to add new actions to the end (or saved games will break).
     Rest,
 
+    // Be sure to add new actions to the end (or saved games will break).
     Wield(Oid),
 }
 
 pub struct InvItem {
     pub name: &'static str,
     pub description: &'static str,
-    pub equipped: bool,
+    pub slot: Option<Slot>,
     pub oid: Oid, // used with commands like Action::Wield
 }
 
@@ -386,24 +385,24 @@ impl Game {
 
         let player = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value().unwrap();
-        self.push_equipped_item(&mut weapons, equipped.main_hand);
-        self.push_equipped_item(&mut weapons, equipped.off_hand);
-        self.push_equipped_item(&mut armor, equipped.head);
-        self.push_equipped_item(&mut armor, equipped.chest);
-        self.push_equipped_item(&mut armor, equipped.hands);
-        self.push_equipped_item(&mut armor, equipped.legs);
-        self.push_equipped_item(&mut armor, equipped.feet);
+        for (slot, &oid) in equipped {
+            if matches!(slot, Slot::MainHand | Slot::OffHand) {
+                self.push_equipped_item(&mut weapons, oid, slot);
+            } else {
+                self.push_equipped_item(&mut armor, oid, slot);
+            }
+        }
 
         for (oid, obj) in self.player_inv_iter() {
             if obj.has(WEAPON_ID) {
-                self.push_inv_item(&mut weapons, oid, false);
+                self.push_inv_item(&mut weapons, oid, None);
             }
             if obj.has(ARMOR_ID) {
                 // in theory an item can be both a weapon and armor
-                self.push_inv_item(&mut armor, oid, false);
+                self.push_inv_item(&mut armor, oid, None);
             }
             if !obj.has(WEAPON_ID) && !obj.has(ARMOR_ID) {
-                self.push_inv_item(&mut other, oid, false);
+                self.push_inv_item(&mut other, oid, None);
             }
         }
 
@@ -551,17 +550,17 @@ impl Game {
 
     fn wield_blocked_by(&mut self) -> Option<Oid> {
         let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
-        let equipped = player.equipped_value().unwrap();
-        equipped.main_hand
+        let equipped = player.equipped_value()?;
+        equipped[Slot::MainHand]
     }
 
     fn wield(&mut self, oid: Oid) {
         {
             let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
-            let mut equipped = player.equipped_value_mut().unwrap();
-            assert!(equipped.main_hand.is_none());
-            equipped.main_hand = Some(oid);
-            equipped.off_hand = None;
+            let equipped = player.equipped_value_mut().unwrap();
+            assert!(equipped[Slot::MainHand].is_none());
+            equipped[Slot::MainHand] = Some(oid);
+            equipped[Slot::OffHand] = None;
 
             let inv = player.inventory_value_mut().unwrap();
             let index = inv.iter().position(|x| *x == oid).unwrap();
@@ -579,20 +578,11 @@ impl Game {
         {
             let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
             let equipped = player.equipped_value_mut().unwrap();
-            if equipped.main_hand == Some(oid) {
-                equipped.main_hand = None;
-            } else if equipped.off_hand == Some(oid) {
-                equipped.off_hand = None;
-            } else if equipped.head == Some(oid) {
-                equipped.head = None;
-            } else if equipped.chest == Some(oid) {
-                equipped.chest = None;
-            } else if equipped.hands == Some(oid) {
-                equipped.hands = None;
-            } else if equipped.legs == Some(oid) {
-                equipped.legs = None;
-            } else if equipped.feet == Some(oid) {
-                equipped.feet = None;
+            for value in equipped.values_mut() {
+                if *value == Some(oid) {
+                    *value = None;
+                    break;
+                }
             }
 
             let inv = player.inventory_value_mut().unwrap();
@@ -610,19 +600,19 @@ impl Game {
         InventoryIterator::new(self, &self.player_loc())
     }
 
-    fn push_inv_item(&self, items: &mut Vec<InvItem>, oid: Oid, equipped: bool) {
+    fn push_inv_item(&self, items: &mut Vec<InvItem>, oid: Oid, slot: Option<Slot>) {
         let obj = self.level.obj(oid).0;
         items.push(InvItem {
             name: obj.name_value().unwrap(),
             description: obj.description(),
-            equipped,
+            slot,
             oid,
         });
     }
 
-    fn push_equipped_item(&self, items: &mut Vec<InvItem>, oid: Option<Oid>) {
+    fn push_equipped_item(&self, items: &mut Vec<InvItem>, oid: Option<Oid>, slot: Slot) {
         if oid.is_some() {
-            self.push_inv_item(items, oid.unwrap(), true);
+            self.push_inv_item(items, oid.unwrap(), Some(slot));
         }
     }
 

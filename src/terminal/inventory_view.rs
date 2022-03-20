@@ -118,7 +118,7 @@ impl InventoryView {
         stdout: &mut Box<dyn Write>,
         max_width: u16,
     ) {
-        let text = if item.equipped {
+        let text = if item.slot.is_some() {
             format!("{} ({etext})", item.name)
         } else {
             item.name.to_string()

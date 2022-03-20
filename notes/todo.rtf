@@ -31,15 +31,11 @@ other rogue-likes\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 \cf3 enum ObjectTag\
-	Weapon\
 	Range(i32)          
 \f2\i ranged weapon, spell, etc
 \f1\i0 \
 	Brand(element)\
 	\
-	Inventory([Objects]),   
-\f2\i or ids?
-\f1\i0 \
 
 \f2\i 	
 \f1\i0 Binding(String) 
@@ -84,6 +80,7 @@ Step 9 - Items\
 	- otherwise reduce speed of all actions, eg if char has half needed str then everything takes 2x as long\
 	- weapon and armor str penalties need to be summed\
 		ie min str for both is weapon.min_str + armor.min_str\
+\'95 Should we print a percentage of current HPs when the player takes damage?\
 \'95 Is there a way to interrupt wearing or removing armor?\
 	- maybe long (or all?) player actions are queued?\
 	- interrupt would be damage? or seen NPCs change?\
@@ -197,6 +194,9 @@ Step 11 - Simple game\
 	- should MapView::render try to not redraw unchanged cells?\
 		` or don\'92t re-render if a cell outside pov changed?\
 	- may want to enable some optimizations in debug profile.\
+\'95\'a0NPCs should have a hearing tag\
+	- value is a percent so 130 means they have 30% better hearning than norma;\
+	- could path to the sound source\
 \'95 Add the crippled god's sword\
 	- god may intercede to actually kill Rhulad\
 	- can't un-equip it\
@@ -277,7 +277,7 @@ Different Warrens\
 Invocations? for priests\
 Evocations? for items\
 Stealth\
-Perception  larger fov, detect invis, detect traps, id items\
+Perception  larger fov, detect invis, detect traps, id items, more granular NPC health\
 \
 \'95\'a0Player should level up and gain more power and new skills.\
 	http://www.roguebasin.com/index.php/Thoughts_on_Combat_Models\

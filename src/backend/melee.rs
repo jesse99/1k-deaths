@@ -149,10 +149,9 @@ impl Game {
     }
 
     pub fn find_equipped_weapon(&self, attacker: &Object) -> Option<&Object> {
-        if let Some(equipped) = attacker.equipped_value() {
-            if let Some(oid) = equipped.main_hand {
-                return Some(self.level.obj(oid).0);
-            }
+        let equipped = attacker.equipped_value()?;
+        if let Some(oid) = equipped[Slot::MainHand] {
+            return Some(self.level.obj(oid).0);
         }
         None
     }

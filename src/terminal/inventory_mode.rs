@@ -1,5 +1,3 @@
-use std::task::Context;
-
 use super::context_menu::{ContextMenu, ContextResult};
 use super::help::{format_help, validate_help};
 use super::inventory_view::{InventoryView, SelectedItem};
@@ -143,7 +141,7 @@ impl InventoryMode {
             SelectedItem::Armor(index) => inv.armor[index].name,
             SelectedItem::Other(index) => inv.other[index].name,
             SelectedItem::Weapon(index) => {
-                if inv.weapons[index].equipped {
+                if inv.weapons[index].slot.is_some() {
                     items.push(ContextItem::Remove);
                 } else {
                     items.push(ContextItem::Wield);

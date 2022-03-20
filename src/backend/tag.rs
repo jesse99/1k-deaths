@@ -1,5 +1,6 @@
 use super::{Color, Oid, Point, Time};
 use derive_more::Display;
+use enum_map::{Enum, EnumMap};
 use std::fmt::{self, Formatter};
 
 #[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
@@ -9,24 +10,15 @@ pub enum Weapon {
     //Ranged,
 }
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
-pub enum Armor {
+#[derive(Clone, Copy, Debug, Display, Enum, Eq, PartialEq)]
+pub enum Slot {
+    MainHand,
+    OffHand,
     Head,
     Chest,
     Hands,
     Legs,
     Feet,
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Equipped {
-    pub main_hand: Option<Oid>,
-    pub off_hand: Option<Oid>,
-    pub head: Option<Oid>,
-    pub chest: Option<Oid>,
-    pub hands: Option<Oid>,
-    pub legs: Option<Oid>,
-    pub feet: Option<Oid>,
 }
 
 /// Affects behavior of items like burning oil or a pick axe. Also affects

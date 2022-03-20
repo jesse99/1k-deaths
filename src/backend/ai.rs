@@ -256,14 +256,13 @@ fn start_fleeing(game: &mut Game, attacker: Oid, attacker_loc: &Point, defender:
 }
 
 fn switched_to_attacking(game: &mut Game, oid: Oid, units: Time) -> Option<Acted> {
-    if let Some(loc) = game.loc(oid) {
-        if game.pov.visible(game, &loc) && !wants_to_flee(game, &loc) {
-            let obj = game.level.get_mut(&loc, BEHAVIOR_ID).unwrap().1;
-            if let Some(Disposition::Aggressive) = obj.disposition_value() {
-                // we're treating visibility as a symmetric operation, TODO: which is probably not quite right
-                game.replace_behavior(&loc, Behavior::Attacking(Oid(0), game.player_loc()));
-                return Some(attack(game, oid, Oid(0), game.player_loc(), units));
-            }
+    let loc = game.loc(oid)?;
+    if game.pov.visible(game, &loc) && !wants_to_flee(game, &loc) {
+        let obj = game.level.get_mut(&loc, BEHAVIOR_ID).unwrap().1;
+        if let Some(Disposition::Aggressive) = obj.disposition_value() {
+            // we're treating visibility as a symmetric operation, TODO: which is probably not quite right
+            game.replace_behavior(&loc, Behavior::Attacking(Oid(0), game.player_loc()));
+            return Some(attack(game, oid, Oid(0), game.player_loc(), units));
         }
     }
     None

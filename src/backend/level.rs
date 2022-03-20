@@ -572,17 +572,14 @@ impl<'a> Iterator for CellIterator<'a> {
     type Item = (Oid, &'a Object);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(oids) = self.oids {
-            self.index -= 1;
-            if self.index >= 0 {
-                let index = self.index as usize;
-                let oid = oids[index];
-                Some((oid, &self.level.objects.get(&oid).unwrap().obj))
-            } else {
-                None // finished iteration
-            }
+        let oids = self.oids?;
+        self.index -= 1;
+        if self.index >= 0 {
+            let index = self.index as usize;
+            let oid = oids[index];
+            Some((oid, &self.level.objects.get(&oid).unwrap().obj))
         } else {
-            None // nothing at the loc
+            None // finished iteration
         }
     }
 }

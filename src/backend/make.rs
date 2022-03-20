@@ -1,4 +1,5 @@
 use super::*;
+use enum_map::EnumMap;
 use rand::prelude::*;
 
 pub fn level(game: &mut Game, map: &str) {
@@ -217,7 +218,7 @@ pub fn player() -> Object {
             Tag::Damage(6),
             Tag::Delay(time::secs(2)),
             Tag::Inventory(Vec::new()),
-            Tag::Equipped(Equipped::default()),
+            Tag::Equipped(EnumMap::default()),
             Tag::Name("yourself"),
             Tag::CanOpenDoor,
             Tag::Player,
@@ -351,7 +352,7 @@ pub fn leather_hat() -> Object {
         vec![
             Tag::Name("leather hat"),
             Tag::Portable,
-            Tag::Armor(Armor::Head),
+            Tag::Armor(Slot::Head),
             Tag::Mitigation(3),
         ],
     )
@@ -366,7 +367,7 @@ pub fn leather_chest() -> Object {
         vec![
             Tag::Name("leather chest"),
             Tag::Portable,
-            Tag::Armor(Armor::Chest),
+            Tag::Armor(Slot::Chest),
             Tag::Mitigation(5),
         ],
     )
@@ -381,7 +382,7 @@ pub fn leather_gloves() -> Object {
         vec![
             Tag::Name("leather gloves"),
             Tag::Portable,
-            Tag::Armor(Armor::Hands),
+            Tag::Armor(Slot::Hands),
             Tag::Mitigation(3),
         ],
     )
@@ -396,7 +397,7 @@ pub fn leather_legs() -> Object {
         vec![
             Tag::Name("leather shin guards"),
             Tag::Portable,
-            Tag::Armor(Armor::Legs),
+            Tag::Armor(Slot::Legs),
             Tag::Mitigation(4),
         ],
     )
@@ -411,7 +412,7 @@ pub fn leather_sandals() -> Object {
         vec![
             Tag::Name("leather sandals"),
             Tag::Portable,
-            Tag::Armor(Armor::Feet),
+            Tag::Armor(Slot::Feet),
             Tag::Mitigation(3),
         ],
     )

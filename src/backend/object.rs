@@ -1,5 +1,6 @@
 use super::tag::*;
 use super::{Color, Material, Message, Oid, Tag, Time, Topic};
+use enum_map::EnumMap;
 #[cfg(debug_assertions)]
 use fnv::FnvHashSet;
 use std::fmt::{self, Formatter};
@@ -203,40 +204,12 @@ impl Object {
 
         if let Some(equipped) = self.equipped_value() {
             let mut oids = FnvHashSet::default();
-            if let Some(oid) = equipped.main_hand {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
-            }
-            if let Some(oid) = equipped.off_hand {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
-            }
-            if let Some(oid) = equipped.head {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
-            }
-            if let Some(oid) = equipped.chest {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
-            }
-            if let Some(oid) = equipped.hands {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
-            }
-            if let Some(oid) = equipped.legs {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
-            }
-            if let Some(oid) = equipped.feet {
-                assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
-                oids.insert(oid);
+            for value in equipped.values() {
+                if let Some(oid) = value {
+                    assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
+                    assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                    oids.insert(oid);
+                }
             }
         }
 
