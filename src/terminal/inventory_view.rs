@@ -1,18 +1,9 @@
 use super::color;
-use one_thousand_deaths::{Color, Game, InvItem, Point, Size};
+use one_thousand_deaths::{Color, Game, InvItem, ItemKind, Point, Size};
 use std::borrow::Cow;
 use std::io::Write;
 
 const WIDTH: u16 = 30;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SelectedItem {
-    Weapon(usize),
-    Armor(usize),
-    Other(usize),
-    None,
-}
-
 /// Shows info about the player and nearby NPCs.
 pub struct InventoryView {
     pub origin: Point,
@@ -20,25 +11,25 @@ pub struct InventoryView {
 }
 
 impl InventoryView {
-    pub fn render(&self, selected: SelectedItem, stdout: &mut Box<dyn Write>, game: &Game) {
+    pub fn render(&self, sindex: Option<usize>, stdout: &mut Box<dyn Write>, game: &Game) {
         let h = (self.origin.x + 1) as u16; // termion is 1-based
         let mut v = 1;
         self.render_background(stdout);
 
         let inv = game.inventory();
-        self.render_weapons(inv.weapons, selected, h, &mut v, stdout);
+        self.render_weapons(&inv, sindex, h, &mut v, stdout);
 
         v += 1;
-        self.render_armor(inv.armor, selected, h, &mut v, stdout);
+        self.render_armor(&inv, sindex, h, &mut v, stdout);
 
         v = 1;
-        self.render_other(inv.other, selected, h + WIDTH + 1, &mut v, stdout);
+        self.render_other(&inv, sindex, h + WIDTH + 1, &mut v, stdout);
     }
 
     fn render_weapons(
         &self,
-        items: Vec<InvItem>,
-        selected: SelectedItem,
+        inv: &Vec<InvItem>,
+        sindex: Option<usize>,
         h: u16,
         v: &mut u16,
         stdout: &mut Box<dyn Write>,
@@ -52,17 +43,19 @@ impl InventoryView {
         );
         *v += 1;
 
-        for (i, item) in items.iter().enumerate() {
-            let sel = selected == SelectedItem::Weapon(i as usize);
-            self.render_item(item, sel, "wielded", h, *v, stdout, WIDTH);
-            *v += 1;
+        for (i, item) in inv.iter().enumerate() {
+            if matches!(item.kind, ItemKind::TwoHandWeapon | ItemKind::OneHandWeapon) {
+                let selected = Some(i) == sindex;
+                self.render_item(item, selected, "wielded", h, *v, stdout, WIDTH);
+                *v += 1;
+            }
         }
     }
 
     fn render_armor(
         &self,
-        items: Vec<InvItem>,
-        selected: SelectedItem,
+        inv: &Vec<InvItem>,
+        sindex: Option<usize>,
         h: u16,
         v: &mut u16,
         stdout: &mut Box<dyn Write>,
@@ -76,17 +69,19 @@ impl InventoryView {
         );
         *v += 1;
 
-        for (i, item) in items.iter().enumerate() {
-            let sel = selected == SelectedItem::Armor(i as usize);
-            self.render_item(item, sel, "worn", h, *v, stdout, WIDTH);
-            *v += 1;
+        for (i, item) in inv.iter().enumerate() {
+            if matches!(item.kind, ItemKind::Armor) {
+                let selected = Some(i) == sindex;
+                self.render_item(item, selected, "worn", h, *v, stdout, WIDTH);
+                *v += 1;
+            }
         }
     }
 
     fn render_other(
         &self,
-        items: Vec<InvItem>,
-        selected: SelectedItem,
+        inv: &Vec<InvItem>,
+        sindex: Option<usize>,
         h: u16,
         v: &mut u16,
         stdout: &mut Box<dyn Write>,
@@ -101,10 +96,12 @@ impl InventoryView {
         *v += 1;
 
         let max_width = (self.size.width as u16) - WIDTH - h;
-        for (i, item) in items.iter().enumerate() {
-            let sel = selected == SelectedItem::Other(i as usize);
-            self.render_item(item, sel, "worn", h, *v, stdout, max_width);
-            *v += 1;
+        for (i, item) in inv.iter().enumerate() {
+            if matches!(item.kind, ItemKind::Other) {
+                let selected = Some(i) == sindex;
+                self.render_item(item, selected, "worn", h, *v, stdout, max_width);
+                *v += 1;
+            }
         }
     }
 
@@ -118,7 +115,7 @@ impl InventoryView {
         stdout: &mut Box<dyn Write>,
         max_width: u16,
     ) {
-        let text = if item.slot.is_some() {
+        let text = if item.equipped.is_some() {
             format!("{} ({etext})", item.name)
         } else {
             item.name.to_string()

@@ -1,11 +1,11 @@
 use super::context_menu::{ContextMenu, ContextResult};
 use super::help::{format_help, validate_help};
-use super::inventory_view::{InventoryView, SelectedItem};
+use super::inventory_view::InventoryView;
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
 use derive_more::Display;
 use fnv::FnvHashMap;
-use one_thousand_deaths::{Action, Game, InvItems, Point, Size};
+use one_thousand_deaths::{Action, Game, InvItem, ItemKind, Point, Size};
 use termion::event::Key;
 
 type KeyHandler = fn(&mut InventoryMode, &mut Game) -> InputAction;
@@ -22,7 +22,7 @@ enum ContextItem {
 pub struct InventoryMode {
     commands: CommandTable,
     view: InventoryView,
-    selected: SelectedItem,
+    selected: Option<usize>,
     menu: Option<ContextMenu<ContextItem>>,
 }
 
@@ -47,7 +47,7 @@ impl InventoryMode {
 
         let origin = Point::new(1, 1);
         let view = InventoryView { origin, size };
-        let selected = SelectedItem::None;
+        let selected = None;
         let mut mode = InventoryMode {
             commands,
             view,
@@ -116,40 +116,36 @@ impl InventoryMode {
 
     fn remove_item(&self, game: &mut Game) {
         let inv = game.inventory();
-        let oid = match self.selected {
-            SelectedItem::Armor(index) => inv.armor[index].oid,
-            SelectedItem::Other(_) => panic!("can't remove other items"),
-            SelectedItem::Weapon(index) => inv.weapons[index].oid,
-            SelectedItem::None => panic!("can't remove None item"),
-        };
-        game.player_acted(Action::Remove(oid));
+        let index = self.selected.unwrap();
+        game.player_acted(Action::Remove(inv[index].oid));
     }
 
     fn wield_item(&self, game: &mut Game) {
-        if let SelectedItem::Weapon(index) = self.selected {
-            let inv = game.inventory();
-            game.player_acted(Action::Wield(inv.weapons[index].oid));
-        } else {
-            assert!(false);
-        }
+        let inv = game.inventory();
+        let index = self.selected.unwrap();
+        game.player_acted(Action::Wield(inv[index].oid));
     }
 
     fn do_create_menu(&mut self, game: &mut Game) -> InputAction {
+        if self.selected.is_none() {
+            return InputAction::NotHandled;
+        }
+
         let inv = game.inventory();
+        let index = self.selected.unwrap();
+        let suffix = inv[index].name;
+
         let mut items = vec![ContextItem::Describe, ContextItem::Drop];
-        let suffix = match self.selected {
-            SelectedItem::Armor(index) => inv.armor[index].name,
-            SelectedItem::Other(index) => inv.other[index].name,
-            SelectedItem::Weapon(index) => {
-                if inv.weapons[index].slot.is_some() {
-                    items.push(ContextItem::Remove);
-                } else {
-                    items.push(ContextItem::Wield);
-                }
-                inv.weapons[index].name
-            }
-            SelectedItem::None => return InputAction::NotHandled,
+        if inv[index].equipped.is_some() {
+            items.push(ContextItem::Remove);
+        }
+        match inv[index].kind {
+            ItemKind::TwoHandWeapon => items.push(ContextItem::Wield),
+            ItemKind::OneHandWeapon => items.push(ContextItem::Wield), // TODO: check for 2-handler in main
+            ItemKind::Armor => (),
+            ItemKind::Other => (),
         };
+
         assert!(self.menu.is_none(), "if there's a menu it should have handled return");
         self.menu = Some(ContextMenu {
             parent_origin: self.view.origin,
@@ -184,163 +180,133 @@ Selection can be moved using the numeric keypad or arrow keys:
 
     fn do_select(&mut self, game: &Game, dx: i32, dy: i32) -> InputAction {
         let inv = game.inventory();
-        if dx == 1 {
-            self.do_select_next_col(&inv);
-        } else if dx == -1 {
-            self.do_select_prev_col(&inv);
-        }
-        if dy == 1 {
-            self.do_select_next_row(&inv);
-        } else if dy == -1 {
-            self.do_select_prev_row(&inv);
+        let weapons = vec![ItemKind::OneHandWeapon, ItemKind::TwoHandWeapon];
+        let armor = vec![ItemKind::Armor];
+        let other = vec![ItemKind::Other];
+        if let Some(start) = self.selected {
+            let kind = inv[start].kind;
+            if dx == 1 {
+                // right
+                match kind {
+                    ItemKind::Other => {
+                        let _ = self.do_select_first_item(&inv, &weapons) || self.do_select_first_item(&inv, &armor);
+                    }
+                    _ => {
+                        self.do_select_first_item(&inv, &other);
+                    }
+                }
+            } else if dx == -1 {
+                // left
+                match kind {
+                    ItemKind::Other => {
+                        let _ = self.do_select_last_item(&inv, &weapons) || self.do_select_last_item(&inv, &armor);
+                    }
+                    _ => {
+                        self.do_select_last_item(&inv, &other);
+                    }
+                }
+            }
+            if dy == 1 {
+                // down
+                match kind {
+                    ItemKind::OneHandWeapon | ItemKind::TwoHandWeapon => {
+                        let _ = self.do_select_next_item(&inv, start)
+                            || self.do_select_first_item(&inv, &armor)
+                            || self.do_select_first_item(&inv, &other)
+                            || self.do_select_first_item(&inv, &weapons);
+                    }
+                    ItemKind::Armor => {
+                        let _ = self.do_select_next_item(&inv, start)
+                            || self.do_select_first_item(&inv, &other)
+                            || self.do_select_first_item(&inv, &weapons)
+                            || self.do_select_first_item(&inv, &armor);
+                    }
+                    ItemKind::Other => {
+                        let _ = self.do_select_next_item(&inv, start)
+                            || self.do_select_first_item(&inv, &weapons)
+                            || self.do_select_first_item(&inv, &armor)
+                            || self.do_select_first_item(&inv, &other);
+                    }
+                }
+            } else if dy == -1 {
+                // up
+                match kind {
+                    ItemKind::OneHandWeapon | ItemKind::TwoHandWeapon => {
+                        let _ = self.do_select_prev_item(&inv, start)
+                            || self.do_select_last_item(&inv, &other)
+                            || self.do_select_last_item(&inv, &armor)
+                            || self.do_select_last_item(&inv, &weapons);
+                    }
+                    ItemKind::Armor => {
+                        let _ = self.do_select_prev_item(&inv, start)
+                            || self.do_select_last_item(&inv, &weapons)
+                            || self.do_select_last_item(&inv, &other)
+                            || self.do_select_last_item(&inv, &armor);
+                    }
+                    ItemKind::Other => {
+                        let _ = self.do_select_prev_item(&inv, start)
+                            || self.do_select_last_item(&inv, &armor)
+                            || self.do_select_last_item(&inv, &weapons)
+                            || self.do_select_last_item(&inv, &other);
+                    }
+                }
+            }
+        } else {
+            if dy == -1 {
+                let _ = self.do_select_last_item(&inv, &other)
+                    || self.do_select_last_item(&inv, &armor)
+                    || self.do_select_last_item(&inv, &weapons);
+            } else {
+                // If nothing is selected then left or right doesn't mean much so we just
+                // handle it like down.
+                let _ = self.do_select_first_item(&inv, &weapons)
+                    || self.do_select_first_item(&inv, &armor)
+                    || self.do_select_first_item(&inv, &other);
+            }
         }
         InputAction::UpdatedGame
     }
 
-    fn do_select_next_col(&mut self, items: &InvItems) {
-        match self.selected {
-            SelectedItem::None => {
-                if !items.other.is_empty() {
-                    self.selected = SelectedItem::Other(0);
-                } else if !items.weapons.is_empty() {
-                    self.selected = SelectedItem::Weapon(0);
-                } else if !items.armor.is_empty() {
-                    self.selected = SelectedItem::Armor(0);
-                }
-            }
-            SelectedItem::Armor(i) | SelectedItem::Weapon(i) => {
-                let count = items.other.len();
-                if count > 0 {
-                    if i < count {
-                        self.selected = SelectedItem::Other(i);
-                    } else {
-                        self.selected = SelectedItem::Other(count - 1);
-                    }
-                }
-            }
-            SelectedItem::Other(_) => {
-                self.do_select_prev_col(items); // wrap around
+    fn do_select_first_item(&mut self, items: &Vec<InvItem>, kinds: &Vec<ItemKind>) -> bool {
+        for (i, candidate) in items.iter().enumerate() {
+            if kinds.contains(&candidate.kind) {
+                self.selected = Some(i);
+                return true;
             }
         }
+        false
     }
 
-    fn do_select_prev_col(&mut self, items: &InvItems) {
-        match self.selected {
-            SelectedItem::None => {
-                if !items.weapons.is_empty() {
-                    self.selected = SelectedItem::Weapon(0);
-                } else if !items.armor.is_empty() {
-                    self.selected = SelectedItem::Armor(0);
-                } else if !items.other.is_empty() {
-                    self.selected = SelectedItem::Other(0);
-                }
-            }
-            SelectedItem::Other(i) => {
-                let count1 = items.weapons.len();
-                let count2 = items.armor.len();
-                if i < count1 {
-                    self.selected = SelectedItem::Weapon(i);
-                } else if count2 == 0 {
-                    if count1 > 0 {
-                        self.selected = SelectedItem::Weapon(count1 - 1);
-                    }
-                } else if i < count1 + count2 {
-                    self.selected = SelectedItem::Armor(i - count1);
-                } else if count2 > 0 {
-                    self.selected = SelectedItem::Armor(count2 - 1);
-                }
-            }
-            SelectedItem::Weapon(_) | SelectedItem::Armor(_) => {
-                self.do_select_next_col(items); // wrap around
+    fn do_select_last_item(&mut self, items: &Vec<InvItem>, kinds: &Vec<ItemKind>) -> bool {
+        let mut found = false;
+        for (i, candidate) in items.iter().enumerate() {
+            if kinds.contains(&candidate.kind) {
+                self.selected = Some(i);
+                found = true;
             }
         }
+        found
     }
 
-    fn do_select_next_row(&mut self, items: &InvItems) {
-        match self.selected {
-            SelectedItem::None => {
-                if !items.weapons.is_empty() {
-                    self.selected = SelectedItem::Weapon(0);
-                } else if !items.armor.is_empty() {
-                    self.selected = SelectedItem::Armor(0);
-                } else if !items.other.is_empty() {
-                    self.selected = SelectedItem::Other(0);
-                }
-            }
-            SelectedItem::Weapon(i) => {
-                let count1 = items.weapons.len();
-                let count2 = items.armor.len();
-                if i + 1 < count1 {
-                    self.selected = SelectedItem::Weapon(i + 1);
-                } else if count2 > 0 {
-                    self.selected = SelectedItem::Armor(0);
-                } else {
-                    self.selected = SelectedItem::Weapon(0);
-                }
-            }
-            SelectedItem::Armor(i) => {
-                let count1 = items.weapons.len();
-                let count2 = items.armor.len();
-                if i + 1 < count2 {
-                    self.selected = SelectedItem::Armor(i + 1);
-                } else if count1 > 0 {
-                    self.selected = SelectedItem::Weapon(0);
-                } else {
-                    self.selected = SelectedItem::Armor(0);
-                }
-            }
-            SelectedItem::Other(i) => {
-                let count = items.other.len();
-                if i + 1 < count {
-                    self.selected = SelectedItem::Other(i + 1);
-                } else {
-                    self.selected = SelectedItem::Other(0);
-                }
+    fn do_select_next_item(&mut self, items: &Vec<InvItem>, start: usize) -> bool {
+        let kind = items[start].kind;
+        for (i, candidate) in items.iter().enumerate().skip(start + 1) {
+            if candidate.kind == kind {
+                self.selected = Some(i);
+                return true;
             }
         }
+        false
     }
 
-    fn do_select_prev_row(&mut self, items: &InvItems) {
-        match self.selected {
-            SelectedItem::None => {
-                if !items.weapons.is_empty() {
-                    self.selected = SelectedItem::Weapon(items.weapons.len() - 1);
-                } else if !items.armor.is_empty() {
-                    self.selected = SelectedItem::Armor(items.armor.len() - 1);
-                } else if !items.other.is_empty() {
-                    self.selected = SelectedItem::Other(items.armor.len() - 1);
-                }
-            }
-            SelectedItem::Weapon(i) => {
-                let count1 = items.weapons.len();
-                let count2 = items.armor.len();
-                if i > 0 {
-                    self.selected = SelectedItem::Weapon(i - 1);
-                } else if count2 > 0 {
-                    self.selected = SelectedItem::Armor(count2 - 1);
-                } else {
-                    self.selected = SelectedItem::Weapon(count1 - 1);
-                }
-            }
-            SelectedItem::Armor(i) => {
-                let count1 = items.weapons.len();
-                let count2 = items.armor.len();
-                if i > 0 {
-                    self.selected = SelectedItem::Armor(i - 1);
-                } else if count1 > 0 {
-                    self.selected = SelectedItem::Weapon(count1 - 1);
-                } else {
-                    self.selected = SelectedItem::Armor(count2 - 1);
-                }
-            }
-            SelectedItem::Other(i) => {
-                let count = items.other.len();
-                if i > 0 {
-                    self.selected = SelectedItem::Other(i - 1);
-                } else {
-                    self.selected = SelectedItem::Other(count - 1);
-                }
+    fn do_select_prev_item(&mut self, items: &Vec<InvItem>, start: usize) -> bool {
+        let kind = items[start].kind;
+        for (i, candidate) in items.iter().enumerate().take(start).rev() {
+            if candidate.kind == kind {
+                self.selected = Some(i);
+                return true;
             }
         }
+        false
     }
 }

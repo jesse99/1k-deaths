@@ -18,6 +18,7 @@ mod tag;
 mod time;
 
 pub use arena::*;
+use chrono::format::Item;
 pub use message::{Message, Topic};
 pub use object::Symbol;
 pub use primitives::Color;
@@ -87,17 +88,21 @@ pub enum Action {
     Wield(Oid),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ItemKind {
+    TwoHandWeapon,
+    OneHandWeapon,
+    Armor,
+    Other,
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct InvItem {
     pub name: &'static str,
     pub description: &'static str,
-    pub slot: Option<Slot>,
+    pub kind: ItemKind,
+    pub equipped: Option<Slot>,
     pub oid: Oid, // used with commands like Action::Wield
-}
-
-pub struct InvItems {
-    pub weapons: Vec<InvItem>,
-    pub armor: Vec<InvItem>,
-    pub other: Vec<InvItem>,
 }
 
 #[derive(Eq, PartialEq)]
@@ -378,35 +383,43 @@ impl Game {
             .collect()
     }
 
-    pub fn inventory(&self) -> InvItems {
-        let mut weapons = Vec::new();
-        let mut armor = Vec::new();
-        let mut other = Vec::new();
+    pub fn inventory(&self) -> Vec<InvItem> {
+        let mut items = Vec::new();
 
         let player = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value().unwrap();
-        for (slot, &oid) in equipped {
-            if matches!(slot, Slot::MainHand | Slot::OffHand) {
-                self.push_equipped_item(&mut weapons, oid, slot);
-            } else {
-                self.push_equipped_item(&mut armor, oid, slot);
+        for (slot, &value) in equipped {
+            if let Some(oid) = value {
+                let kind = match slot {
+                    Slot::MainHand => {
+                        let obj = self.level.obj(oid).0;
+                        match obj.weapon_value().unwrap() {
+                            Weapon::OneHand => ItemKind::OneHandWeapon,
+                            Weapon::TwoHander => ItemKind::TwoHandWeapon,
+                        }
+                    }
+                    Slot::OffHand => ItemKind::OneHandWeapon,
+                    _ => ItemKind::Armor,
+                };
+                self.push_inv_item(&mut items, kind, Some(slot), oid);
             }
         }
 
         for (oid, obj) in self.player_inv_iter() {
-            if obj.has(WEAPON_ID) {
-                self.push_inv_item(&mut weapons, oid, None);
-            }
-            if obj.has(ARMOR_ID) {
-                // in theory an item can be both a weapon and armor
-                self.push_inv_item(&mut armor, oid, None);
-            }
-            if !obj.has(WEAPON_ID) && !obj.has(ARMOR_ID) {
-                self.push_inv_item(&mut other, oid, None);
-            }
+            let kind = if obj.has(WEAPON_ID) {
+                match obj.weapon_value().unwrap() {
+                    Weapon::OneHand => ItemKind::OneHandWeapon,
+                    Weapon::TwoHander => ItemKind::TwoHandWeapon,
+                }
+            } else if obj.has(ARMOR_ID) {
+                ItemKind::Armor
+            } else {
+                ItemKind::Other
+            };
+            self.push_inv_item(&mut items, kind, None, oid);
         }
 
-        InvItems { weapons, armor, other }
+        items
     }
 
     #[cfg(debug_assertions)]
@@ -600,20 +613,15 @@ impl Game {
         InventoryIterator::new(self, &self.player_loc())
     }
 
-    fn push_inv_item(&self, items: &mut Vec<InvItem>, oid: Oid, slot: Option<Slot>) {
+    fn push_inv_item(&self, items: &mut Vec<InvItem>, kind: ItemKind, equipped: Option<Slot>, oid: Oid) {
         let obj = self.level.obj(oid).0;
         items.push(InvItem {
             name: obj.name_value().unwrap(),
             description: obj.description(),
-            slot,
+            kind,
+            equipped,
             oid,
         });
-    }
-
-    fn push_equipped_item(&self, items: &mut Vec<InvItem>, oid: Option<Oid>, slot: Slot) {
-        if oid.is_some() {
-            self.push_inv_item(items, oid.unwrap(), Some(slot));
-        }
     }
 
     pub fn inv_item(&self, ch: &Object, tid: Tid) -> Option<&Object> {
