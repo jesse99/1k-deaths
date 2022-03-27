@@ -1,5 +1,5 @@
 use super::color;
-use one_thousand_deaths::{Color, Game, InvItem, ItemKind, Point, Size};
+use one_thousand_deaths::{Color, Game, InvItem, ItemKind, Point, Size, Slot};
 use std::borrow::Cow;
 use std::io::Write;
 
@@ -44,9 +44,17 @@ impl InventoryView {
         *v += 1;
 
         for (i, item) in inv.iter().enumerate() {
-            if matches!(item.kind, ItemKind::TwoHandWeapon | ItemKind::OneHandWeapon) {
+            if matches!(item.kind, ItemKind::TwoHandWeapon) {
                 let selected = Some(i) == sindex;
-                self.render_item(item, selected, "wielded", h, *v, stdout, WIDTH);
+                self.render_item(item, selected, "both hands", h, *v, stdout, WIDTH);
+                *v += 1;
+            } else if matches!(item.kind, ItemKind::OneHandWeapon) {
+                let selected = Some(i) == sindex;
+                if item.equipped == Some(Slot::MainHand) {
+                    self.render_item(item, selected, "main hand", h, *v, stdout, WIDTH);
+                } else {
+                    self.render_item(item, selected, "off hand", h, *v, stdout, WIDTH);
+                }
                 *v += 1;
             }
         }

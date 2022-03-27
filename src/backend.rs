@@ -18,7 +18,7 @@ mod tag;
 mod time;
 
 pub use arena::*;
-use chrono::format::Item;
+// use chrono::format::Item;
 pub use message::{Message, Topic};
 pub use object::Symbol;
 pub use primitives::Color;
@@ -85,7 +85,8 @@ pub enum Action {
     Rest,
 
     // Be sure to add new actions to the end (or saved games will break).
-    Wield(Oid),
+    WieldMainHand(Oid),
+    WieldOffHand(Oid),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -522,16 +523,28 @@ impl Game {
                     Time::zero()
                 }
             }
-            Action::Wield(oid) => {
+            Action::WieldMainHand(oid) => {
                 if !self.game_over() {
-                    if let Some(other) = self.wield_blocked_by() {
-                        self.remove(other);
-                        self.wield(oid);
-                        time::DIAGNOL_MOVE
-                    } else {
-                        self.wield(oid);
-                        time::DIAGNOL_MOVE / 2
+                    let mut delay = time::DIAGNOL_MOVE / 2;
+                    for oid in self.wield_main_blocked_by(oid) {
+                        self.remove(oid);
+                        delay += time::DIAGNOL_MOVE / 2;
                     }
+                    self.wield(oid, Slot::MainHand);
+                    delay
+                } else {
+                    Time::zero()
+                }
+            }
+            Action::WieldOffHand(oid) => {
+                if !self.game_over() {
+                    let mut delay = time::DIAGNOL_MOVE / 2;
+                    for oid in self.wield_off_blocked_by(oid) {
+                        self.remove(oid);
+                        delay += time::DIAGNOL_MOVE / 2;
+                    }
+                    self.wield(oid, Slot::OffHand);
+                    delay
                 } else {
                     Time::zero()
                 }
@@ -561,19 +574,75 @@ impl Game {
         self.level.try_loc(oid)
     }
 
-    fn wield_blocked_by(&mut self) -> Option<Oid> {
+    fn wield_main_blocked_by(&mut self, oid: Oid) -> Vec<Oid> {
+        let kind = {
+            let obj = self.level.obj(oid).0;
+            obj.weapon_value().unwrap()
+        };
         let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
-        let equipped = player.equipped_value()?;
-        equipped[Slot::MainHand]
+        let equipped = player.equipped_value().unwrap();
+
+        let mut blocks = Vec::new();
+        match kind {
+            Weapon::OneHand => equipped[Slot::MainHand].iter().for_each(|o| blocks.push(*o)),
+            Weapon::TwoHander => {
+                equipped[Slot::MainHand].iter().for_each(|o| blocks.push(*o));
+                equipped[Slot::OffHand].iter().for_each(|o| blocks.push(*o));
+            }
+        }
+        blocks
     }
 
-    fn wield(&mut self, oid: Oid) {
+    fn wield_off_blocked_by(&mut self, oid: Oid) -> Vec<Oid> {
+        let kind = {
+            let obj = self.level.obj(oid).0;
+            obj.weapon_value().unwrap()
+        };
+        let (mh, oh) = {
+            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let equipped = player.equipped_value().unwrap();
+            (equipped[Slot::MainHand], equipped[Slot::OffHand])
+        };
+
+        let mut blocks = Vec::new();
+        if kind == Weapon::OneHand {
+            if let Some(mh) = mh {
+                let obj2 = self.level.obj(mh).0;
+                let kind2 = obj2.weapon_value().unwrap();
+                if kind2 == Weapon::TwoHander {
+                    blocks.push(mh);
+                }
+            }
+            oh.iter().for_each(|o| blocks.push(*o));
+        } else {
+            panic!("expected a one handed weapon");
+        }
+        blocks
+    }
+
+    fn wield(&mut self, oid: Oid, slot: Slot) {
         {
+            let kind = {
+                let obj = self.level.obj(oid).0;
+                obj.weapon_value().unwrap()
+            };
             let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
             let equipped = player.equipped_value_mut().unwrap();
-            assert!(equipped[Slot::MainHand].is_none());
-            equipped[Slot::MainHand] = Some(oid);
-            equipped[Slot::OffHand] = None;
+
+            match slot {
+                Slot::MainHand => {
+                    assert!(equipped[Slot::MainHand].is_none());
+                    equipped[Slot::MainHand] = Some(oid);
+                    if kind == Weapon::TwoHander {
+                        assert!(equipped[Slot::OffHand].is_none());
+                    }
+                }
+                Slot::OffHand => {
+                    assert!(equipped[Slot::OffHand].is_none());
+                    equipped[Slot::OffHand] = Some(oid);
+                }
+                _ => panic!("expected main or off hand"),
+            }
 
             let inv = player.inventory_value_mut().unwrap();
             let index = inv.iter().position(|x| *x == oid).unwrap();

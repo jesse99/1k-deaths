@@ -3,20 +3,23 @@ use super::help::{format_help, validate_help};
 use super::inventory_view::InventoryView;
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
-use derive_more::Display;
+// use derive_more::Display;
 use fnv::FnvHashMap;
 use one_thousand_deaths::{Action, Game, InvItem, ItemKind, Point, Size};
+use std::fmt::{self, Formatter};
 use termion::event::Key;
 
 type KeyHandler = fn(&mut InventoryMode, &mut Game) -> InputAction;
 type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
-#[derive(Clone, Copy, Debug, Display, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ContextItem {
     Describe,
     Drop,
     Remove,
-    Wield,
+    WieldBothHands,
+    WieldMainHand,
+    WieldOffHand,
 }
 
 pub struct InventoryMode {
@@ -87,8 +90,16 @@ impl Mode for InventoryMode {
                     self.remove_item(game);
                     self.menu = None;
                 }
-                ContextResult::Selected(ContextItem::Wield) => {
-                    self.wield_item(game);
+                ContextResult::Selected(ContextItem::WieldBothHands) => {
+                    self.wield_main(game);
+                    self.menu = None;
+                }
+                ContextResult::Selected(ContextItem::WieldMainHand) => {
+                    self.wield_main(game);
+                    self.menu = None;
+                }
+                ContextResult::Selected(ContextItem::WieldOffHand) => {
+                    self.wield_off(game);
                     self.menu = None;
                 }
                 ContextResult::Pop => self.menu = None,
@@ -120,10 +131,16 @@ impl InventoryMode {
         game.player_acted(Action::Remove(inv[index].oid));
     }
 
-    fn wield_item(&self, game: &mut Game) {
+    fn wield_main(&self, game: &mut Game) {
         let inv = game.inventory();
         let index = self.selected.unwrap();
-        game.player_acted(Action::Wield(inv[index].oid));
+        game.player_acted(Action::WieldMainHand(inv[index].oid));
+    }
+
+    fn wield_off(&self, game: &mut Game) {
+        let inv = game.inventory();
+        let index = self.selected.unwrap();
+        game.player_acted(Action::WieldOffHand(inv[index].oid));
     }
 
     fn do_create_menu(&mut self, game: &mut Game) -> InputAction {
@@ -140,8 +157,11 @@ impl InventoryMode {
             items.push(ContextItem::Remove);
         }
         match inv[index].kind {
-            ItemKind::TwoHandWeapon => items.push(ContextItem::Wield),
-            ItemKind::OneHandWeapon => items.push(ContextItem::Wield), // TODO: check for 2-handler in main
+            ItemKind::TwoHandWeapon => items.push(ContextItem::WieldBothHands),
+            ItemKind::OneHandWeapon => {
+                items.push(ContextItem::WieldMainHand);
+                items.push(ContextItem::WieldOffHand);
+            }
             ItemKind::Armor => (),
             ItemKind::Other => (),
         };
@@ -289,9 +309,12 @@ Selection can be moved using the numeric keypad or arrow keys:
     }
 
     fn do_select_next_item(&mut self, items: &Vec<InvItem>, start: usize) -> bool {
-        let kind = items[start].kind;
+        let kinds = match items[start].kind {
+            ItemKind::OneHandWeapon | ItemKind::TwoHandWeapon => vec![ItemKind::OneHandWeapon, ItemKind::TwoHandWeapon],
+            _ => vec![items[start].kind],
+        };
         for (i, candidate) in items.iter().enumerate().skip(start + 1) {
-            if candidate.kind == kind {
+            if kinds.contains(&candidate.kind) {
                 self.selected = Some(i);
                 return true;
             }
@@ -300,13 +323,30 @@ Selection can be moved using the numeric keypad or arrow keys:
     }
 
     fn do_select_prev_item(&mut self, items: &Vec<InvItem>, start: usize) -> bool {
-        let kind = items[start].kind;
+        let kinds = match items[start].kind {
+            ItemKind::OneHandWeapon | ItemKind::TwoHandWeapon => vec![ItemKind::OneHandWeapon, ItemKind::TwoHandWeapon],
+            _ => vec![items[start].kind],
+        };
         for (i, candidate) in items.iter().enumerate().take(start).rev() {
-            if candidate.kind == kind {
+            if kinds.contains(&candidate.kind) {
                 self.selected = Some(i);
                 return true;
             }
         }
         false
+    }
+}
+
+impl fmt::Display for ContextItem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            ContextItem::Describe => "Describe",
+            ContextItem::Drop => "Drop",
+            ContextItem::Remove => "Remove",
+            ContextItem::WieldBothHands => "Wield (both hands)",
+            ContextItem::WieldMainHand => "Wield (main hand)",
+            ContextItem::WieldOffHand => "Wield (off hand)",
+        };
+        write!(f, "{s}")
     }
 }
