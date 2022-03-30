@@ -167,7 +167,7 @@ fn player_vs_character(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
 
 fn is_worthy(game: &Game) -> bool {
     let player = game.level.get(&game.player_loc(), PLAYER_ID).unwrap().1;
-    if let Some(obj) = game.find_equipped_weapon(player) {
+    if let Some(obj) = game.find_main_hand(player) {
         return obj.description().contains("Doom");
     }
     false

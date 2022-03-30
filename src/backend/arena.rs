@@ -233,15 +233,29 @@ impl Game {
         }
     }
 
-    fn compute_stats(&self, attacker: Oid, defender: Oid) -> Stats {
-        let obj = self.level.obj(attacker).0;
+    fn compute_stats(&self, attacker_id: Oid, defender_id: Oid) -> Stats {
+        let obj = self.level.obj(attacker_id).0;
         let hps = obj.durability_value().unwrap().current;
 
-        let loc = self.loc(attacker).unwrap();
+        let loc = self.loc(attacker_id).unwrap();
         let delay = self.melee_delay(&loc);
-        let damage = self.base_damage(attacker).0;
-        let crits = self.crit_prob(attacker);
-        let hits = self.hit_prob(attacker, defender);
+        let hits = self.hit_prob(attacker_id, defender_id);
+
+        let weapon = {
+            let attacker = self.level.obj(attacker_id).0;
+            attacker.equipped_value().map(|e| e[Slot::MainHand]).flatten()
+        };
+        let mut damage = self.base_damage(attacker_id, weapon).0;
+        let crits = self.crit_prob(attacker_id, weapon);
+
+        let weapon = {
+            let attacker = self.level.obj(attacker_id).0;
+            attacker.equipped_value().map(|e| e[Slot::OffHand]).flatten()
+        };
+        let p = self.off_hand_prob();
+        damage += (p * (self.base_damage(attacker_id, weapon).0 as f64)) as i32;
+        // TODO: probably want a crits2 stat
+
         Stats {
             hps,
             dps: (damage as f64) / ((delay.as_ms() as f64) / 1000.0),
