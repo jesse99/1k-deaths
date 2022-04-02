@@ -8,7 +8,7 @@ use fnv::FnvHashMap;
 
 struct Entry {
     obj: Object,
-    loc: Option<Point>, // None for objects within Inventory tags
+    loc: Option<Point>, // None for objects within Equipped or Inventory tags
 }
 
 pub struct Level {
@@ -231,6 +231,29 @@ impl Level {
         oid
     }
 
+    /// Typically this will be a drop from an inventory (or equipped).
+    pub fn add_oid(&mut self, oid: Oid, loc: Point) {
+        let entry = self.objects.get_mut(&oid).unwrap();
+        entry.loc = Some(loc);
+
+        let oids = self.cells.entry(loc).or_insert_with(Vec::new);
+        if oids.is_empty() {
+            self.locations.borrow_mut().clear();
+        }
+
+        if let Some(i) = oids.iter().position(|&o| o.0 == 0) {
+            // TODO: doesn't support NPCs dropping items
+            oids.insert(i, oid);
+        } else {
+            oids.push(oid);
+        }
+        self.changed = loc;
+
+        if cfg!(debug_assertions) {
+            self.invariant();
+        }
+    }
+
     pub fn remove(&mut self, oid: Oid) {
         let entry = self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"));
         if let Some(loc) = entry.loc {
@@ -274,8 +297,7 @@ impl Level {
         let inv = obj.inventory_value_mut().unwrap();
         inv.push(oid);
 
-        {
-            #[cfg(debug_assertions)]
+        if cfg!(debug_assertions) {
             self.invariant();
         }
     }
@@ -504,6 +526,18 @@ impl Level {
                         entry.obj
                     );
                     assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
+                }
+            }
+            if let Some(equipped) = entry.obj.equipped_value() {
+                for item in equipped.values() {
+                    if let Some(oid) = item {
+                        assert!(
+                            all_oids.insert(oid),
+                            "{} has oid {oid} which exists elsewhere",
+                            entry.obj
+                        );
+                        assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
+                    }
                 }
             }
         }

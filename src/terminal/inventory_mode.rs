@@ -122,7 +122,9 @@ impl InventoryMode {
     }
 
     fn drop_item(&self, game: &mut Game) {
-        info!("dropping item {:?}", self.selected);
+        let inv = game.inventory();
+        let index = self.selected.unwrap();
+        game.player_acted(Action::Drop(inv[index].oid));
     }
 
     fn remove_item(&self, game: &mut Game) {

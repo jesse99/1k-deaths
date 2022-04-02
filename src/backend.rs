@@ -62,6 +62,8 @@ pub struct Oid(u64);
 /// remaining time units, but some like (Examine) don't take any time.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Action {
+    Drop(Oid),
+
     /// Print descriptions for objects at the cell. Note that any cell can be examined but
     /// cells that are not in the player's PoV will have either an unhelpful description or
     /// a stale description.
@@ -473,6 +475,25 @@ impl Game {
         // TODO: maybe something fine grained, like only need to update messages
         trace!("player is doing {action:?}");
         let duration = match action {
+            Action::Drop(oid) => {
+                // TODO: dropping heavy stuff should cause noise?
+                if !self.game_over() {
+                    let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+                    let equipped = player.equipped_value_mut().unwrap();
+                    if let Some(slot) = equipped
+                        .iter()
+                        .find_map(|(s, &o)| if o == Some(oid) { Some(s) } else { None })
+                    {
+                        self.drop_equipped(oid, slot);
+                        time::DIAGNOL_MOVE
+                    } else {
+                        self.drop_unequipped(oid);
+                        time::DIAGNOL_MOVE / 2
+                    }
+                } else {
+                    Time::zero()
+                }
+            }
             Action::Examine { loc, wizard } => {
                 self.examine(&loc, wizard);
                 Time::zero()
@@ -620,6 +641,16 @@ impl Game {
         blocks
     }
 
+    fn manage_item_mesg(&mut self, oid: Oid, action: &str) {
+        let obj = self.level.obj(oid).0;
+        let name: &'static str = obj.name_value().unwrap();
+        let mesg = Message {
+            topic: Topic::Normal,
+            text: format!("You {action} the {name}."),
+        };
+        self.messages.push(mesg);
+    }
+
     fn wield(&mut self, oid: Oid, slot: Slot) {
         {
             let kind = {
@@ -651,9 +682,32 @@ impl Game {
             if cfg!(debug_assertions) {
                 player.invariant();
             }
+            self.manage_item_mesg(oid, "wield"); // at the very end to satisfy the borrow checker
         }
 
         assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+    }
+
+    fn drop_equipped(&mut self, oid: Oid, slot: Slot) {
+        let loc = self.player_loc();
+        let player = self.level.get_mut(&loc, CHARACTER_ID).unwrap().1;
+        let equipped = player.equipped_value_mut().unwrap();
+        assert!(equipped[slot] == Some(oid));
+        equipped[slot] = None;
+
+        self.level.add_oid(oid, loc);
+        self.manage_item_mesg(oid, "drop");
+    }
+
+    fn drop_unequipped(&mut self, oid: Oid) {
+        let loc = self.player_loc();
+        let player = self.level.get_mut(&loc, CHARACTER_ID).unwrap().1;
+        let inv = player.inventory_value_mut().unwrap();
+        let i = inv.iter().position(|&o| o == oid).unwrap();
+        inv.remove(i);
+
+        self.level.add_oid(oid, loc);
+        self.manage_item_mesg(oid, "drop");
     }
 
     fn remove(&mut self, oid: Oid) {
@@ -676,6 +730,7 @@ impl Game {
         }
 
         assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+        self.manage_item_mesg(oid, "remove");
     }
 
     fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {
