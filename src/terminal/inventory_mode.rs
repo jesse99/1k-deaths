@@ -3,7 +3,6 @@ use super::help::{format_help, validate_help};
 use super::inventory_view::InventoryView;
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
-// use derive_more::Display;
 use fnv::FnvHashMap;
 use one_thousand_deaths::{Action, Game, InvItem, ItemKind, Point, Size};
 use std::fmt::{self, Formatter};
@@ -14,7 +13,6 @@ type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ContextItem {
-    Describe,
     Drop,
     Remove,
     WieldBothHands,
@@ -64,7 +62,8 @@ impl InventoryMode {
 
 impl Mode for InventoryMode {
     fn render(&self, context: &mut RenderContext) -> bool {
-        self.view.render(self.selected, context.stdout, context.game);
+        let desc = self.describe_item(context.game);
+        self.view.render(self.selected, context.stdout, context.game, desc);
         if let Some(menu) = self.menu.as_ref() {
             menu.render(context.stdout);
         }
@@ -78,10 +77,6 @@ impl Mode for InventoryMode {
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
         if let Some(menu) = self.menu.as_mut() {
             match menu.handle_input(key) {
-                ContextResult::Selected(ContextItem::Describe) => {
-                    self.describe_item(game);
-                    self.menu = None;
-                }
                 ContextResult::Selected(ContextItem::Drop) => {
                     self.drop_item(game);
                     self.menu = None;
@@ -117,8 +112,13 @@ impl Mode for InventoryMode {
 }
 
 impl InventoryMode {
-    fn describe_item(&self, game: &mut Game) {
-        info!("describing item {:?}", self.selected);
+    fn describe_item(&self, game: &mut Game) -> Vec<String> {
+        if let Some(index) = self.selected {
+            let inv = game.inventory();
+            game.describe_item(inv[index].oid)
+        } else {
+            Vec::new()
+        }
     }
 
     fn drop_item(&self, game: &mut Game) {
@@ -154,7 +154,7 @@ impl InventoryMode {
         let index = self.selected.unwrap();
         let suffix = inv[index].name;
 
-        let mut items = vec![ContextItem::Describe, ContextItem::Drop];
+        let mut items = vec![ContextItem::Drop];
         if inv[index].equipped.is_some() {
             items.push(ContextItem::Remove);
         }
@@ -342,7 +342,6 @@ Selection can be moved using the numeric keypad or arrow keys:
 impl fmt::Display for ContextItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
-            ContextItem::Describe => "Describe",
             ContextItem::Drop => "Drop",
             ContextItem::Remove => "Remove",
             ContextItem::WieldBothHands => "Wield (both hands)",

@@ -11,19 +11,36 @@ pub struct InventoryView {
 }
 
 impl InventoryView {
-    pub fn render(&self, sindex: Option<usize>, stdout: &mut Box<dyn Write>, game: &Game) {
+    pub fn render(&self, sindex: Option<usize>, stdout: &mut Box<dyn Write>, game: &Game, desc: Vec<String>) {
         let h = (self.origin.x + 1) as u16; // termion is 1-based
         let mut v = 1;
         self.render_background(stdout);
 
         let inv = game.inventory();
-        self.render_weapons(&inv, sindex, h, &mut v, stdout);
+        let desc_height = if desc.is_empty() { 0 } else { desc.len() as u16 + 1 };
+        self.render_weapons(&inv, sindex, h, &mut v, stdout, desc_height);
 
         v += 1;
-        self.render_armor(&inv, sindex, h, &mut v, stdout);
+        self.render_armor(&inv, sindex, h, &mut v, stdout, desc_height);
 
         v = 1;
-        self.render_other(&inv, sindex, h + WIDTH + 1, &mut v, stdout);
+        self.render_other(&inv, sindex, h + WIDTH + 1, &mut v, stdout, desc_height);
+
+        self.render_desc(desc, stdout);
+    }
+
+    fn render_desc(&self, desc: Vec<String>, stdout: &mut Box<dyn Write>) {
+        let first = self.size.height as u16 - desc.len() as u16;
+        for (i, s) in desc.iter().enumerate() {
+            let _ = write!(
+                stdout,
+                "{}{}{}{}",
+                termion::cursor::Goto(2, first + i as u16 + 1),
+                termion::color::Bg(color::to_termion(Color::Black)),
+                termion::color::Fg(color::to_termion(Color::White)),
+                s,
+            );
+        }
     }
 
     fn render_weapons(
@@ -33,6 +50,7 @@ impl InventoryView {
         h: u16,
         v: &mut u16,
         stdout: &mut Box<dyn Write>,
+        desc_height: u16,
     ) {
         let _ = write!(
             stdout,
@@ -57,6 +75,9 @@ impl InventoryView {
                 }
                 *v += 1;
             }
+            if *v >= self.size.height as u16 - desc_height {
+                break;
+            }
         }
     }
 
@@ -67,6 +88,7 @@ impl InventoryView {
         h: u16,
         v: &mut u16,
         stdout: &mut Box<dyn Write>,
+        desc_height: u16,
     ) {
         let _ = write!(
             stdout,
@@ -82,6 +104,10 @@ impl InventoryView {
                 let selected = Some(i) == sindex;
                 self.render_item(item, selected, "worn", h, *v, stdout, WIDTH);
                 *v += 1;
+
+                if *v >= self.size.height as u16 - desc_height {
+                    break;
+                }
             }
         }
     }
@@ -93,6 +119,7 @@ impl InventoryView {
         h: u16,
         v: &mut u16,
         stdout: &mut Box<dyn Write>,
+        desc_height: u16,
     ) {
         let _ = write!(
             stdout,
@@ -109,6 +136,10 @@ impl InventoryView {
                 let selected = Some(i) == sindex;
                 self.render_item(item, selected, "worn", h, *v, stdout, max_width);
                 *v += 1;
+
+                if *v >= self.size.height as u16 - desc_height {
+                    break;
+                }
             }
         }
     }

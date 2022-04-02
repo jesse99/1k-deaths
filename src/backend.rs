@@ -102,7 +102,6 @@ pub enum ItemKind {
 #[derive(Clone, Copy, Debug)]
 pub struct InvItem {
     pub name: &'static str,
-    pub description: &'static str,
     pub kind: ItemKind,
     pub equipped: Option<Slot>,
     pub oid: Oid, // used with commands like Action::Wield
@@ -425,6 +424,37 @@ impl Game {
         items
     }
 
+    // TODO:
+    // should we check the Strength and Dexterity tags?
+    // should we check the Durability tag?
+    pub fn describe_item(&self, oid: Oid) -> Vec<String> {
+        let mut desc = Vec::new();
+        let obj = self.level.obj(oid).0;
+        desc.push(obj.description().to_string());
+        if let Some(weapon) = obj.weapon_value() {
+            match weapon {
+                Weapon::OneHand => desc.push("It is a one handed weapon.".to_string()),
+                Weapon::TwoHander => desc.push("It is a two handed weapon.".to_string()),
+            }
+        }
+        if let Some(damage) = obj.damage_value() {
+            if let Some(delay) = obj.delay_value() {
+                // TODO: need to account for stats (and penalties)
+                let dps = (damage as f64) / ((delay.as_ms() as f64) / 1000.0);
+                desc.push(format!("Base damage is {dps} dps."));
+            }
+        }
+        if let Some(percent) = obj.crit_value() {
+            // TODO: need to account for stats (and penalties)
+            // TODO: this should probably be factored into dps
+            desc.push(format!("It has a {percent}% to critically hit."));
+        }
+        if let Some(percent) = obj.mitigation_value() {
+            desc.push(format!("It will mitigate damage by {percent}%."));
+        }
+        desc
+    }
+
     #[cfg(debug_assertions)]
     pub fn set_invariants(&mut self, enable: bool) {
         // TODO: might want a wizard command to enable these
@@ -741,7 +771,6 @@ impl Game {
         let obj = self.level.obj(oid).0;
         items.push(InvItem {
             name: obj.name_value().unwrap(),
-            description: obj.description(),
             kind,
             equipped,
             oid,
