@@ -70,6 +70,7 @@ impl TextMode {
         // commands.insert(Key::Home, Box::new(|s, game| s.do_scroll_to_start(game)));
         // commands.insert(Key::End, Box::new(|s, game| s.do_scroll_to_end(game)));
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
+        commands.insert(Key::Char('q'), Box::new(|s, game| s.do_pop(game)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
 
         // less supports other good stuff, most of which requires additional user input.
@@ -146,7 +147,7 @@ Scroll up by one line:
 [[control-u]] or [[control-k]] or [[control-p]] or [[control-y]]
 
 [[?]] show this help.
-[[escape]] exits this mode."#;
+[[escape]] and [[q]] exit this mode."#;
         validate_help("text", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());

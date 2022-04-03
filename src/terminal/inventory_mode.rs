@@ -44,6 +44,7 @@ impl InventoryMode {
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_select(game, 1, -1)));
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('\n'), Box::new(|s, game| s.do_create_menu(game)));
+        commands.insert(Key::Char('q'), Box::new(|s, game| s.do_pop(game)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
 
         let origin = Point::new(1, 1);
@@ -197,7 +198,7 @@ Selection can be moved using the numeric keypad or arrow keys:
 
 [[return]] operates on the selection.
 [[?]] shows this help.
-[[escape]] exits the inventory screen."#;
+[[escape]] and [[q]] exit the inventory screen."#;
         validate_help("inventory", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());

@@ -32,6 +32,7 @@ impl ExamineMode {
         commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('\t'), Box::new(|s, game| s.do_tab_target(game, 1)));
         commands.insert(Key::BackTab, Box::new(|s, game| s.do_tab_target(game, -1)));
+        commands.insert(Key::Char('q'), Box::new(|s, game| s.do_pop(game)));
         commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
 
         Box::new(ExamineMode { examined, commands })
@@ -79,7 +80,7 @@ The focus can be moved with the usual keys:
 [[shift-tab]] can be used to select the previous character.
 [[?]] show this help.
 [[q]] save and quit.
-[[escape]] exits examine mode."#;
+[[escape]] and [[q]] exit examine mode."#;
         validate_help("examine", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
