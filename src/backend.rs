@@ -432,22 +432,32 @@ impl Game {
         let obj = self.level.obj(oid).0;
         desc.push(obj.description().to_string());
         if let Some(weapon) = obj.weapon_value() {
-            match weapon {
-                Weapon::OneHand => desc.push("It is a one handed weapon.".to_string()),
-                Weapon::TwoHander => desc.push("It is a two handed weapon.".to_string()),
+            let suffix = match weapon {
+                Weapon::OneHand => {
+                    desc.push("It is a one handed weapon.".to_string());
+                    " in main hand"
+                }
+                Weapon::TwoHander => {
+                    desc.push("It is a two handed weapon.".to_string());
+                    ""
+                }
+            };
+
+            if let Some(damage) = obj.damage_value() {
+                if let Some(delay) = obj.delay_value() {
+                    // TODO: need to account for stats (and penalties)
+                    let dps = (damage as f64) / ((delay.as_ms() as f64) / 1000.0);
+                    desc.push(format!(
+                        "Base damage is {damage} with delay {delay} ({dps:.1} dps{suffix})."
+                    ));
+                }
             }
-        }
-        if let Some(damage) = obj.damage_value() {
-            if let Some(delay) = obj.delay_value() {
+            if let Some(percent) = obj.crit_value() {
+                // TODO: does crit chance work differently for off hand?
                 // TODO: need to account for stats (and penalties)
-                let dps = (damage as f64) / ((delay.as_ms() as f64) / 1000.0);
-                desc.push(format!("Base damage is {dps} dps."));
+                // TODO: this should probably be factored into dps
+                desc.push(format!("It has a {percent}% to critically hit."));
             }
-        }
-        if let Some(percent) = obj.crit_value() {
-            // TODO: need to account for stats (and penalties)
-            // TODO: this should probably be factored into dps
-            desc.push(format!("It has a {percent}% to critically hit."));
         }
         if let Some(percent) = obj.mitigation_value() {
             desc.push(format!("It will mitigate damage by {percent}%."));
