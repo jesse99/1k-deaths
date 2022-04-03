@@ -21,6 +21,8 @@ impl Game {
     pub fn do_melee_attack(&mut self, attacker_loc: &Point, defender_loc: &Point) {
         let attacker_id = self.level.get(attacker_loc, CHARACTER_ID).unwrap().0;
         let defender_id = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().0;
+        debug!("{attacker_id} is meleeing {defender_id}");
+        self.react_to_attack(attacker_loc, attacker_id, defender_loc);
 
         let mut damage = 0;
         let mut text = String::new();
@@ -69,10 +71,6 @@ impl Game {
         weapon: Option<Oid>,
     ) -> (i32, String) {
         // It'd be more efficient to use Objects here but the borrow checker whines a lot.
-        debug!("{attacker_id} is meleeing {defender_id}");
-
-        self.react_to_attack(attacker_loc, attacker_id, defender_loc);
-
         let attacker_name = self.attacker_name(attacker_id);
         let defender_name = self.defender_name(defender_id);
         if let Some((damage, crit)) = self.do_strike(attacker_id, defender_id, weapon) {

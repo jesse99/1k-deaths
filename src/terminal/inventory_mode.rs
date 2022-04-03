@@ -4,7 +4,7 @@ use super::inventory_view::InventoryView;
 use super::mode::{InputAction, Mode, RenderContext};
 use super::text_mode::TextMode;
 use fnv::FnvHashMap;
-use one_thousand_deaths::{Action, Game, InvItem, ItemKind, Point, Size};
+use one_thousand_deaths::{Action, Game, InvItem, ItemKind, Point, Size, Slot};
 use std::fmt::{self, Formatter};
 use termion::event::Key;
 
@@ -159,10 +159,18 @@ impl InventoryMode {
             items.push(ContextItem::Remove);
         }
         match inv[index].kind {
-            ItemKind::TwoHandWeapon => items.push(ContextItem::WieldBothHands),
+            ItemKind::TwoHandWeapon => {
+                if inv[index].equipped != Some(Slot::MainHand) {
+                    items.push(ContextItem::WieldBothHands);
+                }
+            }
             ItemKind::OneHandWeapon => {
-                items.push(ContextItem::WieldMainHand);
-                items.push(ContextItem::WieldOffHand);
+                if inv[index].equipped != Some(Slot::MainHand) {
+                    items.push(ContextItem::WieldMainHand);
+                }
+                if inv[index].equipped != Some(Slot::OffHand) {
+                    items.push(ContextItem::WieldOffHand);
+                }
             }
             ItemKind::Armor => (),
             ItemKind::Other => (),

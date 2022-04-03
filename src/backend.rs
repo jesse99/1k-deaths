@@ -651,6 +651,7 @@ impl Game {
                 equipped[Slot::OffHand].iter().for_each(|o| blocks.push(*o));
             }
         }
+        self.blocked_by_equipped(oid, &mut blocks);
         blocks
     }
 
@@ -678,7 +679,21 @@ impl Game {
         } else {
             panic!("expected a one handed weapon");
         }
+        self.blocked_by_equipped(oid, &mut blocks);
         blocks
+    }
+
+    // Items that are worn elsewhere need to be removed too. Typically this is something
+    // like wielding a weapon in main hand that is already in offhand.
+    fn blocked_by_equipped(&self, oid: Oid, blocks: &mut Vec<Oid>) {
+        let player = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let equipped = player.equipped_value().unwrap();
+        for value in equipped.values() {
+            if *value == Some(oid) {
+                blocks.push(oid);
+                break;
+            }
+        }
     }
 
     fn manage_item_mesg(&mut self, oid: Oid, action: &str) {
