@@ -15,6 +15,7 @@ type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 enum ContextItem {
     Drop,
     Remove,
+    Wear,
     WieldBothHands,
     WieldMainHand,
     WieldOffHand,
@@ -86,6 +87,10 @@ impl Mode for InventoryMode {
                     self.remove_item(game);
                     self.menu = None;
                 }
+                ContextResult::Selected(ContextItem::Wear) => {
+                    self.wear(game);
+                    self.menu = None;
+                }
                 ContextResult::Selected(ContextItem::WieldBothHands) => {
                     self.wield_main(game);
                     self.menu = None;
@@ -134,6 +139,12 @@ impl InventoryMode {
         game.player_acted(Action::Remove(inv[index].oid));
     }
 
+    fn wear(&self, game: &mut Game) {
+        let inv = game.inventory();
+        let index = self.selected.unwrap();
+        game.player_acted(Action::Wear(inv[index].oid));
+    }
+
     fn wield_main(&self, game: &mut Game) {
         let inv = game.inventory();
         let index = self.selected.unwrap();
@@ -173,7 +184,11 @@ impl InventoryMode {
                     items.push(ContextItem::WieldOffHand);
                 }
             }
-            ItemKind::Armor => (),
+            ItemKind::Armor => {
+                if inv[index].equipped.is_none() {
+                    items.push(ContextItem::Wear);
+                }
+            }
             ItemKind::Other => (),
         };
 
@@ -353,6 +368,7 @@ impl fmt::Display for ContextItem {
         let s = match self {
             ContextItem::Drop => "Drop",
             ContextItem::Remove => "Remove",
+            ContextItem::Wear => "Wear",
             ContextItem::WieldBothHands => "Wield (both hands)",
             ContextItem::WieldMainHand => "Wield (main hand)",
             ContextItem::WieldOffHand => "Wield (off hand)",

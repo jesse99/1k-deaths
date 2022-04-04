@@ -31,7 +31,7 @@ impl Game {
             let attacker = self.level.obj(attacker_id).0;
             attacker.equipped_value().map(|e| e[Slot::MainHand]).flatten()
         };
-        let (dam, msg) = self.do_attack(attacker_id, defender_id, attacker_loc, defender_loc, weapon);
+        let (dam, msg) = self.do_attack(attacker_id, defender_id, defender_loc, weapon);
         damage += dam;
         text += &msg;
 
@@ -49,7 +49,7 @@ impl Game {
             if off_hand {
                 // TODO: probability should depend on skill (very low at no skill)
                 // TODO: may want to allow an off hand unarmed attack for some races (or for a skill?)
-                let (dam, msg) = self.do_attack(attacker_id, defender_id, attacker_loc, defender_loc, weapon);
+                let (dam, msg) = self.do_attack(attacker_id, defender_id, defender_loc, weapon);
                 damage += dam;
                 text += &format!(" {msg}");
             }
@@ -66,7 +66,6 @@ impl Game {
         &mut self,
         attacker_id: Oid,
         defender_id: Oid,
-        attacker_loc: &Point,
         defender_loc: &Point,
         weapon: Option<Oid>,
     ) -> (i32, String) {
@@ -241,17 +240,27 @@ impl Game {
         linear_scale(adex - ddex, -max_delta, max_delta, 0.1, 1.0)
     }
 
-    // TODO: use skill and armor
+    // TODO: use skill
     fn mitigate_damage(&self, _attacker_id: Oid, defender_id: Oid, damage: i32) -> i32 {
         let defender = self.level.obj(defender_id).0;
-        let scaling = if defender.has(PLAYER_ID) {
-            0.9
-        } else if defender.has(ICARIUM_ID) {
-            0.8
+        if let Some(equipped) = defender.equipped_value() {
+            let mut mitigation = 0;
+            for item in equipped.values() {
+                if let Some(oid) = item {
+                    let obj = self.level.obj(*oid).0;
+                    if let Some(m) = obj.mitigation_value() {
+                        mitigation += m;
+                    }
+                }
+            }
+            let scaling = 1.0 - (mitigation as f64) / 100.0;
+            let scaling = scaling.max(0.0);
+            let new_damage = (scaling * (damage as f64)) as i32;
+            info!("damage went from {damage} to {new_damage} (scaling was {scaling:.1})");
+            new_damage
         } else {
-            0.9
-        };
-        (scaling * (damage as f64)) as i32
+            damage
+        }
     }
 
     fn npc_died(&mut self, defender_loc: &Point, defender_id: Oid) {

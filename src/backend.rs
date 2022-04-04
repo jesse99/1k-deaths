@@ -86,6 +86,8 @@ pub enum Action {
 
     Rest,
 
+    Wear(Oid),
+
     // Be sure to add new actions to the end (or saved games will break).
     WieldMainHand(Oid),
     WieldOffHand(Oid),
@@ -584,6 +586,19 @@ impl Game {
                     Time::zero()
                 }
             }
+            Action::Wear(oid) => {
+                if !self.game_over() {
+                    let mut delay = time::DIAGNOL_MOVE; // TODO: might want to scale delay be weight
+                    for oid in self.wear_blocked_by(oid) {
+                        self.remove(oid);
+                        delay += time::DIAGNOL_MOVE;
+                    }
+                    self.wear(oid);
+                    delay
+                } else {
+                    Time::zero()
+                }
+            }
             Action::WieldMainHand(oid) => {
                 if !self.game_over() {
                     let mut delay = time::DIAGNOL_MOVE / 2;
@@ -738,6 +753,48 @@ impl Game {
                 player.invariant();
             }
             self.manage_item_mesg(oid, "wield"); // at the very end to satisfy the borrow checker
+        }
+
+        assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+    }
+
+    fn wear_blocked_by(&mut self, oid: Oid) -> Vec<Oid> {
+        let mut blocks = Vec::new();
+
+        let obj = self.level.obj(oid).0;
+        let slot = obj.armor_value().unwrap();
+
+        let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let equipped = player.equipped_value_mut().unwrap();
+        if let Some(oid) = equipped[slot] {
+            blocks.push(oid);
+        }
+
+        // This normally won't return anything but in theory there could be odd items, e.g.
+        // something that can be used as both a weapon and armor.
+        self.blocked_by_equipped(oid, &mut blocks);
+
+        blocks
+    }
+
+    fn wear(&mut self, oid: Oid) {
+        {
+            let obj = self.level.obj(oid).0;
+            let slot = obj.armor_value().unwrap();
+
+            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let equipped = player.equipped_value_mut().unwrap();
+            assert!(equipped[slot].is_none());
+            equipped[slot] = Some(oid);
+
+            let inv = player.inventory_value_mut().unwrap();
+            let index = inv.iter().position(|x| *x == oid).unwrap();
+            inv.remove(index); // not using swap_remove because the UI cares about inv ordering
+
+            if cfg!(debug_assertions) {
+                player.invariant();
+            }
+            self.manage_item_mesg(oid, "worn"); // at the very end to satisfy the borrow checker
         }
 
         assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
