@@ -241,6 +241,10 @@ impl Game {
     }
 
     // TODO: use skill
+    // TODO: there should be penalties if the character isn't stromg enough to wear the
+    // armor well. Maybe sliding penalties to movement and weapon speed. Description
+    // and status effect should have text for that. Maybe something for magic too? Or maybe
+    // can prevent mage tanks using skills (can't be both great at armor and casting).
     fn mitigate_damage(&self, _attacker_id: Oid, defender_id: Oid, damage: i32) -> i32 {
         let defender = self.level.obj(defender_id).0;
         if let Some(equipped) = defender.equipped_value() {
@@ -255,9 +259,7 @@ impl Game {
             }
             let scaling = 1.0 - (mitigation as f64) / 100.0;
             let scaling = scaling.max(0.0);
-            let new_damage = (scaling * (damage as f64)) as i32;
-            info!("damage went from {damage} to {new_damage} (scaling was {scaling:.1})");
-            new_damage
+            (scaling * (damage as f64)) as i32
         } else {
             damage
         }

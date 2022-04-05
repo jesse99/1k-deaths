@@ -215,8 +215,17 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 // ---- Post-move handlers ---------------------------------------------------------------
 fn player_vs_portable(game: &mut Game, loc: &Point) -> (Time, Sound) {
     let oid = game.level.get(loc, PORTABLE_ID).unwrap().0;
-    game.do_pick_up(Oid(0), loc, oid);
-    (time::PICK_UP, sound::NONE)
+
+    let player = game.level.get_mut(loc, CHARACTER_ID).unwrap().1;
+    let inv = player.inventory_value().unwrap();
+    if inv.len() < MAX_INVENTORY {
+        game.do_pick_up(Oid(0), loc, oid);
+        (time::PICK_UP, sound::NONE)
+    } else {
+        let why = "You don't have enough inventory space to ";
+        game.do_ignore(Oid(0), loc, oid, why);
+        (Time::zero(), sound::NONE)
+    }
 }
 
 fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {

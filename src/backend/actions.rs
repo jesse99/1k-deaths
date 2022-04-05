@@ -136,6 +136,17 @@ impl Game {
         self.pov.dirty();
     }
 
+    pub fn do_ignore(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid, why: &str) {
+        let obj = self.level.obj(obj_oid).0;
+        debug!("{oid} is ignoring {obj_oid}/{obj} at {obj_loc}");
+        let name: &'static str = obj.name_value().unwrap();
+        let mesg = Message {
+            topic: Topic::Normal,
+            text: format!("{why} pick up the {name}."),
+        };
+        self.messages.push(mesg);
+    }
+
     pub fn do_pick_up(&mut self, oid: Oid, obj_loc: &Point, obj_oid: Oid) {
         let obj = self.level.obj(obj_oid).0;
         debug!("{oid} is picking up {obj_oid}/{obj} at {obj_loc}");

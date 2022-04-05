@@ -51,6 +51,7 @@ use fnv::FnvHashSet;
 
 const MAX_MESSAGES: usize = 1000;
 const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
+const MAX_INVENTORY: usize = 25; // TODO: review this later
 
 // TODO: These numbers are not very intelligible. If that becomes an issue we could use
 // a newtype string (e.g. "wall 97") or a simple struct with a static string ref and a
