@@ -571,7 +571,7 @@ impl Game {
                     Time::zero()
                 }
             }
-            Action::Object => panic!("Action::Object should only be used with replay_action"),
+            Action::Object => unreachable!("Action::Object should only be used with replay_action"),
             Action::Remove(oid) => {
                 if !self.game_over() {
                     self.remove(oid);
@@ -693,7 +693,7 @@ impl Game {
             }
             oh.iter().for_each(|o| blocks.push(*o));
         } else {
-            panic!("expected a one handed weapon");
+            unreachable!("expected a one handed weapon");
         }
         self.blocked_by_equipped(oid, &mut blocks);
         blocks
@@ -743,7 +743,7 @@ impl Game {
                     assert!(equipped[Slot::OffHand].is_none());
                     equipped[Slot::OffHand] = Some(oid);
                 }
-                _ => panic!("expected main or off hand"),
+                _ => unreachable!("expected main or off hand"),
             }
 
             let inv = player.inventory_value_mut().unwrap();

@@ -122,7 +122,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
                         game.messages.push(mesg);
                         return PreResult::Acted(delay / 4, sound::QUIET);
                     }
-                    None => panic!("Walls should always have a Material"),
+                    None => unreachable!("Walls should always have a Material"),
                 }
             }
         }
@@ -161,7 +161,7 @@ fn player_vs_character(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
             game.do_melee_attack(player_loc, new_loc);
             PreResult::Acted(delay, sound::QUIET)
         }
-        None => panic!("{obj} didn't have a Disposition!"),
+        None => unreachable!("{obj} didn't have a Disposition!"),
     }
 }
 

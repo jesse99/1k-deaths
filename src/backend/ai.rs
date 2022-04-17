@@ -28,7 +28,7 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
             } else if terrain == Terrain::ShallowWater {
                 shallow_flood(game, oid, units)
             } else {
-                panic!("{oid} is a scheduled terrain but not shallow or deep water!");
+                unreachable!("{oid} is a scheduled terrain but not shallow or deep water!");
             }
         } else {
             // TODO: will have to special case alternate goals, eg
@@ -41,7 +41,7 @@ pub fn acted(game: &mut Game, oid: Oid, units: Time) -> Acted {
                 Some(Behavior::MovingTo(loc)) => move_towards(game, oid, &loc, units),
                 Some(Behavior::Sleeping) => Acted::DidntAct, // NPCs transition out of this via handle_noise
                 Some(Behavior::Wandering(end)) => wander(game, oid, end, units),
-                None => panic!("{obj} is scheduled but has no ai handler"),
+                None => unreachable!("{obj} is scheduled but has no ai handler"),
             }
         }
     } else {

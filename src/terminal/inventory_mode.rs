@@ -76,6 +76,12 @@ impl Mode for InventoryMode {
         None
     }
 
+    // Note that the player can perform an arbitrary number of operations within this
+    // screen. But if he performs multiple actions that can give an NPC a chance to
+    // attack (possibly even more than once) before the player can move again. Ideally
+    // taking damage (or maybe PoV changes) would interrupt these actions but it's not
+    // clear how we'd do that: maybe this screen would auto-pop if the player takes
+    // damage? Or maybe a warning is displayed?
     fn handle_input(&mut self, game: &mut Game, key: Key) -> InputAction {
         if let Some(menu) = self.menu.as_mut() {
             match menu.handle_input(key) {
