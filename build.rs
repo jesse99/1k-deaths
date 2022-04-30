@@ -188,50 +188,54 @@ fn generate_tag_file(out_dir: &str) -> Result<(), std::io::Error> {
 }
 
 fn generate_obj_file(out_dir: &str) -> Result<(), std::io::Error> {
-    let dest_path = Path::new(&out_dir).join("obj.rs");
-    let mut f = File::create(&dest_path)?;
+    fn generate_tag_fns(f: &mut File) -> Result<(), std::io::Error> {
+        let tags = tags();
+        writeln!(f, "impl Object {{")?;
+        for tag in &tags {
+            match tag {
+                Tag::S(_) => (),
+                Tag::P(name, arg) => {
+                    let lname = name.to_lowercase();
+                    if arg.contains('<') {
+                        // If the argument is a collection then we want to return a reference
+                        // to the value (and a mutable version).
+                        writeln!(f, "    pub fn {lname}_value(&self) -> Option<&{arg}> {{")?;
+                        writeln!(f, "        for candidate in &self.tags {{")?;
+                        writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                        writeln!(f, "                return Some(value);")?;
+                        writeln!(f, "            }}")?;
+                        writeln!(f, "        }}")?;
+                        writeln!(f, "        None")?;
+                        writeln!(f, "    }}\n")?;
 
-    let tags = tags();
-    writeln!(f, "impl Object {{")?;
-    for tag in &tags {
-        match tag {
-            Tag::S(_) => (),
-            Tag::P(name, arg) => {
-                let lname = name.to_lowercase();
-                if arg.contains('<') {
-                    // If the argument is a collection then we want to return a reference
-                    // to the value (and a mutable version).
-                    writeln!(f, "    pub fn {lname}_value(&self) -> Option<&{arg}> {{")?;
-                    writeln!(f, "        for candidate in &self.tags {{")?;
-                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
-                    writeln!(f, "                return Some(value);")?;
-                    writeln!(f, "            }}")?;
-                    writeln!(f, "        }}")?;
-                    writeln!(f, "        None")?;
-                    writeln!(f, "    }}\n")?;
-
-                    writeln!(f, "    pub fn {lname}_value_mut(&mut self) -> Option<&mut {arg}> {{",)?;
-                    writeln!(f, "        for candidate in &mut self.tags {{")?;
-                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
-                    writeln!(f, "                return Some(value);")?;
-                    writeln!(f, "            }}")?;
-                    writeln!(f, "        }}")?;
-                    writeln!(f, "        None")?;
-                    writeln!(f, "    }}\n")?;
-                } else {
-                    writeln!(f, "    pub fn {lname}_value(&self) -> Option<{arg}> {{")?;
-                    writeln!(f, "        for candidate in &self.tags {{")?;
-                    writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
-                    writeln!(f, "                return Some(*value);")?;
-                    writeln!(f, "            }}")?;
-                    writeln!(f, "        }}")?;
-                    writeln!(f, "        None")?;
-                    writeln!(f, "    }}\n")?;
+                        writeln!(f, "    pub fn {lname}_value_mut(&mut self) -> Option<&mut {arg}> {{",)?;
+                        writeln!(f, "        for candidate in &mut self.tags {{")?;
+                        writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                        writeln!(f, "                return Some(value);")?;
+                        writeln!(f, "            }}")?;
+                        writeln!(f, "        }}")?;
+                        writeln!(f, "        None")?;
+                        writeln!(f, "    }}\n")?;
+                    } else {
+                        writeln!(f, "    pub fn {lname}_value(&self) -> Option<{arg}> {{")?;
+                        writeln!(f, "        for candidate in &self.tags {{")?;
+                        writeln!(f, "            if let Tag::{name}(value) = candidate {{")?;
+                        writeln!(f, "                return Some(*value);")?;
+                        writeln!(f, "            }}")?;
+                        writeln!(f, "        }}")?;
+                        writeln!(f, "        None")?;
+                        writeln!(f, "    }}\n")?;
+                    }
                 }
             }
         }
+        writeln!(f, "}}")?;
+        Ok(())
     }
-    writeln!(f, "}}")?;
+
+    let dest_path = Path::new(&out_dir).join("obj.rs");
+    let mut f = File::create(&dest_path)?;
+    generate_tag_fns(&mut f)?;
 
     Ok(())
 }

@@ -25,6 +25,56 @@ pub enum Symbol {
     WeakSword,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ObjectName {
+    // Armor
+    LeatherChest,
+    LeatherGloves,
+    LeatherHat,
+    LeatherLegs,
+    LeatherSandals,
+
+    // Misc Items
+    GreaterArmorySign,
+    LesserArmorySign,
+    PickAxe,
+
+    // NPCs
+    BerokeSoftVoice,
+    Doorman,
+    Guard,
+    HaladRackBearer,
+    Icarium,
+    ImrothTheCruel,
+    KahlbTheSilentHunter,
+    Player,
+    Rhulad,
+    SiballeTheUnfound,
+    Spectator,
+    ThenikTheShattered,
+    UrugalTheWoven,
+
+    // Terrain
+    ClosedDoor,
+    DeepWater,
+    Dirt,
+    MetalWall,
+    OpenDoor,
+    Rubble,
+    ShallowWater,
+    StoneWall,
+    Tree,
+    Vitr,
+
+    // Weapons
+    Dagger,
+    Broadsword,
+    EmperorSword,
+    LongKnife,
+    LongSword,
+    MightySword,
+}
+
 // TODO: Should define a custom Clone for Object (and probably Tag) because stuff like
 // InventoryTag won't clone properly. Not sure if this should do a deep clone or assert.
 
@@ -35,7 +85,7 @@ pub enum Symbol {
 #[derive(Clone, Eq, PartialEq)]
 pub struct Object {
     /// Used for logging, error reporting, etc.
-    dname: &'static str,
+    name: ObjectName,
 
     tags: Vec<Tag>,
     symbol: Symbol,
@@ -48,9 +98,9 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(dname: &'static str, description: &'static str, symbol: Symbol, color: Color, tags: Vec<Tag>) -> Object {
+    pub fn new(name: ObjectName, description: &'static str, symbol: Symbol, color: Color, tags: Vec<Tag>) -> Object {
         Object {
-            dname,
+            name,
             tags,
             symbol,
             color,
@@ -58,8 +108,8 @@ impl Object {
         }
     }
 
-    pub fn dname(&self) -> &'static str {
-        &self.dname
+    pub fn dname(&self) -> String {
+        format!("{:?}", self.name)
     }
 
     pub fn description(&self) -> &'static str {
@@ -176,6 +226,18 @@ impl Object {
             assert!(self.has(NAME_ID), "Character's must have a name: {self:?}");
             assert!(!self.has(PORTABLE_ID), "Character objects cannot be Portable: {self:?}",);
 
+            let disp = self.disposition_value();
+            if matches!(disp, Some(Disposition::Neutral) | Some(Disposition::Aggressive)) {
+                assert!(
+                    self.has(DURABILITY_ID),
+                    "Character's the player can fight should be mortal: {self:?}"
+                );
+                assert!(
+                    self.has(SCHEDULED_ID),
+                    "Character's the player can fight should be able to fight back: {self:?}"
+                );
+            }
+
             // This way the interactions table will find a tag for a particular NPC before
             // using the generic Character tag.
             assert!(
@@ -186,8 +248,21 @@ impl Object {
         if self.has(PLAYER_ID) {
             assert!(self.has(CHARACTER_ID), "Player must be a Character: {self:?}")
         }
+        if self.has(ARMOR_ID) {
+            assert!(self.has(PORTABLE_ID), "Armor objects must be portable: {self:?}");
+            assert!(self.has(MITIGATION_ID), "Armor objects must mitigate damage: {self:?}");
+        }
+        if self.has(WEAPON_ID) {
+            assert!(self.has(PORTABLE_ID), "Weapon objects must be portable: {self:?}");
+            assert!(self.has(DAMAGE_ID), "Weapon objects must cause damage: {self:?}");
+            assert!(self.has(DELAY_ID), "Weapon objects must have a delay: {self:?}");
+        }
         if self.has(PORTABLE_ID) {
-            assert!(self.has(NAME_ID), "Portable objects must have a Name: {self:?}")
+            assert!(self.has(NAME_ID), "Portable objects must have a Name: {self:?}");
+        }
+
+        if self.has(DAMAGE_ID) {
+            assert!(self.has(DELAY_ID), "Damage tags must also have a delay tag: {self:?}");
         }
 
         let mut ioids = FnvHashSet::default();
@@ -196,7 +271,7 @@ impl Object {
                 assert!(
                     !ioids.contains(&oid),
                     "'{}' has duplicate inventory oid {oid}",
-                    self.dname
+                    self.dname()
                 );
                 ioids.insert(oid);
             }
@@ -206,8 +281,8 @@ impl Object {
             let mut oids = FnvHashSet::default();
             for value in equipped.values() {
                 if let Some(oid) = value {
-                    assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname);
-                    assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname);
+                    assert!(!ioids.contains(&oid), "'{}' has {oid} in both inv and eq", self.dname());
+                    assert!(!oids.contains(&oid), "'{}' has duplicate eq oid {oid}", self.dname());
                     oids.insert(oid);
                 }
             }
@@ -216,7 +291,7 @@ impl Object {
         let mut ids = FnvHashSet::default();
         for tag in &self.tags {
             let id = tag.to_id();
-            assert!(!ids.contains(&id), "'{}' has duplicate tags: {self:?}", self.dname);
+            assert!(!ids.contains(&id), "'{}' has duplicate tags: {self:?}", self.dname());
             ids.insert(id);
         }
     }
@@ -224,7 +299,7 @@ impl Object {
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.dname)
+        write!(f, "{}", self.dname())
     }
 }
 
@@ -232,7 +307,7 @@ impl fmt::Debug for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let tags: Vec<String> = self.tags.iter().map(|tag| format!("{tag}")).collect();
         let tags = tags.join(", ");
-        write!(f, "dname: {} tags: {}", self.dname, tags)
+        write!(f, "dname: {} tags: {}", self.dname(), tags)
     }
 }
 

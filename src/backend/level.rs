@@ -37,7 +37,7 @@ impl Level {
             sorted: Cell::new(true),
             next_id: 2,
             player_loc: Point::new(0, 0),
-            default: super::make::stone_wall(),
+            default: super::new_obj(ObjectName::StoneWall),
             default_oids: vec![Oid(1)],
             changed: Point::new(0, 0),
             constructing: true,

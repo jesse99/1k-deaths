@@ -46,7 +46,7 @@ impl Game {
         }) {
             debug!("flood deep from {loc} to {new_loc}");
             let bad_oid = self.level.get(&new_loc, TERRAIN_ID).unwrap().0;
-            self.replace_object(&new_loc, bad_oid, make::deep_water());
+            self.replace_object(&new_loc, bad_oid, new_obj(ObjectName::DeepWater));
 
             if new_loc == self.player_loc() {
                 if let Some(newer_loc) = self.find_neighbor(&self.player_loc(), |candidate| {
@@ -99,7 +99,7 @@ impl Game {
         }) {
             debug!("flood shallow from {loc} to {new_loc}");
             let bad_oid = self.level.get(&new_loc, TERRAIN_ID).unwrap().0;
-            self.replace_object(&new_loc, bad_oid, make::shallow_water());
+            self.replace_object(&new_loc, bad_oid, new_obj(ObjectName::ShallowWater));
             Scheduled::Yes
         } else {
             // No where left to flood.
@@ -131,7 +131,7 @@ impl Game {
 
     pub fn do_open_door(&mut self, oid: Oid, ch_loc: &Point, obj_loc: &Point, obj_oid: Oid) {
         debug!("{oid} is opening the door at {obj_loc}");
-        self.replace_object(obj_loc, obj_oid, make::open_door());
+        self.replace_object(obj_loc, obj_oid, new_obj(ObjectName::OpenDoor));
         self.do_move(oid, ch_loc, obj_loc);
         self.pov.dirty();
     }

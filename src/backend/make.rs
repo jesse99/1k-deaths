@@ -9,57 +9,57 @@ pub fn level(game: &mut Game, map: &str) {
         // mapping section so that characters can do things like refer to
         // different uniques.
         let _ = match ch {
-            ' ' => game.add_object(&loc, dirt()),
-            '#' => game.add_object(&loc, stone_wall()),
-            'M' => game.add_object(&loc, metal_wall()),
-            '+' => game.add_object(&loc, closed_door()),
-            '~' => game.add_object(&loc, shallow_water()),
-            'V' => game.add_object(&loc, vitr()),
-            'T' => game.add_object(&loc, tree()),
-            'W' => game.add_object(&loc, deep_water()),
+            ' ' => game.add_object(&loc, new_obj(ObjectName::Dirt)),
+            '#' => game.add_object(&loc, new_obj(ObjectName::StoneWall)),
+            'M' => game.add_object(&loc, new_obj(ObjectName::MetalWall)),
+            '+' => game.add_object(&loc, new_obj(ObjectName::ClosedDoor)),
+            '~' => game.add_object(&loc, new_obj(ObjectName::ShallowWater)),
+            'V' => game.add_object(&loc, new_obj(ObjectName::Vitr)),
+            'T' => game.add_object(&loc, new_obj(ObjectName::Tree)),
+            'W' => game.add_object(&loc, new_obj(ObjectName::DeepWater)),
             'P' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, player())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::Player))
             }
             'D' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, doorman())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::Doorman))
             }
             'I' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, icarium())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::Icarium))
             }
             'g' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, guard())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::Guard))
             }
             'o' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, spectator())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::Spectator))
             }
             'R' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, rhulad())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::Rhulad))
             }
             's' => {
-                game.add_object(&loc, dirt());
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
                 game.add_object(&loc, weak_sword(game))
             }
             'p' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, pick_axe())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::PickAxe))
             }
             'S' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, mighty_sword())
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::MightySword))
             }
             'a' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, sign("a sign that says 'the Lesser Armory'"))
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::LesserArmorySign))
             }
             'b' => {
-                game.add_object(&loc, dirt());
-                game.add_object(&loc, sign("a sign that says 'the Greater Armory'"))
+                game.add_object(&loc, new_obj(ObjectName::Dirt));
+                game.add_object(&loc, new_obj(ObjectName::GreaterArmorySign))
             }
             '\n' => Oid(0),
             _ => {
@@ -67,7 +67,7 @@ pub fn level(game: &mut Game, map: &str) {
                     topic: Topic::Error,
                     text: format!("Ignoring map char '{ch}'"),
                 });
-                game.add_object(&loc, dirt())
+                game.add_object(&loc, new_obj(ObjectName::Dirt))
             }
         };
         if ch == '\n' {
@@ -80,11 +80,11 @@ pub fn level(game: &mut Game, map: &str) {
 }
 
 fn add_extras(game: &mut Game) {
-    add_extra(game, leather_hat());
-    add_extra(game, leather_chest());
-    add_extra(game, leather_gloves());
-    add_extra(game, leather_legs());
-    add_extra(game, leather_sandals());
+    add_extra(game, new_obj(ObjectName::LeatherHat));
+    add_extra(game, new_obj(ObjectName::LeatherChest));
+    add_extra(game, new_obj(ObjectName::LeatherGloves));
+    add_extra(game, new_obj(ObjectName::LeatherLegs));
+    add_extra(game, new_obj(ObjectName::LeatherSandals));
 }
 
 fn add_extra(game: &mut Game, obj: Object) {
@@ -112,439 +112,439 @@ fn add_extra(game: &mut Game, obj: Object) {
     }
 }
 
-// -- characters -------------------------------------------------------------------------
-// https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock
-pub fn broken(i: usize) -> Object {
-    let names = vec![
-        "Beroke Soft Voice",
-        "Halad Rack Bearer",
-        "Imroth the Cruel",
-        "Kahlb the Silent Hunter",
-        "Siballe the Unfound",
-        "Thenik the Shattered",
-        "Urugal the Woven",
-    ];
-    Object::new(
-        names[i],
-        names[i],
-        Symbol::Npc('u'),
-        Color::Red,
-        vec![
-            Tag::Strength(10),
-            Tag::Dexterity(10),
-            Tag::Disposition(Disposition::Aggressive),
-            Tag::Behavior(Behavior::Wandering(Time::max())),
-            Tag::Damage(35),
-            Tag::Delay(time::secs(5)),
-            Tag::Durability(Durability { current: 170, max: 170 }),
-            Tag::Name(names[i]),
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn doorman() -> Object {
-    Object::new(
-        "doorman",
-        "a royal guard",
-        Symbol::Npc('D'),
-        Color::Green,
-        vec![
-            Tag::Disposition(Disposition::Friendly),
-            Tag::Name("Doorman"),
-            Tag::Doorman,
-            Tag::Character,
-        ],
-    )
-}
-
-pub fn guard() -> Object {
-    Object::new(
-        "a guard",
-        "a low level guard",
-        Symbol::Npc('g'),
-        Color::Green,
-        vec![
-            Tag::Strength(10),
-            Tag::Dexterity(10),
-            Tag::Disposition(Disposition::Neutral),
-            Tag::Behavior(Behavior::Sleeping),
-            Tag::Damage(6),
-            Tag::Delay(time::secs(3)),
-            Tag::Flees(50),
-            Tag::Hearing(0),
-            Tag::Durability(Durability { current: 30, max: 30 }),
-            Tag::Name("a guard"),
-            Tag::Guard,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn icarium() -> Object {
-    Object::new(
-        "icarium",
-        "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
-        Symbol::Npc('I'),
-        Color::LightGrey,
-        vec![
-            Tag::Strength(10),
-            Tag::Dexterity(20),
-            Tag::Disposition(Disposition::Neutral),
-            Tag::Behavior(Behavior::Wandering(Time::max())),
-            Tag::Damage(45),
-            Tag::Delay(time::secs(3)),
-            Tag::Durability(Durability { current: 500, max: 500 }),
-            Tag::Name("Icarium"),
-            Tag::Icarium,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-pub fn player() -> Object {
-    Object::new(
-        "player",
-        "yourself",
-        Symbol::Player,
-        Color::Linen,
-        vec![
-            Tag::Strength(10),
-            Tag::Dexterity(10),
-            Tag::Durability(Durability { current: 100, max: 100 }),
-            Tag::Damage(6),
-            Tag::Delay(time::secs(2)),
-            Tag::Inventory(Vec::new()),
-            Tag::Equipped(EnumMap::default()),
-            Tag::Name("yourself"),
-            Tag::CanOpenDoor,
-            Tag::Player,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-pub fn rhulad() -> Object {
-    Object::new(
-        "rhulad",
-        "the Emperor of a Thousand Deaths",
-        Symbol::Npc('R'),
-        Color::Red,
-        vec![
-            Tag::Strength(10),
-            Tag::Dexterity(10),
-            Tag::Disposition(Disposition::Aggressive),
-            Tag::Behavior(Behavior::Sleeping),
-            Tag::Damage(24),
-            Tag::Delay(time::secs(4)),
-            Tag::Durability(Durability { current: 100, max: 100 }),
-            Tag::Name("Rhulad"),
-            Tag::Rhulad,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-fn spectator() -> Object {
-    Object::new(
-        "spectator",
-        "a spectator",
-        Symbol::Npc('s'),
-        Color::Plum,
-        vec![
-            Tag::Strength(10),
-            Tag::Dexterity(10),
-            Tag::Disposition(Disposition::Neutral),
-            Tag::Behavior(Behavior::Sleeping),
-            Tag::Hearing(0),
-            Tag::Durability(Durability { current: 33, max: 33 }),
-            Tag::Name("Spectator"),
-            Tag::Spectator,
-            Tag::Scheduled,
-            Tag::Character,
-        ],
-    )
-}
-
-// -- items ------------------------------------------------------------------------------
-pub fn sign(text: &'static str) -> Object {
-    Object::new("sign", text, Symbol::Sign, Color::Pink, vec![Tag::Sign])
-}
-
-pub fn emp_sword() -> Object {
-    Object::new(
-        "emp sword",
-        "the Sword of the Crippled God",
-        Symbol::StrongSword,
-        Color::Silver,
-        vec![
-            Tag::Name("Sword of the Crippled God"),
-            Tag::Weapon(Weapon::TwoHander),
-            Tag::Portable,
-            Tag::EmpSword,
-            Tag::Damage(50),
-            Tag::Delay(time::secs(5)),
-            Tag::Crit(3),
-            Tag::Strength(7),
-            Tag::Dexterity(20),
-        ],
-    )
-}
-
-// TODO: there should be different functions for these, eg swords and daggers should have
-// different stats
-pub fn weak_sword(game: &Game) -> Object {
+fn weak_sword(game: &Game) -> Object {
     let swords = vec![
-        ("long sword", "a nicked long sword"),
-        ("broadsword", "a dull broadsword"),
-        ("long knife", "a shiny long knife"),
-        ("dagger", "a pointy dagger"),
+        ObjectName::LongSword,
+        ObjectName::Broadsword,
+        ObjectName::LongKnife,
+        ObjectName::Dagger,
     ];
     let sword = swords.iter().choose(&mut *game.rng()).unwrap();
-    Object::new(
-        "weak sword",
-        sword.1,
-        Symbol::WeakSword,
-        Color::Silver,
-        vec![
-            Tag::Name(sword.0),
-            Tag::Portable,
-            Tag::Weapon(Weapon::OneHand),
-            Tag::Damage(12),
-            Tag::Delay(time::secs(3)),
-            Tag::Strength(4),
-            Tag::Dexterity(8),
-            Tag::Crit(10),
-        ],
-    )
+    new_obj(*sword)
 }
 
-pub fn mighty_sword() -> Object {
-    Object::new(
-        "mighty sword",
-        "the Sword of Impending Doom",
-        Symbol::StrongSword,
-        Color::Silver,
-        vec![
-            Tag::Name("Sword of Impending Doom"),
-            Tag::Portable,
-            Tag::Weapon(Weapon::TwoHander),
-            Tag::Damage(40),
-            Tag::Delay(time::secs(5)),
-            Tag::Strength(6),
-            Tag::Dexterity(15),
-            Tag::Crit(2),
-        ],
-    )
+fn broken_name(name: ObjectName) -> &'static str {
+    use ObjectName::*;
+    match name {
+        BerokeSoftVoice => "Beroke Soft Voice",
+        HaladRackBearer => "Halad Rack Bearer",
+        ImrothTheCruel => "Imroth the Cruel",
+        KahlbTheSilentHunter => "Kahlb the SilentHunter",
+        SiballeTheUnfound => "Siballe the Unfound",
+        ThenikTheShattered => "Thenik the Shattered",
+        UrugalTheWoven => "Urugal the Woven",
+        _ => panic!("expected one of the broken, not {name:?}"),
+    }
 }
 
-pub fn leather_hat() -> Object {
-    Object::new(
-        "leather hat",
-        "a leather hat",
-        Symbol::Armor,
-        Color::SandyBrown,
-        vec![
-            Tag::Name("leather hat"),
-            Tag::Portable,
-            Tag::Armor(Slot::Head),
-            Tag::Mitigation(3),
-        ],
-    )
+pub fn new_obj(name: ObjectName) -> Object {
+    use ObjectName::*;
+    match name {
+        // Armor
+        // TODO: chain armor should be 10, 8, and 6%
+        // TODO: plate armor should be 15, 12, and 9%
+        LeatherChest => Object::new(
+            name,
+            "a leather chest",
+            Symbol::Armor,
+            Color::SandyBrown,
+            vec![
+                Tag::Name("leather chest"),
+                Tag::Portable,
+                Tag::Armor(Slot::Chest),
+                Tag::Mitigation(5),
+            ],
+        ),
+        LeatherGloves => Object::new(
+            name,
+            "a leather gloves",
+            Symbol::Armor,
+            Color::SandyBrown,
+            vec![
+                Tag::Name("leather gloves"),
+                Tag::Portable,
+                Tag::Armor(Slot::Hands),
+                Tag::Mitigation(3),
+            ],
+        ),
+        LeatherHat => Object::new(
+            name,
+            "a leather hat",
+            Symbol::Armor,
+            Color::SandyBrown,
+            vec![
+                Tag::Name("leather hat"),
+                Tag::Portable,
+                Tag::Armor(Slot::Head),
+                Tag::Mitigation(3),
+            ],
+        ),
+        LeatherLegs => Object::new(
+            name,
+            "leather shin guard",
+            Symbol::Armor,
+            Color::SandyBrown,
+            vec![
+                Tag::Name("leather shin guards"),
+                Tag::Portable,
+                Tag::Armor(Slot::Legs),
+                Tag::Mitigation(4),
+            ],
+        ),
+        LeatherSandals => Object::new(
+            name,
+            "a leather sandals",
+            Symbol::Armor,
+            Color::SandyBrown,
+            vec![
+                Tag::Name("leather sandals"),
+                Tag::Portable,
+                Tag::Armor(Slot::Feet),
+                Tag::Mitigation(3),
+            ],
+        ),
+
+        // Misc Items
+        GreaterArmorySign => Object::new(
+            name,
+            "a sign that says 'the Greater Armory'",
+            Symbol::Sign,
+            Color::Pink,
+            vec![Tag::Sign],
+        ),
+        LesserArmorySign => Object::new(
+            name,
+            "a sign that says 'the Lesser Armory'",
+            Symbol::Sign,
+            Color::Pink,
+            vec![Tag::Sign],
+        ),
+        PickAxe => Object::new(
+            name,
+            "a pick-axe",
+            Symbol::PickAxe,
+            Color::Tan,
+            vec![
+                Tag::Name("pick-axe"),
+                Tag::PickAxe,
+                Tag::Delay(time::secs(32)),
+                Tag::Portable,
+            ],
+        ),
+
+        // NPCs
+        // https://malazan.fandom.com/wiki/The_Seven_Faces_in_the_Rock
+        BerokeSoftVoice | HaladRackBearer | ImrothTheCruel | KahlbTheSilentHunter | SiballeTheUnfound
+        | ThenikTheShattered | UrugalTheWoven => Object::new(
+            name,
+            "One of seven broken Logros T'lan Imass worshipped as gods by the Teblor.",
+            Symbol::Npc('u'),
+            Color::Red,
+            vec![
+                Tag::Strength(10),
+                Tag::Dexterity(10),
+                Tag::Disposition(Disposition::Aggressive),
+                Tag::Behavior(Behavior::Wandering(Time::max())),
+                Tag::Damage(35),
+                Tag::Delay(time::secs(5)),
+                Tag::Durability(Durability { current: 170, max: 170 }),
+                Tag::Name(broken_name(name)),
+                Tag::Scheduled,
+                Tag::Character,
+            ],
+        ),
+        Doorman => Object::new(
+            name,
+            "a royal guard",
+            Symbol::Npc('D'),
+            Color::Green,
+            vec![
+                Tag::Disposition(Disposition::Friendly),
+                Tag::Name("Doorman"),
+                Tag::Doorman,
+                Tag::Character,
+            ],
+        ),
+        Guard => Object::new(
+            name,
+            "a low level guard",
+            Symbol::Npc('g'),
+            Color::Green,
+            vec![
+                Tag::Strength(10),
+                Tag::Dexterity(10),
+                Tag::Disposition(Disposition::Neutral),
+                Tag::Behavior(Behavior::Sleeping),
+                Tag::Damage(6),
+                Tag::Delay(time::secs(3)),
+                Tag::Flees(50),
+                Tag::Hearing(0),
+                Tag::Durability(Durability { current: 30, max: 30 }),
+                Tag::Name("a guard"),
+                Tag::Guard,
+                Tag::Scheduled,
+                Tag::Character,
+            ],
+        ),
+        Icarium => Object::new(
+            name,
+            "Icarium Lifestealer, a mixed blood Jahgut. He looks extremely dangerous",
+            Symbol::Npc('I'),
+            Color::LightGrey,
+            vec![
+                Tag::Strength(10),
+                Tag::Dexterity(20),
+                Tag::Disposition(Disposition::Neutral),
+                Tag::Behavior(Behavior::Wandering(Time::max())),
+                Tag::Damage(45),
+                Tag::Delay(time::secs(3)),
+                Tag::Durability(Durability { current: 500, max: 500 }),
+                Tag::Name("Icarium"),
+                Tag::Icarium,
+                Tag::Scheduled,
+                Tag::Character,
+            ],
+        ),
+        Player => Object::new(
+            name,
+            "yourself",
+            Symbol::Player,
+            Color::Linen,
+            vec![
+                Tag::Strength(10),
+                Tag::Dexterity(10),
+                Tag::Durability(Durability { current: 100, max: 100 }),
+                Tag::Damage(6),
+                Tag::Delay(time::secs(2)),
+                Tag::Inventory(Vec::new()),
+                Tag::Equipped(EnumMap::default()),
+                Tag::Name("yourself"),
+                Tag::CanOpenDoor,
+                Tag::Player,
+                Tag::Scheduled,
+                Tag::Character,
+            ],
+        ),
+        Rhulad => Object::new(
+            name,
+            "the Emperor of a Thousand Deaths",
+            Symbol::Npc('R'),
+            Color::Red,
+            vec![
+                Tag::Strength(10),
+                Tag::Dexterity(10),
+                Tag::Disposition(Disposition::Aggressive),
+                Tag::Behavior(Behavior::Sleeping),
+                Tag::Damage(24),
+                Tag::Delay(time::secs(4)),
+                Tag::Durability(Durability { current: 100, max: 100 }),
+                Tag::Name("Rhulad"),
+                Tag::Rhulad,
+                Tag::Scheduled,
+                Tag::Character,
+            ],
+        ),
+        Spectator => Object::new(
+            name,
+            "a spectator",
+            Symbol::Npc('s'),
+            Color::Plum,
+            vec![
+                Tag::Strength(10),
+                Tag::Dexterity(10),
+                Tag::Disposition(Disposition::Neutral),
+                Tag::Behavior(Behavior::Sleeping),
+                Tag::Hearing(0),
+                Tag::Durability(Durability { current: 33, max: 33 }),
+                Tag::Name("Spectator"),
+                Tag::Spectator,
+                Tag::Scheduled,
+                Tag::Character,
+            ],
+        ),
+
+        // Terrain
+        ClosedDoor => Object::new(
+            name,
+            "a closed door",
+            Symbol::ClosedDoor,
+            Color::Yellow,
+            door_tags(Color::Black, Material::Stone, false),
+        ),
+        DeepWater => Object::new(
+            name,
+            "deep water",
+            Symbol::DeepLiquid,
+            Color::Blue,
+            vec![
+                Tag::Terrain(Terrain::DeepWater),
+                Tag::Background(Color::LightBlue),
+                Tag::Scheduled,
+            ],
+        ),
+        Dirt => Object::new(
+            name,
+            "a patch of dirt",
+            Symbol::Dirt,
+            Color::LightSlateGray,
+            vec![Tag::Terrain(Terrain::Ground), Tag::Background(Color::Black)],
+        ),
+        MetalWall => Object::new(
+            name,
+            "a metal wall",
+            Symbol::Wall,
+            Color::Silver,
+            wall_tags(Color::Black, Material::Metal),
+        ),
+        OpenDoor => Object::new(
+            name,
+            "an open door",
+            Symbol::OpenDoor,
+            Color::Yellow,
+            door_tags(Color::Black, Material::Stone, true),
+        ),
+        Rubble => Object::new(
+            name,
+            "a destroyed wall",
+            Symbol::Rubble,
+            Color::Chocolate,
+            vec![Tag::Terrain(Terrain::Ground), Tag::Background(Color::Black)],
+        ),
+        ShallowWater => Object::new(
+            name,
+            "shallow water",
+            Symbol::ShallowLiquid,
+            Color::Blue,
+            vec![
+                Tag::Terrain(Terrain::ShallowWater),
+                Tag::Background(Color::LightBlue),
+                Tag::Scheduled,
+            ],
+        ),
+        StoneWall => Object::new(
+            name,
+            "a stone wall",
+            Symbol::Wall,
+            Color::Chocolate,
+            wall_tags(Color::Black, Material::Stone),
+        ),
+        Tree => Object::new(
+            name,
+            "a tree",
+            Symbol::Tree,
+            Color::ForestGreen,
+            vec![Tag::Terrain(Terrain::Tree), Tag::Background(Color::Black)],
+        ),
+        Vitr => Object::new(
+            name,
+            "a pool of chaotic acid",
+            Symbol::DeepLiquid,
+            Color::Gold,
+            vec![Tag::Terrain(Terrain::Vitr), Tag::Background(Color::Black)],
+        ),
+
+        // Weapons
+        Broadsword => Object::new(
+            name,
+            "a dull broadsword",
+            Symbol::WeakSword,
+            Color::Silver,
+            vec![
+                Tag::Name("broadsword"),
+                Tag::Portable,
+                Tag::Weapon(Weapon::OneHand),
+                Tag::Damage(12),
+                Tag::Delay(time::secs(3)),
+                Tag::Strength(4),
+                Tag::Dexterity(8),
+                Tag::Crit(10),
+            ],
+        ),
+        Dagger => Object::new(
+            // TODO: need to re-balance these (and differentiate the weak swords)
+            name,
+            "a pointy dagger",
+            Symbol::WeakSword,
+            Color::Silver,
+            vec![
+                Tag::Name("dagger"),
+                Tag::Portable,
+                Tag::Weapon(Weapon::OneHand),
+                Tag::Damage(12),
+                Tag::Delay(time::secs(3)),
+                Tag::Strength(4),
+                Tag::Dexterity(8),
+                Tag::Crit(10),
+            ],
+        ),
+        EmperorSword => Object::new(
+            name,
+            "the Sword of the Crippled God",
+            Symbol::StrongSword,
+            Color::Silver,
+            vec![
+                Tag::Name("Sword of the Crippled God"),
+                Tag::Weapon(Weapon::TwoHander),
+                Tag::Portable,
+                Tag::EmpSword,
+                Tag::Damage(50),
+                Tag::Delay(time::secs(5)),
+                Tag::Crit(3),
+                Tag::Strength(7),
+                Tag::Dexterity(20),
+            ],
+        ),
+        LongKnife => Object::new(
+            name,
+            "a shiny long knife",
+            Symbol::WeakSword,
+            Color::Silver,
+            vec![
+                Tag::Name("long knife"),
+                Tag::Portable,
+                Tag::Weapon(Weapon::OneHand),
+                Tag::Damage(12),
+                Tag::Delay(time::secs(3)),
+                Tag::Strength(4),
+                Tag::Dexterity(8),
+                Tag::Crit(10),
+            ],
+        ),
+        LongSword => Object::new(
+            name,
+            "a nicked long sword",
+            Symbol::WeakSword,
+            Color::Silver,
+            vec![
+                Tag::Name("long sword"),
+                Tag::Portable,
+                Tag::Weapon(Weapon::OneHand),
+                Tag::Damage(12),
+                Tag::Delay(time::secs(3)),
+                Tag::Strength(4),
+                Tag::Dexterity(8),
+                Tag::Crit(10),
+            ],
+        ),
+        MightySword => Object::new(
+            name,
+            "the Sword of Impending Doom",
+            Symbol::StrongSword,
+            Color::Silver,
+            vec![
+                Tag::Name("Sword of Impending Doom"),
+                Tag::Portable,
+                Tag::Weapon(Weapon::TwoHander),
+                Tag::Damage(40),
+                Tag::Delay(time::secs(5)),
+                Tag::Strength(6),
+                Tag::Dexterity(15),
+                Tag::Crit(2),
+            ],
+        ),
+    }
 }
 
-pub fn leather_chest() -> Object {
-    Object::new(
-        "leather chest",
-        "a leather chest",
-        Symbol::Armor,
-        Color::SandyBrown,
-        vec![
-            Tag::Name("leather chest"),
-            Tag::Portable,
-            Tag::Armor(Slot::Chest),
-            Tag::Mitigation(5),
-        ],
-    )
-}
-
-pub fn leather_gloves() -> Object {
-    Object::new(
-        "leather gloves",
-        "a leather gloves",
-        Symbol::Armor,
-        Color::SandyBrown,
-        vec![
-            Tag::Name("leather gloves"),
-            Tag::Portable,
-            Tag::Armor(Slot::Hands),
-            Tag::Mitigation(3),
-        ],
-    )
-}
-
-pub fn leather_legs() -> Object {
-    Object::new(
-        "leather shin guards",
-        "leather shin guard",
-        Symbol::Armor,
-        Color::SandyBrown,
-        vec![
-            Tag::Name("leather shin guards"),
-            Tag::Portable,
-            Tag::Armor(Slot::Legs),
-            Tag::Mitigation(4),
-        ],
-    )
-}
-
-pub fn leather_sandals() -> Object {
-    Object::new(
-        "leather sandals",
-        "a leather sandals",
-        Symbol::Armor,
-        Color::SandyBrown,
-        vec![
-            Tag::Name("leather sandals"),
-            Tag::Portable,
-            Tag::Armor(Slot::Feet),
-            Tag::Mitigation(3),
-        ],
-    )
-}
-// TODO: chain armor should be 10, 8, and 6%
-// TODO: plate armor should be 15, 12, and 9%
-
-pub fn pick_axe() -> Object {
-    Object::new(
-        "pick-axe",
-        "a pick-axe",
-        Symbol::PickAxe,
-        Color::Tan,
-        vec![
-            Tag::Name("pick-axe"),
-            Tag::PickAxe,
-            Tag::Delay(time::secs(32)),
-            Tag::Portable,
-        ],
-    )
-}
-
-// -- terrain ----------------------------------------------------------------------------
-pub fn dirt() -> Object {
-    Object::new(
-        "dirt",
-        "a patch of dirt",
-        Symbol::Dirt,
-        Color::LightSlateGray,
-        vec![Tag::Terrain(Terrain::Ground), Tag::Background(Color::Black)],
-    )
-}
-
-pub fn rubble() -> Object {
-    Object::new(
-        "rubble",
-        "a destroyed wall",
-        Symbol::Rubble,
-        Color::Chocolate,
-        vec![Tag::Terrain(Terrain::Ground), Tag::Background(Color::Black)],
-    )
-}
-
-pub fn stone_wall() -> Object {
-    Object::new(
-        "stone wall",
-        "a stone wall",
-        Symbol::Wall,
-        Color::Chocolate,
-        wall_tags(Color::Black, Material::Stone),
-    )
-}
-
-pub fn metal_wall() -> Object {
-    Object::new(
-        "metal wall",
-        "a metal wall",
-        Symbol::Wall,
-        Color::Silver,
-        wall_tags(Color::Black, Material::Metal),
-    )
-}
-
-pub fn tree() -> Object {
-    Object::new(
-        "tree",
-        "a tree",
-        Symbol::Tree,
-        Color::ForestGreen,
-        vec![Tag::Terrain(Terrain::Tree), Tag::Background(Color::Black)],
-    )
-}
-
-pub fn closed_door() -> Object {
-    Object::new(
-        "closed door",
-        "a closed door",
-        Symbol::ClosedDoor,
-        Color::Yellow,
-        door_tags(Color::Black, Material::Stone, false),
-    )
-}
-
-pub fn open_door() -> Object {
-    Object::new(
-        "open door",
-        "an open door",
-        Symbol::OpenDoor,
-        Color::Yellow,
-        door_tags(Color::Black, Material::Stone, true),
-    )
-}
-
-pub fn shallow_water() -> Object {
-    Object::new(
-        "shallow water",
-        "shallow water",
-        Symbol::ShallowLiquid,
-        Color::Blue,
-        vec![
-            Tag::Terrain(Terrain::ShallowWater),
-            Tag::Background(Color::LightBlue),
-            Tag::Scheduled,
-        ],
-    )
-}
-
-pub fn deep_water() -> Object {
-    Object::new(
-        "deep water",
-        "deep water",
-        Symbol::DeepLiquid,
-        Color::Blue,
-        vec![
-            Tag::Terrain(Terrain::DeepWater),
-            Tag::Background(Color::LightBlue),
-            Tag::Scheduled,
-        ],
-    )
-}
-
-pub fn vitr() -> Object {
-    Object::new(
-        "vitr",
-        "a pool of chaotic acid",
-        Symbol::DeepLiquid,
-        Color::Gold,
-        vec![Tag::Terrain(Terrain::Vitr), Tag::Background(Color::Black)],
-    )
-}
-
-// --- tags ------------------------------------------------------------------------------
 fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
     let durability = 5 * to_durability(material); // walls are quite a bit tougher than something like a door
     vec![
@@ -556,6 +556,14 @@ fn wall_tags(bg: Color, material: Material) -> Vec<Tag> {
         Tag::Terrain(Terrain::Wall),
         Tag::Background(bg),
     ]
+}
+
+fn to_durability(material: Material) -> i32 {
+    match material {
+        // Material::Wood => 10,
+        Material::Stone => 100,
+        Material::Metal => 1000,
+    }
 }
 
 fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
@@ -573,12 +581,4 @@ fn door_tags(bg: Color, material: Material, open: bool) -> Vec<Tag> {
         },
         Tag::Background(bg),
     ]
-}
-
-fn to_durability(material: Material) -> i32 {
-    match material {
-        // Material::Wood => 10,
-        Material::Stone => 100,
-        Material::Metal => 1000,
-    }
 }

@@ -60,7 +60,6 @@ Step 9 - Items\
 \f1\b0 \cf3 \'95\'a0Look at these:\
 	- https://www.reddit.com/r/roguelikedev/wiki/faq_friday \
 \'95 Rust stuff:\
-	- can use unreachable!(), eg in match arms\
 \pard\pardeftab720\sl420\partightenfactor0
 \cf3 	- cargo-watch - automatically builds project after changes\
 	- cargo-outdated - print old dependecies (unlike cargo check this does new major versions)\
@@ -68,7 +67,15 @@ Step 9 - Items\
 	- criterion - statistically aware micro benchmarking\
 	- hdrhistogram - better distribution analysis, useful when care about min/max\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf3 \'95 Instead of potions/elixers could have items of the gods? https://malazan.fandom.com/wiki/Gods\
+\cf3 \'95\'a0Add a wizard command to create stuff:\
+	- do we need a builder to define (and register) make functions?\
+		` can we build an enum for canonical refs?\
+		` and have a string lookup for wizard command?\
+	- allow name aliases, eg for the broken\
+	- drop item on targeted cell\
+	- will need to verify that item can be added (eg it could be an NPC)\
+	- would be great to use some sort of fuzzy search\
+\'95 Instead of potions/elixers could have items of the gods? https://malazan.fandom.com/wiki/Gods\
 	- maybe multiple levels? gift, blessing\
 	- Soliel, heal percentage/heal + cure bad effects\
 	- Poliel, cause disease/disease cloud\

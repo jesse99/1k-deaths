@@ -272,7 +272,7 @@ impl Game {
         self.destroy_object(defender_loc, defender_id);
 
         if is_rhulad {
-            self.add_object(defender_loc, make::emp_sword()); // TODO: should drop inv items
+            self.add_object(defender_loc, new_obj(ObjectName::EmperorSword)); // TODO: should drop inv items
             self.state = State::KilledRhulad;
 
             let msg = "The Crippled God whispers, 'You shall pay for this mortal'.";
@@ -307,11 +307,20 @@ impl Game {
 
     fn spawn_the_broken(&mut self) {
         let mut bindex = 0;
+        let broken = vec![
+            ObjectName::BerokeSoftVoice,
+            ObjectName::HaladRackBearer,
+            ObjectName::ImrothTheCruel,
+            ObjectName::KahlbTheSilentHunter,
+            ObjectName::SiballeTheUnfound,
+            ObjectName::ThenikTheShattered,
+            ObjectName::UrugalTheWoven,
+        ];
         for _ in 0..21 {
             let loc = self.level.random_loc(&self.rng);
             let existing = &self.level.get(&loc, CHARACTER_ID);
             if existing.is_none() {
-                let ch = make::broken(bindex);
+                let ch = new_obj(broken[bindex]);
                 let (_, terrain) = self.level.get_bottom(&loc);
                 if ch.impassible_terrain(terrain).is_none() {
                     self.add_object(&loc, ch);

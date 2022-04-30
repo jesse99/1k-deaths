@@ -20,7 +20,7 @@ mod time;
 pub use arena::*;
 // use chrono::format::Item;
 pub use message::{Message, Topic};
-pub use object::Symbol;
+pub use object::{ObjectName, Symbol};
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
@@ -29,6 +29,7 @@ pub use tag::{Disposition, Slot};
 use derive_more::Display;
 use interactions::{Interactions, PreHandler, PreResult};
 use level::Level;
+use make::new_obj;
 use object::Object;
 use old_pov::OldPoV;
 use pov::PoV;
@@ -1063,10 +1064,10 @@ impl Game {
         if let Some(terrain) = obj.terrain_value() {
             // Terrain cannot be destroyed but has to be mutated into something else.
             let new_obj = if terrain == Terrain::Wall {
-                make::rubble()
+                new_obj(ObjectName::Rubble)
             } else {
                 error!("Need to better handle destroying Tid {obj}"); // Doors, trees, etc
-                make::dirt()
+                new_obj(ObjectName::Dirt)
             };
             let scheduled = new_obj.has(SCHEDULED_ID);
             let new_oid = self.level.replace(loc, old_oid, new_obj);

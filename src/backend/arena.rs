@@ -171,27 +171,27 @@ impl Game {
         let (oid1, oid2) = match opponents {
             Opponents::PlayerVsGuard => {
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-                let oid = self.add_object(&loc, make::guard());
+                let oid = self.add_object(&loc, new_obj(ObjectName::Guard));
                 (Oid(0), oid)
             }
             Opponents::PlayerVsRhulad => {
-                let oid = self.level.add(make::mighty_sword(), None);
+                let oid = self.level.add(new_obj(ObjectName::MightySword), None);
                 let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
                 let inv = player.inventory_value_mut().unwrap();
                 inv.push(oid);
 
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-                let oid = self.add_object(&loc, make::rhulad());
+                let oid = self.add_object(&loc, new_obj(ObjectName::Rhulad));
                 (Oid(0), oid)
             }
             Opponents::PlayerVsBroken => {
-                let oid = self.level.add(make::emp_sword(), None);
+                let oid = self.level.add(new_obj(ObjectName::EmperorSword), None);
                 let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
                 let inv = player.inventory_value_mut().unwrap();
                 inv.push(oid);
 
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-                let oid = self.add_object(&loc, make::broken(0));
+                let oid = self.add_object(&loc, new_obj(ObjectName::HaladRackBearer));
                 (Oid(0), oid)
             }
         };
