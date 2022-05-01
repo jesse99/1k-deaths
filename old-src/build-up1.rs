@@ -1,3 +1,4 @@
+// TODO: this requires an entry in cargo.toml
 use std::env;
 use std::fs::File;
 use std::io::Write;
