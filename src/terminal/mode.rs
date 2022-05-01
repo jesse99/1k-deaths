@@ -11,8 +11,8 @@ pub struct RenderContext<'a> {
 pub enum InputAction {
     UpdatedGame,
     Quit,
-    // Push(Box<dyn Mode>),
-    // Pop,
+    Push(Box<dyn Mode>),
+    Pop,
     NotHandled,
 }
 

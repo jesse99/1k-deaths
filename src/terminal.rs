@@ -1,8 +1,13 @@
 //! Rendering and UI using termion terminal module.
 mod color;
+mod details_view;
+mod help;
 mod main_mode;
 mod map_view;
+mod messages_view;
 mod mode;
+mod text_mode;
+mod text_view;
 mod ui;
 
 use one_thousand_deaths::State;

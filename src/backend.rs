@@ -1,5 +1,9 @@
+mod message;
+pub mod player;
 mod primitives;
+pub mod render;
 
+pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
@@ -7,59 +11,29 @@ pub use primitives::Size;
 /// Ecapsulates all the backend game state. All the fields and methods are private so
 /// UIs must use the render and input sub-modules.
 pub struct State {
-    player_loc: Point, // TODO: replace this with indexing into chars position
+    player_loc: Point,      // TODO: replace this with indexing into chars position
+    messages: Vec<Message>, // messages shown to the player
 }
 
 impl State {
     pub fn new() -> State {
+        let mut messages = Vec::new();
+        messages.push(Message {
+            topic: Topic::Important,
+            text: String::from("Welcome to 1k-deaths!"),
+        });
+        messages.push(Message {
+            topic: Topic::Important,
+            text: String::from("Are you the hero who will destroy the Crippled God's sword?"),
+        });
+        messages.push(Message {
+            topic: Topic::Important,
+            text: String::from("Press the '?' key for help."),
+        });
+
         State {
             player_loc: Point::new(20, 20),
+            messages,
         }
-    }
-}
-
-// TODO: move into a file
-pub mod render {
-    //! These are the functions that UIs use when rendering.
-    use super::*;
-
-    pub fn player_loc(state: &State) -> Point {
-        state.player_loc
-    }
-}
-
-// TODO: move into a file
-pub mod player {
-    //! These are the functions that UIs use to respond to player input.
-    use super::*;
-
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub enum Direction {
-        North,
-        NorthEast,
-        East,
-        SouthEast,
-        South,
-        SouthWest,
-        West,
-        NorthWest,
-    }
-
-    /// Most often this will move the player to a new location, but it's also used to attack
-    /// NPCs, and to interact with objects like doors.
-    pub fn bump(state: &mut State, dir: Direction) {
-        use Direction::*;
-        let delta = match dir {
-            North => Point::new(0, -1),
-            NorthEast => Point::new(1, -1),
-            East => Point::new(1, 0),
-            SouthEast => Point::new(1, 1),
-            South => Point::new(0, 1),
-            SouthWest => Point::new(-1, 1),
-            West => Point::new(-1, 0),
-            NorthWest => Point::new(-1, -1),
-        };
-        state.player_loc.x += delta.x;
-        state.player_loc.y += delta.y;
     }
 }

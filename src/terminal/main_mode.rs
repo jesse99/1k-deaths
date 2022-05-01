@@ -1,13 +1,13 @@
-// use super::details_view::DetailsView;
-// use super::help::{format_help, validate_help};
+use super::details_view::DetailsView;
+use super::help::{format_help, validate_help};
 use super::map_view::MapView;
-// use super::messages_view::{self, MessagesView};
+use super::messages_view::{self, MessagesView};
 use super::mode::{InputAction, Mode, RenderContext};
-// use super::text_mode::TextMode;
-// use super::text_view::{Line, TextRun};
+use super::text_mode::TextMode;
+use super::text_view::{Line, TextRun};
 use fnv::FnvHashMap;
 use one_thousand_deaths::player::{self, Direction};
-use one_thousand_deaths::{Point, Size, State};
+use one_thousand_deaths::{render, Color, Point, Size, State};
 // use std::fs::File;
 // use std::io::{Error, Write};
 // use std::path::Path;
@@ -20,8 +20,8 @@ type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
 pub struct MainMode {
     map: MapView,
-    // details: DetailsView,
-    // messages: MessagesView,
+    details: DetailsView,
+    messages: MessagesView,
     commands: CommandTable,
     // screen_size: Size,
 }
@@ -62,8 +62,8 @@ impl MainMode {
         // }
 
         // We don't receive ctrl-m so we use ctrl-p because that's what Crawl does.
-        // commands.insert(Key::Ctrl('p'), Box::new(|s, state| s.do_show_messages(state)));
-        // commands.insert(Key::Char('?'), Box::new(|s, state| s.do_help(state)));
+        commands.insert(Key::Ctrl('p'), Box::new(|s, state| s.do_show_messages(state)));
+        commands.insert(Key::Char('?'), Box::new(|s, state| s.do_help(state)));
         commands.insert(Key::Char('q'), Box::new(|s, state| s.do_quit(state)));
 
         let details_width = 20;
@@ -72,14 +72,14 @@ impl MainMode {
                 origin: Point::new(0, 0),
                 size: Size::new(width - details_width, height - NUM_MESSAGES),
             },
-            // details: DetailsView {
-            //     origin: Point::new(width - details_width, 0),
-            //     size: Size::new(details_width, height - NUM_MESSAGES),
-            // },
-            // messages: MessagesView {
-            //     origin: Point::new(0, height - NUM_MESSAGES),
-            //     size: Size::new(width, NUM_MESSAGES),
-            // },
+            details: DetailsView {
+                origin: Point::new(width - details_width, 0),
+                size: Size::new(details_width, height - NUM_MESSAGES),
+            },
+            messages: MessagesView {
+                origin: Point::new(0, height - NUM_MESSAGES),
+                size: Size::new(width, NUM_MESSAGES),
+            },
             commands,
             // screen_size: Size::new(width, height),
         })
@@ -88,9 +88,9 @@ impl MainMode {
 
 impl Mode for MainMode {
     fn render(&self, context: &mut RenderContext) -> bool {
-        // self.details.render(context.stdout, context.state); // TODO: views should probably take context
+        self.details.render(context.stdout, context.state); // TODO: views should probably take context
         self.map.render(context.stdout, context.state, context.examined); // TODO: details can write into the next line so this will fix up (which may cause flashing)
-                                                                          // self.messages.render(context.stdout, context.state);
+        self.messages.render(context.stdout, context.state);
         true
     }
 
@@ -113,35 +113,32 @@ impl MainMode {
     //     InputAction::Push(window)
     // }
 
-    //     fn do_help(&mut self, _game: &mut State) -> InputAction {
-    //         let mut help = r#"Help for the main game. Note that help is context sensitive,
-    // e.g. examine mode has its own set of commands and its own help screen.
+    fn do_help(&mut self, _game: &mut State) -> InputAction {
+        let help = r#"Help for the main game. Note that help is context sensitive,
+    e.g. examine mode has its own set of commands and its own help screen.
 
-    // Movement is done using the numeric keypad or arrow keys:
-    // [[7]] [[8]] [[9]]                  [[up-arrow]]
-    // [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
-    // [[1]] [[2]] [[3]]                 [[down-arrow]]
+    Movement is done using the numeric keypad or arrow keys:
+    [[7]] [[8]] [[9]]                  [[up-arrow]]
+    [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
+    [[1]] [[2]] [[3]]                 [[down-arrow]]
 
-    // [[5]] or [[s]] rest for one turn.
-    // [[i]] manage inventory items.
-    // [[x]] examine visible cells.
-    // [[control-p]] show recent messages.
-    // [[?]] show this help.
-    // [[q]] save and quit
-    // "#
-    //         .to_string();
-    //         if super::wizard_mode() {
-    //             help += r#"
+    [[control-p]] show recent messages.
+    [[?]] show this help.
+    [[q]] save and quit
+    "#
+        .to_string();
+        //     if super::wizard_mode() {
+        //         help += r#"
 
-    // Wizard mode commands:
-    // [[control-d]] dump game state to state-xxx.txt.
-    // "#;
-    //         }
-    //         validate_help("main", &help, self.commands.keys());
+        // Wizard mode commands:
+        // [[control-d]] dump game state to state-xxx.txt.
+        // "#;
+        //     }
+        validate_help("main", &help, self.commands.keys());
 
-    //         let lines = format_help(&help, self.commands.keys());
-    //         InputAction::Push(TextMode::at_top().create(lines))
-    //     }
+        let lines = format_help(&help, self.commands.keys());
+        InputAction::Push(TextMode::at_top().create(lines))
+    }
 
     // fn do_inventory(&mut self, state: &mut State) -> InputAction {
     //     let window = super::inventory_mode::InventoryMode::create(state, self.screen_size);
@@ -192,18 +189,18 @@ impl MainMode {
     //     InputAction::UpdatedGame
     // }
 
-    // fn do_show_messages(&mut self, state: &mut State) -> InputAction {
-    //     fn get_lines(state: &mut State) -> Vec<Line> {
-    //         let mut lines = Vec::new();
-    //         for message in state.recent_messages(usize::MAX) {
-    //             let fg = messages_view::to_fore_color(message.topic);
-    //             let line = vec![TextRun::Color(fg), TextRun::Text(message.text.clone())];
-    //             lines.push(line);
-    //         }
-    //         lines
-    //     }
+    fn do_show_messages(&mut self, state: &mut State) -> InputAction {
+        fn get_lines(state: &mut State) -> Vec<Line> {
+            let mut lines = Vec::new();
+            for message in render::recent_messages(state, usize::MAX) {
+                let fg = messages_view::to_fore_color(message.topic);
+                let line = vec![TextRun::Color(fg), TextRun::Text(message.text.clone())];
+                lines.push(line);
+            }
+            lines
+        }
 
-    //     let lines = get_lines(state);
-    //     InputAction::Push(TextMode::at_bottom().with_bg(Color::White).create(lines))
-    // }
+        let lines = get_lines(state);
+        InputAction::Push(TextMode::at_bottom().with_bg(Color::White).create(lines))
+    }
 }

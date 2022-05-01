@@ -63,26 +63,26 @@ impl UI {
         }
     }
 
-    // fn clear(&self, stdout: &mut Box<dyn Write>) {
-    //     write!(stdout, "{}", termion::clear::All).unwrap();
-    // }
+    fn clear(&self, stdout: &mut Box<dyn Write>) {
+        write!(stdout, "{}", termion::clear::All).unwrap();
+    }
 
-    pub(super) fn handle_input(&mut self, _stdout: &mut Box<dyn Write>, state: &mut State) -> GameLoop {
+    pub(super) fn handle_input(&mut self, stdout: &mut Box<dyn Write>, state: &mut State) -> GameLoop {
         use InputAction::*;
         let key = self.get_key();
         let mode = self.modes.last_mut().unwrap();
         match mode.handle_input(state, key) {
             UpdatedGame => (),
             Quit => return GameLoop::Quitting,
-            // Push(mode) => {
-            //     self.modes.push(mode);
-            //     self.clear(stdout);
-            // }
-            // Pop => {
-            //     let _ = self.modes.pop();
-            //     assert!(!self.modes.is_empty());
-            //     self.clear(stdout);
-            // }
+            Push(mode) => {
+                self.modes.push(mode);
+                self.clear(stdout);
+            }
+            Pop => {
+                let _ = self.modes.pop();
+                assert!(!self.modes.is_empty());
+                self.clear(stdout);
+            }
             NotHandled => {
                 debug!("player pressed {key:?}"); // TODO: beep?
             }

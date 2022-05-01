@@ -28,10 +28,10 @@ impl<T: Clone> Vec2d<T> {
         Vec2d { size, elements }
     }
 
-    #[cfg(test)] // for now this is only used within unit tests
-    pub fn size(&self) -> Size {
-        self.size
-    }
+    // #[cfg(test)] // for now this is only used within unit tests
+    // pub fn size(&self) -> Size {
+    //     self.size
+    // }
 
     #[cfg(test)] // for now this is only used within unit tests
     pub fn set(&mut self, loc: Point, value: T) {

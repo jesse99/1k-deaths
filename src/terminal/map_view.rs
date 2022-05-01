@@ -32,7 +32,7 @@ impl MapView {
                         color::Bg(super::color::to_termion(Color::Black)),
                         color::Fg(super::color::to_termion(Color::Blue)),
                     )
-                } else if pt == Point::new(5, 5) {
+                } else if pt.y == 0 || pt.x == 0 {
                     // so we can see where the player is moving
                     write!(
                         stdout,
