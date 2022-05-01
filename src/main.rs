@@ -3,10 +3,10 @@ extern crate derive_more;
 extern crate log;
 extern crate simplelog;
 
-// mod terminal;
+mod terminal;
 
 use clap::{ArgEnum, Parser};
-// use one_thousand_deaths::Game;
+use one_thousand_deaths::State;
 use simplelog::{CombinedLogger, ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
 // use std::path::Path;
@@ -112,6 +112,7 @@ fn main() {
     //     }
     // }
 
-    // let mut terminal = terminal::Terminal::new(game, actions);
-    // terminal.run();
+    let state = State::new();
+    let mut terminal = terminal::Terminal::new(state);
+    terminal.run();
 }
