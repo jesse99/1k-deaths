@@ -1,12 +1,12 @@
-mod message;
 pub mod player;
 mod primitives;
 pub mod render;
+mod support;
 
-pub use message::{Message, Topic};
 pub use primitives::Color;
 pub use primitives::Point;
 pub use primitives::Size;
+pub use support::{Message, Topic};
 
 /// Ecapsulates all the backend game state. All the fields and methods are private so
 /// UIs must use the render and input sub-modules.
