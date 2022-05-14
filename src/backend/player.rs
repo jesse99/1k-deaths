@@ -27,18 +27,23 @@ pub fn bump(state: &mut State, dir: Direction) {
         West => Point::new(-1, 0),
         NorthWest => Point::new(-1, -1),
     };
-    if state.player_loc.x + delta.x >= 0 && state.player_loc.y + delta.x >= 0 {
-        internal::move_player(state, delta);
+    let loc = loc(state);
+    if loc.x + delta.x >= 0 && loc.y + delta.x >= 0 {
+        state.process(Event::MoveChar(Oid(0), loc + delta));
     } else {
         state.messages.push(Message::new(Topic::Failed, "Can't move there"))
     }
 }
 
-mod internal {
-    use super::*;
-
-    pub fn move_player(state: &mut State, delta: Point) {
-        state.player_loc.x += delta.x;
-        state.player_loc.y += delta.y;
-    }
+pub fn loc(state: &State) -> Point {
+    state.char_to_loc.lookup(Oid(0))
 }
+
+// mod internal {
+//     use super::*;
+
+//     pub fn move_player(state: &mut State, delta: Point) {
+//         state.player_loc.x += delta.x;
+//         state.player_loc.y += delta.y;
+//     }
+// }

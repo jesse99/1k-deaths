@@ -2,7 +2,7 @@
 name = "one-thousand-deaths"
 version = "0.1.0"       # also Header::major_version and minor_version
 edition = "2021"
-# build = "build.rs"      # we generate source code to work with Tag's
+build = "build.rs"      # used to generate boiler-plate code, e.g. for extracting data from objects
 default-run = "one-thousand-deaths"
 
 [profile.dev]

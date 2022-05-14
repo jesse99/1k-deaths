@@ -1,5 +1,6 @@
 use std::fmt::{self, Formatter};
 use std::hash::{Hash, Hasher};
+use std::ops::{Add, AddAssign};
 
 /// Represents a point in cartesian space, typically a location within a level.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -56,5 +57,25 @@ impl Hash for Point {
         s <<= 32;
         s |= self.y as i64;
         s.hash(state);
+    }
+}
+
+impl Add for Point {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl AddAssign for Point {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        };
     }
 }

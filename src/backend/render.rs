@@ -11,7 +11,7 @@ pub fn recent_messages(state: &State, limit: usize) -> impl Iterator<Item = &Mes
 }
 
 pub fn player_loc(state: &State) -> Point {
-    state.player_loc
+    player::loc(state)
 }
 
 pub fn player_hps(_state: &State) -> (i32, i32) {
