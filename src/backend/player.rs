@@ -39,11 +39,6 @@ pub fn loc(state: &State) -> Point {
     state.char_to_loc.lookup(Oid(0))
 }
 
-// mod internal {
-//     use super::*;
-
-//     pub fn move_player(state: &mut State, delta: Point) {
-//         state.player_loc.x += delta.x;
-//         state.player_loc.y += delta.y;
-//     }
-// }
+fn special_terrain(state: &mut State, loc: &Point) -> bool {
+    false
+}

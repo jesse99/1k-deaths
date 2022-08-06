@@ -165,31 +165,6 @@ impl Object {
     pub fn to_fg_symbol(&self) -> (Color, Symbol) {
         (self.color, self.symbol)
     }
-
-    pub fn impassible_terrain(&self, obj: &Object) -> Option<Message> {
-        let terrain = obj.terrain_value().unwrap();
-        obj.impassible_terrain_type(terrain)
-    }
-
-    pub fn impassible_terrain_type(&self, terrain: Terrain) -> Option<Message> {
-        match terrain {
-            Terrain::ClosedDoor if !self.has(CAN_OPEN_DOOR_ID) => {
-                Some(Message::new(Topic::Failed, "You fail to open the door."))
-            }
-            Terrain::ClosedDoor => None,
-            Terrain::DeepWater => Some(Message::new(Topic::Failed, "The water is too deep.")),
-            Terrain::Ground => None,
-            Terrain::OpenDoor => None,
-            Terrain::Rubble => None,
-            Terrain::ShallowWater => None,
-            Terrain::Tree => Some(Message::new(
-                Topic::Failed,
-                "The tree's are too thick to travel through.",
-            )),
-            Terrain::Vitr => Some(Message::new(Topic::Failed, "Do you have a death wish?")),
-            Terrain::Wall => Some(Message::new(Topic::Failed, "You bump into the wall.")),
-        }
-    }
 }
 
 // Debug support

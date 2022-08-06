@@ -53,12 +53,18 @@ impl State {
             text: String::from("Press the '?' key for help."),
         });
 
+        let default_terrain = Oid(1);
         let mut state = State {
             oid_to_obj: OidToObj::new(),
+            loc_to_terrain: LocToTerrain(default_terrain),
             char_to_loc: CharToLoc::new(),
             messages,
             stream: Vec::new(),
         };
+
+        state.create_char(&Point::new(10, 10), ObjectName::Player);
+        state.process(Event::Create(ObjectName::StoneWall));
+        assert!(state.oid_to_obj.last_oid() == default_terrain);
 
         for y in 0..40 {
             for x in 0..40 {
@@ -71,7 +77,6 @@ impl State {
             state.create_terrain(&Point::new(0, i), ObjectName::StoneWall);
             state.create_terrain(&Point::new(40, i), ObjectName::StoneWall);
         }
-        state.create_char(&Point::new(10, 10), ObjectName::Player);
         state
     }
 }

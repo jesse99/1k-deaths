@@ -2,12 +2,14 @@ mod make;
 mod message;
 mod object;
 mod tag;
+mod terrain;
 mod time;
 
 pub use make::*;
 pub use message::*;
 pub use object::*;
 pub use tag::*;
+pub use terrain::*;
 pub use time::*;
 
 use rand::prelude::*;
