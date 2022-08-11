@@ -7,6 +7,7 @@ mod level;
 mod make;
 mod melee;
 mod message;
+mod model;
 mod object;
 mod old_pov;
 mod persistence;
