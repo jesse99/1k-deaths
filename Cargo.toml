@@ -2,7 +2,6 @@
 name = "one-thousand-deaths"
 version = "0.1.0"       # also Header::major_version and minor_version
 edition = "2021"
-build = "build.rs"      # we generate source code to work with Tag's
 default-run = "one-thousand-deaths"
 
 [profile.dev]
@@ -11,17 +10,3 @@ opt-level = 1           # this is noticeably faster and hopefully doesn't slow d
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-byteorder = "1.4.3"     # byte-swapping library
-chrono = "0.4.19"	    # datetime library
-clap = {version = "3.0.13", features = ["derive"]}      # command line parser
-derive_more = "0.99.17" # helper to derive traits like Display for structs and enums
-enum-map = "2.0.3"      # efficient collection indexing via an enum
-fnv = "1.0.7"	        # custom hasher that is much more performant for small keys
-log = "0.4.14" 	        # logging facade
-postcard = {version = "0.7.3", features = ["use-std"]}  # binary backend for serde
-rand = {version = "0.8.4", features = ["small_rng"]}	# random numbers
-rand_distr = "0.4.3"    # normal (and other) distributions
-serde = "1.0.133"	    # serialization framework
-serde_derive = "1.0.133"# serde derive macros
-simplelog = "0.11.2" 	# logging to a file
-termion = "1.5.6"       # terminal support
