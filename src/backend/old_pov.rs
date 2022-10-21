@@ -22,7 +22,7 @@ impl OldPoV {
     pub fn update(game: &mut Game) {
         if game.pov.edition() != game.old_pov.edition {
             for loc in game.pov.locations() {
-                let (_, obj) = game.level.get_top(loc);
+                let (_, obj) = game.level.get_top(*loc);
                 let (_, symbol) = obj.to_fg_symbol();
                 game.old_pov.old.insert(*loc, symbol);
             }

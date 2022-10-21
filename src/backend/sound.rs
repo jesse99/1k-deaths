@@ -88,13 +88,13 @@ impl Game {
         // TODO: if this becomes an issue we could look at using the rstar crate to find
         // the NPCs near an arbitrary location (not sure how well that'd work with lots
         // of movement though).
-        let delta2 = origin.distance2(&self.player_loc());
+        let delta2 = origin.distance2(self.player_loc());
         let npcs: Vec<Point> = self
             .level
             .npcs()
             .map_while(|oid| {
                 let loc = self.loc(oid).unwrap();
-                let distance2 = origin.distance2(&loc);
+                let distance2 = origin.distance2(loc);
                 if distance2 <= pov::RADIUS * pov::RADIUS + delta2 + 4 * 4 {
                     // We don't want to check every NPC since that's expensive and kinda
                     // pointless. So currently we check out to the pov radius + 4.
@@ -108,7 +108,7 @@ impl Game {
         for loc in &npcs {
             if let Some(distance10) = self.find_distance10(origin, loc) {
                 let hearing: i32 = {
-                    if let Some((_, obj)) = self.level.get(&loc, HEARING_ID) {
+                    if let Some((_, obj)) = self.level.get(*loc, HEARING_ID) {
                         obj.hearing_value().unwrap()
                     } else {
                         100
@@ -116,7 +116,7 @@ impl Game {
                 };
                 let (was_heard, p) = noise.was_heard(&self.rng, distance10, hearing);
                 if was_heard {
-                    if let Some((_, obj)) = self.level.get_mut(&loc, BEHAVIOR_ID) {
+                    if let Some((_, obj)) = self.level.get_mut(*loc, BEHAVIOR_ID) {
                         if responded_to_noise(obj, origin) {
                             // We could switch to attacking here if an enemy made the noise
                             // and is in sight. But we need to make that check anyway each
@@ -126,7 +126,7 @@ impl Game {
                                 "{obj} heard a noise and is now moving to {origin}, prob={p:.2}, dist={:.1}",
                                 (distance10 as f64) / 10.0
                             );
-                            self.replace_behavior(&loc, Behavior::MovingTo(*origin));
+                            self.replace_behavior(*loc, Behavior::MovingTo(*origin));
                             // } else {
                             //     info!(
                             //         "{obj} heard a noise but ignored it, prob={p:.2}, dist={:.1}",
@@ -160,7 +160,7 @@ impl Game {
         let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let (_, obj) = self.level.get_bottom(&new_loc);
+            let (_, obj) = self.level.get_bottom(new_loc);
             let mut d = match obj.terrain_value().unwrap() {
                 // sound travels through everything but can be very attenuated
                 Terrain::ClosedDoor => 50,
@@ -173,7 +173,7 @@ impl Game {
                 Terrain::Vitr => 10,
                 Terrain::Wall => 100,
             };
-            if loc.diagnol(&new_loc) {
+            if loc.diagnol(new_loc) {
                 d += 12 * d / 10;
             }
             neighbors.push((new_loc, d));

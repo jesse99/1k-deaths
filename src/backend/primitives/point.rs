@@ -18,21 +18,21 @@ impl Point {
         Point { x: 0, y: 0 }
     }
 
-    pub fn adjacent(&self, rhs: &Point) -> bool {
+    pub fn adjacent(&self, rhs: Point) -> bool {
         let dx = (self.x - rhs.x).abs();
         let dy = (self.y - rhs.y).abs();
         dx <= 1 && dy <= 1 && !(dx == 0 && dy == 0)
     }
 
     /// distance squared between two points
-    pub fn distance2(&self, rhs: &Point) -> i32 {
+    pub fn distance2(&self, rhs: Point) -> i32 {
         let dx = self.x - rhs.x;
         let dy = self.y - rhs.y;
         dx * dx + dy * dy
     }
 
-    pub fn diagnol(&self, new_loc: &Point) -> bool {
-        assert!(self != new_loc);
+    pub fn diagnol(&self, new_loc: Point) -> bool {
+        assert!(*self != new_loc);
 
         let dx = self.x - new_loc.x;
         let dy = self.y - new_loc.y;

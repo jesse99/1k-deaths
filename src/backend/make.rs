@@ -9,57 +9,57 @@ pub fn level(game: &mut Game, map: &str) {
         // mapping section so that characters can do things like refer to
         // different uniques.
         let _ = match ch {
-            ' ' => game.add_object(&loc, new_obj(ObjectName::Dirt)),
-            '#' => game.add_object(&loc, new_obj(ObjectName::StoneWall)),
-            'M' => game.add_object(&loc, new_obj(ObjectName::MetalWall)),
-            '+' => game.add_object(&loc, new_obj(ObjectName::ClosedDoor)),
-            '~' => game.add_object(&loc, new_obj(ObjectName::ShallowWater)),
-            'V' => game.add_object(&loc, new_obj(ObjectName::Vitr)),
-            'T' => game.add_object(&loc, new_obj(ObjectName::Tree)),
-            'W' => game.add_object(&loc, new_obj(ObjectName::DeepWater)),
+            ' ' => game.add_object(loc, new_obj(ObjectName::Dirt)),
+            '#' => game.add_object(loc, new_obj(ObjectName::StoneWall)),
+            'M' => game.add_object(loc, new_obj(ObjectName::MetalWall)),
+            '+' => game.add_object(loc, new_obj(ObjectName::ClosedDoor)),
+            '~' => game.add_object(loc, new_obj(ObjectName::ShallowWater)),
+            'V' => game.add_object(loc, new_obj(ObjectName::Vitr)),
+            'T' => game.add_object(loc, new_obj(ObjectName::Tree)),
+            'W' => game.add_object(loc, new_obj(ObjectName::DeepWater)),
             'P' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::Player))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::Player))
             }
             'D' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::Doorman))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::Doorman))
             }
             'I' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::Icarium))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::Icarium))
             }
             'g' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::Guard))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::Guard))
             }
             'o' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::Spectator))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::Spectator))
             }
             'R' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::Rhulad))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::Rhulad))
             }
             's' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, weak_sword(game))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, weak_sword(game))
             }
             'p' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::PickAxe))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::PickAxe))
             }
             'S' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::MightySword))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::MightySword))
             }
             'a' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::LesserArmorySign))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::LesserArmorySign))
             }
             'b' => {
-                game.add_object(&loc, new_obj(ObjectName::Dirt));
-                game.add_object(&loc, new_obj(ObjectName::GreaterArmorySign))
+                game.add_object(loc, new_obj(ObjectName::Dirt));
+                game.add_object(loc, new_obj(ObjectName::GreaterArmorySign))
             }
             '\n' => Oid(0),
             _ => {
@@ -67,7 +67,7 @@ pub fn level(game: &mut Game, map: &str) {
                     topic: Topic::Error,
                     text: format!("Ignoring map char '{ch}'"),
                 });
-                game.add_object(&loc, new_obj(ObjectName::Dirt))
+                game.add_object(loc, new_obj(ObjectName::Dirt))
             }
         };
         if ch == '\n' {
@@ -100,11 +100,11 @@ fn add_extra(game: &mut Game, obj: Object) {
         for _ in 0..5 {
             // we'll try 5x to add count instances of obj
             let loc = game.level.random_loc(&game.rng);
-            let has_char = game.level.get(&loc, CHARACTER_ID).is_some();
-            let terrain = game.level.get_bottom(&loc).1;
+            let has_char = game.level.get(loc, CHARACTER_ID).is_some();
+            let terrain = game.level.get_bottom(loc).1;
             if Terrain::Ground == terrain.terrain_value().unwrap() {
                 if !has_char {
-                    game.add_object(&loc, obj.clone());
+                    game.add_object(loc, obj.clone());
                     break;
                 }
             }

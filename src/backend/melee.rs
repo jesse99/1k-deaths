@@ -3,9 +3,9 @@ use super::*;
 const MAX_STAT: i32 = 30; // this is a soft limit: stats can go higher than this but with diminishing (or no) returns
 
 impl Game {
-    pub fn melee_delay(&self, attacker_loc: &Point) -> Time {
+    pub fn melee_delay(&self, attacker_loc: Point) -> Time {
         let attacker_id = self.level.get(attacker_loc, CHARACTER_ID).unwrap().0;
-        let attacker = self.level.obj(attacker_id).0;
+        let attacker = self.level.obj(attacker_id);
         if let Some(weapon) = self.find_main_hand(attacker) {
             // TODO: extra delay if off hand?
             weapon.delay_value().unwrap()
@@ -18,7 +18,7 @@ impl Game {
         0.25
     }
 
-    pub fn do_melee_attack(&mut self, attacker_loc: &Point, defender_loc: &Point) {
+    pub fn do_melee_attack(&mut self, attacker_loc: Point, defender_loc: Point) {
         let attacker_id = self.level.get(attacker_loc, CHARACTER_ID).unwrap().0;
         let defender_id = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().0;
         debug!("{attacker_id} is meleeing {defender_id}");
@@ -28,7 +28,7 @@ impl Game {
         let mut text = String::new();
 
         let weapon = {
-            let attacker = self.level.obj(attacker_id).0;
+            let attacker = self.level.obj(attacker_id);
             attacker.equipped_value().map(|e| e[Slot::MainHand]).flatten()
         };
         let (dam, msg) = self.do_attack(attacker_id, defender_id, defender_loc, weapon);
@@ -38,7 +38,7 @@ impl Game {
         // Weapon delay is ignored for the off hand so it's best to use the highest damage
         // weapon you can find.
         let weapon = {
-            let attacker = self.level.obj(attacker_id).0;
+            let attacker = self.level.obj(attacker_id);
             attacker.equipped_value().map(|e| e[Slot::OffHand]).flatten()
         };
         if weapon.is_some() {
@@ -66,7 +66,7 @@ impl Game {
         &mut self,
         attacker_id: Oid,
         defender_id: Oid,
-        defender_loc: &Point,
+        defender_loc: Point,
         weapon: Option<Oid>,
     ) -> (i32, String) {
         // It'd be more efficient to use Objects here but the borrow checker whines a lot.
@@ -129,15 +129,15 @@ impl Game {
         if attacker_id.0 == 0 {
             "You".to_string()
         } else {
-            let attacker = self.level.obj(attacker_id).0;
+            let attacker = self.level.obj(attacker_id);
             let name: &'static str = attacker.name_value().unwrap();
             format!("{name}")
         }
     }
 
     pub fn base_damage(&self, attacker_id: Oid, weapon: Option<Oid>) -> (i32, bool) {
-        let attacker = self.level.obj(attacker_id).0;
-        let (damage, min_str) = if let Some(weapon) = weapon.map(|w| self.level.obj(w).0) {
+        let attacker = self.level.obj(attacker_id);
+        let (damage, min_str) = if let Some(weapon) = weapon.map(|w| self.level.obj(w)) {
             (weapon.damage_value().unwrap(), weapon.strength_value())
         } else {
             (
@@ -173,8 +173,8 @@ impl Game {
     }
 
     pub fn crit_prob(&self, attacker_id: Oid, weapon: Option<Oid>) -> f64 {
-        let attacker = self.level.obj(attacker_id).0;
-        let (min_dex, crit_percent) = if let Some(weapon) = weapon.map(|w| self.level.obj(w).0) {
+        let attacker = self.level.obj(attacker_id);
+        let (min_dex, crit_percent) = if let Some(weapon) = weapon.map(|w| self.level.obj(w)) {
             (weapon.dexterity_value(), weapon.crit_value().unwrap_or(0))
         } else {
             (
@@ -196,7 +196,7 @@ impl Game {
         if defender_id.0 == 0 {
             "you".to_string()
         } else {
-            let defender = self.level.obj(defender_id).0;
+            let defender = self.level.obj(defender_id);
             format!("{defender}")
         }
     }
@@ -204,7 +204,7 @@ impl Game {
     pub fn find_main_hand(&self, attacker: &Object) -> Option<&Object> {
         let equipped = attacker.equipped_value()?;
         if let Some(oid) = equipped[Slot::MainHand] {
-            return Some(self.level.obj(oid).0);
+            return Some(self.level.obj(oid));
         }
         None
     }
@@ -212,13 +212,13 @@ impl Game {
     pub fn find_off_hand(&self, attacker: &Object) -> Option<&Object> {
         let equipped = attacker.equipped_value()?;
         if let Some(oid) = equipped[Slot::OffHand] {
-            return Some(self.level.obj(oid).0);
+            return Some(self.level.obj(oid));
         }
         None
     }
 
     fn hps(&self, defender_id: Oid, damage: i32) -> (i32, i32) {
-        let defender = self.level.obj(defender_id).0;
+        let defender = self.level.obj(defender_id);
         let durability = defender.durability_value().unwrap();
         (durability.current - damage, durability.max)
     }
@@ -231,8 +231,8 @@ impl Game {
 
     // TODO: use dexterity/evasion
     pub fn hit_prob(&self, attacker_id: Oid, defender_id: Oid) -> f64 {
-        let attacker = self.level.obj(attacker_id).0;
-        let defender = self.level.obj(defender_id).0;
+        let attacker = self.level.obj(attacker_id);
+        let defender = self.level.obj(defender_id);
 
         let adex = attacker.dexterity_value().unwrap(); // TODO: this should be adjusted by heavy gear
         let ddex = defender.dexterity_value().unwrap();
@@ -246,12 +246,12 @@ impl Game {
     // and status effect should have text for that. Maybe something for magic too? Or maybe
     // can prevent mage tanks using skills (can't be both great at armor and casting).
     fn mitigate_damage(&self, _attacker_id: Oid, defender_id: Oid, damage: i32) -> i32 {
-        let defender = self.level.obj(defender_id).0;
+        let defender = self.level.obj(defender_id);
         if let Some(equipped) = defender.equipped_value() {
             let mut mitigation = 0;
             for item in equipped.values() {
                 if let Some(oid) = item {
-                    let obj = self.level.obj(*oid).0;
+                    let obj = self.level.obj(*oid);
                     if let Some(m) = obj.mitigation_value() {
                         mitigation += m;
                     }
@@ -265,8 +265,8 @@ impl Game {
         }
     }
 
-    fn npc_died(&mut self, defender_loc: &Point, defender_id: Oid) {
-        let defender = self.level.obj(defender_id).0;
+    fn npc_died(&mut self, defender_loc: Point, defender_id: Oid) {
+        let defender = self.level.obj(defender_id);
         let is_rhulad = defender.has(RHULAD_ID);
 
         self.destroy_object(defender_loc, defender_id);
@@ -282,7 +282,7 @@ impl Game {
         }
     }
 
-    fn react_to_attack(&mut self, attacker_loc: &Point, attacker_id: Oid, defender_loc: &Point) {
+    fn react_to_attack(&mut self, attacker_loc: Point, attacker_id: Oid, defender_loc: Point) {
         let defender = self.level.get_mut(defender_loc, CHARACTER_ID).unwrap().1;
         let attack = match defender.behavior_value() {
             Some(Behavior::Sleeping) => true,
@@ -301,7 +301,7 @@ impl Game {
             }
         };
         if attack {
-            self.replace_behavior(defender_loc, Behavior::Attacking(attacker_id, *attacker_loc));
+            self.replace_behavior(defender_loc, Behavior::Attacking(attacker_id, attacker_loc));
         }
     }
 
@@ -318,19 +318,19 @@ impl Game {
         ];
         for _ in 0..21 {
             let loc = self.level.random_loc(&self.rng);
-            let existing = &self.level.get(&loc, CHARACTER_ID);
+            let existing = &self.level.get(loc, CHARACTER_ID);
             if existing.is_none() {
                 let ch = new_obj(broken[bindex]);
-                let (_, terrain) = self.level.get_bottom(&loc);
+                let (_, terrain) = self.level.get_bottom(loc);
                 if ch.impassible_terrain(terrain).is_none() {
-                    self.add_object(&loc, ch);
+                    self.add_object(loc, ch);
                     bindex += 1;
                     if bindex == 7 {
                         break;
                     }
 
                     let target = Point::new(46, 35); // they all head for the Vitr lake
-                    self.replace_behavior(&loc, Behavior::MovingTo(target));
+                    self.replace_behavior(loc, Behavior::MovingTo(target));
                 }
             }
         }

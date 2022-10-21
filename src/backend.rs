@@ -262,7 +262,7 @@ impl Game {
     }
 
     pub fn player_hps(&self) -> (i32, i32) {
-        let obj = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let obj = self.level.get(self.player_loc(), CHARACTER_ID).unwrap().1;
         let durability = obj.durability_value().unwrap();
         (durability.current, durability.max)
     }
@@ -303,10 +303,10 @@ impl Game {
     /// Otherwise return None.
     pub fn tile(&self, loc: &Point) -> Tile {
         let tile = if self.pov.visible(self, loc) {
-            let (_, obj) = self.level.get_bottom(loc);
+            let (_, obj) = self.level.get_bottom(*loc);
             let bg = obj.to_bg_color();
 
-            let (_, obj) = self.level.get_top(loc);
+            let (_, obj) = self.level.get_top(*loc);
             let (fg, symbol) = obj.to_fg_symbol();
 
             Tile::Visible { bg, fg, symbol }
@@ -320,14 +320,14 @@ impl Game {
         tile
     }
 
-    pub fn target_next(&self, old_loc: &Point, delta: i32) -> Option<Point> {
+    pub fn target_next(&self, old_loc: Point, delta: i32) -> Option<Point> {
         // Find the NPCs near the player that are actually visible to the player.
         let chars: Vec<Point> = self
             .level
             .npcs()
             .map_while(|oid| {
-                let loc = self.level.obj(oid).1.unwrap();
-                let dist = loc.distance2(&self.player_loc());
+                let loc = self.level.obj_loc(oid).unwrap();
+                let dist = loc.distance2(self.player_loc());
                 if dist <= pov::RADIUS * pov::RADIUS {
                     Some(loc)
                 } else {
@@ -350,7 +350,7 @@ impl Game {
 
         // Find the next Character to examine accounting for lame unsized math.
         if delta > 0 {
-            if index < chars.len() && chars[index] != *old_loc {
+            if index < chars.len() && chars[index] != old_loc {
                 // we don't want to apply delta in this case
                 assert_eq!(delta, 1);
             } else if index + (delta as usize) < chars.len() {
@@ -377,8 +377,8 @@ impl Game {
         self.level
             .npcs()
             .map_while(|oid| {
-                let loc = self.level.obj(oid).1.unwrap();
-                let dist = loc.distance2(&self.player_loc());
+                let loc = self.level.obj_loc(oid).unwrap();
+                let dist = loc.distance2(self.player_loc());
                 if dist <= pov::RADIUS * pov::RADIUS {
                     Some(loc)
                 } else {
@@ -386,20 +386,20 @@ impl Game {
                 }
             })
             .filter(|loc| self.pov.visible(self, &loc))
-            .map(|loc| self.to_npc(&loc, wizard))
+            .map(|loc| self.to_npc(loc, wizard))
             .collect()
     }
 
     pub fn inventory(&self) -> Vec<InvItem> {
         let mut items = Vec::new();
 
-        let player = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let player = self.level.get(self.player_loc(), CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value().unwrap();
         for (slot, &value) in equipped {
             if let Some(oid) = value {
                 let kind = match slot {
                     Slot::MainHand => {
-                        let obj = self.level.obj(oid).0;
+                        let obj = self.level.obj(oid);
                         match obj.weapon_value().unwrap() {
                             Weapon::OneHand => ItemKind::OneHandWeapon,
                             Weapon::TwoHander => ItemKind::TwoHandWeapon,
@@ -434,7 +434,7 @@ impl Game {
     // should we check the Durability tag?
     pub fn describe_item(&self, oid: Oid) -> Vec<String> {
         let mut desc = Vec::new();
-        let obj = self.level.obj(oid).0;
+        let obj = self.level.obj(oid);
         desc.push(obj.description().to_string());
         if let Some(weapon) = obj.weapon_value() {
             let suffix = match weapon {
@@ -523,7 +523,7 @@ impl Game {
             Action::Drop(oid) => {
                 // TODO: dropping heavy stuff should cause noise?
                 if !self.game_over() {
-                    let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+                    let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
                     let equipped = player.equipped_value_mut().unwrap();
                     if let Some(slot) = equipped
                         .iter()
@@ -540,7 +540,7 @@ impl Game {
                 }
             }
             Action::Examine { loc, wizard } => {
-                self.examine(&loc, wizard);
+                self.examine(loc, wizard);
                 Time::zero()
             }
             Action::Move { dx, dy } => {
@@ -550,7 +550,7 @@ impl Game {
                 if !self.game_over() {
                     let player = self.player_loc();
                     let new_loc = Point::new(player.x + dx, player.y + dy);
-                    match self.try_interact(&player, &new_loc) {
+                    match self.try_interact(player, new_loc) {
                         PreResult::Acted(taken, sound) => {
                             assert!(taken > Time::zero());
                             self.handle_noise(&self.player_loc(), sound);
@@ -559,10 +559,10 @@ impl Game {
                         PreResult::ZeroAction => Time::zero(),
                         PreResult::DidntAct => {
                             let old_loc = self.player_loc();
-                            self.do_move(Oid(0), &old_loc, &new_loc);
-                            let (duration, volume) = self.interact_post_move(&new_loc);
+                            self.do_move(Oid(0), old_loc, new_loc);
+                            let (duration, volume) = self.interact_post_move(new_loc);
                             self.handle_noise(&new_loc, sound::QUIET + volume);
-                            if old_loc.diagnol(&new_loc) {
+                            if old_loc.diagnol(new_loc) {
                                 time::DIAGNOL_MOVE + duration
                             } else {
                                 time::CARDINAL_MOVE + duration
@@ -655,10 +655,10 @@ impl Game {
 
     fn wield_main_blocked_by(&mut self, oid: Oid) -> Vec<Oid> {
         let kind = {
-            let obj = self.level.obj(oid).0;
+            let obj = self.level.obj(oid);
             obj.weapon_value().unwrap()
         };
-        let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value().unwrap();
 
         let mut blocks = Vec::new();
@@ -675,11 +675,11 @@ impl Game {
 
     fn wield_off_blocked_by(&mut self, oid: Oid) -> Vec<Oid> {
         let kind = {
-            let obj = self.level.obj(oid).0;
+            let obj = self.level.obj(oid);
             obj.weapon_value().unwrap()
         };
         let (mh, oh) = {
-            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
             let equipped = player.equipped_value().unwrap();
             (equipped[Slot::MainHand], equipped[Slot::OffHand])
         };
@@ -687,7 +687,7 @@ impl Game {
         let mut blocks = Vec::new();
         if kind == Weapon::OneHand {
             if let Some(mh) = mh {
-                let obj2 = self.level.obj(mh).0;
+                let obj2 = self.level.obj(mh);
                 let kind2 = obj2.weapon_value().unwrap();
                 if kind2 == Weapon::TwoHander {
                     blocks.push(mh);
@@ -704,7 +704,7 @@ impl Game {
     // Items that are worn elsewhere need to be removed too. Typically this is something
     // like wielding a weapon in main hand that is already in offhand.
     fn blocked_by_equipped(&self, oid: Oid, blocks: &mut Vec<Oid>) {
-        let player = self.level.get(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let player = self.level.get(self.player_loc(), CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value().unwrap();
         for value in equipped.values() {
             if *value == Some(oid) {
@@ -715,7 +715,7 @@ impl Game {
     }
 
     fn manage_item_mesg(&mut self, oid: Oid, action: &str) {
-        let obj = self.level.obj(oid).0;
+        let obj = self.level.obj(oid);
         let name: &'static str = obj.name_value().unwrap();
         let mesg = Message {
             topic: Topic::Normal,
@@ -727,10 +727,10 @@ impl Game {
     fn wield(&mut self, oid: Oid, slot: Slot) {
         {
             let kind = {
-                let obj = self.level.obj(oid).0;
+                let obj = self.level.obj(oid);
                 obj.weapon_value().unwrap()
             };
-            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
             let equipped = player.equipped_value_mut().unwrap();
 
             match slot {
@@ -758,16 +758,16 @@ impl Game {
             self.manage_item_mesg(oid, "wield"); // at the very end to satisfy the borrow checker
         }
 
-        assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+        assert!(self.level.obj_loc(oid).is_none()); // oid must exist and not have a loc
     }
 
     fn wear_blocked_by(&mut self, oid: Oid) -> Vec<Oid> {
         let mut blocks = Vec::new();
 
-        let obj = self.level.obj(oid).0;
+        let obj = self.level.obj(oid);
         let slot = obj.armor_value().unwrap();
 
-        let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+        let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value_mut().unwrap();
         if let Some(oid) = equipped[slot] {
             blocks.push(oid);
@@ -782,10 +782,10 @@ impl Game {
 
     fn wear(&mut self, oid: Oid) {
         {
-            let obj = self.level.obj(oid).0;
+            let obj = self.level.obj(oid);
             let slot = obj.armor_value().unwrap();
 
-            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
             let equipped = player.equipped_value_mut().unwrap();
             assert!(equipped[slot].is_none());
             equipped[slot] = Some(oid);
@@ -800,12 +800,12 @@ impl Game {
             self.manage_item_mesg(oid, "worn"); // at the very end to satisfy the borrow checker
         }
 
-        assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+        assert!(self.level.obj_loc(oid).is_none()); // oid must exist and not have a loc
     }
 
     fn drop_equipped(&mut self, oid: Oid, slot: Slot) {
         let loc = self.player_loc();
-        let player = self.level.get_mut(&loc, CHARACTER_ID).unwrap().1;
+        let player = self.level.get_mut(loc, CHARACTER_ID).unwrap().1;
         let equipped = player.equipped_value_mut().unwrap();
         assert!(equipped[slot] == Some(oid));
         equipped[slot] = None;
@@ -816,7 +816,7 @@ impl Game {
 
     fn drop_unequipped(&mut self, oid: Oid) {
         let loc = self.player_loc();
-        let player = self.level.get_mut(&loc, CHARACTER_ID).unwrap().1;
+        let player = self.level.get_mut(loc, CHARACTER_ID).unwrap().1;
         let inv = player.inventory_value_mut().unwrap();
         let i = inv.iter().position(|&o| o == oid).unwrap();
         inv.remove(i);
@@ -827,7 +827,7 @@ impl Game {
 
     fn remove(&mut self, oid: Oid) {
         {
-            let player = self.level.get_mut(&self.player_loc(), CHARACTER_ID).unwrap().1;
+            let player = self.level.get_mut(self.player_loc(), CHARACTER_ID).unwrap().1;
             let equipped = player.equipped_value_mut().unwrap();
             for value in equipped.values_mut() {
                 if *value == Some(oid) {
@@ -844,16 +844,16 @@ impl Game {
             }
         }
 
-        assert!(self.level.obj(oid).1.is_none()); // oid must exist and not have a loc
+        assert!(self.level.obj_loc(oid).is_none()); // oid must exist and not have a loc
         self.manage_item_mesg(oid, "remove");
     }
 
     fn player_inv_iter(&self) -> impl Iterator<Item = (Oid, &Object)> {
-        InventoryIterator::new(self, &self.player_loc())
+        InventoryIterator::new(self, self.player_loc())
     }
 
     fn push_inv_item(&self, items: &mut Vec<InvItem>, kind: ItemKind, equipped: Option<Slot>, oid: Oid) {
-        let obj = self.level.obj(oid).0;
+        let obj = self.level.obj(oid);
         items.push(InvItem {
             name: obj.name_value().unwrap(),
             kind,
@@ -865,7 +865,7 @@ impl Game {
     pub fn inv_item(&self, ch: &Object, tid: Tid) -> Option<&Object> {
         if let Some(oids) = ch.inventory_value() {
             for oid in oids {
-                let obj = self.level.obj(*oid).0;
+                let obj = self.level.obj(*oid);
                 if obj.has(tid) {
                     return Some(obj);
                 }
@@ -878,12 +878,12 @@ impl Game {
         self.inv_item(ch, tid).is_some()
     }
 
-    fn examine(&mut self, loc: &Point, wizard: bool) {
+    fn examine(&mut self, loc: Point, wizard: bool) {
         let suffix = if wizard { format!(" {}", loc) } else { "".to_string() };
         if self.pov.visible(self, &loc) {
             let descs: Vec<String> = self
                 .level
-                .cell_iter(&loc)
+                .cell_iter(loc)
                 .map(|(_, obj)| {
                     if wizard {
                         format!("{} {obj:?}", obj.description())
@@ -923,7 +923,7 @@ impl Game {
         };
     }
 
-    fn to_npc(&self, loc: &Point, wizard: bool) -> Npc {
+    fn to_npc(&self, loc: Point, wizard: bool) -> Npc {
         let granularity = 5; // TODO: base this on perception
 
         let obj = self.level.get(loc, CHARACTER_ID).unwrap().1;
@@ -966,7 +966,7 @@ impl Game {
         self.rng.borrow_mut()
     }
 
-    fn find_interact_handler(&self, tag0: &Tag, new_loc: &Point) -> Option<PreHandler> {
+    fn find_interact_handler(&self, tag0: &Tag, new_loc: Point) -> Option<PreHandler> {
         for (_, obj) in self.level.cell_iter(new_loc) {
             for tag1 in obj.iter() {
                 let handler = self.interactions.find_interact_handler(tag0, tag1);
@@ -979,7 +979,7 @@ impl Game {
     }
 
     // Player attempting to interact with an adjacent cell.
-    fn try_interact(&mut self, player_loc: &Point, new_loc: &Point) -> PreResult {
+    fn try_interact(&mut self, player_loc: Point, new_loc: Point) -> PreResult {
         let handler = self.find_interact_handler(&Tag::Player, new_loc);
         if handler.is_some() {
             handler.unwrap()(self, player_loc, new_loc)
@@ -989,12 +989,12 @@ impl Game {
     }
 
     // Player interacting with a cell he has just moved into.
-    fn interact_post_move(&mut self, new_loc: &Point) -> (Time, Sound) {
+    fn interact_post_move(&mut self, new_loc: Point) -> (Time, Sound) {
         let mut handlers = Vec::new();
         {
             let oids = self.level.cell(new_loc);
             for oid in oids.iter().rev() {
-                let obj = self.level.obj(*oid).0;
+                let obj = self.level.obj(*oid);
                 for tag in obj.iter() {
                     if let Some(handler) = self.interactions.find_post_handler(&Tag::Player, tag) {
                         handlers.push(*handler);
@@ -1013,10 +1013,10 @@ impl Game {
         (duration, volume)
     }
 
-    fn add_object(&mut self, loc: &Point, obj: Object) -> Oid {
+    fn add_object(&mut self, loc: Point, obj: Object) -> Oid {
         let behavior = obj.behavior_value();
         let scheduled = obj.has(SCHEDULED_ID) && !matches!(behavior, Some(Behavior::Sleeping));
-        let oid = self.level.add(obj, Some(*loc));
+        let oid = self.level.add(obj, Some(loc));
         if scheduled {
             self.schedule_new_obj(oid);
         }
@@ -1024,7 +1024,7 @@ impl Game {
     }
 
     fn schedule_new_obj(&mut self, oid: Oid) {
-        let obj = self.level.obj(oid).0;
+        let obj = self.level.obj(oid);
         let terrain = obj.terrain_value();
         let initial = if oid.0 == 0 {
             time::DIAGNOL_MOVE
@@ -1038,8 +1038,8 @@ impl Game {
         self.scheduler.add(oid, initial);
     }
 
-    fn replace_behavior(&mut self, loc: &Point, new_behavior: Behavior) {
-        let (oid, obj) = self.level.get_mut(&loc, BEHAVIOR_ID).unwrap();
+    fn replace_behavior(&mut self, loc: Point, new_behavior: Behavior) {
+        let (oid, obj) = self.level.get_mut(loc, BEHAVIOR_ID).unwrap();
         let old_behavior = obj.behavior_value().unwrap();
         assert_ne!(old_behavior, new_behavior);
         obj.replace(Tag::Behavior(new_behavior));
@@ -1054,9 +1054,10 @@ impl Game {
         }
     }
 
-    fn destroy_object(&mut self, loc: &Point, old_oid: Oid) {
-        let (obj, pos) = self.level.obj(old_oid);
-        assert_eq!(pos.unwrap(), *loc);
+    fn destroy_object(&mut self, loc: Point, old_oid: Oid) {
+        let obj = self.level.obj(old_oid);
+        let pos = self.level.obj_loc(old_oid);
+        assert_eq!(pos.unwrap(), loc);
 
         if obj.has(SCHEDULED_ID) {
             self.scheduler.remove(old_oid);
@@ -1079,16 +1080,17 @@ impl Game {
             // The player may now be able to see through this cell so we need to ensure
             // that cells around it exist now. TODO: probably should have a LOS changed
             // check.
-            self.level.ensure_neighbors(&loc);
+            self.level.ensure_neighbors(loc);
         } else {
             // If it's just a normal object or character we can just nuke the object.
             self.level.remove(old_oid);
         }
     }
 
-    fn replace_object(&mut self, loc: &Point, old_oid: Oid, new_obj: Object) {
-        let (old_obj, pos) = self.level.obj(old_oid);
-        assert_eq!(pos.unwrap(), *loc);
+    fn replace_object(&mut self, loc: Point, old_oid: Oid, new_obj: Object) {
+        let old_obj = self.level.obj(old_oid);
+        let pos = self.level.obj_loc(old_oid);
+        assert_eq!(pos.unwrap(), loc);
 
         trace!("replacing {old_obj} at {loc} with {new_obj}");
         if old_obj.has(SCHEDULED_ID) {
@@ -1117,14 +1119,14 @@ impl Game {
         None
     }
 
-    fn find_empty_cell(&self, ch: &Object, loc: &Point) -> Option<Point> {
+    fn find_empty_cell(&self, ch: &Object, loc: Point) -> Option<Point> {
         let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
         deltas.shuffle(&mut *self.rng());
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            let character = &self.level.get(&new_loc, CHARACTER_ID);
+            let character = &self.level.get(new_loc, CHARACTER_ID);
             if character.is_none() {
-                let (_, terrain) = self.level.get_bottom(&new_loc);
+                let (_, terrain) = self.level.get_bottom(new_loc);
                 if ch.impassible_terrain(terrain).is_none() {
                     return Some(new_loc);
                 }
@@ -1146,7 +1148,7 @@ impl Game {
         self.stream.clear();
     }
 
-    fn dump_cell<W: Write>(&self, writer: &mut W, loc: &Point) -> Result<(), Error> {
+    fn dump_cell<W: Write>(&self, writer: &mut W, loc: Point) -> Result<(), Error> {
         for (oid, obj) in self.level.cell_iter(loc) {
             write!(writer, "   dname: {} oid: {oid}\n", obj.dname())?;
             for tag in obj.iter() {
@@ -1176,7 +1178,7 @@ impl Game {
         for y in min_y..=max_y {
             for x in min_x..=max_x {
                 let loc = Point::new(x, y);
-                let obj = self.level.get_top(&loc).1;
+                let obj = self.level.get_top(loc).1;
                 if obj.has(CHARACTER_ID) {
                     if chars.len() < 10 {
                         write!(writer, " c{}", chars.len())?;
@@ -1201,7 +1203,7 @@ impl Game {
             write!(writer, "\n")?;
             for (i, loc) in chars.iter().enumerate() {
                 write!(writer, "c{i} at {loc}:\n")?;
-                self.dump_cell(writer, &loc)?;
+                self.dump_cell(writer, *loc)?;
             }
         }
 
@@ -1209,7 +1211,7 @@ impl Game {
             write!(writer, "\n")?;
             for (i, loc) in objs.iter().enumerate() {
                 write!(writer, "{i} at {loc}:\n")?;
-                self.dump_cell(writer, &loc)?;
+                self.dump_cell(writer, *loc)?;
             }
         }
 
@@ -1247,7 +1249,7 @@ struct InventoryIterator<'a> {
 }
 
 impl<'a> InventoryIterator<'a> {
-    fn new(game: &'a Game, loc: &Point) -> InventoryIterator<'a> {
+    fn new(game: &'a Game, loc: Point) -> InventoryIterator<'a> {
         let (_, inv) = game.level.get(loc, INVENTORY_ID).unwrap();
         let oids = inv.inventory_value().unwrap();
         InventoryIterator {
@@ -1266,7 +1268,7 @@ impl<'a> Iterator for InventoryIterator<'a> {
         if self.index >= 0 {
             let index = self.index as usize;
             let oid = self.oids[index];
-            Some((oid, self.game.level.obj(oid).0))
+            Some((oid, self.game.level.obj(oid)))
         } else {
             None // finished iteration
         }

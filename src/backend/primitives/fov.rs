@@ -147,7 +147,7 @@ where
         let loc = Point::new(self.start.x + real_x, self.start.y + real_y);
         if !visited.contains(&loc) {
             visited.insert(loc);
-            if loc.distance2(&self.start) <= self.radius * self.radius {
+            if loc.distance2(self.start) <= self.radius * self.radius {
                 (self.visible_tile)(loc);
             }
             // } else {

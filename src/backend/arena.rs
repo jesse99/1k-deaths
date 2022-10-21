@@ -80,7 +80,7 @@ fn run_arena(writer: &mut dyn Write, round: i32, seed: u64, opponents: Opponents
     let mut game = Game::new_arena(seed + (round as u64));
     let (oid, pstats, ostats) = game.setup_arena(opponents);
     if round == 0 {
-        let obj = game.level.obj(oid).0;
+        let obj = game.level.obj(oid);
         print_stats(writer, "player", pstats, &format!("{obj}"), ostats)?;
         writeln!(writer, "")?;
     }
@@ -171,27 +171,27 @@ impl Game {
         let (oid1, oid2) = match opponents {
             Opponents::PlayerVsGuard => {
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-                let oid = self.add_object(&loc, new_obj(ObjectName::Guard));
+                let oid = self.add_object(loc, new_obj(ObjectName::Guard));
                 (Oid(0), oid)
             }
             Opponents::PlayerVsRhulad => {
                 let oid = self.level.add(new_obj(ObjectName::MightySword), None);
-                let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
+                let player = self.level.get_mut(self.player_loc(), INVENTORY_ID).unwrap().1;
                 let inv = player.inventory_value_mut().unwrap();
                 inv.push(oid);
 
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-                let oid = self.add_object(&loc, new_obj(ObjectName::Rhulad));
+                let oid = self.add_object(loc, new_obj(ObjectName::Rhulad));
                 (Oid(0), oid)
             }
             Opponents::PlayerVsBroken => {
                 let oid = self.level.add(new_obj(ObjectName::EmperorSword), None);
-                let player = self.level.get_mut(&self.player_loc(), INVENTORY_ID).unwrap().1;
+                let player = self.level.get_mut(self.player_loc(), INVENTORY_ID).unwrap().1;
                 let inv = player.inventory_value_mut().unwrap();
                 inv.push(oid);
 
                 let loc = Point::new(self.player_loc().x + 1, self.player_loc().y);
-                let oid = self.add_object(&loc, new_obj(ObjectName::HaladRackBearer));
+                let oid = self.add_object(loc, new_obj(ObjectName::HaladRackBearer));
                 (Oid(0), oid)
             }
         };
@@ -234,22 +234,22 @@ impl Game {
     }
 
     fn compute_stats(&self, attacker_id: Oid, defender_id: Oid) -> Stats {
-        let obj = self.level.obj(attacker_id).0;
+        let obj = self.level.obj(attacker_id);
         let hps = obj.durability_value().unwrap().current;
 
         let loc = self.loc(attacker_id).unwrap();
-        let delay = self.melee_delay(&loc);
+        let delay = self.melee_delay(loc);
         let hits = self.hit_prob(attacker_id, defender_id);
 
         let weapon = {
-            let attacker = self.level.obj(attacker_id).0;
+            let attacker = self.level.obj(attacker_id);
             attacker.equipped_value().map(|e| e[Slot::MainHand]).flatten()
         };
         let mut damage = self.base_damage(attacker_id, weapon).0;
         let crits = self.crit_prob(attacker_id, weapon);
 
         let weapon = {
-            let attacker = self.level.obj(attacker_id).0;
+            let attacker = self.level.obj(attacker_id);
             attacker.equipped_value().map(|e| e[Slot::OffHand]).flatten()
         };
         let p = self.off_hand_prob();

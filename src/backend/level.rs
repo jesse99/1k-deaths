@@ -1,53 +1,33 @@
 use crate::backend::tag::CHARACTER_ID;
-use rand::prelude::*;
+// use rand::prelude::*;
 use rand::rngs::SmallRng;
 use std::cell::{Cell, RefCell};
 
+use super::model::*;
 use super::*;
 use fnv::FnvHashMap;
 
-struct Entry {
-    obj: Object,
-    loc: Option<Point>, // None for objects within Equipped or Inventory tags
-}
-
 pub struct Level {
-    objects: FnvHashMap<Oid, Entry>,    // all existing objects are here
-    cells: FnvHashMap<Point, Vec<Oid>>, // objects within each cell on the map
-    npcs: RefCell<Vec<Oid>>,            // all NPCs sorted so that the first is closest to the player
-    sorted: Cell<bool>,                 // false if npcs needs to be re-sorted
-    locations: RefCell<Vec<Point>>,     // locations on the level
-    next_id: u64,                       // 0 is the player, 1 is the default object
-    player_loc: Point,
-    default: Object,
-    default_oids: Vec<Oid>,
-    constructing: bool, // level is in the process of being constructed
-    changed: Point,     // the loc that was last modified, used for cheap invariants
+    model: Model,
+    locations: FnvHashMap<Oid, Point>,
+    npcs: RefCell<Vec<Oid>>, // all NPCs sorted so that the first is closest to the player
+    sorted: Cell<bool>,      // false if npcs needs to be re-sorted
+    changed: Point,          // the loc that was last modified, used for cheap invariants
     #[cfg(debug_assertions)]
     invariants: bool, // if true then expensive checks are enabled
 }
 
 impl Level {
-    pub fn new() -> Level {
+    pub fn new(model: Model) -> Level {
         Level {
-            objects: FnvHashMap::default(),
-            cells: FnvHashMap::default(),
+            model,
+            locations: FnvHashMap::default(),
             npcs: RefCell::new(Vec::new()),
-            locations: RefCell::new(Vec::new()),
             sorted: Cell::new(true),
-            next_id: 2,
-            player_loc: Point::new(0, 0),
-            default: super::new_obj(ObjectName::StoneWall),
-            default_oids: vec![Oid(1)],
             changed: Point::new(0, 0),
-            constructing: true,
             #[cfg(debug_assertions)]
             invariants: false,
         }
-    }
-
-    pub fn set_constructing(&mut self, value: bool) {
-        self.constructing = value;
     }
 
     #[cfg(debug_assertions)]
@@ -57,113 +37,52 @@ impl Level {
     }
 
     pub fn player_loc(&self) -> Point {
-        self.player_loc
+        self.model.player_loc()
     }
 
-    pub fn get(&self, loc: &Point, tag: Tid) -> Option<(Oid, &Object)> {
-        if let Some(oids) = self.cells.get(loc) {
-            for oid in oids.iter().rev() {
-                let entry = self
-                    .objects
-                    .get(oid)
-                    .expect("All objects in the level should still exist");
-                if entry.obj.has(tag) {
-                    return Some((*oid, &entry.obj));
-                }
-            }
-        }
-        if self.default.has(tag) {
-            // Note that if this cell is converted into a real cell the oid will change.
-            // I don't think that this will be a problem in practice...
-            Some((Oid(1), &self.default))
-        } else {
-            None
-        }
+    // TODO: move these into a Model forwarding Impl
+    pub fn get(&self, loc: Point, tag: Tid) -> Option<(Oid, &Object)> {
+        self.model.get(loc, tag)
     }
 
-    pub fn get_mut(&mut self, loc: &Point, tag: Tid) -> Option<(Oid, &mut Object)> {
-        if !self.cells.contains_key(loc) {
-            self.add_default(loc);
-        }
-
-        let mut oid = None;
-        if let Some(oids) = self.cells.get(loc) {
-            for candidate in oids.iter().rev() {
-                let entry = self
-                    .objects
-                    .get(candidate)
-                    .expect("All objects in the level should still exist");
-                if entry.obj.has(tag) {
-                    oid = Some(candidate);
-                    break;
-                }
-            }
-        }
-
-        if let Some(oid) = oid {
-            let entry = self.objects.get_mut(oid).unwrap();
-            return Some((*oid, &mut entry.obj));
-        }
-
-        None
+    pub fn get_mut(&mut self, loc: Point, tag: Tid) -> Option<(Oid, &mut Object)> {
+        self.model.get_mut(loc, tag)
     }
 
     /// Typically this will be a terrain object.
-    pub fn get_bottom(&self, loc: &Point) -> (Oid, &Object) {
-        if let Some(oids) = self.cells.get(loc) {
-            let oid = oids
-                .first()
-                .expect("cells should always have at least a terrain object");
-            let entry = self
-                .objects
-                .get(oid)
-                .expect("All objects in the level should still exist");
-            (*oid, &entry.obj)
-        } else {
-            (Oid(1), &self.default)
-        }
+    pub fn get_bottom(&self, loc: Point) -> (Oid, &Object) {
+        self.model.get_bottom(loc)
     }
 
     /// Character, item, door, or if all else fails terrain.
-    pub fn get_top(&self, loc: &Point) -> (Oid, &Object) {
-        if let Some(oids) = self.cells.get(loc) {
-            let oid = oids.last().expect("cells should always have at least a terrain object");
-            let entry = self
-                .objects
-                .get(oid)
-                .expect("All objects in the level should still exist");
-            (*oid, &entry.obj)
-        } else {
-            (Oid(1), &self.default)
-        }
+    pub fn get_top(&self, loc: Point) -> (Oid, &Object) {
+        self.model.get_top(loc)
     }
 
     /// Iterates over the objects at loc starting with the topmost object.
-    pub fn cell_iter(&self, loc: &Point) -> impl Iterator<Item = (Oid, &Object)> {
-        CellIterator::new(self, loc)
+    pub fn cell_iter(&self, loc: Point) -> impl Iterator<Item = (Oid, &Object)> {
+        self.model.cell_iter(loc)
     }
 
-    pub fn obj(&self, oid: Oid) -> (&Object, Option<Point>) {
-        let entry = self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"));
-        (&entry.obj, entry.loc)
+    pub fn obj(&self, oid: Oid) -> &Object {
+        self.model.obj(oid)
+    }
+
+    // TODO: think we need an oid => location map
+    pub fn obj_loc(&self, oid: Oid) -> Option<&Point> {
+        self.locations.get(&oid)
     }
 
     pub fn try_obj(&self, oid: Oid) -> Option<&Object> {
-        let entry = self.objects.get(&oid);
-        entry.map(|e| &e.obj)
+        self.model.try_obj(oid)
     }
 
-    pub fn try_loc(&self, oid: Oid) -> Option<Point> {
-        let entry = self.objects.get(&oid);
-        entry.map(|e| e.loc).flatten()
+    pub fn try_loc(&self, oid: Oid) -> Option<&Point> {
+        self.locations.get(&oid)
     }
 
-    pub fn cell(&self, loc: &Point) -> &Vec<Oid> {
-        if let Some(ref oids) = self.cells.get(loc) {
-            oids
-        } else {
-            &self.default_oids
-        }
+    pub fn cell(&self, loc: Point) -> &Vec<Oid> {
+        self.model.cell(loc)
     }
 
     /// Note that this is sorted by distance from the player (closest first) and does not
@@ -174,10 +93,10 @@ impl Level {
             // operation. Still it's expensive enough that we want to defer sorting until
             // we actually need it.
             self.npcs.borrow_mut().sort_by(|a, b| {
-                let a = self.obj(*a).1.unwrap();
-                let b = self.obj(*b).1.unwrap();
-                let a = a.distance2(&self.player_loc);
-                let b = b.distance2(&self.player_loc);
+                let a = self.obj_loc(*a).unwrap();
+                let b = self.obj_loc(*b).unwrap();
+                let a = a.distance2(self.model.player_loc());
+                let b = b.distance2(self.model.player_loc());
                 a.cmp(&b)
             });
             self.sorted.set(true);
@@ -187,41 +106,26 @@ impl Level {
 
     /// Returns a random cell on the map.
     pub fn random_loc(&self, rng: &RefCell<SmallRng>) -> Point {
-        if self.locations.borrow().is_empty() {
-            self.locations.borrow_mut().extend(self.cells.keys());
-        }
-        // We could use cells.keys() here but the performance would be O(N) if we did that.
-        *self.locations.borrow().iter().choose(&mut *rng.borrow_mut()).unwrap()
+        // Note that this is O(N) because values is an iterator not a slice.
+        // If this is a problem we could have a random list of locations
+        // behind a RefCell.
+        *self.locations.values().choose(&mut *rng.borrow_mut()).unwrap()
     }
 
     pub fn add(&mut self, obj: Object, loc: Option<Point>) -> Oid {
-        let oid = self.next_oid(&obj);
-        if let Some(loc) = loc {
-            trace!("adding {obj} {oid} to {loc}");
-        } else {
-            trace!("adding {obj} {oid} (no loc)");
-        }
-
-        if obj.has(CHARACTER_ID) {
-            assert!(loc.is_some(), "Characters should be on the map: {obj:?}");
-            if oid.0 == 0 {
-                self.player_loc = loc.unwrap();
-            } else {
-                self.npcs.borrow_mut().push(oid);
-                self.sorted.set(false);
-            }
-        }
-
-        let old = self.objects.insert(oid, Entry { obj, loc });
-        assert!(old.is_none(), "Level already had oid {oid}");
+        let is_char = obj.has(CHARACTER_ID);
+        let oid = self.model.add(obj, loc);
+        let is_npc = is_char && oid.0 != 0;
 
         if let Some(loc) = loc {
-            let oids = self.cells.entry(loc).or_insert_with(Vec::new);
-            if oids.is_empty() {
-                self.locations.borrow_mut().clear();
-            }
-            oids.push(oid);
+            let old = self.locations.insert(oid, loc);
+            assert!(old.is_none(), "oid {oid} was already in locations");
             self.changed = loc;
+        }
+
+        if is_npc {
+            self.npcs.borrow_mut().push(oid);
+            self.sorted.set(false);
         }
 
         if cfg!(debug_assertions) {
@@ -233,78 +137,60 @@ impl Level {
 
     /// Typically this will be a drop from an inventory (or equipped).
     pub fn add_oid(&mut self, oid: Oid, loc: Point) {
-        let entry = self.objects.get_mut(&oid).unwrap();
-        entry.loc = Some(loc);
+        let obj = self.model.obj(oid);
+        assert!(!obj.has(CHARACTER_ID));
 
-        let oids = self.cells.entry(loc).or_insert_with(Vec::new);
-        if oids.is_empty() {
-            self.locations.borrow_mut().clear();
-        }
-
-        if let Some(i) = oids.iter().position(|&o| o.0 == 0) {
-            // TODO: doesn't support NPCs dropping items
-            oids.insert(i, oid);
-        } else {
-            oids.push(oid);
-        }
+        let old = self.locations.insert(oid, loc);
+        assert!(old.is_none(), "oid {oid} was already in locations");
         self.changed = loc;
 
         if cfg!(debug_assertions) {
             self.invariant();
         }
-    }
-
-    pub fn remove(&mut self, oid: Oid) {
-        let entry = self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"));
-        if let Some(loc) = entry.loc {
-            trace!("removing {} {oid} which was at {loc}", entry.obj);
-            let oids = self.cells.get_mut(&loc).unwrap();
-            let index = oids.iter().position(|id| *id == oid).unwrap();
-            oids.remove(index);
-            self.changed = loc;
-        } else {
-            trace!("removing {} {oid} which had no loc", entry.obj);
-        }
-
-        if oid.0 != 0 && entry.obj.has(CHARACTER_ID) {
-            let index = self.npcs.borrow().iter().position(|id| *id == oid).unwrap();
-            self.npcs.borrow_mut().remove(index);
-        }
-
-        self.objects.remove(&oid);
-
-        {
-            #[cfg(debug_assertions)]
-            self.invariant();
-        }
-    }
-
-    pub fn pickup(&mut self, loc: &Point, oid: Oid) {
-        let mut entry = self
-            .objects
-            .get_mut(&oid)
-            .expect(&format!("oid {oid} isn't in objects"));
-        if let Some(loc) = entry.loc {
-            let oids = self.cells.get_mut(&loc).unwrap();
-            let index = oids.iter().position(|id| *id == oid).unwrap();
-            oids.remove(index);
-            self.changed = loc;
-        }
-        entry.loc = None;
-        assert!(!entry.obj.has(CHARACTER_ID));
-
-        let obj = self.get_mut(loc, INVENTORY_ID).unwrap().1;
-        let inv = obj.inventory_value_mut().unwrap();
-        inv.push(oid);
 
         if cfg!(debug_assertions) {
             self.invariant();
         }
     }
 
-    pub fn replace(&mut self, loc: &Point, old_oid: Oid, new_obj: Object) -> Oid {
-        // Fix up npcs.
-        let old_obj = &self.objects.get(&old_oid).unwrap().obj;
+    pub fn remove(&mut self, oid: Oid, loc: Point) {
+        let old = self.locations.remove(&oid);
+        assert!(old.is_some(), "oid {oid} was not in locations");
+        self.changed = loc;
+
+        let obj = self.model.obj(oid);
+        if oid.0 != 0 && obj.has(CHARACTER_ID) {
+            let index = self.npcs.borrow().iter().position(|id| *id == oid).unwrap();
+            self.npcs.borrow_mut().remove(index);
+        }
+
+        self.model.remove(oid, loc);
+
+        if cfg!(debug_assertions) {
+            self.invariant();
+        }
+    }
+
+    pub fn pickup(&mut self, loc: Point, oid: Oid) {
+        let obj = self.model.obj(oid);
+        assert!(!obj.has(CHARACTER_ID));
+
+        let old = self.locations.remove(&oid);
+        assert!(old.is_some(), "oid {oid} was not in locations");
+        self.changed = loc;
+
+        self.model.pickup(loc, oid);
+
+        if cfg!(debug_assertions) {
+            self.invariant();
+        }
+    }
+
+    pub fn replace(&mut self, loc: Point, old_oid: Oid, new_obj: Object) -> Oid {
+        let old = self.locations.remove(&old_oid);
+        assert!(old.is_some(), "oid {old_oid} is missing from locations");
+
+        let old_obj = self.model.obj(old_oid);
         let old_name = old_obj.dname();
         if old_obj.has(CHARACTER_ID) {
             assert!(old_oid.0 > 1);
@@ -313,104 +199,38 @@ impl Level {
             oids.remove(index);
         }
 
-        let new_oid = self.next_oid(&new_obj);
-        trace!("replacing {old_name} {old_oid} with {new_obj} {new_oid} at {loc}");
-        if new_obj.has(CHARACTER_ID) {
+        let is_char = new_obj.has(CHARACTER_ID);
+        let new_oid = self.model.replace(loc, old_oid, new_obj);
+        self.locations.insert(new_oid, loc);
+        if is_char {
             assert!(new_oid.0 > 1);
             self.npcs.borrow_mut().push(new_oid);
             self.sorted.set(false);
         }
 
-        // Fix up objects.
-        let old = self.objects.insert(
-            new_oid,
-            Entry {
-                obj: new_obj,
-                loc: Some(*loc),
-            },
-        );
-        assert!(old.is_none(), "Level already had oid {new_oid}");
+        self.changed = loc;
+        if cfg!(debug_assertions) {
+            self.invariant();
+        }
 
-        self.objects.remove(&old_oid);
-
-        // Fix up cells.
-        let oids = self.cells.get_mut(&loc).unwrap();
-        let index = oids.iter().position(|id| *id == old_oid).unwrap();
-        oids[index] = new_oid;
-
-        self.changed = *loc;
         new_oid
     }
 
-    pub fn moved(&mut self, oid: Oid, from: &Point, to: &Point) {
-        assert!(!self.constructing); // make sure this is reset once things start happening
-        let entry = self
-            .objects
-            .get_mut(&oid)
-            .expect(&format!("oid {oid} isn't in objects"));
-        entry.loc = Some(*to);
+    pub fn change_loc(&mut self, oid: Oid, from: Point, to: Point) {
+        let old = self.locations.insert(oid, to);
+        assert!(old.unwrap() == from);
 
-        let oids = self.cells.get_mut(from).unwrap();
-        let index = oids
-            .iter()
-            .position(|id| *id == oid)
-            .expect(&format!("expected {oid} at {from}"));
-        oids.remove(index);
-
-        let oids = self.cells.entry(*to).or_insert_with(Vec::new);
-        if oids.is_empty() {
-            self.locations.borrow_mut().clear();
-        }
-        oids.push(oid);
+        self.model.change_loc(oid, from, to);
 
         self.sorted.set(false); // technically we should do this only if oid has a CHARACTER_ID, but very little moves other than characters
-        self.changed = *to;
-
-        if oid.0 == 0 {
-            self.player_loc = *to;
-        }
-
+        self.changed = to;
         if cfg!(debug_assertions) {
             self.invariant();
         }
     }
 
-    pub fn ensure_neighbors(&mut self, loc: &Point) {
-        let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
-        for delta in deltas {
-            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
-            if !self.cells.contains_key(&new_loc) {
-                self.add_default(&new_loc);
-                self.locations.borrow_mut().clear();
-            }
-        }
-    }
-
-    fn next_oid(&mut self, obj: &Object) -> Oid {
-        if obj.has(PLAYER_ID) {
-            Oid(0)
-        } else {
-            let o = Oid(self.next_id);
-            self.next_id += 1;
-            o
-        }
-    }
-
-    fn add_default(&mut self, new_loc: &Point) {
-        let oid = Oid(self.next_id);
-        self.next_id += 1;
-        let old = self.objects.insert(
-            oid,
-            Entry {
-                obj: self.default.clone(),
-                loc: Some(*new_loc),
-            },
-        );
-        if old.is_none() {
-            self.locations.borrow_mut().clear();
-        }
-        let old_oids = self.cells.insert(*new_loc, vec![oid]);
-        assert!(old_oids.is_none());
+    pub fn ensure_neighbors(&mut self, loc: Point) {
+        self.model.ensure_neighbors(loc);
     }
 }
 
@@ -418,206 +238,32 @@ impl Level {
 impl Level {
     #[cfg(debug_assertions)]
     fn invariant(&self) {
-        if self.constructing {
-            return;
-        }
+        self.model.cheap_invariants(self.changed);
 
-        // Check what we can that isn't very expensive to do.
-        let entry = self.objects.get(&Oid(0)).expect("oid 0 should always exist");
-        assert!(entry.obj.has(PLAYER_ID), "oid 0 should be the player not {}", entry.obj);
-
-        let entry = self.objects.get(&Oid(1));
-        assert!(
-            entry.is_none(),
-            "oid 1 should be the default object, not {}",
-            entry.unwrap().obj
-        );
-
-        let entry = self.objects.get(&Oid(self.next_id));
-        assert!(entry.is_none(), "next_id is somehow {}", entry.unwrap().obj);
-
-        let oids = self.cells.get(&self.player_loc).expect("player should be on the map");
-        assert!(
-            oids.iter().any(|oid| self.objects.get(oid).unwrap().obj.has(PLAYER_ID)),
-            "player isn't at {}",
-            self.player_loc
-        );
-
-        assert!(self.locations.borrow().is_empty() || self.locations.borrow().len() == self.cells.len());
-
-        self.cheap_invariants(&self.changed);
         if self.invariants {
-            self.expensive_invariants(); // some overlap with cheap_invariants but that should be OK
+            self.model.expensive_invariants();
+            self.expensive_invariants();
         }
     }
 
-    // This only checks invariants at one cell. Not ideal but it does give us some coverage
-    // of the level without being really expensive.
-    #[cfg(debug_assertions)]
-    fn cheap_invariants(&self, loc: &Point) {
-        let oids = self.cells.get(loc).expect(&format!("cell at {loc} should exist"));
-        assert!(
-            !oids.is_empty(),
-            "cell at {loc} is empty (should have at least a terrain object)"
-        );
-
-        if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
-            let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
-            assert!(
-                ch.impassible_terrain(terrain).is_none(),
-                "{ch} shouldn't be in {terrain}"
-            );
-        }
-
-        for (i, oid) in oids.iter().enumerate() {
-            let entry = self
-                .objects
-                .get(oid)
-                .expect(&format!("oid {oid} at {loc} is not in objects"));
-
-            if i == 0 {
-                assert!(
-                    entry.obj.has(TERRAIN_ID),
-                    "cell at {loc} has {} for the first object instead of a terrain object",
-                    entry.obj
-                );
-            } else {
-                assert!(
-                    !entry.obj.has(TERRAIN_ID),
-                    "cell at {loc} has {} which isn't at the bottom",
-                    entry.obj
-                );
-            }
-
-            if i < oids.len() - 1 {
-                assert!(
-                    !entry.obj.has(CHARACTER_ID),
-                    "cell at {loc} has {} which isn't at the top",
-                    entry.obj
-                );
-            }
-
-            entry.obj.invariant();
-        }
-    }
-
-    // This checks every cell and every object so it is pretty slow.
+    // every char should be in locations
+    // every oid in npcs should exist
+    // every oid in npcs should be a non-player character
+    // should model have a changed flag? or maybe its invariant can take a changed flag?
     #[cfg(debug_assertions)]
     fn expensive_invariants(&self) {
-        // First we'll check global constraints.
-        let mut all_oids = FnvHashSet::default();
-        for (loc, oids) in &self.cells {
-            for oid in oids {
-                assert!(all_oids.insert(oid), "{loc} has oid {oid} which exists elsewhere");
-                assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
-            }
-        }
-
-        for oid in self.npcs.borrow().iter() {
-            assert!(all_oids.contains(&oid), "{oid} NPC isn't on the map");
-        }
-
-        for entry in self.objects.values() {
-            if let Some(oids) = entry.obj.inventory_value() {
-                for oid in oids {
-                    assert!(
-                        all_oids.insert(oid),
-                        "{} has oid {oid} which exists elsewhere",
-                        entry.obj
-                    );
-                    assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
-                }
-            }
-            if let Some(equipped) = entry.obj.equipped_value() {
-                for item in equipped.values() {
-                    if let Some(oid) = item {
-                        assert!(
-                            all_oids.insert(oid),
-                            "{} has oid {oid} which exists elsewhere",
-                            entry.obj
-                        );
-                        assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
-                    }
-                }
-            }
-        }
-
-        assert_eq!(
-            all_oids.len(),
-            self.objects.len(),
-            "all objects should be used somewhere"
-        );
-
-        // Then we'll verify that the objects in a cell are legit.
-        for (loc, oids) in &self.cells {
-            assert!(
-                !oids.is_empty(),
-                "cell at {loc} is empty (should have at least a terrain object)"
-            );
-            let entry = self.objects.get(&oids[0]).unwrap();
-            assert!(
-                entry.obj.has(TERRAIN_ID),
-                "cell at {loc} has {} for the first object instead of a terrain object",
-                entry.obj
-            );
-            assert!(
-                !oids
-                    .iter()
-                    .skip(1)
-                    .any(|oid| self.objects.get(oid).unwrap().obj.has(TERRAIN_ID)),
-                "cell at {loc} has multiple terrain objects"
-            );
-
-            let index = oids.iter().position(|oid| {
-                let entry = self.objects.get(oid).unwrap();
-                entry.obj.has(CHARACTER_ID)
-            });
-            if let Some(index) = index {
-                // If not cells won't render quite right.
-                assert!(index == oids.len() - 1, "{loc} has a Character that is not at the top")
-            }
-        }
-
-        // Finally we'll check each individual object.
-        for entry in self.objects.values() {
-            entry.obj.invariant();
+        // TODO: should we get lists of portable and characters from model?
+        // then could assert that lists match
+        // would probably have to sort these
+        // getters could be protected by debug_assertions
+        // maybe just one getter (could return a tuple)
+        for (oid, loc) in self.locations {
+            assert!(self.model.try_obj(oid).is_some(), "oid {oid} does not exist");
+            let oids = self.model.cell(loc);
+            assert!(oids.contains(&oid), "{loc} is missing oid {oid}");
         }
     }
 }
-
-struct CellIterator<'a> {
-    level: &'a Level,
-    oids: Option<&'a Vec<Oid>>,
-    index: i32,
-}
-
-impl<'a> CellIterator<'a> {
-    fn new(level: &'a Level, loc: &Point) -> CellIterator<'a> {
-        let oids = level.cells.get(loc);
-        CellIterator {
-            level,
-            oids,
-            index: oids.map(|list| list.len() as i32).unwrap_or(-1),
-        }
-    }
-}
-
-impl<'a> Iterator for CellIterator<'a> {
-    type Item = (Oid, &'a Object);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let oids = self.oids?;
-        self.index -= 1;
-        if self.index >= 0 {
-            let index = self.index as usize;
-            let oid = oids[index];
-            Some((oid, &self.level.objects.get(&oid).unwrap().obj))
-        } else {
-            None // finished iteration
-        }
-    }
-}
-
 struct NpcsIterator<'a> {
     level: &'a Level,
     index: i32,

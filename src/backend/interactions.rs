@@ -21,8 +21,8 @@ pub enum PreResult {
 }
 
 // ---- struct Interaction -------------------------------------------------
-pub type PreHandler = fn(&mut Game, &Point, &Point) -> PreResult;
-pub type PostHandler = fn(&mut Game, &Point) -> (Time, Sound);
+pub type PreHandler = fn(&mut Game, Point, Point) -> PreResult;
+pub type PostHandler = fn(&mut Game, Point) -> (Time, Sound);
 
 // TODO:
 // do we need any other handlers? or maybe just comment missing ones?
@@ -76,7 +76,7 @@ impl Interactions {
 }
 
 // ---- Pre-move handlers ----------------------------------------------------------------
-fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
+fn player_vs_terrain_pre(game: &mut Game, player_loc: Point, new_loc: Point) -> PreResult {
     let (oid, obj) = game.level.get_bottom(new_loc);
     let player = game.level.get(player_loc, PLAYER_ID).unwrap().1;
 
@@ -138,7 +138,7 @@ fn player_vs_terrain_pre(game: &mut Game, player_loc: &Point, new_loc: &Point) -
     }
 }
 
-fn player_vs_character(game: &mut Game, player_loc: &Point, new_loc: &Point) -> PreResult {
+fn player_vs_character(game: &mut Game, player_loc: Point, new_loc: Point) -> PreResult {
     let obj = game.level.get(new_loc, CHARACTER_ID).unwrap().1;
     match obj.disposition_value() {
         Some(Disposition::Aggressive) => {
@@ -166,18 +166,18 @@ fn player_vs_character(game: &mut Game, player_loc: &Point, new_loc: &Point) -> 
 }
 
 fn is_worthy(game: &Game) -> bool {
-    let player = game.level.get(&game.player_loc(), PLAYER_ID).unwrap().1;
+    let player = game.level.get(game.player_loc(), PLAYER_ID).unwrap().1;
     if let Some(obj) = game.find_main_hand(player) {
         return obj.description().contains("Doom");
     }
     false
 }
 
-fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) -> PreResult {
+fn player_vs_doorman(game: &mut Game, _player_loc: Point, doorman_loc: Point) -> PreResult {
     if is_worthy(game) {
         let (oid, doorman) = game.level.get(doorman_loc, DOORMAN_ID).unwrap();
         if let Some(to_loc) = game.find_empty_cell(doorman, doorman_loc) {
-            game.do_shove_doorman(Oid(0), doorman_loc, oid, &to_loc);
+            game.do_shove_doorman(Oid(0), doorman_loc, oid, to_loc);
             PreResult::Acted(time::SHOVE_DOORMAN, sound::QUIET)
         } else {
             PreResult::ZeroAction
@@ -189,7 +189,7 @@ fn player_vs_doorman(game: &mut Game, _player_loc: &Point, doorman_loc: &Point) 
     }
 }
 
-fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -> PreResult {
+fn player_vs_spectator(game: &mut Game, _player_loc: Point, _new_loc: Point) -> PreResult {
     let messages = if matches!(game.state, State::Adventuring) {
         vec![
             "I hope you're prepared to die!",
@@ -213,7 +213,7 @@ fn player_vs_spectator(game: &mut Game, _player_loc: &Point, _new_loc: &Point) -
 }
 
 // ---- Post-move handlers ---------------------------------------------------------------
-fn player_vs_portable(game: &mut Game, loc: &Point) -> (Time, Sound) {
+fn player_vs_portable(game: &mut Game, loc: Point) -> (Time, Sound) {
     let oid = game.level.get(loc, PORTABLE_ID).unwrap().0;
 
     let player = game.level.get_mut(loc, CHARACTER_ID).unwrap().1;
@@ -228,7 +228,7 @@ fn player_vs_portable(game: &mut Game, loc: &Point) -> (Time, Sound) {
     }
 }
 
-fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {
+fn player_vs_sign(game: &mut Game, loc: Point) -> (Time, Sound) {
     let (_, obj) = game.level.get(loc, SIGN_ID).unwrap();
     let mesg = Message {
         topic: Topic::Normal,
@@ -238,7 +238,7 @@ fn player_vs_sign(game: &mut Game, loc: &Point) -> (Time, Sound) {
     (Time::zero(), sound::NONE)
 }
 
-fn player_vs_terrain_post(game: &mut Game, loc: &Point) -> (Time, Sound) {
+fn player_vs_terrain_post(game: &mut Game, loc: Point) -> (Time, Sound) {
     let (_, obj) = game.level.get(loc, TERRAIN_ID).unwrap();
     match obj.terrain_value().unwrap() {
         Terrain::Rubble => {

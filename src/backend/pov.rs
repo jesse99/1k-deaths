@@ -37,7 +37,7 @@ impl PoV {
     /// Returns true if loc is visible from origin.
     pub fn visible(&self, game: &Game, loc: &Point) -> bool {
         assert!(!self.dirty);
-        if loc.distance2(&game.player_loc()) <= RADIUS * RADIUS {
+        if loc.distance2(game.player_loc()) <= RADIUS * RADIUS {
             self.visible.contains(loc)
         } else {
             false
@@ -65,7 +65,7 @@ impl PoV {
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
-            blocks_los: { |loc| blocks_los(game.level.cell_iter(&loc)) },
+            blocks_los: { |loc| blocks_los(game.level.cell_iter(loc)) },
         };
         view.visit();
 

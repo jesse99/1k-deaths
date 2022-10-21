@@ -396,7 +396,7 @@ mod tests {
                 if *map.get(new_loc) == '~' {
                     neighbors.push((new_loc, time::CARDINAL_MOVE * 5));
                 } else if *map.get(new_loc) != '#' {
-                    if loc.diagnol(&new_loc) {
+                    if loc.diagnol(new_loc) {
                         neighbors.push((new_loc, time::DIAGNOL_MOVE));
                     } else {
                         neighbors.push((new_loc, time::CARDINAL_MOVE));

@@ -112,8 +112,6 @@ pub struct Model {
     default_cell: Vec<Oid>,             // used for locations not in cells
     player_loc: Point,
     next_id: u64, // 0 is the player
-    #[cfg(debug_assertions)]
-    invariants: bool, // if true then expensive checks are enabled
 }
 
 impl Model {
@@ -124,15 +122,7 @@ impl Model {
             default_cell: builder.default_cell,
             player_loc: builder.player_loc,
             next_id: 1,
-            #[cfg(debug_assertions)]
-            invariants: false,
         }
-    }
-
-    #[cfg(debug_assertions)]
-    pub fn set_invariants(&mut self, enable: bool) {
-        // TODO: might want a wizard command to enable these
-        self.invariants = enable;
     }
 
     pub fn player_loc(&self) -> Point {
@@ -234,11 +224,17 @@ impl Model {
 
     /// Iterates over the objects at loc starting with the topmost object.
     pub fn cell_iter(&self, loc: Point) -> impl Iterator<Item = (Oid, &Object)> {
-        CellIterator2::new(self, loc)
+        CellIterator::new(self, loc)
     }
 
     pub fn obj(&self, oid: Oid) -> &Object {
         self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"))
+    }
+
+    /// Normally Oids are guaranteed to exist but it is possible for objects
+    /// to cache an oid that later is destroyed.
+    pub fn try_obj(&self, oid: Oid) -> Option<&Object> {
+        self.objects.get(&oid)
     }
 
     pub fn add(&mut self, obj: Object, loc: Option<Point>) -> Oid {
@@ -263,10 +259,6 @@ impl Model {
         let old = self.objects.insert(oid, obj);
         assert!(old.is_none(), "Level already had oid {oid}");
 
-        if cfg!(debug_assertions) {
-            self.invariant();
-        }
-
         oid
     }
 
@@ -282,10 +274,6 @@ impl Model {
             _ => 0,
         };
         oids.insert(index, oid);
-
-        if cfg!(debug_assertions) {
-            self.invariant();
-        }
     }
 
     /// This is the inverse of add but functions more like destroy.
@@ -297,10 +285,6 @@ impl Model {
         let oids = self.cells.get_mut(&loc).unwrap();
         let index = oids.iter().position(|id| *id == oid).unwrap();
         oids.remove(index);
-
-        if cfg!(debug_assertions) {
-            self.invariant();
-        }
     }
 
     /// Character at loc adds oid at loc to its inventory.
@@ -317,10 +301,6 @@ impl Model {
 
         let inv = obj.inventory_value_mut().unwrap();
         inv.push(oid);
-
-        if cfg!(debug_assertions) {
-            self.invariant();
-        }
     }
 
     /// Replace oid at loc with a new object/oid.
@@ -345,15 +325,10 @@ impl Model {
         let index = oids.iter().position(|id| *id == old_oid).unwrap();
         oids[index] = new_oid;
 
-        if cfg!(debug_assertions) {
-            self.invariant();
-        }
-
         new_oid
     }
 
-    /// Move an oid from from to to.
-    pub fn shift(&mut self, oid: Oid, from: Point, to: Point) {
+    pub fn change_loc(&mut self, oid: Oid, from: Point, to: Point) {
         let obj = self.objects.get(&oid).expect(&format!("oid {oid} isn't in objects"));
         assert!(obj.has(PORTABLE_ID) || obj.has(CHARACTER_ID));
 
@@ -369,15 +344,11 @@ impl Model {
         if oid.0 == 0 {
             self.player_loc = to;
         }
-
-        if cfg!(debug_assertions) {
-            self.invariant();
-        }
     }
 
     /// Ensure that points around loc are in cells. This is typically used after something
     /// like a dig action so that characters can interact with newly exposed cells.
-    pub fn ensure_neighbors(&mut self, loc: &Point) {
+    pub fn ensure_neighbors(&mut self, loc: Point) {
         let deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
         for delta in deltas {
             let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
@@ -436,8 +407,77 @@ impl Model {
         }
     }
 
-    fn invariant(&self) {
-        // All oids must be in objects.
+    // These always run in debug.
+    #[cfg(debug_assertions)]
+    pub fn cheap_invariants(&self, loc: Point) {
+        let oid = Oid(self.next_id);
+        assert!(!self.objects.contains_key(&oid), "next_oid {oid} is in objects");
+
+        // Can only have one oid in default cell (several methods assume that this is true).
+        // It's an array so that we can avoid creating a temporary array.
+        let num_default = self.default_cell.len();
+        assert!(num_default == 1, "default_cell has len {num_default}");
+
+        // Characters should not be in impassible terrain.
+        if let Some((_, ch)) = self.get(loc, CHARACTER_ID) {
+            let terrain = self.get(loc, TERRAIN_ID).unwrap().1;
+            assert!(
+                ch.impassible_terrain(terrain).is_none(),
+                "{ch} shouldn't be in {terrain}"
+            );
+        }
+        // Player must be present.
+        assert!(self.objects.contains_key(&Oid(0)), "player oid is not in objects");
+
+        let oids = self.cells.get(&self.player_loc).expect("player_loc is not in cells");
+        let obj = oids.iter().find(|oid| oid.0 == 0);
+        assert!(obj.is_some(), "there's no player at {}", self.player_loc);
+
+        // This is potentially expensive but we're only doing it for one cell.
+        let oids = self.cells.get(&loc).expect("cells is missing {loc}");
+        self.cell_invariant(loc, oids);
+    }
+
+    // These run when --invariants is used.
+    #[cfg(debug_assertions)]
+    pub fn expensive_invariants(&self) {
+        let mut inv_oids = FnvHashSet::default();
+        for obj in self.objects.values() {
+            if let Some(equipped) = obj.equipped_value() {
+                for item in equipped.values() {
+                    if let Some(oid) = item {
+                        let added = inv_oids.insert(oid);
+                        assert!(added, "oid {oid} is in inventory more than once",);
+                        assert!(self.objects.contains_key(oid), "equipped oid {oid} is not in objects");
+                    }
+                }
+            }
+            if let Some(inv) = obj.inventory_value() {
+                for oid in inv.iter() {
+                    let added = inv_oids.insert(oid);
+                    assert!(added, "oid {oid} is in inventory more than once",);
+                    assert!(self.objects.contains_key(oid), "inventory oid {oid} is not in objects");
+                }
+            }
+        }
+
+        let mut level_oids = FnvHashMap::default();
+        for (loc, oids) in &self.cells {
+            for oid in oids {
+                let old = level_oids.insert(loc, oid);
+                if let Some(old_loc) = old {
+                    panic!("oid {oid} is at {loc} and at {old_loc}");
+                }
+                assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
+                assert!(!inv_oids.contains(&oid), "oid {oid} is in inventory and is at {loc}");
+            }
+        }
+
+        assert!(
+            inv_oids.len() + level_oids.len() == self.objects.len(),
+            "all oids must be either on the level or in inventory"
+        );
+
         for oids in self.cells.values() {
             for oid in oids {
                 assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
@@ -447,65 +487,60 @@ impl Model {
             assert!(self.objects.contains_key(oid), "oid {oid} is not in objects");
         }
 
-        let oid = Oid(self.next_id);
-        assert!(!self.objects.contains_key(&oid), "next_oid {oid} is in objects");
-
-        // Cells must be layered properly.
         for (loc, oids) in self.cells.iter() {
-            assert!(!oids.is_empty(), "{loc} has no objects"); // should have at least terrain
+            self.cell_invariant(*loc, oids);
+        }
+    }
 
-            let num_chars = oids
-                .iter()
-                .map(|oid| self.objects.get(oid).unwrap())
-                .filter(|obj| obj.has(CHARACTER_ID))
-                .count();
-            assert!(num_chars <= 1, "{loc} has {num_chars} Characters");
+    // Cells must be layered properly.
+    #[cfg(debug_assertions)]
+    fn cell_invariant(&self, loc: Point, oids: &Vec<Oid>) {
+        assert!(!oids.is_empty(), "{loc} has no objects"); // should have at least terrain
 
-            if num_chars > 0 {
-                let oid = oids.first().unwrap();
-                let obj = self.objects.get(&oid).unwrap();
-                assert!(
-                    obj.has(CHARACTER_ID),
-                    "{loc} has a Character but it's not the first object"
-                );
-            }
+        let num_chars = oids
+            .iter()
+            .map(|oid| self.objects.get(oid).unwrap())
+            .filter(|obj| obj.has(CHARACTER_ID))
+            .count();
+        assert!(num_chars <= 1, "{loc} has {num_chars} Characters");
 
-            let num_terrain = oids
-                .iter()
-                .map(|oid| self.objects.get(oid).unwrap())
-                .filter(|obj| obj.has(TERRAIN_ID))
-                .count();
-            assert!(num_terrain == 1, "{loc} has {num_terrain} terrain objects");
-
-            let oid = oids.last().unwrap();
+        if num_chars > 0 {
+            let oid = oids.first().unwrap();
             let obj = self.objects.get(&oid).unwrap();
-            assert!(obj.has(TERRAIN_ID), "{loc} has {obj} at the end (expected terrain)");
+            assert!(
+                obj.has(CHARACTER_ID),
+                "{loc} has a Character but it's not the first object"
+            );
         }
 
-        // Can only have one oid in default cell (several methods assume that this is true).
-        // It's an array so that we can avoid creating a temporary array.
-        let num_default = self.default_cell.len();
-        assert!(num_default == 1, "default_cell has len {num_default}");
+        let num_terrain = oids
+            .iter()
+            .map(|oid| self.objects.get(oid).unwrap())
+            .filter(|obj| obj.has(TERRAIN_ID))
+            .count();
+        assert!(num_terrain == 1, "{loc} has {num_terrain} terrain objects");
 
-        // Player must be present.
-        assert!(self.objects.contains_key(&Oid(0)), "player oid is not in objects");
+        let oid = oids.last().unwrap();
+        let obj = self.objects.get(&oid).unwrap();
+        assert!(obj.has(TERRAIN_ID), "{loc} has {obj} at the end (expected terrain)");
 
-        let oids = self.cells.get(&self.player_loc).expect("player_loc is not in cells");
-        let obj = oids.iter().find(|oid| oid.0 == 0);
-        assert!(obj.is_some(), "there's no player at {}", self.player_loc);
+        for oid in oids {
+            let obj = self.objects.get(&oid).unwrap();
+            obj.invariant();
+        }
     }
 }
 
-struct CellIterator2<'a> {
+struct CellIterator<'a> {
     model: &'a Model,
     oids: Option<&'a Vec<Oid>>,
     index: i32,
 }
 
-impl<'a> CellIterator2<'a> {
-    fn new(model: &'a Model, loc: Point) -> CellIterator2<'a> {
+impl<'a> CellIterator<'a> {
+    fn new(model: &'a Model, loc: Point) -> CellIterator<'a> {
         let oids = model.cells.get(&loc);
-        CellIterator2 {
+        CellIterator {
             model,
             oids,
             index: oids.map(|list| list.len() as i32).unwrap_or(-1),
@@ -513,7 +548,7 @@ impl<'a> CellIterator2<'a> {
     }
 }
 
-impl<'a> Iterator for CellIterator2<'a> {
+impl<'a> Iterator for CellIterator<'a> {
     type Item = (Oid, &'a Object);
 
     fn next(&mut self) -> Option<Self::Item> {

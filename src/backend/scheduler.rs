@@ -162,7 +162,7 @@ impl Scheduler {
 
         write!(writer, "   oid  units dname\n")?;
         for entry in items.iter().rev() {
-            let obj = game.level.obj(entry.oid).0;
+            let obj = game.level.obj(entry.oid);
             write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
         }
         Ok(())
@@ -190,7 +190,7 @@ fn advance_time(game: &mut Game) {
 
     for oid in game.scheduler.entries.keys() {
         if let Some(loc) = game.loc(*oid) {
-            if let Some((_, obj)) = game.level.get_mut(&loc, CHARACTER_ID) {
+            if let Some((_, obj)) = game.level.get_mut(loc, CHARACTER_ID) {
                 if let Some(durability) = obj.durability_value() {
                     if durability.current < durability.max {
                         obj.replace(Tag::Durability(Durability {
