@@ -10,5 +10,6 @@ opt-level = 1           # this is noticeably faster and hopefully doesn't slow d
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}   # command line parsing
 log = "0.4.17"          # standard logging API
 simplelog = "0.11.0"    # logging facade
