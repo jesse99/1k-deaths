@@ -3,6 +3,7 @@ name = "one-thousand-deaths"
 version = "0.1.0"       # also Header::major_version and minor_version
 edition = "2021"
 default-run = "one-thousand-deaths"
+about = "Roguelike based on the Malazan Books of the Fallen."
 
 [profile.dev]
 opt-level = 1           # this is noticeably faster and hopefully doesn't slow down compiles much
@@ -10,6 +11,9 @@ opt-level = 1           # this is noticeably faster and hopefully doesn't slow d
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.22"       # time library
 clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}   # command line parsing
+fnv = "1.0.7"           # faster hashing for small keys
 log = "0.4.17"          # standard logging API
 simplelog = "0.11.0"    # logging facade
+termion = "2.0.1"       # cross-platform terminal library

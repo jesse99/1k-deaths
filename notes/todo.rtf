@@ -54,20 +54,17 @@ other rogue-likes\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\b \cf3 \
-Step 2 - Hello World\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f1\b0 \cf3 \'95 Get logging options working\
-	- probably want to use command attr better: https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html\
-\'95\'a0Maybe just some primitive backend type unit tests\
-	- make the backend a lib so that we can use integration tests\
-\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f3\b \cf3 Step 3 - It\'92s a boy!\
+Step 3 - It\'92s a boy!\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf3 \'95\'a0Screen input and output\
+	- stop exposing Store from backend, \
+		instead have GameState with player_loc method\
+	- do we still want to use termion?\
+	- get player input working\
+		for now can just print the player\'92s location\
+	- add walls\
+	- render the level\
 \'95 Support scrolling\
 \'95 Door open and closing (will need a backend store)\
 \

@@ -2,10 +2,14 @@
 extern crate log;
 extern crate simplelog;
 
+mod backend;
+mod terminal;
+
 use clap::Parser;
 use simplelog::*;
 use std::{fs::File, str::FromStr};
 
+// See https://docs.rs/clap/latest/clap/_derive/index.html
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -20,30 +24,32 @@ struct Args {
     /// Relative path to log file
     #[arg(long, default_value = "1k-deaths.log", value_name = "PATH")]
     log_path: String,
-
-    /// Number of times to greet
-    #[arg(short, long, default_value_t = 1)]
-    count: u8,
 }
 
-// TODO:
-// add options to control the logger
-//  support allow modules
-//  support ignore modules
 fn main() {
     let args = Args::parse();
-    let log_level = LevelFilter::from_str(&args.log_level).expect("oops"); // TODO: don't use oops
-    let location = LevelFilter::from_str(&args.log_location).expect("oops");
+    let log_level = LevelFilter::from_str(&args.log_level).expect("bad log-level");
+    let location = LevelFilter::from_str(&args.log_location).expect("bad log-location");
 
+    // See https://docs.rs/simplelog/0.12.0/simplelog/struct.ConfigBuilder.html
+    // TODO: may want to support allow and ignore lists. Note that the functions (eg
+    // add_filter_allow_str) append onto an internal list.
     let config = ConfigBuilder::new()
-        .set_thread_level(LevelFilter::Off) // don't log thread IDs
+        .set_location_level(location) // file names and line numbers
         .set_target_level(LevelFilter::Off) // don't log exe name
-        .set_location_level(location) // include file and line?
+        .set_thread_level(LevelFilter::Off) // don't log thread IDs
         .build();
+    // Unwrapping File::create is a little lame but it actually returns a decent error message.
     let _ = WriteLogger::init(log_level, config, File::create(&args.log_path).unwrap()).unwrap();
 
-    // TODO: at info log timestamp and version, maybe args too
-    error!("error level");
-    info!("logging to {}", args.log_path);
-    debug!("debug level");
+    let local = chrono::Local::now();
+    info!(
+        "started up on {} with version {} ----------------------------",
+        local.to_rfc2822(),
+        env!("CARGO_PKG_VERSION")
+    );
+
+    let game = backend::Game::new();
+    let mut terminal = terminal::Terminal::new(game);
+    terminal.run();
 }
