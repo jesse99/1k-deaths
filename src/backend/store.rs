@@ -136,7 +136,7 @@ mod tests {
                                                   //     println!("{oid} => {rel:?}")
                                                   // }
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Ground);
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Dirt);
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
     }
 }

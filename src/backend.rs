@@ -23,7 +23,7 @@ impl Game {
 
         let oid = ObjectId::Cell(loc);
         store.create(oid, Relation::Objects(vec![ObjectId::Player]));
-        store.create(oid, Relation::Terrain(Terrain::Ground));
+        store.create(oid, Relation::Terrain(Terrain::Dirt));
 
         let oid = ObjectId::DefaultCell;
         store.create(oid, Relation::Objects(vec![]));

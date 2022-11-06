@@ -42,10 +42,7 @@ pub(super) enum Terrain {
     ClosedDoor,
 
     DeepWater,
-
-    /// Grass, dirt, etc.
-    Ground,
-
+    Dirt,
     OpenDoor,
 
     /// Will have a Material tag.

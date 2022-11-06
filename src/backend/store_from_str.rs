@@ -12,7 +12,7 @@ impl From<&str> for Store {
         let mut loc = Point::origin();
         for ch in map.chars() {
             match ch {
-                ' ' => add_terrain(&mut store, loc, Terrain::Ground),
+                ' ' => add_terrain(&mut store, loc, Terrain::Dirt),
                 'W' => add_terrain(&mut store, loc, Terrain::DeepWater),
                 '@' => add_player(&mut store, loc),
                 '~' => add_terrain(&mut store, loc, Terrain::ShallowWater),
