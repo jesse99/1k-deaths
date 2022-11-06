@@ -11,7 +11,6 @@
 //! value - In RDF this is the object. It's the value of the [`Relation`] enum, e.g. Color.
 use super::*;
 use fnv::FnvHashMap;
-use std::fmt;
 
 type Relations = FnvHashMap<RelationTag, Relation>;
 
@@ -106,37 +105,5 @@ impl Store {
             Some(Relation::Location(value)) => Some(value),
             _ => None,
         }
-    }
-}
-
-#[cfg(debug_assertions)]
-impl fmt::Display for ObjectId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ObjectId::Obj(count) => write!(f, "{}:{}", count.tag, count.value),
-            _ => write!(f, "{:?}", self),
-        }
-    }
-}
-
-#[cfg(not(debug_assertions))]
-impl fmt::Display for ObjectId {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ObjectId::Obj(count) => write!(f, "Obj:{}", count.value),
-            _ => write!(f, "{:?}", self),
-        }
-    }
-}
-
-impl fmt::Display for Terrain {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl fmt::Display for RelationTag {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
     }
 }

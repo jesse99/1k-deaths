@@ -1,4 +1,5 @@
 use super::*;
+use std::fmt;
 
 /// Used to uniquely identify most objects in the [`Store`] via [`ObjectId`].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -97,5 +98,37 @@ impl Relation {
             Relation::Objects(_) => RelationTag::Objects,
             Relation::Terrain(_) => RelationTag::Terrain,
         }
+    }
+}
+
+#[cfg(debug_assertions)]
+impl fmt::Display for ObjectId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ObjectId::Obj(count) => write!(f, "{}:{}", count.tag, count.value),
+            _ => write!(f, "{:?}", self),
+        }
+    }
+}
+
+#[cfg(not(debug_assertions))]
+impl fmt::Display for ObjectId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ObjectId::Obj(count) => write!(f, "Obj:{}", count.value),
+            _ => write!(f, "{:?}", self),
+        }
+    }
+}
+
+impl fmt::Display for Terrain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl fmt::Display for RelationTag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
