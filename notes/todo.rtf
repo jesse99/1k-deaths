@@ -49,7 +49,28 @@ other rogue-likes\
 \f2\i \cf3 keys should have a binding\
 	
 \f1\i0 \cf3 Chest(contents)
-\f2\i \cf3  has a binding if a key is required
+\f2\i \cf3  has a binding if a key is required\
+	\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\i0 \cf3 Door\
+	can open or close\
+	can break down (maybe with a str threshold)\
+		then it\'92s broken door: can\'92t close or spike or lock\
+	can spike shut?\
+	optionally lock or unlock\
+	may have a material\
+	\
+Terrain\
+	ShallowLiquid   
+\f2\i \cf3 how do we say \'93You splash through the water\'94?
+\f1\i0 \cf3 \
+	DeepLiquid\
+	Solid					
+\f2\i \cf3 wall, maybe door, maybe tree\
+
+\f1\i0 \cf3 	Vitr					
+\f2\i \cf3 or liquid type? 
 \f1\i0 \cf3 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
@@ -57,16 +78,27 @@ other rogue-likes\
 Step 3 - It\'92s a boy!\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf3 \'95\'a0Screen input and output\
-	- stop exposing Store from backend, \
-		instead have GameState with player_loc method\
-	- do we still want to use termion?\
-	- get player input working\
-		for now can just print the player\'92s location\
-	- add walls\
+\f1\b0 \cf3 \'95\'a0Work on backend design:\
+	- put relation into its own file\
+	- add support for converting ASCII to a store (useful for testing and for the initial map)\
+	- add serde::Serializeable support to the store\
+	- use the insta crate to add snapshot tests\
+		` use the yaml variant\
+		` ASCII to store\
+		` binary serialize round-tripping\
+		` move player to open square\
+		` attempt to move player into wall\
+		  will need to store messages (these would be helpful for game reloading too)\
+		` move into water\
+\'95\'a0Screen input and output\
+	- how do we handle rendering? really want UI module to pick colors and symbols\
+		maybe an appearence relation?\
+		works well with disguise spells, maybe traps too\
+		maybe also invis\
+	- add a mini-map\
 	- render the level\
 \'95 Support scrolling\
-\'95 Door open and closing (will need a backend store)\
+\'95 Door open and closing\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
