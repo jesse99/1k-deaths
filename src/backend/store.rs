@@ -137,10 +137,14 @@ mod tests {
     // TODO: change this to use snapshots
     #[test]
     fn test_from_str() {
-        let store = Store::from("###\n# #\n###"); // TODO: can't we use a better string literal?
-                                                  // for (oid, rel) in store.tuples.iter() {
-                                                  //     println!("{oid} => {rel:?}")
-                                                  // }
+        let store = Store::from(
+            "###\n\
+             # #\n\
+             ###",
+        );
+        // for (oid, rel) in store.tuples.iter() {
+        //     println!("{oid} => {rel:?}")
+        // }
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Dirt);
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
@@ -148,7 +152,11 @@ mod tests {
 
     #[test]
     fn test_round_trip() {
-        let old_store = Store::from("###\n# #\n###");
+        let store = Store::from(
+            "###\n\
+             # #\n\
+             ###",
+        );
         let bytes: Vec<u8> = postcard::to_allocvec(&old_store).unwrap();
         let store: Store = from_bytes(bytes.deref()).unwrap();
 
