@@ -1,12 +1,17 @@
 use super::*;
+use arraystring::{typenum::U16, ArrayString};
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fmt;
 
+pub(super) type TagStr = ArrayString<U16>;
+
 /// Used to uniquely identify most objects in the [`Store`] via [`ObjectId`].
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub(super) struct Counter {
     // Used by Display so that we get more informative logging.
     #[cfg(debug_assertions)]
-    pub tag: &'static str,
+    pub tag: TagStr,
 
     // Unique identifier for an ObjectId::Obj.
     pub value: u32,
@@ -16,7 +21,7 @@ pub(super) struct Counter {
 // TODO: UI could use these to figure out how to render
 
 /// Used with the [`Store`] to identify a set of associated [`Relation`s].
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub(super) enum ObjectId {
     /// These will have Objects and Terrain relations.
     Cell(Point),
@@ -34,7 +39,7 @@ pub(super) enum ObjectId {
     Player,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Terrain {
     /// Will have Durability (and usually Material) if the door can be broken down.
     /// If it has a Binding tag then it can only be opened by characters that
@@ -60,7 +65,7 @@ pub(super) enum Terrain {
 }
 
 /// Used to identify a particular Relation for operations like Store::find.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub(super) enum RelationTag {
     // TODO: need to generate RelationTag and Relation
     Location,
@@ -69,7 +74,7 @@ pub(super) enum RelationTag {
 }
 
 /// Used to associate a value with an [`ObjectId`] in the [`Store`].
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(super) enum Relation {
     /// Used for characters and items.
     Location(Point),

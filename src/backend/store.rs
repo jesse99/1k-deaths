@@ -11,9 +11,16 @@
 //! value - In RDF this is the object. It's the value of the [`Relation`] enum, e.g. Color.
 use super::*;
 use fnv::FnvHashMap;
+use serde::{Deserialize, Serialize};
+
+#[cfg(test)]
+use core::ops::Deref;
+#[cfg(test)]
+use postcard::from_bytes;
 
 type Relations = FnvHashMap<RelationTag, Relation>;
 
+#[derive(Serialize, Deserialize)]
 pub(super) struct Store {
     tuples: FnvHashMap<ObjectId, Relations>,
     counter: u32,
@@ -30,7 +37,7 @@ impl Store {
     #[cfg(debug_assertions)]
     pub(super) fn new_object(&mut self, tag: &'static str) -> ObjectId {
         let new = ObjectId::Obj(Counter {
-            tag,
+            tag: TagStr::from_str_truncate(tag),
             value: self.counter,
         });
         self.counter += 1;
@@ -126,8 +133,7 @@ impl Store {
 mod tests {
     use super::*;
 
-    // TODO: add a test for serialize round-tripping
-    // TODO: add some
+    // TODO: add some DefaultCell tests?
     // TODO: change this to use snapshots
     #[test]
     fn test_from_str() {
@@ -135,6 +141,17 @@ mod tests {
                                                   // for (oid, rel) in store.tuples.iter() {
                                                   //     println!("{oid} => {rel:?}")
                                                   // }
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Dirt);
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
+    }
+
+    #[test]
+    fn test_round_trip() {
+        let old_store = Store::from("###\n# #\n###");
+        let bytes: Vec<u8> = postcard::to_allocvec(&old_store).unwrap();
+        let store: Store = from_bytes(bytes.deref()).unwrap();
+
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Dirt);
         assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
