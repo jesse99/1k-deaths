@@ -70,11 +70,16 @@ impl Store {
         if let Some(relations) = self.tuples.get(&oid) {
             relations.get(&tag)
         } else {
-            if matches!(oid, ObjectId::Cell(_)) {
-                let relations = self.tuples.get(&ObjectId::DefaultCell).unwrap();
-                relations.get(&tag)
-            } else {
-                None
+            match oid {
+                // Note that we cannot get the Location for a DefaultCell (and we can't
+                // use a temporary because we need to return a reference). But this should
+                // be OK: the only way to access DefaultCell is to use a Cell which means
+                // that the caller already has the location.
+                ObjectId::Cell(_) => {
+                    let relations = self.tuples.get(&ObjectId::DefaultCell).unwrap();
+                    relations.get(&tag)
+                }
+                _ => None,
             }
         }
     }
@@ -133,8 +138,6 @@ impl Store {
 mod tests {
     use super::*;
 
-    // TODO: add some DefaultCell tests?
-    // TODO: change this to use snapshots
     #[test]
     fn test_from_str() {
         let store = Store::from(
@@ -142,12 +145,7 @@ mod tests {
              # #\n\
              ###",
         );
-        // for (oid, rel) in store.tuples.iter() {
-        //     println!("{oid} => {rel:?}")
-        // }
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Dirt);
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
+        insta::assert_yaml_snapshot!(store);
     }
 
     #[test]
@@ -159,9 +157,6 @@ mod tests {
         );
         let bytes: Vec<u8> = postcard::to_allocvec(&old_store).unwrap();
         let store: Store = from_bytes(bytes.deref()).unwrap();
-
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Dirt);
-        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
+        insta::assert_yaml_snapshot!(store);
     }
 }

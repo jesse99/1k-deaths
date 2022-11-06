@@ -3,14 +3,22 @@ name = "one-thousand-deaths"
 version = "0.1.0"       # also Header::major_version and minor_version
 edition = "2021"
 default-run = "one-thousand-deaths"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [profile.dev]
 opt-level = 1           # this is noticeably faster and hopefully doesn't slow down compiles much
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
+
+[dev-dependencies]
+insta = {version = "1.21.0", features = ["yaml"]}       # snapshot testing
 
 [dependencies]
-arraystring = {version = "0.3.0", features = ["serde-traits"]}   # copyable fixed width strings
+arraystring = {version = "0.3.0", features = ["serde-traits"]}                  # copyable fixed width strings
 chrono = "0.4.22"                                       # time library
 clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}   # command line parsing
 fnv = "1.0.7"                                           # faster hashing for small keys
