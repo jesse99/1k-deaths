@@ -2,11 +2,12 @@
 mod primitives;
 mod relation;
 mod store;
+mod store_from_str;
 
 use relation::*;
 use store::*;
+use store_from_str::*;
 
-pub use primitives::Color;
 pub use primitives::Point;
 
 /// External API for the game state. Largely acts as a wrapper around the Store.
@@ -21,12 +22,10 @@ impl Game {
         store.create(ObjectId::Player, Relation::Location(loc));
 
         let oid = ObjectId::Cell(loc);
-        store.create(oid, Relation::Background(Color::Gray));
         store.create(oid, Relation::Objects(vec![ObjectId::Player]));
         store.create(oid, Relation::Terrain(Terrain::Ground));
 
         let oid = ObjectId::DefaultCell;
-        store.create(oid, Relation::Background(Color::DarkGray));
         store.create(oid, Relation::Objects(vec![]));
         store.create(oid, Relation::Terrain(Terrain::Wall));
 
@@ -34,7 +33,7 @@ impl Game {
     }
 
     pub fn player_loc(&self) -> Point {
-        *self.store.expect_location(ObjectId::Player)
+        self.store.expect_location(ObjectId::Player)
     }
 
     pub fn move_player(&mut self, dx: i32, dy: i32) {

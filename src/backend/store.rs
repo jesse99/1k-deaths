@@ -93,17 +93,50 @@ impl Store {
 
 // TODO: these should be generated
 impl Store {
-    pub(super) fn expect_location(&self, oid: ObjectId) -> &Point {
+    pub(super) fn expect_location(&self, oid: ObjectId) -> Point {
         match self.find(oid, RelationTag::Location) {
-            Some(Relation::Location(value)) => value,
+            Some(Relation::Location(value)) => *value,
             _ => panic!("{oid} is missing the Location tag"),
         }
     }
 
-    pub(super) fn find_location(&self, oid: ObjectId) -> Option<&Point> {
+    pub(super) fn expect_terrain(&self, oid: ObjectId) -> Terrain {
+        match self.find(oid, RelationTag::Terrain) {
+            Some(Relation::Terrain(value)) => *value,
+            _ => panic!("{oid} is missing the Terrain tag"),
+        }
+    }
+
+    pub(super) fn find_location(&self, oid: ObjectId) -> Option<Point> {
         match self.find(oid, RelationTag::Location) {
-            Some(Relation::Location(value)) => Some(value),
+            Some(Relation::Location(value)) => Some(*value),
             _ => None,
         }
+    }
+
+    pub(super) fn find_terrain(&self, oid: ObjectId) -> Option<Terrain> {
+        match self.find(oid, RelationTag::Terrain) {
+            Some(Relation::Terrain(value)) => Some(*value),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: add a test for serialize round-tripping
+    // TODO: add some
+    // TODO: change this to use snapshots
+    #[test]
+    fn test_from_str() {
+        let store = Store::from("###\n# #\n###"); // TODO: can't we use a better string literal?
+                                                  // for (oid, rel) in store.tuples.iter() {
+                                                  //     println!("{oid} => {rel:?}")
+                                                  // }
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(0, 0))), Terrain::Wall);
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(1, 1))), Terrain::Ground);
+        assert_eq!(store.expect_terrain(ObjectId::Cell(Point::new(100, 1))), Terrain::Wall);
     }
 }

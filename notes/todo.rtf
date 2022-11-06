@@ -80,6 +80,7 @@ Step 3 - It\'92s a boy!\
 
 \f1\b0 \cf3 \'95\'a0Work on backend design:\
 	- add support for converting ASCII to a store (useful for testing and for the initial map)\
+	- rename Ground to Dirt?\
 	- add serde::Serializeable support to the store\
 	- use the insta crate to add snapshot tests\
 		` use the yaml variant\
@@ -87,6 +88,7 @@ Step 3 - It\'92s a boy!\
 		` binary serialize round-tripping\
 		` move player to open square\
 		` attempt to move player into wall\
+		` do we need invariant checks or can we rely on snap shot tests?\
 		  will need to store messages (these would be helpful for game reloading too)\
 		` move into water\
 \'95\'a0Screen input and output\

@@ -18,7 +18,7 @@ pub(super) struct Counter {
 /// Used with the [`Store`] to identify a set of associated [`Relation`s].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(super) enum ObjectId {
-    /// These will have Background, Objects, and Terrain relations.
+    /// These will have Objects and Terrain relations.
     Cell(Point),
 
     /// Used internally when a Cell is not found. Acts like a normal cell except that it's
@@ -66,17 +66,14 @@ pub(super) enum Terrain {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(super) enum RelationTag {
     // TODO: need to generate RelationTag and Relation
-    Background,
     Location,
     Objects,
     Terrain,
 }
 
 /// Used to associate a value with an [`ObjectId`] in the [`Store`].
+#[derive(Debug)]
 pub(super) enum Relation {
-    /// Typically just used for Cell.
-    Background(Color),
-
     /// Used for characters and items.
     Location(Point),
 
@@ -93,7 +90,6 @@ impl Relation {
     // Would be nicer to use the From trait but that consumes the input.
     pub(super) fn tag(&self) -> RelationTag {
         match self {
-            Relation::Background(_) => RelationTag::Background,
             Relation::Location(_) => RelationTag::Location,
             Relation::Objects(_) => RelationTag::Objects,
             Relation::Terrain(_) => RelationTag::Terrain,
