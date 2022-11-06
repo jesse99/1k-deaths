@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 
-pub(super) type TagStr = ArrayString<U16>;
+pub type TagStr = ArrayString<U16>;
 
 /// Used to uniquely identify most objects in the [`Store`] via [`ObjectId`].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub(super) struct Counter {
+pub struct Counter {
     // Used by Display so that we get more informative logging.
     #[cfg(debug_assertions)]
     pub tag: TagStr,
@@ -22,7 +22,7 @@ pub(super) struct Counter {
 
 /// Used with the [`Store`] to identify a set of associated [`Relation`s].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub(super) enum ObjectId {
+pub enum ObjectId {
     /// These will have Objects and Terrain relations.
     Cell(Point),
 
@@ -40,7 +40,7 @@ pub(super) enum ObjectId {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub(super) enum Terrain {
+pub enum Terrain {
     /// Will have Durability (and usually Material) if the door can be broken down.
     /// If it has a Binding tag then it can only be opened by characters that
     /// have a matching Binding object in their inventory (i.e. a key).
@@ -66,7 +66,7 @@ pub(super) enum Terrain {
 
 /// Used to identify a particular Relation for operations like Store::find.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub(super) enum RelationTag {
+pub enum RelationTag {
     // TODO: need to generate RelationTag and Relation
     Location,
     Objects,
@@ -75,7 +75,7 @@ pub(super) enum RelationTag {
 
 /// Used to associate a value with an [`ObjectId`] in the [`Store`].
 #[derive(Debug, Serialize, Deserialize)]
-pub(super) enum Relation {
+pub enum Relation {
     /// Used for characters and items.
     Location(Point),
 
@@ -90,7 +90,7 @@ pub(super) enum Relation {
 // TODO: generate this
 impl Relation {
     // Would be nicer to use the From trait but that consumes the input.
-    pub(super) fn tag(&self) -> RelationTag {
+    pub fn tag(&self) -> RelationTag {
         match self {
             Relation::Location(_) => RelationTag::Location,
             Relation::Objects(_) => RelationTag::Objects,

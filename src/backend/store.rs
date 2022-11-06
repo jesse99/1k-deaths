@@ -21,13 +21,13 @@ use postcard::from_bytes;
 type Relations = FnvHashMap<RelationTag, Relation>;
 
 #[derive(Serialize, Deserialize)]
-pub(super) struct Store {
+pub struct Store {
     tuples: FnvHashMap<ObjectId, Relations>,
     counter: u32,
 }
 
 impl Store {
-    pub(super) fn new() -> Store {
+    pub fn new() -> Store {
         Store {
             tuples: FnvHashMap::default(),
             counter: 0,
@@ -35,7 +35,7 @@ impl Store {
     }
 
     #[cfg(debug_assertions)]
-    pub(super) fn new_object(&mut self, tag: &'static str) -> ObjectId {
+    pub fn new_object(&mut self, tag: &'static str) -> ObjectId {
         let new = ObjectId::Obj(Counter {
             tag: TagStr::from_str_truncate(tag),
             value: self.counter,
@@ -45,7 +45,7 @@ impl Store {
     }
 
     #[cfg(not(debug_assertions))]
-    pub(super) fn new_object(&mut self, _tag: &'static str) -> ObjectId {
+    pub fn new_object(&mut self, _tag: &'static str) -> ObjectId {
         let new = ObjectId::Obj(Counter { value: self.counter });
         self.counter += 1;
         new
@@ -55,7 +55,7 @@ impl Store {
 // The basic CRUD functions (there are also some generated functions built on top of these
 // that offer better ease of use).
 impl Store {
-    pub(super) fn create(&mut self, oid: ObjectId, relation: Relation) {
+    pub fn create(&mut self, oid: ObjectId, relation: Relation) {
         let tag = relation.tag();
         let relations = self.tuples.entry(oid).or_insert_with(|| Relations::default());
         let old = relations.insert(tag, relation);
@@ -64,7 +64,7 @@ impl Store {
 
     /// Typically one of the generated functions (eg expect_location or find_location)
     /// would be used instead.
-    pub(super) fn find(&self, oid: ObjectId, tag: RelationTag) -> Option<&Relation> {
+    pub fn find(&self, oid: ObjectId, tag: RelationTag) -> Option<&Relation> {
         debug_assert!(!matches!(oid, ObjectId::DefaultCell));
 
         if let Some(relations) = self.tuples.get(&oid) {
@@ -79,7 +79,7 @@ impl Store {
         }
     }
 
-    pub(super) fn update(&mut self, oid: ObjectId, relation: Relation) {
+    pub fn update(&mut self, oid: ObjectId, relation: Relation) {
         debug_assert!(!matches!(oid, ObjectId::DefaultCell));
 
         let tag = relation.tag();
@@ -89,7 +89,7 @@ impl Store {
     }
 
     /// Note that it is not an error to remove a missing tuple.
-    pub(super) fn remove(&mut self, oid: ObjectId, tag: RelationTag) {
+    pub fn remove(&mut self, oid: ObjectId, tag: RelationTag) {
         debug_assert!(!matches!(oid, ObjectId::DefaultCell));
 
         if let Some(relations) = self.tuples.get_mut(&oid) {
@@ -100,28 +100,28 @@ impl Store {
 
 // TODO: these should be generated
 impl Store {
-    pub(super) fn expect_location(&self, oid: ObjectId) -> Point {
+    pub fn expect_location(&self, oid: ObjectId) -> Point {
         match self.find(oid, RelationTag::Location) {
             Some(Relation::Location(value)) => *value,
             _ => panic!("{oid} is missing the Location tag"),
         }
     }
 
-    pub(super) fn expect_terrain(&self, oid: ObjectId) -> Terrain {
+    pub fn expect_terrain(&self, oid: ObjectId) -> Terrain {
         match self.find(oid, RelationTag::Terrain) {
             Some(Relation::Terrain(value)) => *value,
             _ => panic!("{oid} is missing the Terrain tag"),
         }
     }
 
-    pub(super) fn find_location(&self, oid: ObjectId) -> Option<Point> {
+    pub fn find_location(&self, oid: ObjectId) -> Option<Point> {
         match self.find(oid, RelationTag::Location) {
             Some(Relation::Location(value)) => Some(*value),
             _ => None,
         }
     }
 
-    pub(super) fn find_terrain(&self, oid: ObjectId) -> Option<Terrain> {
+    pub fn find_terrain(&self, oid: ObjectId) -> Option<Terrain> {
         match self.find(oid, RelationTag::Terrain) {
             Some(Relation::Terrain(value)) => Some(*value),
             _ => None,
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn test_round_trip() {
-        let store = Store::from(
+        let old_store = Store::from(
             "###\n\
              # #\n\
              ###",
