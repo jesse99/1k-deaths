@@ -134,6 +134,8 @@ impl Store {
     }
 }
 
+// TODO: Depending on how much code coverage we have with unit tests we can just rely
+// on the snapshots to catch problems rather than adding complex invariant checks.
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,6 +159,29 @@ mod tests {
         );
         let bytes: Vec<u8> = postcard::to_allocvec(&old_store).unwrap();
         let store: Store = from_bytes(bytes.deref()).unwrap();
+        insta::assert_yaml_snapshot!(store);
+    }
+
+    #[test]
+    fn move_into_wall() {
+        let mut store = Store::from(
+            "####\n\
+             #@ #\n\
+             ####",
+        );
+        store.bump_player(1, 0);
+        store.bump_player(1, 0);
+        insta::assert_yaml_snapshot!(store);
+    }
+
+    #[test]
+    fn move_into_door() {
+        let mut store = Store::from(
+            "####\n\
+             #@+#\n\
+             ####",
+        );
+        store.bump_player(1, 0);
         insta::assert_yaml_snapshot!(store);
     }
 }

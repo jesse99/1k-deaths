@@ -1,9 +1,11 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
+mod player_actions;
 mod primitives;
 mod relation;
 mod store;
 mod store_from_str;
 
+use player_actions::*;
 use relation::*;
 use store::*;
 use store_from_str::*;

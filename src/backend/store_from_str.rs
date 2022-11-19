@@ -17,6 +17,8 @@ impl From<&str> for Store {
                 '@' => add_player(&mut store, loc),
                 '~' => add_terrain(&mut store, loc, Terrain::ShallowWater),
                 '#' => add_terrain(&mut store, loc, Terrain::Wall),
+                '+' => add_terrain(&mut store, loc, Terrain::ClosedDoor),
+                '-' => add_terrain(&mut store, loc, Terrain::OpenDoor),
                 '\n' => (),
                 _ => error!("bad char '{ch}' in store_from_str"), // TODO: probably should make this an error message
             }
