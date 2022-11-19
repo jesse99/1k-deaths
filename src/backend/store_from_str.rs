@@ -8,6 +8,7 @@ impl From<&str> for Store {
 
         store.create(ObjectId::DefaultCell, Relation::Objects(vec![]));
         store.create(ObjectId::DefaultCell, Relation::Terrain(Terrain::Wall));
+        store.create(ObjectId::Game, Relation::Messages(vec![]));
 
         let mut loc = Point::origin();
         for ch in map.chars() {

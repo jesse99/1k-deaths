@@ -4,14 +4,58 @@ expression: store
 ---
 tuples:
   ? Cell:
-      x: 0
+      x: 1
+      y: 0
+  : Location:
+      Location:
+        x: 1
+        y: 0
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 2
       y: 1
   : Location:
       Location:
-        x: 0
+        x: 2
         y: 1
     Terrain:
       Terrain: Wall
+  ? Cell:
+      x: 0
+      y: 2
+  : Location:
+      Location:
+        x: 0
+        y: 2
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 1
+      y: 2
+  : Location:
+      Location:
+        x: 1
+        y: 2
+    Terrain:
+      Terrain: Wall
+  DefaultCell:
+    Terrain:
+      Terrain: Wall
+    Objects:
+      Objects: []
+  ? Cell:
+      x: 2
+      y: 2
+  : Location:
+      Location:
+        x: 2
+        y: 2
+    Terrain:
+      Terrain: Wall
+  Game:
+    Messages:
+      Messages: []
   ? Cell:
       x: 1
       y: 1
@@ -22,37 +66,14 @@ tuples:
     Terrain:
       Terrain: Dirt
   ? Cell:
-      x: 2
+      x: 0
       y: 1
   : Location:
       Location:
-        x: 2
+        x: 0
         y: 1
     Terrain:
       Terrain: Wall
-  DefaultCell:
-    Objects:
-      Objects: []
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 0
-      y: 0
-  : Location:
-      Location:
-        x: 0
-        y: 0
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 1
-      y: 0
-  : Location:
-      Location:
-        x: 1
-        y: 0
-    Terrain:
-      Terrain: Wall
   ? Cell:
       x: 2
       y: 0
@@ -64,29 +85,11 @@ tuples:
       Terrain: Wall
   ? Cell:
       x: 0
-      y: 2
+      y: 0
   : Location:
       Location:
         x: 0
-        y: 2
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 1
-      y: 2
-  : Location:
-      Location:
-        x: 1
-        y: 2
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 2
-      y: 2
-  : Location:
-      Location:
-        x: 2
-        y: 2
+        y: 0
     Terrain:
       Terrain: Wall
 counter: 0

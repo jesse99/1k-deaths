@@ -4,68 +4,11 @@ expression: store
 ---
 tuples:
   ? Cell:
-      x: 3
-      y: 2
-  : Location:
-      Location:
-        x: 3
-        y: 2
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 0
-      y: 1
-  : Location:
-      Location:
-        x: 0
-        y: 1
-    Terrain:
-      Terrain: Wall
-  DefaultCell:
-    Objects:
-      Objects: []
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 3
-      y: 0
-  : Location:
-      Location:
-        x: 3
-        y: 0
-    Terrain:
-      Terrain: Wall
-  Player:
-    Objects:
-      Objects: []
-    Location:
-      Location:
-        x: 2
-        y: 1
-  ? Cell:
-      x: 0
-      y: 0
-  : Location:
-      Location:
-        x: 0
-        y: 0
-    Terrain:
-      Terrain: Wall
-  ? Cell:
       x: 1
       y: 0
   : Location:
       Location:
         x: 1
-        y: 0
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 2
-      y: 0
-  : Location:
-      Location:
-        x: 2
         y: 0
     Terrain:
       Terrain: Wall
@@ -96,6 +39,11 @@ tuples:
         y: 2
     Terrain:
       Terrain: Wall
+  DefaultCell:
+    Terrain:
+      Terrain: Wall
+    Objects:
+      Objects: []
   ? Cell:
       x: 1
       y: 2
@@ -105,6 +53,18 @@ tuples:
         y: 2
     Terrain:
       Terrain: Wall
+  Player:
+    Location:
+      Location:
+        x: 2
+        y: 1
+    Objects:
+      Objects: []
+  Game:
+    Messages:
+      Messages:
+        - kind: Normal
+          text: You bump the wall.
   ? Cell:
       x: 2
       y: 2
@@ -112,6 +72,51 @@ tuples:
       Location:
         x: 2
         y: 2
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 3
+      y: 2
+  : Location:
+      Location:
+        x: 3
+        y: 2
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 0
+      y: 0
+  : Location:
+      Location:
+        x: 0
+        y: 0
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 0
+      y: 1
+  : Location:
+      Location:
+        x: 0
+        y: 1
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 2
+      y: 0
+  : Location:
+      Location:
+        x: 2
+        y: 0
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 3
+      y: 0
+  : Location:
+      Location:
+        x: 3
+        y: 0
     Terrain:
       Terrain: Wall
 counter: 0

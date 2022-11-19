@@ -103,6 +103,32 @@ impl Store {
     }
 }
 
+// Non-basic core functions.
+impl Store {
+    pub fn process<F>(&mut self, oid: ObjectId, tag: RelationTag, mut callback: F)
+    where
+        F: FnMut(&mut Relation),
+    {
+        debug_assert!(!matches!(oid, ObjectId::DefaultCell));
+        if let Some(relations) = self.tuples.get_mut(&oid) {
+            let relation = relations.get_mut(&tag).unwrap();
+            callback(relation);
+        } else {
+            panic!("Couldn't find {oid}/{tag}");
+        }
+    }
+
+    pub fn process_messages<F>(&mut self, mut callback: F)
+    where
+        F: FnMut(&mut Vec<Message>),
+    {
+        self.process(ObjectId::Game, RelationTag::Messages, |relation| match relation {
+            Relation::Messages(messages) => callback(messages),
+            _ => panic!("Expected Relation::Messages"),
+        });
+    }
+}
+
 // TODO: these should be generated
 impl Store {
     pub fn expect_location(&self, oid: ObjectId) -> Point {
