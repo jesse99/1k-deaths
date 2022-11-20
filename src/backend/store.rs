@@ -210,4 +210,15 @@ mod tests {
         store.bump_player(1, 0);
         insta::assert_yaml_snapshot!(store);
     }
+
+    #[test]
+    fn move_into_shallows() {
+        let mut store = Store::from(
+            "####\n\
+             #@~#\n\
+             ####",
+        );
+        store.bump_player(1, 0);
+        insta::assert_yaml_snapshot!(store);
+    }
 }
