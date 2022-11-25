@@ -1,8 +1,9 @@
+use super::{InputAction, MainMode, Mode, RenderContext};
 use crate::backend::Game;
 use std::io::{self, Write};
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
-use termion::cursor;
+// use termion::cursor;
 use termion::event::Key;
 use termion::input::TermRead; // for keys trait
 
@@ -13,6 +14,7 @@ pub enum LifeCycle {
 }
 
 pub struct UI {
+    modes: Vec<Box<dyn Mode>>,
     recv: Receiver<Key>,
 }
 
@@ -35,22 +37,34 @@ impl UI {
             }
         });
 
-        UI { recv }
+        let modes = vec![MainMode::create(width, height)];
+        UI { modes, recv }
     }
 
     pub fn render(&self, stdout: &mut Box<dyn Write>, game: &mut Game) {
-        write!(
+        let mut context = RenderContext {
             stdout,
-            "{}{}loc: {}",
-            termion::clear::All,
-            cursor::Goto(1, 1),
-            game.player_loc()
-        )
-        .unwrap();
+            game,
+            examined: None,
+        };
+        for mode in self.modes.iter().rev() {
+            if mode.render(&mut context) {
+                return;
+            }
+        }
+        panic!("No modes rendered!")
     }
 
     fn get_key(&self) -> Key {
-        self.recv.recv().unwrap()
+        if let Some(ms) = self.modes.last().unwrap().input_timeout_ms() {
+            let duration = std::time::Duration::from_millis(ms as u64);
+            match self.recv.recv_timeout(duration) {
+                Ok(key) => key,
+                Err(_) => Key::Null, // bit of a hack
+            }
+        } else {
+            self.recv.recv().unwrap()
+        }
     }
 
     fn clear(&self, stdout: &mut Box<dyn Write>) {
@@ -58,26 +72,26 @@ impl UI {
     }
 
     pub(super) fn handle_input(&mut self, stdout: &mut Box<dyn Write>, game: &mut Game) -> LifeCycle {
+        use InputAction::*;
         let key = self.get_key();
-        match key {
-            Key::Left => self.do_move(game, -1, 0),
-            Key::Right => self.do_move(game, 1, 0),
-            Key::Up => self.do_move(game, 0, -1),
-            Key::Down => self.do_move(game, 0, 1),
-            Key::Char('1') => self.do_move(game, -1, 1),
-            Key::Char('2') => self.do_move(game, 0, 1),
-            Key::Char('3') => self.do_move(game, 1, 1),
-            Key::Char('4') => self.do_move(game, -1, 0),
-            Key::Char('6') => self.do_move(game, 1, 0),
-            Key::Char('7') => self.do_move(game, -1, -1),
-            Key::Char('8') => self.do_move(game, 0, -1),
-            Key::Char('9') => self.do_move(game, 1, -1),
-            Key::Char('q') => LifeCycle::Quit,
-            _ => {
+        let mode = self.modes.last_mut().unwrap();
+        match mode.handle_input(game, key) {
+            UpdatedGame => (),
+            Quit => return LifeCycle::Quit,
+            Push(mode) => {
+                self.modes.push(mode);
+                self.clear(stdout);
+            }
+            Pop => {
+                let _ = self.modes.pop();
+                assert!(!self.modes.is_empty());
+                self.clear(stdout);
+            }
+            NotHandled => {
                 debug!("player pressed {key:?}"); // TODO: beep?
-                LifeCycle::Running
             }
         }
+        LifeCycle::Running
     }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> LifeCycle {

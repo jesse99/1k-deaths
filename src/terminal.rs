@@ -1,6 +1,14 @@
+mod color;
+mod main_mode;
+mod map_view;
+mod mode;
 mod ui;
 
 use crate::backend::Game;
+use color::*;
+use main_mode::*;
+use map_view::*;
+use mode::*;
 use std::io::{self, Write};
 use std::process;
 use termion::raw::IntoRawMode;
