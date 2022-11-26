@@ -19,10 +19,9 @@ impl Size {
     //     }
     // }
 
-    #[cfg(test)] // for now this is only used within unit tests
-    pub fn area(self) -> i32 {
-        self.width * self.height
-    }
+    // pub fn area(self) -> i32 {
+    //     self.width * self.height
+    // }
 }
 
 impl fmt::Display for Size {

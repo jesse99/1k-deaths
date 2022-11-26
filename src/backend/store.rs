@@ -84,6 +84,18 @@ impl Store {
         }
     }
 
+    pub fn find_mut(&mut self, oid: ObjectId, tag: RelationTag) -> Option<&mut Relation> {
+        debug_assert!(!matches!(oid, ObjectId::DefaultCell));
+
+        // Note that it doesn't make sense to return a mutable ref to a DefaultCell
+        // (although it can make sense to change the cell at that loc to a regular cell).
+        if let Some(relations) = self.tuples.get_mut(&oid) {
+            relations.get_mut(&tag)
+        } else {
+            None
+        }
+    }
+
     pub fn update(&mut self, oid: ObjectId, relation: Relation) {
         debug_assert!(!matches!(oid, ObjectId::DefaultCell));
 
@@ -155,6 +167,20 @@ impl Store {
     pub fn find_location(&self, oid: ObjectId) -> Option<Point> {
         match self.find(oid, RelationTag::Location) {
             Some(Relation::Location(value)) => Some(*value),
+            _ => None,
+        }
+    }
+
+    pub fn find_objects(&self, oid: ObjectId) -> Option<&Vec<ObjectId>> {
+        match self.find(oid, RelationTag::Objects) {
+            Some(Relation::Objects(value)) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn find_objects_mut(&mut self, oid: ObjectId) -> Option<&mut Vec<ObjectId>> {
+        match self.find_mut(oid, RelationTag::Objects) {
+            Some(Relation::Objects(value)) => Some(value),
             _ => None,
         }
     }

@@ -58,7 +58,8 @@ impl Game {
         let oid = ObjectId::Cell(loc);
         match self.store.find(oid, RelationTag::Terrain) {
             Some(&Relation::Terrain(terrain)) => {
-                let character = self.store.find_character(oid);
+                let objects = self.store.find_objects(oid);
+                let character = objects.and_then(|oids| oids.last().and_then(|oid| self.store.find_character(*oid)));
                 let content = Content { terrain, character };
                 Tile::Visible(content)
             }

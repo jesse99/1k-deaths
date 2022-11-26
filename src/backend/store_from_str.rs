@@ -41,11 +41,12 @@ impl From<&str> for Store {
 fn add_player(store: &mut Store, loc: Point) {
     add_terrain(store, loc, Terrain::Dirt);
 
+    store.create(ObjectId::Player, Relation::Character(Character::Player));
     store.create(ObjectId::Player, Relation::Location(loc));
     store.create(ObjectId::Player, Relation::Objects(vec![]));
 
     let oid = ObjectId::Cell(loc);
-    store.create(oid, Relation::Character(Character::Player));
+    store.create(oid, Relation::Objects(vec![ObjectId::Player]));
 }
 
 fn add_terrain(store: &mut Store, loc: Point, terrain: Terrain) {

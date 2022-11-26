@@ -27,6 +27,8 @@ tuples:
     Objects:
       Objects: []
   Player:
+    Character:
+      Character: Player
     Location:
       Location:
         x: 2
@@ -42,6 +44,8 @@ tuples:
         y: 1
     Terrain:
       Terrain: Dirt
+    Objects:
+      Objects: []
   ? Cell:
       x: 1
       y: 0
@@ -128,7 +132,8 @@ tuples:
         y: 1
     Terrain:
       Terrain: Dirt
-    Character:
-      Character: Player
+    Objects:
+      Objects:
+        - Player
 counter: 0
 

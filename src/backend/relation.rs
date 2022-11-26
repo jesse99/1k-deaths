@@ -109,7 +109,7 @@ pub enum RelationTag {
 /// Used to associate a value with an [`ObjectId`] in the [`Store`].
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Relation {
-    /// Cells may have one of these.
+    /// Characters will have this.
     Character(Character),
 
     /// Used for characters and items.
