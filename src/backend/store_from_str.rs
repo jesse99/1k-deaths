@@ -14,8 +14,10 @@ impl From<&str> for Store {
         for ch in map.chars() {
             match ch {
                 ' ' => add_terrain(&mut store, loc, Terrain::Dirt),
+                's' => add_weak_sword(&mut store, loc),
                 'M' => add_terrain(&mut store, loc, Terrain::Wall), // TODO: should be metal
                 'T' => add_terrain(&mut store, loc, Terrain::Tree),
+                'S' => add_mighty_sword(&mut store, loc),
                 'V' => add_terrain(&mut store, loc, Terrain::Vitr),
                 'W' => add_terrain(&mut store, loc, Terrain::DeepWater),
                 '@' => add_player(&mut store, loc),
@@ -47,6 +49,26 @@ fn add_player(store: &mut Store, loc: Point) {
 
     let oid = ObjectId::Cell(loc);
     store.create(oid, Relation::Objects(vec![ObjectId::Player]));
+}
+
+fn add_weak_sword(store: &mut Store, loc: Point) {
+    add_terrain(store, loc, Terrain::Dirt);
+
+    let obj_oid = store.new_object("weak sword");
+    store.create(obj_oid, Relation::Portable(Portable::WeakSword));
+
+    let oid = ObjectId::Cell(loc);
+    store.create(oid, Relation::Objects(vec![obj_oid]));
+}
+
+fn add_mighty_sword(store: &mut Store, loc: Point) {
+    add_terrain(store, loc, Terrain::Dirt);
+
+    let obj_oid = store.new_object("mighty sword");
+    store.create(obj_oid, Relation::Portable(Portable::MightySword));
+
+    let oid = ObjectId::Cell(loc);
+    store.create(oid, Relation::Objects(vec![obj_oid]));
 }
 
 fn add_terrain(store: &mut Store, loc: Point, terrain: Terrain) {

@@ -89,6 +89,12 @@ pub enum MessageKind {
     Debug,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Portable {
+    MightySword,
+    WeakSword,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Message {
     pub kind: MessageKind,
@@ -103,6 +109,7 @@ pub enum RelationTag {
     Location,
     Messages,
     Objects,
+    Portable,
     Terrain,
 }
 
@@ -121,6 +128,9 @@ pub enum Relation {
     /// Characters and items for a Cell. Also items in a character's inventory.
     Objects(Vec<ObjectId>),
 
+    /// Objects that can be picked up and placed in a characters inventory.
+    Portable(Portable),
+
     /// A Cell will always have this.
     Terrain(Terrain),
 }
@@ -135,6 +145,7 @@ impl Relation {
             Relation::Location(_) => RelationTag::Location,
             Relation::Messages(_) => RelationTag::Messages,
             Relation::Objects(_) => RelationTag::Objects,
+            Relation::Portable(_) => RelationTag::Portable,
             Relation::Terrain(_) => RelationTag::Terrain,
         }
     }
@@ -206,6 +217,7 @@ impl Hash for RelationTag {
             RelationTag::Location => 1.hash(state),
             RelationTag::Messages => 2.hash(state),
             RelationTag::Objects => 3.hash(state),
+            RelationTag::Portable => 6.hash(state),
             RelationTag::Terrain => 4.hash(state),
         }
     }

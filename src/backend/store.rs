@@ -185,6 +185,13 @@ impl Store {
         }
     }
 
+    pub fn find_portable(&self, oid: ObjectId) -> Option<Portable> {
+        match self.find(oid, RelationTag::Portable) {
+            Some(Relation::Portable(value)) => Some(*value),
+            _ => None,
+        }
+    }
+
     pub fn find_terrain(&self, oid: ObjectId) -> Option<Terrain> {
         match self.find(oid, RelationTag::Terrain) {
             Some(Relation::Terrain(value)) => Some(*value),

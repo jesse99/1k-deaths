@@ -12,14 +12,14 @@ use store::*;
 
 pub use primitives::Point;
 pub use primitives::Size;
-pub use relation::{Character, Terrain};
+pub use relation::{Character, Portable, Terrain};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Content {
     pub terrain: Terrain,
     pub character: Option<Character>,
-    // TODO: non-portable enum vector, e.g. traps or fountains
-    // TODO: portable enum vector
+    pub portables: Vec<Portable>,
+    // TODO: non-portable objects vector, e.g. traps or fountains
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -60,7 +60,16 @@ impl Game {
             Some(&Relation::Terrain(terrain)) => {
                 let objects = self.store.find_objects(oid);
                 let character = objects.and_then(|oids| oids.last().and_then(|oid| self.store.find_character(*oid)));
-                let content = Content { terrain, character };
+                let portables = objects
+                    .unwrap_or(&Vec::new())
+                    .iter()
+                    .filter_map(|oid| self.store.find_portable(*oid))
+                    .collect();
+                let content = Content {
+                    terrain,
+                    character,
+                    portables,
+                };
                 Tile::Visible(content)
             }
             _ => Tile::NotVisible,

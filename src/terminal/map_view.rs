@@ -1,5 +1,5 @@
 use super::Color;
-use crate::backend::{Character, Game, Point, Size, Terrain, Tile};
+use crate::backend::{Character, Game, Point, Portable, Size, Terrain, Tile};
 use std::convert::From;
 use std::io::Write;
 use termion::{color, cursor, style};
@@ -12,8 +12,8 @@ pub struct MapView {
 
 #[derive(Eq, PartialEq)]
 pub enum RunTile {
-    Visible { bg: Color, fg: Color, symbol: char },
-    Stale { bg: Color, fg: Color, symbol: char },
+    Visible { bg: Color, fg: Color, symbol: &'static str },
+    Stale { bg: Color, fg: Color, symbol: &'static str },
     NotVisible,
 }
 
@@ -45,17 +45,17 @@ fn terrain_to_bg(terrain: Terrain) -> Color {
     }
 }
 
-fn terrain_to_symbol(terrain: Terrain) -> char {
+fn terrain_to_symbol(terrain: Terrain) -> &'static str {
     match terrain {
-        Terrain::ClosedDoor => '+',
-        Terrain::DeepWater => 'W',
-        Terrain::Dirt => '.',
-        Terrain::OpenDoor => '-',
-        Terrain::Rubble => '…',
-        Terrain::ShallowWater => '~',
-        Terrain::Tree => 'T',
-        Terrain::Vitr => 'V',
-        Terrain::Wall => '#',
+        Terrain::ClosedDoor => "+",
+        Terrain::DeepWater => "W",
+        Terrain::Dirt => ".",
+        Terrain::OpenDoor => "-",
+        Terrain::Rubble => "…",
+        Terrain::ShallowWater => "~",
+        Terrain::Tree => "T",
+        Terrain::Vitr => "V",
+        Terrain::Wall => "#",
     }
 }
 
@@ -66,10 +66,25 @@ fn character_to_fg(character: Character) -> Color {
     }
 }
 
-fn character_to_symbol(character: Character) -> char {
+fn character_to_symbol(character: Character) -> &'static str {
     match character {
-        Character::Guard => 'G',
-        Character::Player => '@',
+        Character::Guard => "G",
+        Character::Player => "@",
+    }
+}
+
+fn portable_to_fg(portable: Portable) -> Color {
+    match portable {
+        Portable::MightySword => Color::Silver,
+        Portable::WeakSword => Color::Silver,
+    }
+}
+
+fn portable_to_symbol(portable: Portable) -> &'static str {
+    // TODO: move all this into the impl
+    match portable {
+        Portable::MightySword => "\u{2694}\u{FE0F}",
+        Portable::WeakSword => "\u{1F5E1}",
     }
 }
 
@@ -80,6 +95,8 @@ impl From<Tile> for RunTile {
                 let bg = terrain_to_bg(content.terrain);
                 let (fg, symbol) = if let Some(character) = content.character {
                     (character_to_fg(character), character_to_symbol(character))
+                } else if let Some(portable) = content.portables.last() {
+                    (portable_to_fg(*portable), portable_to_symbol(*portable))
                 } else {
                     (terrain_to_fg(content.terrain), terrain_to_symbol(content.terrain))
                 };
@@ -89,6 +106,8 @@ impl From<Tile> for RunTile {
                 let bg = Color::LightGrey;
                 let (fg, symbol) = if let Some(character) = content.character {
                     (character_to_fg(character), character_to_symbol(character))
+                } else if let Some(portable) = content.portables.last() {
+                    (portable_to_fg(*portable), portable_to_symbol(*portable))
                 } else {
                     (terrain_to_fg(content.terrain), terrain_to_symbol(content.terrain))
                 };
@@ -97,7 +116,7 @@ impl From<Tile> for RunTile {
             Tile::NotVisible => {
                 let bg = Color::Black;
                 let fg = Color::Black;
-                let symbol = ' ';
+                let symbol = " ";
                 RunTile::Visible { bg, fg, symbol }
             }
         }
@@ -159,7 +178,7 @@ impl MapView {
                 fg: f,
                 symbol: s,
             } => (b, f, s), // TODO: use black if there is a character or item?
-            RunTile::NotVisible => (Color::Black, Color::Black, ' '),
+            RunTile::NotVisible => (Color::Black, Color::Black, " "),
         };
         let text = symbol.to_string().repeat(count);
         if run.focused {
