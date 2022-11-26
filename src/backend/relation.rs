@@ -44,6 +44,12 @@ pub enum ObjectId {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Character {
+    Guard,
+    Player,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Terrain {
     /// Will have Durability (and usually Material) if the door can be broken down.
     /// If it has a Binding tag then it can only be opened by characters that
@@ -82,6 +88,7 @@ pub enum MessageKind {
     // Messages that are not normally shown.
     Debug,
 }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Message {
     pub kind: MessageKind,
@@ -92,6 +99,7 @@ pub struct Message {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum RelationTag {
     // TODO: need to generate RelationTag and Relation
+    Character,
     Location,
     Messages,
     Objects,
@@ -101,6 +109,9 @@ pub enum RelationTag {
 /// Used to associate a value with an [`ObjectId`] in the [`Store`].
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Relation {
+    /// Cells may have one of these.
+    Character(Character),
+
     /// Used for characters and items.
     Location(Point),
 
@@ -120,6 +131,7 @@ impl Relation {
     // Would be nicer to use the From trait but that consumes the input.
     pub fn tag(&self) -> RelationTag {
         match self {
+            Relation::Character(_) => RelationTag::Character,
             Relation::Location(_) => RelationTag::Location,
             Relation::Messages(_) => RelationTag::Messages,
             Relation::Objects(_) => RelationTag::Objects,
@@ -149,6 +161,12 @@ impl fmt::Display for ObjectId {
 }
 
 impl fmt::Display for Terrain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl fmt::Display for Character {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
@@ -184,6 +202,7 @@ impl Hash for ObjectId {
 impl Hash for RelationTag {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
+            RelationTag::Character => 5.hash(state),
             RelationTag::Location => 1.hash(state),
             RelationTag::Messages => 2.hash(state),
             RelationTag::Objects => 3.hash(state),

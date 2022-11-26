@@ -14,6 +14,9 @@ impl From<&str> for Store {
         for ch in map.chars() {
             match ch {
                 ' ' => add_terrain(&mut store, loc, Terrain::Dirt),
+                'M' => add_terrain(&mut store, loc, Terrain::Wall), // TODO: should be metal
+                'T' => add_terrain(&mut store, loc, Terrain::Tree),
+                'V' => add_terrain(&mut store, loc, Terrain::Vitr),
                 'W' => add_terrain(&mut store, loc, Terrain::DeepWater),
                 '@' => add_player(&mut store, loc),
                 '~' => add_terrain(&mut store, loc, Terrain::ShallowWater),
@@ -36,8 +39,13 @@ impl From<&str> for Store {
 }
 
 fn add_player(store: &mut Store, loc: Point) {
+    add_terrain(store, loc, Terrain::Dirt);
+
     store.create(ObjectId::Player, Relation::Location(loc));
     store.create(ObjectId::Player, Relation::Objects(vec![]));
+
+    let oid = ObjectId::Cell(loc);
+    store.create(oid, Relation::Character(Character::Player));
 }
 
 fn add_terrain(store: &mut Store, loc: Point, terrain: Terrain) {

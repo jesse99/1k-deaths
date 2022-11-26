@@ -10,10 +10,16 @@ impl Store {
             None => {
                 self.update(ObjectId::Player, Relation::Location(new_loc));
                 self.player_entered(terrain);
+
+                self.remove(ObjectId::Cell(old_loc), RelationTag::Character);
+                self.create(ObjectId::Cell(new_loc), Relation::Character(Character::Player));
             }
             Some(_) if terrain == Terrain::ClosedDoor => {
                 self.update(ObjectId::Cell(new_loc), Relation::Terrain(Terrain::OpenDoor));
                 self.update(ObjectId::Player, Relation::Location(new_loc));
+
+                self.remove(ObjectId::Cell(old_loc), RelationTag::Character);
+                self.create(ObjectId::Cell(new_loc), Relation::Character(Character::Player));
             }
             Some(mesg) => self.process_messages(|messages| {
                 if messages.len() > 1500 {

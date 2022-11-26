@@ -4,6 +4,45 @@ expression: store
 ---
 tuples:
   ? Cell:
+      x: 0
+      y: 1
+  : Location:
+      Location:
+        x: 0
+        y: 1
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 2
+      y: 0
+  : Location:
+      Location:
+        x: 2
+        y: 0
+    Terrain:
+      Terrain: Wall
+  DefaultCell:
+    Terrain:
+      Terrain: Wall
+    Objects:
+      Objects: []
+  Player:
+    Location:
+      Location:
+        x: 2
+        y: 1
+    Objects:
+      Objects: []
+  ? Cell:
+      x: 1
+      y: 1
+  : Location:
+      Location:
+        x: 1
+        y: 1
+    Terrain:
+      Terrain: Dirt
+  ? Cell:
       x: 1
       y: 0
   : Location:
@@ -12,15 +51,6 @@ tuples:
         y: 0
     Terrain:
       Terrain: Wall
-  ? Cell:
-      x: 2
-      y: 1
-  : Location:
-      Location:
-        x: 2
-        y: 1
-    Terrain:
-      Terrain: Dirt
   ? Cell:
       x: 3
       y: 1
@@ -31,20 +61,6 @@ tuples:
     Terrain:
       Terrain: Wall
   ? Cell:
-      x: 0
-      y: 2
-  : Location:
-      Location:
-        x: 0
-        y: 2
-    Terrain:
-      Terrain: Wall
-  DefaultCell:
-    Terrain:
-      Terrain: Wall
-    Objects:
-      Objects: []
-  ? Cell:
       x: 1
       y: 2
   : Location:
@@ -53,13 +69,24 @@ tuples:
         y: 2
     Terrain:
       Terrain: Wall
-  Player:
-    Location:
+  ? Cell:
+      x: 3
+      y: 0
+  : Location:
       Location:
-        x: 2
-        y: 1
-    Objects:
-      Objects: []
+        x: 3
+        y: 0
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 3
+      y: 2
+  : Location:
+      Location:
+        x: 3
+        y: 2
+    Terrain:
+      Terrain: Wall
   Game:
     Messages:
       Messages:
@@ -75,49 +102,33 @@ tuples:
     Terrain:
       Terrain: Wall
   ? Cell:
-      x: 3
+      x: 0
+      y: 0
+  : Location:
+      Location:
+        x: 0
+        y: 0
+    Terrain:
+      Terrain: Wall
+  ? Cell:
+      x: 0
       y: 2
   : Location:
       Location:
-        x: 3
+        x: 0
         y: 2
     Terrain:
       Terrain: Wall
   ? Cell:
-      x: 0
-      y: 0
-  : Location:
-      Location:
-        x: 0
-        y: 0
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 0
+      x: 2
       y: 1
   : Location:
       Location:
-        x: 0
+        x: 2
         y: 1
     Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 2
-      y: 0
-  : Location:
-      Location:
-        x: 2
-        y: 0
-    Terrain:
-      Terrain: Wall
-  ? Cell:
-      x: 3
-      y: 0
-  : Location:
-      Location:
-        x: 3
-        y: 0
-    Terrain:
-      Terrain: Wall
+      Terrain: Dirt
+    Character:
+      Character: Player
 counter: 0
 

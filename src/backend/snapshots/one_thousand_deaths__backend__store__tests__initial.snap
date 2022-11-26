@@ -29,7 +29,7 @@ tuples:
   Player:
     Location:
       Location:
-        x: 2
+        x: 1
         y: 1
     Objects:
       Objects: []
@@ -42,6 +42,8 @@ tuples:
         y: 1
     Terrain:
       Terrain: Dirt
+    Character:
+      Character: Player
   ? Cell:
       x: 1
       y: 0
@@ -89,9 +91,7 @@ tuples:
       Terrain: Wall
   Game:
     Messages:
-      Messages:
-        - kind: Normal
-          text: You splash through the water.
+      Messages: []
   ? Cell:
       x: 2
       y: 2
@@ -127,8 +127,6 @@ tuples:
         x: 2
         y: 1
     Terrain:
-      Terrain: ShallowWater
-    Character:
-      Character: Player
+      Terrain: ClosedDoor
 counter: 0
 

@@ -145,6 +145,13 @@ impl Store {
         }
     }
 
+    pub fn find_character(&self, oid: ObjectId) -> Option<Character> {
+        match self.find(oid, RelationTag::Character) {
+            Some(Relation::Character(value)) => Some(*value),
+            _ => None,
+        }
+    }
+
     pub fn find_location(&self, oid: ObjectId) -> Option<Point> {
         match self.find(oid, RelationTag::Location) {
             Some(Relation::Location(value)) => Some(*value),
@@ -219,6 +226,16 @@ mod tests {
              ####",
         );
         store.bump_player(1, 0);
+        insta::assert_yaml_snapshot!(store);
+    }
+
+    #[test]
+    fn initial() {
+        let store = Store::from(
+            "####\n\
+             #@+#\n\
+             ####",
+        );
         insta::assert_yaml_snapshot!(store);
     }
 }

@@ -1,5 +1,5 @@
 use super::Color;
-use crate::backend::{Game, Point, Size, Terrain, Tile};
+use crate::backend::{Character, Game, Point, Size, Terrain, Tile};
 use std::convert::From;
 use std::io::Write;
 use termion::{color, cursor, style};
@@ -59,19 +59,39 @@ fn terrain_to_symbol(terrain: Terrain) -> char {
     }
 }
 
+fn character_to_fg(character: Character) -> Color {
+    match character {
+        Character::Guard => Color::SandyBrown,
+        Character::Player => Color::Linen,
+    }
+}
+
+fn character_to_symbol(character: Character) -> char {
+    match character {
+        Character::Guard => 'G',
+        Character::Player => '@',
+    }
+}
+
 impl From<Tile> for RunTile {
     fn from(tile: Tile) -> Self {
         match tile {
             Tile::Visible(content) => {
                 let bg = terrain_to_bg(content.terrain);
-                let fg = terrain_to_fg(content.terrain);
-                let symbol = terrain_to_symbol(content.terrain);
+                let (fg, symbol) = if let Some(character) = content.character {
+                    (character_to_fg(character), character_to_symbol(character))
+                } else {
+                    (terrain_to_fg(content.terrain), terrain_to_symbol(content.terrain))
+                };
                 RunTile::Visible { bg, fg, symbol }
             }
             Tile::Stale(content) => {
                 let bg = Color::LightGrey;
-                let fg = Color::DarkGray;
-                let symbol = terrain_to_symbol(content.terrain);
+                let (fg, symbol) = if let Some(character) = content.character {
+                    (character_to_fg(character), character_to_symbol(character))
+                } else {
+                    (terrain_to_fg(content.terrain), terrain_to_symbol(content.terrain))
+                };
                 RunTile::Visible { bg, fg, symbol }
             }
             Tile::NotVisible => {

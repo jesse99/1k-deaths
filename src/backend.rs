@@ -12,17 +12,17 @@ use store::*;
 
 pub use primitives::Point;
 pub use primitives::Size;
-pub use relation::Terrain;
+pub use relation::{Character, Terrain};
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Content {
     pub terrain: Terrain,
+    pub character: Option<Character>,
     // TODO: non-portable enum vector, e.g. traps or fountains
     // TODO: portable enum vector
-    // TODO: NPC enum vector
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Tile {
     /// player can see this
     Visible(Content),
@@ -58,7 +58,8 @@ impl Game {
         let oid = ObjectId::Cell(loc);
         match self.store.find(oid, RelationTag::Terrain) {
             Some(&Relation::Terrain(terrain)) => {
-                let content = Content { terrain };
+                let character = self.store.find_character(oid);
+                let content = Content { terrain, character };
                 Tile::Visible(content)
             }
             _ => Tile::NotVisible,
@@ -66,8 +67,6 @@ impl Game {
     }
 
     pub fn move_player(&mut self, dx: i32, dy: i32) {
-        let loc = self.player_loc();
-        self.store
-            .update(ObjectId::Player, Relation::Location(Point::new(loc.x + dx, loc.y + dy)));
+        self.store.bump_player(dx, dy);
     }
 }
