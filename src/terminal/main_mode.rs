@@ -1,4 +1,4 @@
-use super::{InputAction, MapView, Mode, RenderContext};
+use super::{format_help, validate_help, InputAction, MapView, Mode, RenderContext, TextMode};
 use crate::backend::{Game, Point, Size};
 use fnv::FnvHashMap;
 use termion::event::Key;
@@ -41,7 +41,7 @@ impl MainMode {
 
         // We don't receive ctrl-m so we use ctrl-p because that's what Crawl does.
         // commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
-        // commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
+        commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
         commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
 
         // let details_width = 20;
@@ -92,35 +92,36 @@ impl MainMode {
     //     InputAction::Push(window)
     // }
 
-    //     fn do_help(&mut self, _game: &mut Game) -> InputAction {
-    //         let mut help = r#"Help for the main game. Note that help is context sensitive,
-    // e.g. examine mode has its own set of commands and its own help screen.
-
-    // Movement is done using the numeric keypad or arrow keys:
-    // [[7]] [[8]] [[9]]                  [[up-arrow]]
-    // [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
-    // [[1]] [[2]] [[3]]                 [[down-arrow]]
-
+    // TODO: help commands to be supported
     // [[5]] or [[s]] rest for one turn.
     // [[i]] manage inventory items.
     // [[x]] examine visible cells.
     // [[control-p]] show recent messages.
-    // [[?]] show this help.
-    // [[q]] save and quit
-    // "#
-    //         .to_string();
-    //         //         if super::wizard_mode() {
-    //         //             help += r#"
+    fn do_help(&mut self, _game: &mut Game) -> InputAction {
+        let help = r#"Help for the main game. Note that help is context sensitive,
+    e.g. examine mode has its own set of commands and its own help screen.
 
-    //         // Wizard mode commands:
-    //         // [[control-d]] dump game state to state-xxx.txt.
-    //         // "#;
-    //         //         }
-    //         validate_help("main", &help, self.commands.keys());
+    Movement is done using the numeric keypad or arrow keys:
+    [[7]] [[8]] [[9]]                  [[up-arrow]]
+    [[4]]   [[6]]           [[left-arrow]]   [[right-arrow]]
+    [[1]] [[2]] [[3]]                 [[down-arrow]]
 
-    //         let lines = format_help(&help, self.commands.keys());
-    //         InputAction::Push(TextMode::at_top().create(lines))
-    //     }
+    [[?]] show help for help.
+    [[q]] save and quit
+    "#
+        .to_string();
+        //         if super::wizard_mode() {
+        //             help += r#"
+
+        // Wizard mode commands:
+        // [[control-d]] dump game state to state-xxx.txt.
+        // "#;
+        //         }
+        validate_help("main", &help, self.commands.keys());
+
+        let lines = format_help(&help, self.commands.keys());
+        InputAction::Push(TextMode::at_top().create(lines))
+    }
 
     // fn do_inventory(&mut self, game: &mut Game) -> InputAction {
     //     let window = super::inventory_mode::InventoryMode::create(game, self.screen_size);

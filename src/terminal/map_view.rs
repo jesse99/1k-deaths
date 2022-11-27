@@ -83,8 +83,8 @@ fn portable_to_fg(portable: Portable) -> Color {
 fn portable_to_symbol(portable: Portable) -> &'static str {
     // TODO: move all this into the impl
     match portable {
-        Portable::MightySword => "\u{2694}\u{FE0F}",
-        Portable::WeakSword => "\u{1F5E1}",
+        Portable::MightySword => "\u{2694}\u{FE0F}", // crossed swords
+        Portable::WeakSword => "\u{1F5E1}",          // dagger
     }
 }
 

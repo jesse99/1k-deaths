@@ -1,17 +1,23 @@
 mod color;
+mod help;
 mod main_mode;
 mod map_view;
 mod mode;
+mod text_mode;
+mod text_view;
 mod ui;
 
 use crate::backend::Game;
 use color::*;
+use help::*;
 use main_mode::*;
 use map_view::*;
 use mode::*;
 use std::io::{self, Write};
 use std::process;
 use termion::raw::IntoRawMode;
+use text_mode::*;
+use text_view::*;
 use ui::*;
 
 pub struct Terminal {

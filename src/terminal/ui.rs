@@ -94,8 +94,8 @@ impl UI {
         LifeCycle::Running
     }
 
-    fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> LifeCycle {
-        game.move_player(dx, dy);
-        LifeCycle::Running
-    }
+    // fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> LifeCycle {
+    //     game.move_player(dx, dy);
+    //     LifeCycle::Running
+    // }
 }

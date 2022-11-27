@@ -105,14 +105,14 @@ impl Store {
         assert!(old.is_some(), "{oid} is missing {tag}"); // should we return the old value?
     }
 
-    /// Note that it is not an error to remove a missing tuple.
-    pub fn remove(&mut self, oid: ObjectId, tag: RelationTag) {
-        debug_assert!(!matches!(oid, ObjectId::DefaultCell));
+    // /// Note that it is not an error to remove a missing tuple.
+    // pub fn remove(&mut self, oid: ObjectId, tag: RelationTag) {
+    //     debug_assert!(!matches!(oid, ObjectId::DefaultCell));
 
-        if let Some(relations) = self.tuples.get_mut(&oid) {
-            relations.remove(&tag);
-        }
-    }
+    //     if let Some(relations) = self.tuples.get_mut(&oid) {
+    //         relations.remove(&tag);
+    //     }
+    // }
 }
 
 // Non-basic core functions.
@@ -164,12 +164,12 @@ impl Store {
         }
     }
 
-    pub fn find_location(&self, oid: ObjectId) -> Option<Point> {
-        match self.find(oid, RelationTag::Location) {
-            Some(Relation::Location(value)) => Some(*value),
-            _ => None,
-        }
-    }
+    // pub fn find_location(&self, oid: ObjectId) -> Option<Point> {
+    //     match self.find(oid, RelationTag::Location) {
+    //         Some(Relation::Location(value)) => Some(*value),
+    //         _ => None,
+    //     }
+    // }
 
     pub fn find_objects(&self, oid: ObjectId) -> Option<&Vec<ObjectId>> {
         match self.find(oid, RelationTag::Objects) {
@@ -192,12 +192,12 @@ impl Store {
         }
     }
 
-    pub fn find_terrain(&self, oid: ObjectId) -> Option<Terrain> {
-        match self.find(oid, RelationTag::Terrain) {
-            Some(Relation::Terrain(value)) => Some(*value),
-            _ => None,
-        }
-    }
+    // pub fn find_terrain(&self, oid: ObjectId) -> Option<Terrain> {
+    //     match self.find(oid, RelationTag::Terrain) {
+    //         Some(Relation::Terrain(value)) => Some(*value),
+    //         _ => None,
+    //     }
+    // }
 }
 
 // TODO: Depending on how much code coverage we have with unit tests we can just rely
