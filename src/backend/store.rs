@@ -139,6 +139,13 @@ impl Store {
             _ => panic!("Expected Relation::Messages"),
         });
     }
+
+    pub fn messages(&self) -> &Vec<Message> {
+        match self.find(ObjectId::Game, RelationTag::Messages) {
+            Some(Relation::Messages(value)) => value,
+            _ => panic!("Game didn't have Messages!"),
+        }
+    }
 }
 
 // TODO: these should be generated
