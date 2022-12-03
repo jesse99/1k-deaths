@@ -3,6 +3,7 @@ mod player_actions;
 mod primitives;
 mod relation;
 mod store;
+mod store2;
 mod store_from_str;
 
 // use player_actions::*;
@@ -12,7 +13,7 @@ use store::*;
 
 pub use primitives::Point;
 pub use primitives::Size;
-pub use relation::{Character, Portable, Terrain};
+pub use relation::{Character, Message, Portable, Terrain};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Content {
