@@ -147,6 +147,20 @@ where
 
     /// Used for lists of VALUEs.
     #[must_use]
+    pub fn get_last<VALUE>(&self, key: KEY) -> Option<VALUE>
+    where
+        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    {
+        let id = VALUE::default().id();
+        self.lists.get(&key).map_or(None, |lists| {
+            lists
+                .get(&id)
+                .map_or(None, |list| list.last().map(|bytes| from_bytes(bytes).unwrap()))
+        })
+    }
+
+    /// Used for lists of VALUEs.
+    #[must_use]
     pub fn get_range<VALUE>(&self, key: KEY, range: Range<usize>) -> Vec<VALUE>
     where
         VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,

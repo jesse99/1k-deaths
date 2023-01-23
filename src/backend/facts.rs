@@ -248,8 +248,12 @@ impl Level {
     }
 
     pub fn find_char(&self, loc: Point) -> Option<Character> {
-        if let Some(oid) = self.find_cell(loc) {
-            self.store.find::<Character>(oid)
+        if let Some(cell_oid) = self.find_cell(loc) {
+            if let Some(obj_oid) = self.store.get_last::<Oid>(cell_oid) {
+                self.store.find::<Character>(obj_oid)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -297,11 +301,16 @@ impl Level {
     }
 
     pub fn get_portables(&self, loc: Point) -> Vec<Portable> {
-        if let Some(oid) = self.find_cell(loc) {
-            self.store.get_all::<Portable>(oid)
-        } else {
-            Vec::new()
+        let mut portables = Vec::new();
+        if let Some(cell_oid) = self.find_cell(loc) {
+            let oids = self.store.get_all::<Oid>(cell_oid);
+            for obj_oid in &oids {
+                if let Some(p) = self.store.find::<Portable>(*obj_oid) {
+                    portables.push(p);
+                }
+            }
         }
+        portables
     }
 
     pub fn append_message(&mut self, message: Message) {
