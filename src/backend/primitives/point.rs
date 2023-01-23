@@ -3,7 +3,7 @@ use std::fmt::{self, Formatter};
 use std::hash::{Hash, Hasher};
 
 /// Represents a point in cartesian space, typically a location within a level.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
     pub y: i32,

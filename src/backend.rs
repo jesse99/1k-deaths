@@ -1,19 +1,20 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
+mod facts;
 mod player_actions;
 mod primitives;
 mod relation;
-mod store;
 mod store2;
 mod store_from_str;
 
+use facts::*;
 // use player_actions::*;
-use relation::*;
-use store::*;
-// use store_from_str::*;
+use store2::*;
 
+pub use facts::{Character, Portable, Terrain};
 pub use primitives::Point;
 pub use primitives::Size;
-pub use relation::{Character, Message, Portable, Terrain};
+
+// use self::relation::Character3;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Content {
@@ -37,17 +38,17 @@ pub enum Tile {
 
 /// External API for the game state. Largely acts as a wrapper around the Store.
 pub struct Game {
-    store: Store,
+    level: Level,
 }
 
 impl Game {
     pub fn new() -> Game {
-        let store = Store::from(include_str!("backend/maps/start.txt"));
-        Game { store }
+        let level = Level::from(include_str!("backend/maps/start.txt"));
+        Game { level }
     }
 
     pub fn player_loc(&self) -> Point {
-        self.store.expect_location(ObjectId::Player)
+        self.level.expect_location(PLAYER_ID)
     }
 
     /// 1) If the loc is in the level and within the player's FoV then return the current
@@ -56,28 +57,17 @@ impl Game {
     /// seen (which may not be accurate now).
     /// 3) Otherwise return NotVisible.
     pub fn tile(&self, loc: Point) -> Tile {
-        let oid = ObjectId::Cell(loc);
-        match self.store.find(oid, RelationTag::Terrain) {
-            Some(&Relation::Terrain(terrain)) => {
-                let objects = self.store.find_objects(oid);
-                let character = objects.and_then(|oids| oids.last().and_then(|oid| self.store.find_character(*oid)));
-                let portables = objects
-                    .unwrap_or(&Vec::new())
-                    .iter()
-                    .filter_map(|oid| self.store.find_portable(*oid))
-                    .collect();
-                let content = Content {
-                    terrain,
-                    character,
-                    portables,
-                };
-                Tile::Visible(content)
-            }
-            _ => Tile::NotVisible,
-        }
+        let terrain = self.level.get_terrain(loc);
+        let character = self.level.find_char(loc);
+        let portables = self.level.get_portables(loc);
+        Tile::Visible(Content {
+            terrain,
+            character,
+            portables,
+        })
     }
 
     pub fn move_player(&mut self, dx: i32, dy: i32) {
-        self.store.bump_player(dx, dy);
+        self.level.bump_player(dx, dy);
     }
 }

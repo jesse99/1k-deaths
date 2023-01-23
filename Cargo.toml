@@ -23,6 +23,7 @@ chrono = "0.4.22"                                       # time library
 clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}   # command line parsing
 fnv = "1.0.7"                                           # faster hashing for small keys
 log = "0.4.17"                                          # standard logging API
+once_cell = "1.17.0"                                    # safe/lazy initialization (eg of global data)
 postcard = {version = "1.0.2", features = ["alloc"]}    # binary backend for serde
 serde = {version = "1.0.147", features = ["derive"]}    # serialization framework
 serde_derive = "1.0.147"                                # serde derive macros

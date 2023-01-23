@@ -22,7 +22,7 @@ type ListValue = FnvHashMap<u16, Vec<Vec<u8>>>; // like Values except that there
 
 /// Records all the game state.
 #[derive(Serialize, Deserialize)]
-pub struct Store2<KEY>
+pub struct Store<KEY>
 where
     KEY: Hash + Eq + Display + Copy,
 {
@@ -30,16 +30,16 @@ where
     lists: FnvHashMap<KEY, ListValue>, // may want to use a VecDeque<Vec<u8>> here
 
     #[cfg(debug_assertions)]
-    ids: FnvHashMap<String, u16>,
+    ids: FnvHashMap<String, u16>, // used to verify that ids are unique
 }
 
-impl<KEY> Store2<KEY>
+impl<KEY> Store<KEY>
 where
     KEY: Hash + Eq + Display + Copy,
 {
     #[must_use]
-    pub fn new() -> Store2<KEY> {
-        Store2 {
+    pub fn new() -> Store<KEY> {
+        Store {
             primitives: FnvHashMap::default(),
             lists: FnvHashMap::default(),
 
@@ -50,7 +50,7 @@ where
 }
 
 // Primitive values
-impl<KEY> Store2<KEY>
+impl<KEY> Store<KEY>
 where
     KEY: Hash + Eq + Display + Copy,
 {
@@ -115,13 +115,13 @@ where
 }
 
 // List values
-impl<KEY> Store2<KEY>
+impl<KEY> Store<KEY>
 where
     KEY: Hash + Eq + Display + Copy,
 {
     /// Used for lists of VALUEs.
     #[must_use]
-    fn len<VALUE>(&self, key: KEY) -> usize
+    pub fn len<VALUE>(&self, key: KEY) -> usize
     where
         VALUE: Serialize + TypeId + Display + Default,
     {
@@ -174,6 +174,24 @@ where
         assert!(self.good_id(value));
     }
 
+    /// Used for lists of VALUEs. Removes a value using an equality test.
+    pub fn remove_value<VALUE>(&mut self, key: KEY, value: VALUE)
+    where
+        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default + PartialEq,
+    {
+        let id = VALUE::default().id();
+        if let Some(lists) = self.lists.get_mut(&key) {
+            if let Some(list) = lists.get_mut(&id) {
+                if let Some(index) = list.iter().position(|bytes| {
+                    let x: VALUE = from_bytes(bytes).unwrap();
+                    x == value
+                }) {
+                    list.remove(index);
+                }
+            }
+        }
+    }
+
     /// Used for lists of VALUEs.
     pub fn remove_range<VALUE>(&mut self, key: KEY, range: Range<usize>)
     where
@@ -189,7 +207,7 @@ where
 }
 
 // Debug support
-impl<KEY> Store2<KEY>
+impl<KEY> Store<KEY>
 where
     KEY: Hash + Eq + Display + Copy,
 {
@@ -208,10 +226,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        fmt::{self},
-        ops::Add,
-    };
+    use std::fmt::{self};
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
     enum Key {
@@ -234,7 +249,6 @@ mod tests {
     }
 
     impl TypeId for Address {
-        // TODO: can we add a runtime check to ensure these are valid?
         fn id(&self) -> u16 {
             0
         }
@@ -254,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_find() {
-        let mut store = Store2::new();
+        let mut store = Store::new();
 
         let value = store.find::<Address>(Key::Home);
         assert!(value.is_none());
@@ -273,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_list() {
-        let mut store = Store2::new();
+        let mut store = Store::new();
 
         let len = store.len::<Address>(Key::History);
         assert_eq!(len, 0);
