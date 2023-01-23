@@ -5,12 +5,13 @@ mod primitives;
 mod relation;
 mod store2;
 mod store_from_str;
+use std::io::{Error, Write};
 
 use facts::*;
 // use player_actions::*;
 use store2::*;
 
-pub use facts::{Character, Portable, Terrain};
+pub use facts::{Character, Message, MessageKind, Portable, Terrain};
 pub use primitives::Point;
 pub use primitives::Size;
 
@@ -69,5 +70,67 @@ impl Game {
 
     pub fn move_player(&mut self, dx: i32, dy: i32) {
         self.level.bump_player(dx, dy);
+    }
+
+    pub fn add_message(&mut self, message: Message) {
+        self.level.append_message(message);
+    }
+
+    pub fn dump_state<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        self.dump_pov(writer)
+        // self.scheduler.dump(writer, self)    // TODO: want an equivalent for this
+    }
+
+    // TODO: use POV
+    fn dump_pov<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        let mut details = Vec::new();
+
+        let center = self.player_loc();
+        for y in center.y - 8..center.y + 8 {
+            for x in center.x - 8..center.x + 8 {
+                let loc = Point::new(x, y);
+                let character = self.level.find_char(loc);
+                let portables = self.level.get_portables(loc);
+                if character.is_some() || !portables.is_empty() {
+                    let cp = (48 + details.len()) as u8;
+                    write!(writer, "{}", (cp as char))?;
+                    details.push(loc);
+                } else {
+                    self.dump_terrain(writer, loc)?;
+                }
+            }
+            write!(writer, "\n")?;
+        }
+
+        for (i, loc) in details.iter().enumerate() {
+            let cp = i as u8;
+            write!(writer, "{} at {loc}\n", (cp as char))?;
+
+            let portables = self.level.get_portables(*loc);
+            for p in portables.iter() {
+                write!(writer, "   {p}\n")?;
+            }
+
+            if let Some(c) = self.level.find_char(*loc) {
+                write!(writer, "   {c}\n")?; // TODO: can dump a lot more here
+            }
+        }
+        Result::Ok(())
+    }
+
+    fn dump_terrain<W: Write>(&self, writer: &mut W, loc: Point) -> Result<(), Error> {
+        let terrain = self.level.get_terrain(loc);
+        match terrain {
+            Terrain::ClosedDoor => write!(writer, "+")?,
+            Terrain::DeepWater => write!(writer, "W")?,
+            Terrain::Dirt => write!(writer, ".")?,
+            Terrain::OpenDoor => write!(writer, "-")?,
+            Terrain::Rubble => write!(writer, "…")?,
+            Terrain::ShallowWater => write!(writer, "w")?,
+            Terrain::Tree => write!(writer, "T")?,
+            Terrain::Vitr => write!(writer, "V")?,
+            Terrain::Wall => write!(writer, "#")?,
+        }
+        Result::Ok(())
     }
 }

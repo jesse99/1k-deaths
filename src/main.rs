@@ -24,6 +24,10 @@ struct Args {
     /// Relative path to log file
     #[arg(long, default_value = "1k-deaths.log", value_name = "PATH")]
     log_path: String,
+
+    /// Enable special developer commands
+    #[arg(long)]
+    wizard: bool,
 }
 
 fn main() {
@@ -48,6 +52,12 @@ fn main() {
         local.to_rfc2822(),
         env!("CARGO_PKG_VERSION")
     );
+
+    if args.wizard {
+        terminal::WIZARD_MODE.with(|w| {
+            *w.borrow_mut() = true;
+        })
+    }
 
     let game = backend::Game::new();
     let mut terminal = terminal::Terminal::new(game);

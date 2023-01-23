@@ -1,6 +1,9 @@
 use super::{format_help, validate_help, InputAction, MapView, Mode, RenderContext, TextMode};
-use crate::backend::{Game, Point, Size};
+use crate::backend::{Game, Message, MessageKind, Point, Size};
 use fnv::FnvHashMap;
+use std::fs::File;
+use std::io::{Error, Write};
+use std::path::Path;
 use termion::event::Key;
 
 const NUM_MESSAGES: i32 = 5;
@@ -35,9 +38,9 @@ impl MainMode {
         commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
         // commands.insert(Key::Char('i'), Box::new(|s, game| s.do_inventory(game)));
         // commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
-        // if super::wizard_mode() {
-        //     commands.insert(Key::Ctrl('d'), Box::new(|s, game| s.do_save_state(game)));
-        // }
+        if super::wizard_mode() {
+            commands.insert(Key::Ctrl('d'), Box::new(|s, game| s.do_save_state(game)));
+        }
 
         // We don't receive ctrl-m so we use ctrl-p because that's what Crawl does.
         // commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
@@ -142,35 +145,37 @@ impl MainMode {
     //     InputAction::UpdatedGame
     // }
 
-    // fn state_path(&self, base: &str) -> String {
-    //     for i in 1..1000 {
-    //         let candidate = format!("{base}-{:0>3}.txt", i);
-    //         if !Path::new(&candidate).is_file() {
-    //             return candidate;
-    //         }
-    //     }
-    //     panic!("Couldn't find a file to dump state in 1K tries!");
-    // }
+    fn state_path(&self, base: &str) -> String {
+        for i in 1..1000 {
+            let candidate = format!("{base}-{:0>3}.txt", i);
+            if !Path::new(&candidate).is_file() {
+                return candidate;
+            }
+        }
+        panic!("Couldn't find a file to dump state in 1K tries!");
+    }
 
-    // fn save_state<W: Write>(&self, path: &str, writer: &mut W, game: &mut Game) -> Result<(), Error> {
-    //     game.dump_state(writer)?;
-    //     game.add_mesg(Message {
-    //         topic: Topic::Important,
-    //         text: format!("Saved state to {path}"),
-    //     });
-    //     Ok(())
-    // }
+    fn save_state<W: Write>(&self, path: &str, writer: &mut W, game: &mut Game) -> Result<(), Error> {
+        game.dump_state(writer)?;
+        game.add_message(Message {
+            kind: MessageKind::Important,
+            text: format!("Saved state to {path}"),
+        });
+        Ok(())
+    }
 
-    // fn do_save_state(&mut self, game: &mut Game) -> InputAction {
-    //     let path = self.state_path("state");
-    //     if let Err(err) = File::create(&path).and_then(|mut file| self.save_state(&path, &mut file, game)) {
-    //         game.add_mesg(Message {
-    //             topic: Topic::Error,
-    //             text: format!("Couldn't save state to {path}: {err}"),
-    //         })
-    //     }
-    //     InputAction::UpdatedGame
-    // }
+    // Dumps game state into a human readable file.
+    fn do_save_state(&mut self, game: &mut Game) -> InputAction {
+        let path = self.state_path("state");
+        info!("dumped game to {path}");
+        if let Err(err) = File::create(&path).and_then(|mut file| self.save_state(&path, &mut file, game)) {
+            game.add_message(Message {
+                kind: MessageKind::Error,
+                text: format!("Couldn't save state to {path}: {err}"),
+            })
+        }
+        InputAction::UpdatedGame
+    }
 
     // fn do_show_messages(&mut self, game: &mut Game) -> InputAction {
     //     fn get_lines(game: &mut Game) -> Vec<Line> {

@@ -67,6 +67,9 @@ pub enum Portable {
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MessageKind {
+    /// Operation failed.
+    Error,
+
     /// Player is near death, special message when entering a new level, etc.
     Critical,
 

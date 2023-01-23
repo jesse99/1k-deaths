@@ -13,12 +13,19 @@ use help::*;
 use main_mode::*;
 use map_view::*;
 use mode::*;
+use std::cell::RefCell;
 use std::io::{self, Write};
 use std::process;
 use termion::raw::IntoRawMode;
 use text_mode::*;
 use text_view::*;
 use ui::*;
+
+thread_local!(pub static WIZARD_MODE: RefCell<bool> = RefCell::new(false));
+
+pub fn wizard_mode() -> bool {
+    WIZARD_MODE.with(|w| *w.borrow())
+}
 
 pub struct Terminal {
     ui: UI,
