@@ -89,9 +89,7 @@ impl Game {
         for y in center.y - 8..center.y + 8 {
             for x in center.x - 8..center.x + 8 {
                 let loc = Point::new(x, y);
-                let character = self.level.find_char(loc);
-                let portables = self.level.get_portables(loc);
-                if character.is_some() || !portables.is_empty() {
+                if self.level.num_objects(loc) > 0 {
                     let cp = (48 + details.len()) as u8;
                     write!(writer, "{}", (cp as char))?;
                     details.push(loc);
@@ -101,9 +99,10 @@ impl Game {
             }
             write!(writer, "\n")?;
         }
+        write!(writer, "\n")?;
 
         for (i, loc) in details.iter().enumerate() {
-            let cp = i as u8;
+            let cp = (48 + i) as u8;
             write!(writer, "{} at {loc}\n", (cp as char))?;
 
             let portables = self.level.get_portables(*loc);

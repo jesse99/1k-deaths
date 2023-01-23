@@ -313,6 +313,10 @@ impl Level {
         portables
     }
 
+    pub fn num_objects(&self, loc: Point) -> usize {
+        self.find_cell(loc).map(|oid| self.store.len::<Oid>(oid)).unwrap_or(0)
+    }
+
     pub fn append_message(&mut self, message: Message) {
         const MAX_MESSAGES: usize = 1000;
         const EXTRA_MESSAGES: usize = 100; // trim messages once len is more than MAX + EXTRA
