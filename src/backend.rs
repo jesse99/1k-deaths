@@ -5,6 +5,7 @@ mod primitives;
 mod relation;
 mod store2;
 mod store_from_str;
+use core::num;
 use std::io::{Error, Write};
 
 use facts::*;
@@ -45,7 +46,20 @@ pub struct Game {
 impl Game {
     pub fn new() -> Game {
         let level = Level::from(include_str!("backend/maps/start.txt"));
-        Game { level }
+        let mut game = Game { level };
+        game.add_message(Message {
+            kind: MessageKind::Important,
+            text: String::from("Welcome to 1k-deaths!"),
+        });
+        game.add_message(Message {
+            kind: MessageKind::Important,
+            text: String::from("Are you the hero who will destroy the Crippled God's sword?"),
+        });
+        game.add_message(Message {
+            kind: MessageKind::Important,
+            text: String::from("Press the '?' key for help."),
+        });
+        game
     }
 
     pub fn player_loc(&self) -> Point {
@@ -66,6 +80,17 @@ impl Game {
             character,
             portables,
         })
+    }
+
+    /// Returns the last count messages.
+    pub fn messages(&self, count: usize) -> Vec<Message> {
+        let num_messages = self.level.store.len::<Message>(GAME_ID);
+        let range = if count < num_messages {
+            (num_messages - count)..num_messages
+        } else {
+            0..num_messages
+        };
+        self.level.store.get_range::<Message>(GAME_ID, range)
     }
 
     pub fn move_player(&mut self, dx: i32, dy: i32) {

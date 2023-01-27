@@ -1,4 +1,4 @@
-use super::{format_help, validate_help, InputAction, MapView, Mode, RenderContext, TextMode};
+use super::{format_help, validate_help, InputAction, MapView, MessagesView, Mode, RenderContext, TextMode};
 use crate::backend::{Game, Message, MessageKind, Point, Size};
 use fnv::FnvHashMap;
 use std::fs::File;
@@ -14,7 +14,7 @@ type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 pub struct MainMode {
     map: MapView,
     // details: DetailsView,
-    // messages: MessagesView,
+    messages: MessagesView,
     commands: CommandTable,
     // screen_size: Size,
 }
@@ -58,10 +58,10 @@ impl MainMode {
             //     origin: Point::new(width - details_width, 0),
             //     size: Size::new(details_width, height - NUM_MESSAGES),
             // },
-            // messages: MessagesView {
-            //     origin: Point::new(0, height - NUM_MESSAGES),
-            //     size: Size::new(width, NUM_MESSAGES),
-            // },
+            messages: MessagesView {
+                origin: Point::new(0, height - NUM_MESSAGES),
+                size: Size::new(width, NUM_MESSAGES),
+            },
             commands,
             // screen_size: Size::new(width, height),
         })
@@ -72,7 +72,7 @@ impl Mode for MainMode {
     fn render(&self, context: &mut RenderContext) -> bool {
         // self.details.render(context.stdout, context.game); // TODO: views should probably take context
         self.map.render(context.stdout, context.game, context.examined); // TODO: details can write into the next line so this will fix up (which may cause flashing)
-                                                                         // self.messages.render(context.stdout, context.game);
+        self.messages.render(context.stdout, context.game);
         true
     }
 
