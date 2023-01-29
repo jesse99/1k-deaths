@@ -1,6 +1,8 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod facts;
+mod old_pov;
 mod player_actions;
+mod pov;
 mod primitives;
 mod relation;
 mod store2;
@@ -10,6 +12,8 @@ use std::io::{Error, Write};
 
 use facts::*;
 // use player_actions::*;
+use old_pov::*;
+use pov::*;
 use store2::*;
 
 pub use facts::{Character, Message, MessageKind, Portable, Terrain};
@@ -59,6 +63,8 @@ impl Game {
             kind: MessageKind::Important,
             text: String::from("Press the '?' key for help."),
         });
+        OldPoV::update(&mut game);
+        PoV::refresh(&mut game);
         game
     }
 
@@ -72,14 +78,25 @@ impl Game {
     /// seen (which may not be accurate now).
     /// 3) Otherwise return NotVisible.
     pub fn tile(&self, loc: Point) -> Tile {
-        let terrain = self.level.get_terrain(loc);
-        let character = self.level.find_char(loc);
-        let portables = self.level.get_portables(loc);
-        Tile::Visible(Content {
-            terrain,
-            character,
-            portables,
-        })
+        if self.level.pov.visible(self, loc) {
+            let terrain = self.level.get_terrain(loc);
+            let character = self.level.find_char(loc);
+            let portables = self.level.get_portables(loc);
+            Tile::Visible(Content {
+                terrain,
+                character,
+                portables,
+            })
+        } else {
+            match self.level.old_pov.get(loc) {
+                Some(old) => Tile::Stale(Content {
+                    terrain: old.terrain,
+                    character: old.character,
+                    portables: old.portables.map_or(vec![], |p| vec![p]),
+                }),
+                None => Tile::NotVisible, // not visible and never seen
+            }
+        }
     }
 
     /// Returns the last count messages.
@@ -94,7 +111,9 @@ impl Game {
     }
 
     pub fn move_player(&mut self, dx: i32, dy: i32) {
+        OldPoV::update(self); // TODO: should only do these if something happened
         self.level.bump_player(dx, dy);
+        PoV::refresh(self);
     }
 
     pub fn add_message(&mut self, message: Message) {

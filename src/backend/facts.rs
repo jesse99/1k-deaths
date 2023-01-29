@@ -223,6 +223,8 @@ pub static LAST_ID: u32 = 2;
 /// dug into to create a new normal cell).
 pub struct Level {
     pub store: Store<Oid>,
+    pub pov: PoV,
+    pub old_pov: OldPoV,
     cell_ids: FnvHashMap<Point, Oid>,
     current_id: u32,
 }
@@ -231,6 +233,8 @@ impl Level {
     pub fn new() -> Level {
         let mut level = Level {
             store: Store::new(),
+            pov: PoV::new(),
+            old_pov: OldPoV::new(),
             cell_ids: FnvHashMap::default(),
             current_id: LAST_ID,
         };
@@ -347,6 +351,23 @@ impl Level {
     pub fn expect_location(&self, oid: Oid) -> Point {
         let loc = self.store.find::<Point>(oid);
         loc.expect(&format!("expected a loc for {oid}"))
+    }
+
+    // TODO: will need to extend this for effects, e.g. clouds could have a chance of blocking los
+    // TODO: maybe characters or items could also block los
+    pub fn blocks_los(&self, loc: Point) -> bool {
+        // non-existent cells need to block los
+        match self.get_terrain(loc) {
+            Terrain::ClosedDoor => true,
+            Terrain::DeepWater => false,
+            Terrain::Dirt => false,
+            Terrain::OpenDoor => false,
+            Terrain::Rubble => false,
+            Terrain::ShallowWater => false,
+            Terrain::Tree => true,
+            Terrain::Vitr => false,
+            Terrain::Wall => true,
+        }
     }
 
     // Extent cells always have a terrain and a list of oids associated with that location.

@@ -10,10 +10,12 @@ impl Level {
             None => {
                 self.move_char(PLAYER_ID, new_loc);
                 self.player_entered(terrain);
+                self.pov.dirty();
             }
             Some(_) if terrain == Terrain::ClosedDoor => {
                 self.set_terrain(new_loc, Terrain::OpenDoor);
                 self.move_char(PLAYER_ID, new_loc);
+                self.pov.dirty();
             }
             Some(mesg) => self.append_message(Message {
                 kind: MessageKind::Normal,
