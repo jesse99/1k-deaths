@@ -130,15 +130,19 @@ impl Game {
         let mut details = Vec::new();
 
         let center = self.player_loc();
-        for y in center.y - 8..center.y + 8 {
-            for x in center.x - 8..center.x + 8 {
+        for y in center.y - RADIUS..center.y + RADIUS {
+            for x in center.x - RADIUS..center.x + RADIUS {
                 let loc = Point::new(x, y);
-                if self.level.num_objects(loc) > 0 {
-                    let cp = (48 + details.len()) as u8;
-                    write!(writer, "{}", (cp as char))?;
-                    details.push(loc);
+                if self.level.pov.visible(self, loc) {
+                    if self.level.num_objects(loc) > 0 {
+                        let cp = (48 + details.len()) as u8;
+                        write!(writer, "{}", (cp as char))?;
+                        details.push(loc);
+                    } else {
+                        self.dump_terrain(writer, loc)?;
+                    }
                 } else {
-                    self.dump_terrain(writer, loc)?;
+                    write!(writer, " ")?;
                 }
             }
             write!(writer, "\n")?;
