@@ -58,3 +58,77 @@ fn player_can_traverse(terrain: Terrain) -> Option<&'static str> {
         Terrain::Wall => Some("You bump the wall."),
     }
 }
+
+// TODO: Depending on how much code coverage we have with unit tests we can just rely
+// on the snapshots to catch problems rather than adding complex invariant checks.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_str() {
+        let mut level = Level::from(
+            "###\n\
+             #@#\n\
+             ###",
+        );
+        PoV::refresh(&mut level);
+        insta::assert_display_snapshot!(level);
+    }
+
+    // #[test]
+    // fn test_round_trip() {
+    //     let old_store = Store3::from(
+    //         "###\n\
+    //          #@#\n\
+    //          ###",
+    //     );
+    //     let bytes: Vec<u8> = postcard::to_allocvec(&old_store).unwrap();
+    //     let store: Store3 = from_bytes(bytes.deref()).unwrap();
+    //     insta::assert_display_snapshot!(store);
+    // }
+
+    // #[test]
+    // fn move_into_wall() {
+    //     let mut store = Store3::from(
+    //         "####\n\
+    //          #@ #\n\
+    //          ####",
+    //     );
+    //     store.bump_player(1, 0);
+    //     store.bump_player(1, 0);
+    //     insta::assert_display_snapshot!(store);
+    // }
+
+    // #[test]
+    // fn move_into_door() {
+    //     let mut store = Store3::from(
+    //         "####\n\
+    //          #@+#\n\
+    //          ####",
+    //     );
+    //     store.bump_player(1, 0);
+    //     insta::assert_display_snapshot!(store);
+    // }
+
+    // #[test]
+    // fn move_into_shallows() {
+    //     let mut store = Store3::from(
+    //         "####\n\
+    //          #@~#\n\
+    //          ####",
+    //     );
+    //     store.bump_player(1, 0);
+    //     insta::assert_display_snapshot!(store);
+    // }
+
+    // #[test]
+    // fn initial() {
+    //     let store = Store3::from(
+    //         "####\n\
+    //          #@+#\n\
+    //          ####",
+    //     );
+    //     insta::assert_display_snapshot!(store);
+    // }
+}

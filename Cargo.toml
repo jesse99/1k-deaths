@@ -20,7 +20,7 @@ insta = {version = "1.21.0", features = ["yaml"]}       # snapshot testing
 [dependencies]
 arraystring = {version = "0.3.0", features = ["serde-traits"]}                  # copyable fixed width strings
 chrono = "0.4.22"                                       # time library
-clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}   # command line parsing
+clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}
 fnv = "1.0.7"                                           # faster hashing for small keys
 log = "0.4.17"                                          # standard logging API
 once_cell = "1.17.0"                                    # safe/lazy initialization (eg of global data)

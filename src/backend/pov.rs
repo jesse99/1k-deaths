@@ -1,11 +1,13 @@
 use super::primitives::FoV;
-use super::{Game, Point};
+use super::{Level, Point, PLAYER_ID};
 use fnv::FnvHashSet;
+use serde::{Deserialize, Serialize};
 
 pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? or gear?
 
 /// Field of View for a character. These are invalidated for certain events
 /// (e.g. terrain changes).
+#[derive(Serialize, Deserialize)]
 pub struct PoV {
     edition: u32, // incremented each time visible is updated
     visible: FnvHashSet<Point>,
@@ -35,9 +37,10 @@ impl PoV {
     }
 
     /// Returns true if loc is visible from origin.
-    pub fn visible(&self, game: &Game, loc: Point) -> bool {
+    pub fn visible(&self, level: &Level, loc: Point) -> bool {
         assert!(!self.dirty);
-        if loc.distance2(game.player_loc()) <= RADIUS * RADIUS {
+        let player_loc = level.expect_location(PLAYER_ID);
+        if loc.distance2(player_loc) <= RADIUS * RADIUS {
             self.visible.contains(&loc)
         } else {
             false
@@ -45,18 +48,18 @@ impl PoV {
     }
 
     // This can't be an ordinary method or we run into all sorts of borrowing grief.
-    pub fn refresh(game: &mut Game) {
-        if game.level.pov.dirty {
-            let loc = game.player_loc();
-            PoV::do_refresh(game, &loc);
-            game.level.pov.edition = game.level.pov.edition.wrapping_add(1);
-            game.level.pov.dirty = false;
+    pub fn refresh(level: &mut Level) {
+        if level.pov.dirty {
+            let loc = level.expect_location(PLAYER_ID);
+            PoV::do_refresh(level, &loc);
+            level.pov.edition = level.pov.edition.wrapping_add(1);
+            level.pov.dirty = false;
         }
     }
 
     // Game is mutable so that we can create a Cell if one isn't already there.
-    fn do_refresh(game: &mut Game, origin: &Point) {
-        game.level.pov.visible.clear();
+    fn do_refresh(level: &mut Level, origin: &Point) {
+        level.pov.visible.clear();
 
         let mut new_locs = Vec::new();
         let mut view = FoV {
@@ -65,12 +68,12 @@ impl PoV {
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
-            blocks_los: { |loc| game.level.blocks_los(loc) },
+            blocks_los: { |loc| level.blocks_los(loc) },
         };
         view.visit();
 
         for loc in new_locs {
-            game.level.pov.visible.insert(loc);
+            level.pov.visible.insert(loc);
         }
     }
 }

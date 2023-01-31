@@ -135,7 +135,7 @@ impl TypeId for Message {
 
 impl Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{:?}: {}", self.kind, self.text)
     }
 }
 
@@ -221,6 +221,7 @@ pub static LAST_ID: u32 = 2;
 /// because the mapping from a location to an Oid has to be consistent and because level
 /// sizes are not static (levels have a default cell which is typically rock and can be
 /// dug into to create a new normal cell).
+#[derive(Serialize, Deserialize)]
 pub struct Level {
     pub store: Store<Oid>,
     pub pov: PoV,
@@ -285,9 +286,9 @@ impl Level {
     // TODO: If find_cell turns out to be a bottle-neck then could add a get_cell
     // function with methods like get_terrain, get_portables, and get_char.
     pub fn get_terrain(&self, loc: Point) -> Terrain {
-        if let Some(oid) = self.find_cell(loc) {
-            let terrain = self.store.find::<Terrain>(oid);
-            terrain.expect(&format!("expected a terrain for {oid}"))
+        if let Some(cell_oid) = self.find_cell(loc) {
+            let terrain = self.store.find::<Terrain>(cell_oid);
+            terrain.expect(&format!("expected a terrain for {cell_oid}"))
         } else {
             let terrain = self.store.find::<Terrain>(DEFAULT_CELL_ID);
             terrain.expect(&format!("expected a terrain for the default cell"))
@@ -370,8 +371,12 @@ impl Level {
         }
     }
 
+    pub fn cell_iter(&self) -> impl Iterator<Item = (&Point, &Oid)> {
+        self.cell_ids.iter()
+    }
+
     // Extent cells always have a terrain and a list of oids associated with that location.
-    fn find_cell(&self, loc: Point) -> Option<Oid> {
+    pub fn find_cell(&self, loc: Point) -> Option<Oid> {
         self.cell_ids.get(&loc).copied()
     }
 
@@ -391,5 +396,111 @@ impl Level {
     fn new_oid(&mut self, tag: &str) -> Oid {
         self.current_id += 1;
         Oid::new(tag, self.current_id)
+    }
+}
+
+impl Display for Level {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.dump_pov(f)?;
+        self.dump_non_pov(f)?;
+        self.dump_game(f)
+    }
+}
+
+impl Level {
+    fn dump_pov(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut details = Vec::new();
+
+        let center = self.expect_location(PLAYER_ID);
+        write!(f, "==== Visible ===================================\n")?;
+        for y in center.y - RADIUS..center.y + RADIUS {
+            for x in center.x - RADIUS..center.x + RADIUS {
+                let loc = Point::new(x, y);
+                if self.pov.visible(self, loc) {
+                    if self.num_objects(loc) > 0 {
+                        let cp = (48 + details.len()) as u8;
+                        write!(f, "{}", (cp as char))?;
+                        details.push(loc);
+                    } else {
+                        self.dump_terrain(loc, f)?;
+                    }
+                } else {
+                    write!(f, " ")?;
+                }
+            }
+            write!(f, "\n")?;
+        }
+        write!(f, "\n")?;
+
+        for (i, loc) in details.iter().enumerate() {
+            let cp = (48 + i) as u8;
+            let label = format!("{} at {loc}", (cp as char));
+            self.dump_details(*loc, &label, f)?;
+        }
+        write!(f, "\n")?;
+        Result::Ok(())
+    }
+
+    fn dump_non_pov(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "==== Not visible ===================================\n")?;
+        for (loc, _) in self.cell_iter() {
+            if !self.pov.visible(self, *loc) {
+                if self.num_objects(*loc) > 0 {
+                    let label = format!("{loc}");
+                    self.dump_details(*loc, &label, f)?;
+                    write!(f, "\n")?;
+                }
+            }
+        }
+        write!(f, "\n")?;
+        Result::Ok(())
+    }
+
+    fn dump_game(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "==== Game ===================================\n")?;
+        let messages = self.store.get_all::<Message>(GAME_ID);
+        for mesg in messages {
+            write!(f, "{mesg}\n")?;
+        }
+        Result::Ok(())
+    }
+
+    fn dump_details(&self, loc: Point, label: &str, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{label}\n")?;
+
+        if let Some(cell_oid) = self.find_cell(loc) {
+            write!(f, "   ")?;
+            self.dump_terrain(loc, f)?;
+            write!(f, "\n")?;
+
+            let oids = self.store.get_all::<Oid>(cell_oid);
+            for oid in oids.iter() {
+                if let Some(p) = self.store.find::<Portable>(*oid) {
+                    write!(f, "   {p}\n")?;
+                }
+                if let Some(c) = self.store.find::<Character>(*oid) {
+                    write!(f, "   {c}\n")?; // TODO: can dump a lot more here
+                }
+            }
+        } else {
+            write!(f, "   couldn't find an oid for {loc}\n")?;
+        }
+        Result::Ok(())
+    }
+
+    fn dump_terrain(&self, loc: Point, f: &mut fmt::Formatter) -> fmt::Result {
+        let terrain = self.get_terrain(loc);
+        match terrain {
+            Terrain::ClosedDoor => write!(f, "+")?,
+            Terrain::DeepWater => write!(f, "W")?,
+            Terrain::Dirt => write!(f, ".")?,
+            Terrain::OpenDoor => write!(f, "-")?,
+            Terrain::Rubble => write!(f, "…")?,
+            Terrain::ShallowWater => write!(f, "w")?,
+            Terrain::Tree => write!(f, "T")?,
+            Terrain::Vitr => write!(f, "V")?,
+            Terrain::Wall => write!(f, "#")?,
+        }
+        Result::Ok(())
     }
 }

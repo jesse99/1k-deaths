@@ -1,7 +1,8 @@
 use super::{Character, Content, Game, Point, Portable, Terrain};
 use fnv::FnvHashMap;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OldContent {
     pub terrain: Terrain,
     pub character: Option<Character>,
@@ -22,6 +23,7 @@ impl OldContent {
 /// this so, as an optimization, this may include locations that are actually
 /// visible. Currently this is only used for the Player to render locations
 /// that he has seen before.
+#[derive(Serialize, Deserialize)]
 pub struct OldPoV {
     old: FnvHashMap<Point, OldContent>, // may not match the current Level state
     edition: u32,                       // current PoV edition

@@ -64,7 +64,7 @@ impl Game {
             text: String::from("Press the '?' key for help."),
         });
         OldPoV::update(&mut game);
-        PoV::refresh(&mut game);
+        PoV::refresh(&mut game.level);
         game
     }
 
@@ -78,7 +78,7 @@ impl Game {
     /// seen (which may not be accurate now).
     /// 3) Otherwise return NotVisible.
     pub fn tile(&self, loc: Point) -> Tile {
-        if self.level.pov.visible(self, loc) {
+        if self.level.pov.visible(&self.level, loc) {
             let terrain = self.level.get_terrain(loc);
             let character = self.level.find_char(loc);
             let portables = self.level.get_portables(loc);
@@ -113,7 +113,7 @@ impl Game {
     pub fn move_player(&mut self, dx: i32, dy: i32) {
         OldPoV::update(self); // TODO: should only do these if something happened
         self.level.bump_player(dx, dy);
-        PoV::refresh(self);
+        PoV::refresh(&mut self.level);
     }
 
     pub fn add_message(&mut self, message: Message) {
@@ -121,63 +121,7 @@ impl Game {
     }
 
     pub fn dump_state<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-        self.dump_pov(writer)
+        write!(writer, "{}", self.level)
         // self.scheduler.dump(writer, self)    // TODO: want an equivalent for this
-    }
-
-    // TODO: use POV
-    fn dump_pov<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-        let mut details = Vec::new();
-
-        let center = self.player_loc();
-        for y in center.y - RADIUS..center.y + RADIUS {
-            for x in center.x - RADIUS..center.x + RADIUS {
-                let loc = Point::new(x, y);
-                if self.level.pov.visible(self, loc) {
-                    if self.level.num_objects(loc) > 0 {
-                        let cp = (48 + details.len()) as u8;
-                        write!(writer, "{}", (cp as char))?;
-                        details.push(loc);
-                    } else {
-                        self.dump_terrain(writer, loc)?;
-                    }
-                } else {
-                    write!(writer, " ")?;
-                }
-            }
-            write!(writer, "\n")?;
-        }
-        write!(writer, "\n")?;
-
-        for (i, loc) in details.iter().enumerate() {
-            let cp = (48 + i) as u8;
-            write!(writer, "{} at {loc}\n", (cp as char))?;
-
-            let portables = self.level.get_portables(*loc);
-            for p in portables.iter() {
-                write!(writer, "   {p}\n")?;
-            }
-
-            if let Some(c) = self.level.find_char(*loc) {
-                write!(writer, "   {c}\n")?; // TODO: can dump a lot more here
-            }
-        }
-        Result::Ok(())
-    }
-
-    fn dump_terrain<W: Write>(&self, writer: &mut W, loc: Point) -> Result<(), Error> {
-        let terrain = self.level.get_terrain(loc);
-        match terrain {
-            Terrain::ClosedDoor => write!(writer, "+")?,
-            Terrain::DeepWater => write!(writer, "W")?,
-            Terrain::Dirt => write!(writer, ".")?,
-            Terrain::OpenDoor => write!(writer, "-")?,
-            Terrain::Rubble => write!(writer, "…")?,
-            Terrain::ShallowWater => write!(writer, "w")?,
-            Terrain::Tree => write!(writer, "T")?,
-            Terrain::Vitr => write!(writer, "V")?,
-            Terrain::Wall => write!(writer, "#")?,
-        }
-        Result::Ok(())
     }
 }
