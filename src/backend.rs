@@ -7,7 +7,7 @@ mod primitives;
 mod relation;
 mod store2;
 mod store_from_str;
-use core::num;
+// use core::num;
 use std::io::{Error, Write};
 
 use facts::*;

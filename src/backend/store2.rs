@@ -78,6 +78,7 @@ where
     }
 
     /// Note that it is not an error to remove a missing value.
+    #[allow(dead_code)] // TODO: remove this
     pub fn remove<VALUE>(&mut self, key: KEY)
     where
         VALUE: DeserializeOwned + TypeId + Display + Default, // TODO: do we really need hints?
@@ -105,13 +106,13 @@ where
             .flatten()
     }
 
-    #[must_use]
-    pub fn expect<VALUE>(&self, key: KEY) -> VALUE
-    where
-        VALUE: DeserializeOwned + TypeId + Display + Default,
-    {
-        self.find(key).unwrap()
-    }
+    // #[must_use]
+    // pub fn expect<VALUE>(&self, key: KEY) -> VALUE
+    // where
+    //     VALUE: DeserializeOwned + TypeId + Display + Default,
+    // {
+    //     self.find(key).unwrap()
+    // }
 }
 
 // List values

@@ -1,0 +1,35 @@
+---
+source: src/backend/player_actions.rs
+expression: level
+---
+==== Visible ===================================
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+        ####        
+        #.0#        
+        ####        
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+0 at (2, 1)
+   .
+   Player
+
+==== Not visible ===================================
+
+==== Game ===================================
+Normal: You bump the wall.
+

@@ -111,14 +111,9 @@ impl From<Tile> for RunTile {
                 } else {
                     (terrain_to_fg(content.terrain), terrain_to_symbol(content.terrain))
                 };
-                RunTile::Visible { bg, fg, symbol }
+                RunTile::Stale { bg, fg, symbol }
             }
-            Tile::NotVisible => {
-                let bg = Color::Black;
-                let fg = Color::Black;
-                let symbol = " ";
-                RunTile::Visible { bg, fg, symbol }
-            }
+            Tile::NotVisible => RunTile::NotVisible,
         }
     }
 }

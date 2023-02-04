@@ -18,10 +18,10 @@ pub struct TextModeBuilder {
 }
 
 impl TextModeBuilder {
-    pub fn with_bg(mut self, color: Color) -> TextModeBuilder {
-        self.bg = color;
-        self
-    }
+    // pub fn with_bg(mut self, color: Color) -> TextModeBuilder {
+    //     self.bg = color;
+    //     self
+    // }
 
     pub fn create(self, lines: Vec<Line>) -> Box<dyn Mode> {
         Box::new(TextMode::create(lines, self.at_top, self.bg))
@@ -101,12 +101,12 @@ impl TextMode {
         }
     }
 
-    pub fn at_bottom() -> TextModeBuilder {
-        TextModeBuilder {
-            at_top: false,
-            bg: Color::Black,
-        }
-    }
+    // pub fn at_bottom() -> TextModeBuilder {
+    //     TextModeBuilder {
+    //         at_top: false,
+    //         bg: Color::Black,
+    //     }
+    // }
 }
 
 impl Mode for TextMode {

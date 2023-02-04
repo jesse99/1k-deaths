@@ -1,0 +1,36 @@
+---
+source: src/backend/player_actions.rs
+expression: level
+---
+==== Visible ===================================
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+        #####       
+        #.0W#       
+        #####       
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+0 at (2, 1)
+   w
+   Player
+
+==== Not visible ===================================
+
+==== Game ===================================
+Normal: You splash through the water.
+Normal: The water is too deep.
+
