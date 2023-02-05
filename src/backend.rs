@@ -1,5 +1,6 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
 mod facts;
+mod objects;
 mod old_pov;
 mod player_actions;
 mod pov;
@@ -7,16 +8,18 @@ mod primitives;
 mod relation;
 mod store2;
 mod store_from_str;
-// use core::num;
+mod type_id;
 use std::io::{Error, Write};
 
 use facts::*;
 // use player_actions::*;
+use objects::*;
 use old_pov::*;
 use pov::*;
 use store2::*;
+use type_id::*;
 
-pub use facts::{Character, Message, MessageKind, Portable, Terrain};
+pub use objects::{Character, Message, MessageKind, Portable, Terrain};
 pub use primitives::Point;
 pub use primitives::Size;
 

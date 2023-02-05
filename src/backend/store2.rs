@@ -3,6 +3,7 @@
 //! to access arbitrary VALUE types. Note that the value types for a given key must
 //! be unique which may require the use of structs to bundle together information or
 //! the newtype idiom.
+use super::TypeId;
 use fnv::FnvHashMap;
 use postcard::from_bytes;
 use serde::de::DeserializeOwned;
@@ -10,12 +11,6 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::Range;
-
-/// Every type used as a VALUE in the [`Store`] must implement this to return a unique
-/// numeric ID for that type. (This is checked at runtime for debug builds).
-pub trait TypeId {
-    fn id(&self) -> u16;
-}
 
 type Values = FnvHashMap<u16, Vec<u8>>; // u16 is the TypeId for a particular value type
 type ListValue = FnvHashMap<u16, Vec<Vec<u8>>>; // like Values except that there is a list of values
