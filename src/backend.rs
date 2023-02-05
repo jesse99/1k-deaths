@@ -1,5 +1,5 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
-mod facts;
+mod level;
 mod objects;
 mod old_pov;
 mod player_actions;
@@ -11,7 +11,7 @@ mod store_from_str;
 mod type_id;
 use std::io::{Error, Write};
 
-use facts::*;
+use level::*;
 // use player_actions::*;
 use objects::*;
 use old_pov::*;
