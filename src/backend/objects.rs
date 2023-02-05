@@ -17,6 +17,10 @@ pub struct Oid {
     pub value: u32,
 }
 
+/// The player and NPCs will each have a unique Oid. That oid will store the following:
+/// * A Character value.
+/// * A location Point.
+/// * A list of inventory Oid's (may be empty).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Character {
     #[default]
@@ -24,6 +28,33 @@ pub enum Character {
     Player,
 }
 
+/// Objects that may be picked up and dropped off. These store:
+/// * A Portable value.
+/// * An InvItem value (if they can be equipped).
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Portable {
+    #[default]
+    MightySword,
+    WeakSword,
+}
+
+/// See [`Portable`].
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct InvItem {
+    // TODO: replace this with Slot?
+    // pub slot: Option<Slot>, // None if not equipped
+    pub oid: Oid,
+}
+
+/// Each cell on the level will have a unique Oid which looks like "(1, 2)". Levels may be
+/// irregular (and may grow as the result of actions like digging). Cell Oids store the
+/// following:
+/// * A Terrain value.
+/// * A location Point. Note that levels can be irregular.
+/// * A list of object Oids. These are typically Portable objects with an optional
+/// Character at the end.
+/// Note that cells that are not explicitly part of the level are managed internally by
+/// Level using DEFAULT_CELL_ID.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Terrain {
     /// Will have Durability (and usually Material) if the door can be broken down.
@@ -50,17 +81,11 @@ pub enum Terrain {
     Wall,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct InvItem {
-    // pub slot: Option<Slot>, // None if not equipped
-    pub oid: Oid,
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub enum Portable {
-    #[default]
-    MightySword,
-    WeakSword,
+/// The GAME_ID Oid stores a list of these.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct Message {
+    pub kind: MessageKind,
+    pub text: String, // TODO: intern these? probably quite a few duplicates
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -80,42 +105,6 @@ pub enum MessageKind {
 
     // Messages that are not normally shown.
     Debug,
-}
-
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Message {
-    pub kind: MessageKind,
-    pub text: String, // TODO: intern these? probably quite a few duplicates
-}
-
-impl Display for Message {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}: {}", self.kind, self.text)
-    }
-}
-
-impl Display for Character {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Display for Portable {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Display for Terrain {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Display for InvItem {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }
 
 impl Oid {
@@ -146,23 +135,57 @@ impl Oid {
     }
 }
 
-impl fmt::Display for Oid {
-    #[cfg(debug_assertions)]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(tag) = self.tag {
-            write!(f, "{}#{}", tag, self.value)
-        } else {
-            match self.value {
-                0 => write!(f, "player#{}", self.value),
-                1 => write!(f, "default cell#{}", self.value),
-                2 => write!(f, "game#{}", self.value),
-                _ => panic!("excpected a tag"),
-            }
+mod display_impl {
+    use super::*;
+
+    impl Display for Message {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{:?}: {}", self.kind, self.text)
         }
     }
 
-    #[cfg(not(debug_assertions))]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "#{}", self.value)
+    impl Display for Character {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{:?}", self)
+        }
+    }
+
+    impl Display for Portable {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{:?}", self)
+        }
+    }
+
+    impl Display for Terrain {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{:?}", self)
+        }
+    }
+
+    impl Display for InvItem {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{:?}", self)
+        }
+    }
+
+    impl fmt::Display for Oid {
+        #[cfg(debug_assertions)]
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            if let Some(tag) = self.tag {
+                write!(f, "{}#{}", tag, self.value)
+            } else {
+                match self.value {
+                    0 => write!(f, "player#{}", self.value),
+                    1 => write!(f, "default cell#{}", self.value),
+                    2 => write!(f, "game#{}", self.value),
+                    _ => panic!("excpected a tag"),
+                }
+            }
+        }
+
+        #[cfg(not(debug_assertions))]
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "#{}", self.value)
+        }
     }
 }
