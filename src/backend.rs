@@ -5,8 +5,7 @@ mod old_pov;
 mod player_actions;
 mod pov;
 mod primitives;
-mod relation;
-mod store2;
+mod store;
 mod store_from_str;
 mod type_id;
 use std::io::{Error, Write};
@@ -16,7 +15,7 @@ use level::*;
 use objects::*;
 use old_pov::*;
 use pov::*;
-use store2::*;
+use store::*;
 use type_id::*;
 
 pub use objects::{Character, Message, MessageKind, Portable, Terrain};
