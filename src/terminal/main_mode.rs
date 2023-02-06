@@ -1,5 +1,5 @@
 use super::{format_help, validate_help, InputAction, MapView, MessagesView, Mode, RenderContext, TextMode};
-use crate::backend::{Game, Message, MessageKind, Point, Size};
+use crate::backend::{Action, Game, Message, MessageKind, Point, Size};
 use fnv::FnvHashMap;
 use std::fs::File;
 use std::io::{Error, Write};
@@ -132,7 +132,7 @@ impl MainMode {
     // }
 
     fn do_move(&mut self, game: &mut Game, dx: i32, dy: i32) -> InputAction {
-        game.move_player(dx, dy);
+        game.player_acted(Action::Move { dx, dy });
         InputAction::UpdatedGame
     }
 

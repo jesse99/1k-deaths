@@ -59,7 +59,8 @@ fn main() {
         })
     }
 
-    let game = backend::Game::new();
+    let seed = chrono::Utc::now().timestamp_millis() as u64;
+    let game = backend::Game::new_game("saved.game", seed);
     let mut terminal = terminal::Terminal::new(game);
     terminal.run();
 }

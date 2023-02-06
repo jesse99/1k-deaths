@@ -19,6 +19,7 @@ insta = {version = "1.21.0", features = ["yaml"]}       # snapshot testing
 
 [dependencies]
 arraystring = {version = "0.3.0", features = ["serde-traits"]}                  # copyable fixed width strings
+byteorder = "1.4.3"                                     # byte-swapping library
 chrono = "0.4.22"                                       # time library
 clap = {version = "4.0.18", features = ["deprecated", "derive", "wrap_help"]}
 fnv = "1.0.7"                                           # faster hashing for small keys

@@ -2,12 +2,15 @@
 mod level;
 mod objects;
 mod old_pov;
+mod persistence;
 mod player_actions;
 mod pov;
 mod primitives;
 mod store;
 mod store_from_str;
 mod type_id;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
 use std::io::{Error, Write};
 
 use level::*;
@@ -22,7 +25,33 @@ pub use objects::{Character, Message, MessageKind, Portable, Terrain};
 pub use primitives::Point;
 pub use primitives::Size;
 
-// use self::relation::Character3;
+const MAX_QUEUED_EVENTS: usize = 1_000; // TODO: make this even larger?
+
+/// Represents what the player wants to do next. Most of these will use up the player's
+/// remaining time units, but some like (Examine) don't take any time.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Action {
+    // Drop(Oid),
+    /// Print descriptions for objects at the cell. Note that any cell can be examined but
+    /// cells that are not in the player's PoV will have either an unhelpful description or
+    /// a stale description.
+    Examine { loc: Point, wizard: bool },
+    /// Move the player to empty cells (or attempt to interact with an object at that cell).
+    /// dx and dy must be 0, +1, or -1.
+    Move { dx: i32, dy: i32 },
+    // /// Something other than the player did something.
+    // Object,
+
+    // Remove(Oid),
+
+    // Rest,
+
+    // Wear(Oid),
+
+    // // Be sure to add new actions to the end (or saved games will break).
+    // WieldMainHand(Oid),
+    // WieldOffHand(Oid),
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Content {
@@ -47,24 +76,44 @@ pub enum Tile {
 /// External API for the game state. Largely acts as a wrapper around the Store.
 pub struct Game {
     level: Level,
+    stream: Vec<Action>, // used to reconstruct games
+    file: Option<File>,  // actions are perodically saved here
 }
 
 impl Game {
-    pub fn new() -> Game {
+    /// Start a brand new game and save it to path.
+    pub fn new_game(path: &str, seed: u64) -> Game {
+        let mut messages = vec![
+            Message {
+                kind: MessageKind::Important,
+                text: String::from("Welcome to 1k-deaths!"),
+            },
+            Message {
+                kind: MessageKind::Important,
+                text: String::from("Are you the hero who will destroy the Crippled God's sword?"),
+            },
+            Message {
+                kind: MessageKind::Important,
+                text: String::from("Press the '?' key for help."),
+            },
+        ];
+
         let level = Level::from(include_str!("backend/maps/start.txt"));
-        let mut game = Game { level };
-        game.add_message(Message {
-            kind: MessageKind::Important,
-            text: String::from("Welcome to 1k-deaths!"),
-        });
-        game.add_message(Message {
-            kind: MessageKind::Important,
-            text: String::from("Are you the hero who will destroy the Crippled God's sword?"),
-        });
-        game.add_message(Message {
-            kind: MessageKind::Important,
-            text: String::from("Press the '?' key for help."),
-        });
+        let stream = Vec::new();
+        let file = match persistence::new_game(path, seed) {
+            Ok(se) => Some(se),
+            Err(err) => {
+                messages.push(Message {
+                    kind: MessageKind::Error,
+                    text: format!("Couldn't open {path} for writing: {err}"),
+                });
+                None
+            }
+        };
+        let mut game = Game { stream, file, level };
+        for mesg in messages {
+            game.add_message(mesg);
+        }
         OldPoV::update(&mut game);
         PoV::refresh(&mut game.level);
         game
@@ -72,6 +121,10 @@ impl Game {
 
     pub fn player_loc(&self) -> Point {
         self.level.expect_location(PLAYER_ID)
+    }
+
+    pub fn player_acted(&mut self, action: Action) {
+        self.do_player_acted(action, false);
     }
 
     /// 1) If the loc is in the level and within the player's FoV then return the current
@@ -112,18 +165,46 @@ impl Game {
         self.level.store.get_range::<Message>(GAME_ID, range)
     }
 
-    pub fn move_player(&mut self, dx: i32, dy: i32) {
-        OldPoV::update(self); // TODO: should only do these if something happened
-        self.level.bump_player(dx, dy);
-        PoV::refresh(&mut self.level);
-    }
-
     pub fn add_message(&mut self, message: Message) {
         self.level.append_message(message);
     }
 
+    /// Wizard mode command
     pub fn dump_state<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
         write!(writer, "{}", self.level)
         // self.scheduler.dump(writer, self)    // TODO: want an equivalent for this
+    }
+
+    fn save_actions(&mut self) {
+        if let Some(f) = &mut self.file {
+            if let Err(err) = persistence::append_game(f, &self.stream) {
+                self.add_message(Message {
+                    kind: MessageKind::Error,
+                    text: format!("Couldn't save game: {err}"),
+                });
+            }
+        }
+        // If we can't save there's not much we can do other than clear. (Still worthwhile
+        // appending onto the stream because we may want a wizard command to show the last
+        // few events).
+        self.stream.clear();
+    }
+
+    fn do_player_acted(&mut self, action: Action, replay: bool) {
+        trace!("player is doing {action:?}");
+        match action {
+            Action::Examine { loc: _, wizard: _ } => todo!(),
+            Action::Move { dx, dy } => {
+                OldPoV::update(self); // TODO: should only do these if something happened
+                self.level.bump_player(dx, dy);
+                PoV::refresh(&mut self.level);
+            }
+        }
+        if !replay {
+            self.stream.push(action);
+            if self.stream.len() >= MAX_QUEUED_EVENTS {
+                self.save_actions();
+            }
+        }
     }
 }
