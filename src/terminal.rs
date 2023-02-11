@@ -4,17 +4,19 @@ mod main_mode;
 mod map_view;
 mod messages_view;
 mod mode;
+mod replay_mode;
 mod text_mode;
 mod text_view;
 mod ui;
 
-use crate::backend::Game;
+use crate::backend::{Action, Game};
 use color::*;
 use help::*;
 use main_mode::*;
 use map_view::*;
 use messages_view::*;
 use mode::*;
+use replay_mode::*;
 use std::cell::RefCell;
 use std::io::{self, Write};
 use std::process;
@@ -36,7 +38,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn new(game: Game) -> Terminal {
+    pub fn new(game: Game, replay: Vec<Action>) -> Terminal {
         let stdout = io::stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -54,7 +56,7 @@ impl Terminal {
         info!("terminal size is {} x {}", width, height);
 
         Terminal {
-            ui: UI::new(width, height),
+            ui: UI::new(width, height, replay),
             game,
             stdout: Box::new(stdout),
         }

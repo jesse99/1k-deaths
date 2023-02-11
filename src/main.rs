@@ -7,12 +7,17 @@ mod terminal;
 
 use clap::Parser;
 use simplelog::*;
+use std::path::Path;
 use std::{fs::File, str::FromStr};
 
 // See https://docs.rs/clap/latest/clap/_derive/index.html
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// Path to saved file
+    #[arg(long, value_name = "PATH")]
+    load: Option<String>,
+
     /// Can be trace, debug, info, warn, error, or off
     #[arg(long, default_value = "info", value_name = "LEVEL")]
     log_level: String,
@@ -24,6 +29,14 @@ struct Args {
     /// Relative path to log file
     #[arg(long, default_value = "1k-deaths.log", value_name = "PATH")]
     log_path: String,
+
+    /// Ignore any saved files
+    #[arg(long)]
+    new_game: bool,
+
+    /// Fixed random number seed (defaults to random)
+    #[arg(long, value_name = "N")]
+    seed: Option<u64>,
 
     /// Enable special developer commands
     #[arg(long)]
@@ -59,8 +72,27 @@ fn main() {
         })
     }
 
-    let seed = chrono::Utc::now().timestamp_millis() as u64;
-    let game = backend::Game::new_game("saved.game", seed);
-    let mut terminal = terminal::Terminal::new(game);
+    let mut warnings = Vec::new();
+    if args.seed.is_some() && (args.load.is_some() || Path::new("saved.game").is_file()) && !args.new_game {
+        // --new-game --load is a bit odd but means start a new game saved to the specified
+        // path. But --seed --load without the --new-game is wrong because we need to replay
+        // saved games using the original seed (we could reset the seed once we're finished
+        // replaying but that's kind of a pain).
+        warnings.push("Ignoring --seed (game is beiing replayed so the original seed is being used.)".to_string());
+    }
+
+    // TODO: probably need to make --seed and old_game into a warning
+    // (can't just set the seed because we'd have to do it after replay finishes)
+
+    // Timestamps are a poor seed but should be fine for our purposes.
+    let seed = args.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
+    let (game, actions) = match args.load {
+        Some(ref path) if args.new_game => (backend::Game::new_game(path, seed), Vec::new()),
+        Some(ref path) => backend::Game::old_game(path, warnings),
+        None if Path::new("saved.game").is_file() && !args.new_game => backend::Game::old_game("saved.game", warnings),
+        None => (backend::Game::new_game("saved.game", seed), Vec::new()),
+    };
+
+    let mut terminal = terminal::Terminal::new(game, actions);
     terminal.run();
 }

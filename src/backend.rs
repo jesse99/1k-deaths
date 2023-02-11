@@ -81,6 +81,18 @@ pub struct Game {
 }
 
 impl Game {
+    fn new(messages: Vec<Message>, _seed: u64, file: Option<File>) -> Game {
+        let level = Level::from(include_str!("backend/maps/start.txt"));
+        let stream = Vec::new();
+        let mut game = Game { stream, file, level };
+        for mesg in messages {
+            game.add_message(mesg);
+        }
+        OldPoV::update(&mut game);
+        PoV::refresh(&mut game.level);
+        game
+    }
+
     /// Start a brand new game and save it to path.
     pub fn new_game(path: &str, seed: u64) -> Game {
         let mut messages = vec![
@@ -97,9 +109,6 @@ impl Game {
                 text: String::from("Press the '?' key for help."),
             },
         ];
-
-        let level = Level::from(include_str!("backend/maps/start.txt"));
-        let stream = Vec::new();
         let file = match persistence::new_game(path, seed) {
             Ok(se) => Some(se),
             Err(err) => {
@@ -110,13 +119,67 @@ impl Game {
                 None
             }
         };
-        let mut game = Game { stream, file, level };
-        for mesg in messages {
-            game.add_message(mesg);
+        Game::new(messages, seed, file)
+    }
+
+    /// Load a saved game and return the actions so that they can be replayed.
+    pub fn old_game(path: &str, warnings: Vec<String>) -> (Game, Vec<Action>) {
+        let mut seed = 1;
+        let mut actions = Vec::new();
+        let mut messages = Vec::new();
+
+        let mut file = None;
+        info!("loading {path}");
+        match persistence::load_game(path) {
+            Ok((s, a)) => {
+                seed = s;
+                actions = a;
+            }
+            Err(err) => {
+                info!("loading file had err: {err}");
+                messages.push(Message {
+                    kind: MessageKind::Error,
+                    text: format!("Couldn't open {path} for reading: {err}"),
+                });
+            }
+        };
+
+        if !actions.is_empty() {
+            info!("opening {path}");
+            file = match persistence::open_game(path) {
+                Ok(se) => Some(se),
+                Err(err) => {
+                    messages.push(Message {
+                        kind: MessageKind::Error,
+                        text: format!("Couldn't open {path} for appending: {err}"),
+                    });
+                    None
+                }
+            };
         }
-        OldPoV::update(&mut game);
-        PoV::refresh(&mut game.level);
-        game
+
+        messages.extend(warnings.iter().map(|w| Message {
+            kind: MessageKind::Error,
+            text: w.clone(),
+        }));
+
+        if file.is_some() {
+            (Game::new(messages, seed, file), actions)
+        } else {
+            let mut game = Game::new_game(path, seed);
+            for mesg in messages {
+                game.add_message(mesg);
+            }
+            (game, Vec::new())
+        }
+    }
+
+    pub fn replay_action(&mut self, action: Action) {
+        // if let Action::Object = action {
+        //     self.advance_time(true);
+        // } else {
+        self.do_player_acted(action, true);
+        // }
     }
 
     pub fn player_loc(&self) -> Point {
@@ -206,5 +269,11 @@ impl Game {
                 self.save_actions();
             }
         }
+    }
+}
+
+impl Drop for Game {
+    fn drop(&mut self) {
+        self.save_actions();
     }
 }
