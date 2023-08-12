@@ -1,0 +1,78 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Oblique;
+}
+{\colortbl;\red255\green255\blue255;\red2\green2\blue2;\red2\green2\blue2;}
+{\*\expandedcolortbl;;\csgenericrgb\c784\c784\c784;\cssrgb\c784\c784\c784;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs48 \cf2 Goals\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 \'95\'a0Strong separation between backend (game logic) and front end (UI). 
+\f2\i This should result in a cleaner design and will make testing the trickiest bits easier.\
+
+\f1\i0 \'95 Games should support replay and live rollback. 
+\f2\i Much easier to repro bugs and to backup to investigate problems. Also would enable regression testing by replaying old games and verifying end states (or maybe that they don\'92t just panic or log errors).
+\f1\i0 \
+\'95\'a0UI should (eventually) be web-based. 
+\f2\i Very low barrier to entry for users. Cross platform, should be able to have a nice looking yet powerful UI with some work (ideally with separate windows for stuff like inventory). Much easier to track both problems and usage (e.g. how well do the different classes do? how do player\'92s die? is an item or ability over-powered?)\
+
+\f1\i0 \'95\'a0Make it as easy as possible for players to evaluate weapons and spells. 
+\f2\i This isn\'92t entirely straight-forward because it depends on the target and the RNG will play a role but we could simulate the behavior against a target picked by the user for a lot of rounds and report the result.\
+
+\f1\i0 \'95\'a0Events should not use floating point. 
+\f2\i This side steps complexities involved in persistence as well as sticky isses like when are two floating point numbers equal. I think that this will mainly affect time which can be stored as integral milliseconds.
+\f1\i0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b \cf2 Non-Goals\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 \'95\'a0Support for creating different UIs. 
+\f2\i Doesn\'92t seem much reason to have this if there\'92s a good web front end (though might be nice to support different icon sets or themes). Also dicy to support different capabilities (e.g. terminal will have much inferior color support to compared to html).\
+
+\f1\i0 \'95 A backend flexible enough to create a different game. 
+\f2\i It should be easy to modify the game (so much of it may use config files) but it\'92s not an explicit goal to create a backend that can be used as the basis for other games. In theory the front end could be used for a lot of different sorts of games but even that isn\'92t an explicit goal.
+\f1\i0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0\b\fs58 \cf3 \expnd0\expndtw0\kerning0
+event sourcing
+\f1\b0\fs48 \
+\'a0\'a0\'a0\'a0\'a0\'a0 store facts\
+\'a0\'a0\'a0\'a0\'a0\'a0 state is a transient derivative of the facts\
+\'a0\'a0\'a0\'a0\'a0\'a0 facts are immutable\
+\'a0\'a0\'a0\'a0\'a0\'a0 typically micro-services would listen for events they care about\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 renderer would listen for events that affect visuals and update display\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 scheduler would keep track of timed actions and write an event to notify services when they are ready\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\
++ easy to audit\
++ easy to rollback\
++ supports replay\
++ works well with logic changes (eg can change the chance to hit but that won't affect replay because it's storing the facts)\
++ should be easy to build with alternative services\
+\'a0\'a0\'a0\'a0\'a0\'a0 eg renderer and input\
++ compact because it's storing deltas instead of duplicating tons of state that doesn't actually change\
+- have to maintain in-memory data structures\'a0\
+\'a0\'a0\'a0\'a0\'a0\'a0 could model this by making each micro-services a module\
+\'a0\'a0\'a0\'a0\'a0\'a0 each module then maintains it's own data structures\
+- would be a bit lame to update the UI after every visible event\
+\'a0\'a0\'a0\'a0\'a0\'a0 renderer could update state after every event\
+\'a0\'a0\'a0\'a0\'a0\'a0 but render just before player is ready\
+- likely tough to infer state just by looking at the events\
+- might be slow to replay (can have snapshots)\
+\
+architecture\
+	services are embedded within modules\
+	main owns services\
+	event creation\
+		services have to keep track of when they will be ready (use event durations)\
+		main has to call service that will be ready next with mutable self returning optional<event>\
+	on new event\
+		persist it\
+		call each service in turn with mutable self, event, and any services it requires\
+would be nice to have an opt-in telemetry service (every now and then send off the event stream and a version)		\
+questions\
+}

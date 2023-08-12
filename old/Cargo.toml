@@ -1,0 +1,34 @@
+[package]
+name = "one-thousand-deaths"
+version = "0.1.0"       # also Header::major_version and minor_version
+edition = "2021"
+default-run = "one-thousand-deaths"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+opt-level = 1           # this is noticeably faster and hopefully doesn't slow down compiles much
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
+
+[dev-dependencies]
+insta = {version = "1.26.0", features = ["yaml"]}       # snapshot testing
+
+[dependencies]
+arraystring = {version = "0.3.0", features = ["serde-traits"]}                  # copyable fixed width strings
+byteorder = "1.4.3"                                     # byte-swapping library
+chrono = "0.4.23"                                       # time library
+clap = {version = "4.1.4", features = ["deprecated", "derive", "wrap_help"]}
+fnv = "1.0.7"                                           # faster hashing for small keys
+log = "0.4.17"                                          # standard logging API
+once_cell = "1.17.0"                                    # safe/lazy initialization (eg of global data)
+postcard = {version = "1.0.2", features = ["alloc"]}    # binary backend for serde
+rand = {version = "0.8.5", features = ["small_rng"]}	# random numbers
+rand_distr = "0.4.3"    # normal (and other) distributions
+serde = {version = "1.0.152", features = ["derive"]}    # serialization framework
+serde_derive = "1.0.152"                                # serde derive macros
+simplelog = "0.12.0"                                    # logging facade
+termion = "2.0.1"                                       # cross-platform terminal library

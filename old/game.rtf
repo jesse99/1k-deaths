@@ -1,0 +1,188 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red2\green2\blue2;}
+{\*\expandedcolortbl;;\csgenericrgb\c784\c784\c784;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs72 \cf2 Design Goals\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0\fs48 \cf2 \'95\'a0Game play should be very different for different classes.\
+\'95 Different magic schools should be very different\
+	- focused on different outcomes, eg illusions or manipulating earth\
+	- probably have different orientations, eg offense, defense, utility \
+	- maybe can learn a second school (but not to a high level)\
+\'95\'a0In so far as possible users should always be able to avoid dying\
+	- might require zero mistakes (and running away)\
+	- all classes should have escape options (tho they may not always be available)\
+	- should be able to (roughly) gauge relative power levels\
+	- don\'92t allow users to do stuff that will auto-kill them, eg walk into deep vitr\
+	- may want a visual indication of very dangerous NPCs (auro? flicker? ominous music?)\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs72 \cf2 Game Overview\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0\fs48 \cf2 Goal is to defeat Rhulad and immerse sword in vitr sea \
+Most of the game is delving into warrens\
+   Vitr sea is deep into chaos\
+   Gods could maybe give quests into regions of the world\
+   Portals are at fixed locations?\
+   Chaos could be random\
+Speech at the start\
+   "Even tho you are a rank novice"\
+   "Gods have said you may be able to do a great deed by destroying the Crippled God's sword"\
+\
+Initially could immediately be sent to chaos\
+Sword could be on the ground\
+   Have a message when entering the level\
+Or Rhulad is wandering around \
+  Chance on killing him for a god to intercede\
+     But if not comes back stronger and crazier \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs72 \cf2 Branches (may need to think about this)\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\b0\fs48 \cf2 	entry branches\
+		Tennes (land)\
+				D\'92riss (stone)\
+		Ruse (sea)	\
+				Rashan (darkness)\
+		Serc (sky)\
+				Thyr (light)\
+		Telas (fire)\
+				Meanas (shadows and illusion)\
+	random branches (within above)\
+			Denul (healing)\
+			Mockra (mind)\
+			Chaos\
+			Barghast\
+			Abyss (traveling)\
+			Thelomen Tobalki?\
+	elder warrens\
+	    was Hood an elder warren?\
+		guarded by a powerful demon\
+		maybe these could be extra credit\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs72 \cf2 Items\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0\fs48 \cf2 Should there be a way to use an inventory/equipped item on a world item?\
+   Anything on vitr (destroy)\
+   Key on door(lock or unlock)\
+   Spike on door (wedge)\
+   Oil on floor (puddle)\
+   Munition on oil (wall of flame)\
+   Munition on wall (hole)\
+Maybe can use an item \
+  Where some require targets \
+   Could auto select nearest enemy \
+   Tab selects next enemy\
+   Arrows select cell\
+   If cell has multiple items effect is dependent on src\
+       Key would apply to first sane option\
+       Munition to all \
+       Bow to enemy\
+   Src would need a range \
+      Key has range 1\
+      Munitions short range (but may be timed)\
+      Sword normally 1\
+          Arrow into enrmy would be short cut\
+          \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs72 \cf2 class templates (not sure we quite want this)\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0\fs48 \cf2 fighter (path of the body)\
+	excellent at melee weapons and armor\
+	tough, strong, quick recovery\
+	pitiful at magic\
+	\
+mage (path of the mind)\
+	bad at weapons and armor\
+	can use more warrens at higher levels\
+	some warrens may have a backlash (shadows could sic an assasin on you)\
+	\
+hunter (path of summer)\
+	excellent at ranged weapons\
+	ok at melee and light armor\
+	attuned to nature\
+	can have a pet and become a divers\
+	\
+assasin (path of shadows)\
+	can hide in shadows, can sap, ambush\
+	quick, light armor, high dodge\
+	combat involves low damage coupled with bleed effects\
+	special attacks for disabling (knees/wrists/etc) and vital areas (eyes/throat)\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs72 \cf2 Effects\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs48 \cf2 corruption\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 	body part, eyes, mind\
+	usually three levels with the last being complete loss of function\
+	crippled god priests can cast this\
+		maybe also a chance on some spell misfires\
+		maybe also chaotic clouds\
+	\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b \cf2 blindess\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 	can happen via eyes corruption or temporary effect from a spell\
+	level 1: can't see as far, impairs ranged attacks\
+	level 2: can't see nearly as far, takes longer to use items in backpack, impairs doging/melee/ranged attacks\
+	level 3: can't see at all, can use items but item is randomly chosen, can't dodge\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b \cf2 \
+stun\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 	blunt force trauma, high level spell\
+	level 1: incapacitated for a second, can't dodge\
+	level 2: incapacitated for longer, can't dodge\
+	level 3: like level 2 but concussed effect persists, impairs dodging and spells\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b \cf2 \
+bleed\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 	slicing weapon, high level spell\
+	level 1: weak DOT\
+	level 2: medium DOT\
+	level 3: strong DOT (maybe include a blood loss effect?)\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b \cf2 \
+stab\
+	
+\f1\b0 big damage multiplier for sleeping NPCs\
+	maybe at high skill provides a good chance at ignoring armor
+\f0\b \
+\
+insanity\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf2 	can happen via mental corruption, dieing with Sword of Crippled God\
+	effects:\
+		mis-identify things\
+		see things that aren't there\
+		impaired spells	\
+	more levels of insanity => greater chance of effects kicking in\
+	\
+          }
