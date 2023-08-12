@@ -28,6 +28,12 @@ pub enum Character {
     Player,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Durability {
+    pub current: i32,
+    pub max: i32,
+}
+
 /// Objects that may be picked up and dropped off. These store:
 /// * A Portable value.
 /// * An InvItem value (if they can be equipped).
@@ -145,6 +151,12 @@ mod display_impl {
     }
 
     impl Display for Character {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{:?}", self)
+        }
+    }
+
+    impl Display for Durability {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "{:?}", self)
         }

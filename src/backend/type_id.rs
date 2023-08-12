@@ -1,4 +1,4 @@
-use super::{Character, InvItem, Message, Oid, Point, Portable, Terrain};
+use super::{objects::Durability, Character, InvItem, Message, Oid, Point, Portable, Terrain};
 
 /// Every type used as a VALUE in the [`Store`] must implement this to return a unique
 /// numeric ID for that type. (This is checked at runtime for debug builds).
@@ -45,5 +45,11 @@ impl TypeId for Portable {
 impl TypeId for Message {
     fn id(&self) -> u16 {
         6
+    }
+}
+
+impl TypeId for Durability {
+    fn id(&self) -> u16 {
+        7
     }
 }

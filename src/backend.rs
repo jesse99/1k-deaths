@@ -1,4 +1,6 @@
 //! Contains the game logic, i.e. everything but rendering, user input, and program initialization.
+mod actions;
+mod ai;
 mod level;
 mod objects;
 mod old_pov;
@@ -6,10 +8,18 @@ mod persistence;
 mod player_actions;
 mod pov;
 mod primitives;
+mod scheduler;
 mod store;
 mod store_from_str;
+mod time;
 mod type_id;
+use rand::prelude::*;
+use rand::rngs::SmallRng;
+use rand_distr::StandardNormal;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
+use std::fmt;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{Error, Write};
 
@@ -18,7 +28,11 @@ use level::*;
 use objects::*;
 use old_pov::*;
 use pov::*;
+use rand::RngCore;
+use scheduler::*;
+use std::cell::RefMut;
 use store::*;
+use time::*;
 use type_id::*;
 
 pub use objects::{Character, Message, MessageKind, Portable, Terrain};
@@ -76,18 +90,50 @@ pub enum Tile {
 /// External API for the game state. Largely acts as a wrapper around the Store.
 pub struct Game {
     level: Level,
+    scheduler: Scheduler,
     stream: Vec<Action>, // used to reconstruct games
     file: Option<File>,  // actions are perodically saved here
+    rng: RefCell<SmallRng>,
 }
 
 impl Game {
-    fn new(messages: Vec<Message>, _seed: u64, file: Option<File>) -> Game {
+    fn new(messages: Vec<Message>, seed: u64, file: Option<File>) -> Game {
         let level = Level::from(include_str!("backend/maps/start.txt"));
+        let scheduler = Scheduler::new();
         let stream = Vec::new();
-        let mut game = Game { stream, file, level };
+
+        // TODO: SmallRng is not guaranteed to be portable so results may
+        // not be reproducible between platforms.
+        let rng = RefCell::new(SmallRng::seed_from_u64(seed));
+
+        let mut game = Game {
+            stream,
+            scheduler,
+            file,
+            level,
+            rng,
+        };
         for mesg in messages {
             game.add_message(mesg);
         }
+        OldPoV::update(&mut game);
+        PoV::refresh(&mut game.level);
+        game
+    }
+
+    #[cfg(test)]
+    pub fn test_game(map: &str) -> Game {
+        let level = Level::from(map);
+        let scheduler = Scheduler::new();
+        let stream = Vec::new();
+        let rng = RefCell::new(SmallRng::seed_from_u64(1));
+        let mut game = Game {
+            stream,
+            scheduler,
+            file: None,
+            level,
+            rng,
+        };
         OldPoV::update(&mut game);
         PoV::refresh(&mut game.level);
         game
@@ -238,6 +284,11 @@ impl Game {
         // self.scheduler.dump(writer, self)    // TODO: want an equivalent for this
     }
 
+    // The RNG doesn't directly affect the game state so we use interior mutability for it.
+    fn rng(&self) -> RefMut<'_, dyn RngCore> {
+        self.rng.borrow_mut()
+    }
+
     fn save_actions(&mut self) {
         if let Some(f) = &mut self.file {
             if let Err(err) = persistence::append_game(f, &self.stream) {
@@ -259,7 +310,7 @@ impl Game {
             Action::Examine { loc: _, wizard: _ } => todo!(),
             Action::Move { dx, dy } => {
                 OldPoV::update(self); // TODO: should only do these if something happened
-                self.level.bump_player(dx, dy);
+                self.bump_player(dx, dy);
                 PoV::refresh(&mut self.level);
             }
         }
@@ -272,8 +323,33 @@ impl Game {
     }
 }
 
+impl Display for Game {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.level)
+    }
+}
+
 impl Drop for Game {
     fn drop(&mut self) {
         self.save_actions();
     }
+}
+
+/// Returns a number with the standard normal distribution centered on x where the
+/// values are all within +/- the given percentage.
+fn rand_normal64(x: i64, percent: i32, rng: &RefCell<SmallRng>) -> i64 {
+    assert!(percent > 0);
+    assert!(percent <= 100);
+
+    // Could use a generic for this but the type bounds get pretty gnarly.
+    let rng = &mut *rng.borrow_mut();
+    let scaling: f64 = rng.sample(StandardNormal); // ~95% are in -2..2
+    let scaling = if scaling >= -2.0 && scaling <= 2.0 {
+        scaling / 2.0 // all are in -1..1
+    } else {
+        0.0 // the few outliers are mapped to the mode
+    };
+    let scaling = scaling * (percent as f64) / 100.0; // all are in +/- percent
+    let delta = (x as f64) * scaling; // all are in +/- percent of x
+    x + (delta as i64)
 }

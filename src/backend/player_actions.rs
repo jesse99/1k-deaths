@@ -1,46 +1,22 @@
 //! Actions that the player can perform.
 use super::*;
 
-impl Level {
+impl Game {
     pub fn bump_player(&mut self, dx: i32, dy: i32) {
-        let old_loc = self.expect_location(PLAYER_ID);
+        let old_loc = self.level.expect_location(PLAYER_ID);
         let new_loc = Point::new(old_loc.x + dx, old_loc.y + dy);
-        let terrain = self.get_terrain(new_loc);
+        let terrain = self.level.get_terrain(new_loc);
         match player_can_traverse(terrain) {
             None => {
-                self.move_char(PLAYER_ID, new_loc);
-                self.player_entered(terrain);
-                self.pov.dirty();
+                self.do_move(PLAYER_ID, old_loc, new_loc);
             }
             Some(_) if terrain == Terrain::ClosedDoor => {
-                self.set_terrain(new_loc, Terrain::OpenDoor);
-                self.move_char(PLAYER_ID, new_loc);
-                self.pov.dirty();
+                self.do_open_door(PLAYER_ID, old_loc, new_loc);
             }
-            Some(mesg) => self.append_message(Message {
+            Some(mesg) => self.add_message(Message {
                 kind: MessageKind::Normal,
                 text: mesg.to_string(),
             }),
-        }
-    }
-
-    fn player_entered(&mut self, terrain: Terrain) {
-        let text = match terrain {
-            Terrain::ClosedDoor => None,
-            Terrain::DeepWater => None,
-            Terrain::Dirt => None,
-            Terrain::OpenDoor => None,
-            Terrain::Rubble => Some("You pick your way through the rubble."),
-            Terrain::ShallowWater => Some("You splash through the water."),
-            Terrain::Tree => None,
-            Terrain::Vitr => None,
-            Terrain::Wall => None,
-        };
-        if let Some(text) = text {
-            self.append_message(Message {
-                kind: MessageKind::Normal,
-                text: text.to_string(),
-            });
         }
     }
 }
@@ -67,71 +43,71 @@ mod tests {
 
     #[test]
     fn test_from_str() {
-        let mut level = Level::from(
+        let mut game = Game::test_game(
             "###\n\
              #@#\n\
              ###",
         );
-        PoV::refresh(&mut level);
-        insta::assert_display_snapshot!(level);
+        PoV::refresh(&mut game.level);
+        insta::assert_display_snapshot!(game);
     }
 
     #[test]
     fn move_into_wall() {
-        let mut level = Level::from(
+        let mut game = Game::test_game(
             "####\n\
              #@ #\n\
              ####",
         );
-        level.bump_player(1, 0);
-        level.bump_player(1, 0);
-        PoV::refresh(&mut level);
-        insta::assert_display_snapshot!(level);
+        game.bump_player(1, 0);
+        game.bump_player(1, 0);
+        PoV::refresh(&mut game.level);
+        insta::assert_display_snapshot!(game);
     }
 
     #[test]
     fn move_into_water() {
-        let mut level = Level::from(
+        let mut game = Game::test_game(
             "####\n\
              #@~W\n\
              ####",
         );
-        level.bump_player(1, 0);
-        level.bump_player(1, 0);
-        PoV::refresh(&mut level);
-        insta::assert_display_snapshot!(level);
+        game.bump_player(1, 0);
+        game.bump_player(1, 0);
+        PoV::refresh(&mut game.level);
+        insta::assert_display_snapshot!(game);
     }
 
     // #[test]
     // fn move_into_door() {
-    //     let mut level = Level::from(
+    //     let mut game = Game::test_game(
     //         "####\n\
     //          #@+#\n\
     //          ####",
     //     );
-    //     level.bump_player(1, 0);
-    //     insta::assert_display_snapshot!(level);
+    // PoV::refresh(&mut game.level);
+    // insta::assert_display_snapshot!(game);
     // }
 
     // #[test]
     // fn initial() {
-    //     let level = Level::from(
+    //     let game = Game::test_game(
     //         "####\n\
     //          #@+#\n\
     //          ####",
     //     );
-    //     insta::assert_display_snapshot!(level);
+    //     insta::assert_display_snapshot!(game);
     // }
 
     // #[test]
     // fn test_round_trip() {
-    //     let old_level = Level::from(
+    //     let old_game = Game::test_game(
     //         "###\n\
     //          #@#\n\
     //          ###",
     //     );
-    //     let bytes: Vec<u8> = postcard::to_allocvec(&old_level).unwrap();
-    //     let level: Store3 = from_bytes(bytes.deref()).unwrap();
-    //     insta::assert_display_snapshot!(level);
+    //     let bytes: Vec<u8> = postcard::to_allocvec(&game).unwrap();
+    //     let game: Game = from_bytes(bytes.deref()).unwrap();
+    //     insta::assert_display_snapshot!(game);
     // }
 }
