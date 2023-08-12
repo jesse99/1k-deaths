@@ -1,10 +1,10 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2707
+{\rtf1\ansi\ansicpg1252\cocoartf2709
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Oblique;
 \f3\fswiss\fcharset0 Helvetica-Bold;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red254\green228\blue200;\red2\green2\blue2;
-}
+\red60\green60\blue59;\red95\green124\blue3;\red130\green130\blue130;\red240\green240\blue240;}
 {\*\expandedcolortbl;;\csgray\c0;\cssrgb\c100000\c91449\c82330;\csgenericrgb\c784\c784\c784;
-}
+\cssrgb\c30196\c30196\c29804;\cssrgb\c44314\c54902\c0;\cssrgb\c58039\c58039\c58039;\cssrgb\c95294\c95294\c95294;}
 \deftab720
 \pard\pardeftab720\sl300\partightenfactor0
 
@@ -37,24 +37,24 @@ other rogue-likes\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 \cf4 enum ObjectTag\
 	Range(i32)          
-\f2\i ranged weapon, spell, etc
-\f1\i0 \
+\f2\i \cf4 ranged weapon, spell, etc
+\f1\i0 \cf4 \
 	Brand(element)\
 	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\i \cf4 	
-\f1\i0 Binding(String) 
-\f2\i used to associate objects, eg a key and a door
-\f1\i0 	\
+\f1\i0 \cf4 Binding(String) 
+\f2\i \cf4 used to associate objects, eg a key and a door
+\f1\i0 \cf4 	\
 	Fountain(type)   
-\f2\i water or blood\
+\f2\i \cf4 water or blood\
 	
-\f1\i0 Key                    
-\f2\i keys should have a binding\
+\f1\i0 \cf4 Key                    
+\f2\i \cf4 keys should have a binding\
 	
-\f1\i0 Chest(contents)
-\f2\i  has a binding if a key is required\
+\f1\i0 \cf4 Chest(contents)
+\f2\i \cf4  has a binding if a key is required\
 	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
@@ -72,7 +72,76 @@ other rogue-likes\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\b \cf4 \
-Step 6 - It\'92s Alive! Alive!
+\pard\pardeftab720\partightenfactor0
+
+\f0\b0\fs32 \cf5 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec5 \
+[dev-dependencies]\
+insta = \{version = \cf6 \strokec6 "1.26.0"\cf5 \strokec5 , features = [\cf6 \strokec6 "yaml"\cf5 \strokec5 ]\}       \cf7 \strokec7 # snapshot testing\cf5 \strokec5 \
+\
+[dependencies]\
+arraystring = \{version = \cf6 \strokec6 "0.3.0"\cf5 \strokec5 , features = [\cf6 \strokec6 "serde-traits"\cf5 \strokec5 ]\}                  \cf7 \strokec7 # copyable fixed width strings\cf5 \strokec5 \
+byteorder = \cf6 \strokec6 "1.4.3"\cf5 \strokec5                                      \cf7 \strokec7 # byte-swapping library\cf5 \strokec5 \
+chrono = \cf6 \strokec6 "0.4.23"\cf5 \strokec5                                        \cf7 \strokec7 # time library\cf5 \strokec5 \
+clap = \{version = \cf6 \strokec6 "4.1.4"\cf5 \strokec5 , features = [\cf6 \strokec6 "deprecated"\cf5 \strokec5 , \cf6 \strokec6 "derive"\cf5 \strokec5 , \cf6 \strokec6 "wrap_help"\cf5 \strokec5 ]\}\
+fnv = \cf6 \strokec6 "1.0.7"\cf5 \strokec5                                            \cf7 \strokec7 # faster hashing for small keys\cf5 \strokec5 \
+log = \cf6 \strokec6 "0.4.17"\cf5 \strokec5                                           \cf7 \strokec7 # standard logging API\cf5 \strokec5 \
+once_cell = \cf6 \strokec6 "1.17.0"\cf5 \strokec5                                     \cf7 \strokec7 # safe/lazy initialization (eg of global data)\cf5 \strokec5 \
+postcard = \{version = \cf6 \strokec6 "1.0.2"\cf5 \strokec5 , features = [\cf6 \strokec6 "alloc"\cf5 \strokec5 ]\}    \cf7 \strokec7 # binary backend for serde\cf5 \strokec5 \
+rand = \{version = \cf6 \strokec6 "0.8.5"\cf5 \strokec5 , features = [\cf6 \strokec6 "small_rng"\cf5 \strokec5 ]\}    \cf7 \strokec7 # random numbers\cf5 \strokec5 \
+rand_distr = \cf6 \strokec6 "0.4.3"\cf5 \strokec5     \cf7 \strokec7 # normal (and other) distributions\cf5 \strokec5 \
+serde = \{version = \cf6 \strokec6 "1.0.152"\cf5 \strokec5 , features = [\cf6 \strokec6 "derive"\cf5 \strokec5 ]\}    \cf7 \strokec7 # serialization framework\cf5 \strokec5 \
+serde_derive = \cf6 \strokec6 "1.0.152"\cf5 \strokec5                                 \cf7 \strokec7 # serde derive macros\cf5 \strokec5 \
+simplelog = \cf6 \strokec6 "0.12.0"\cf5 \strokec5                                     \cf7 \strokec7 # logging facade\cf5 \strokec5 \
+termion = \cf6 \strokec6 "2.0.1"\cf5 \strokec5                                        \cf7 \strokec7 # cross-platform terminal libra\cb8 ry\cf5 \cb1 \strokec5 \
+\
+\pard\pardeftab720\sl420\partightenfactor0
+
+\f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 2 Hello world
+\f1\b0 \
+	- use cargo workspace to write client and server\
+	- get them talking to each other using ipmpsc\
+	- document architecture\
+		` overall structure\
+		` service summary\
+		` mention advantages/disadvantages\
+		` why not http?\
+
+\f3\b 3 It\'92s a boy!
+\f1\b0 \
+	- add state and tester services\
+	- support basic terrain and player movement\
+	- add support for snapshot testing\
+	- might be able to use test first design\
+	- add support for other services (note that tester should go trhough logic)\
+	- add logging\
+
+\f3\b 4 the map
+\f1\b0 \
+	- add ui service\
+	- support scrolling in the ui\
+	- support moving the player using keys\
+	- add doors\
+
+\f3\b 5 saving/loading
+\f1\b0 \
+	- mutator events should be serialized to a special log using json\
+	- load would replay events\
+	- probably want to allow the ui to have some control over this\
+	- would be great to have a roll back option, maybe in debugger service?\
+* Get persistence working\
+	- change Entity to a string\
+	- see if we can use newtype and from/into attributes\
+	- will need to do some custom serialization for Game\
+		slog-serde?\
+	- make sure we aren\'92t using write! for errors\
+	- Logger has a list method, can use that list to re-create a Logger\
+	- implements KV which has a serialize method\
+	- not sure about the reverse\
+	- could just keep track of key/values ourself\'85\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f3\b \cf4 Step 6 - It\'92s Alive! Alive!
 \f1\b0 \
 \'95\'a0Implement NPCs (and time)\
 	- add ai\

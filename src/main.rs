@@ -1,2 +1,3 @@
-blah
-h
+fn main() {
+    println!("Hello World!");
+}
