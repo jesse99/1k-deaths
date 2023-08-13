@@ -4,7 +4,7 @@ use std::fmt::{self, Formatter};
 /// Name of a channel to use to communicate between services. Typically a service will
 /// create a receiver and then send the channel name to other services so that they can
 /// create senders.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ChannelName {
     name: String,
 }
@@ -12,6 +12,10 @@ pub struct ChannelName {
 impl ChannelName {
     pub fn new(name: &str) -> ChannelName {
         ChannelName { name: name.to_string() }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.name
     }
 
     // TODO: probably want methods to create tx and rx endpoints
