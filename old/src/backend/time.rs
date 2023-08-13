@@ -47,7 +47,7 @@ impl Time {
 }
 
 /// In general this only should be used for "extra" time. For the most part use the constants
-/// above (e.g. CARDINAL_MOVE).
+/// above (e.g. CARDINAL_MOVE). 
 pub fn secs(s: i64) -> Time {
     Time { t: s * SECS_TO_TIME }
 }
