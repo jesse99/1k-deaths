@@ -27,7 +27,8 @@ pub struct Cell {
 /// These take the name of a channel to send a [`StateResponse`] to.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateQueries {
-    // TODO: these should go into a module
+    // TODO: these should go into a module, maybe under a messages module
+    // TODO: invaritant service will need a get all state (to ensure atomicity)
     PlayerView(ChannelName),
 }
 
@@ -50,6 +51,7 @@ pub enum StateMessages {
 /// Messages that the state service sends to other services.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateResponse {
+    // TODO: ready to move should include all that are ready
     Map(HashMap<Point, Cell>),
     Updated(EditCount),
 }

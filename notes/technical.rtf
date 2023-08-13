@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2580
+{\rtf1\ansi\ansicpg1252\cocoartf2709
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Oblique;
 }
 {\colortbl;\red255\green255\blue255;\red2\green2\blue2;\red2\green2\blue2;}
@@ -6,9 +6,8 @@
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f0\b\fs48 \cf2 Goals\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf2 \'95\'a0Strong separation between backend (game logic) and front end (UI). 
+\f1\b0 \'95\'a0Sharp system boundaries with well defined APIs. 
 \f2\i This should result in a cleaner design and will make testing the trickiest bits easier.\
 
 \f1\i0 \'95 Games should support replay and live rollback. 
@@ -24,12 +23,10 @@
 \f2\i This side steps complexities involved in persistence as well as sticky isses like when are two floating point numbers equal. I think that this will mainly affect time which can be stored as integral milliseconds.
 \f1\i0 \
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f0\b \cf2 Non-Goals\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\f0\b Non-Goals\
 
-\f1\b0 \cf2 \'95\'a0Support for creating different UIs. 
+\f1\b0 \'95\'a0Support for creating different UIs. 
 \f2\i Doesn\'92t seem much reason to have this if there\'92s a good web front end (though might be nice to support different icon sets or themes). Also dicy to support different capabilities (e.g. terminal will have much inferior color support to compared to html).\
 
 \f1\i0 \'95 A backend flexible enough to create a different game. 
@@ -39,40 +36,68 @@
 \pard\pardeftab720\partightenfactor0
 
 \f0\b\fs58 \cf3 \expnd0\expndtw0\kerning0
-event sourcing
+Design
 \f1\b0\fs48 \
-\'a0\'a0\'a0\'a0\'a0\'a0 store facts\
-\'a0\'a0\'a0\'a0\'a0\'a0 state is a transient derivative of the facts\
-\'a0\'a0\'a0\'a0\'a0\'a0 facts are immutable\
-\'a0\'a0\'a0\'a0\'a0\'a0 typically micro-services would listen for events they care about\
-\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 renderer would listen for events that affect visuals and update display\
-\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0 scheduler would keep track of timed actions and write an event to notify services when they are ready\
-\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\
-+ easy to audit\
-+ easy to rollback\
-+ supports replay\
-+ works well with logic changes (eg can change the chance to hit but that won't affect replay because it's storing the facts)\
-+ should be easy to build with alternative services\
-\'a0\'a0\'a0\'a0\'a0\'a0 eg renderer and input\
-+ compact because it's storing deltas instead of duplicating tons of state that doesn't actually change\
-- have to maintain in-memory data structures\'a0\
-\'a0\'a0\'a0\'a0\'a0\'a0 could model this by making each micro-services a module\
-\'a0\'a0\'a0\'a0\'a0\'a0 each module then maintains it's own data structures\
-- would be a bit lame to update the UI after every visible event\
-\'a0\'a0\'a0\'a0\'a0\'a0 renderer could update state after every event\
-\'a0\'a0\'a0\'a0\'a0\'a0 but render just before player is ready\
-- likely tough to infer state just by looking at the events\
-- might be slow to replay (can have snapshots)\
+Micro-services inspired design. Components are separated into distinct processes that use typed channels to communicate. Note that these are simple processes and don\'92t rely on containers. The services are:\
 \
-architecture\
-	services are embedded within modules\
-	main owns services\
-	event creation\
-		services have to keep track of when they will be ready (use event durations)\
-		main has to call service that will be ready next with mutable self returning optional<event>\
-	on new event\
-		persist it\
-		call each service in turn with mutable self, event, and any services it requires\
-would be nice to have an opt-in telemetry service (every now and then send off the event stream and a version)		\
-questions\
+\ul State\ulnone \
+\'95\'a0Contains all the game state.\
+\'95\'a0No real logic other than what is required for acceptable performance (e.g. LOS algorithms).\
+\'95 Supports query messages, e.g. what is visible near a character.\
+\'95\'a0Supports mutator messages, e.g. move character to position X.\
+\'95\'a0Mutator messages are logged using json to allow for replay and rollback.\
+\
+\ul Logic\ulnone \
+\'95\'a0Has all the game logic, eg what happens when a character bumps into another object.\
+\'95\'a0Also has NPC AI. Might want to move this into its own service.\
+\'95\'a0Handles all validation.\
+\'95\'a0Should be the only source of non-determinism.\
+\
+\ul UI\
+\ulnone \'95\'a0Initially terminal based, later could be web page.\
+\'95\'a0Takes in player input and sends associated message to Logic.\
+\'95\'a0Directly queries State when rendering.\
+\
+\ul Watchdog\ulnone \
+\'95\'a0Restarts or kills processes that have hung.\
+\'95\'a0Maybe decision is made with a per-service config option.\
+\
+\ul Game\
+\ulnone \'95\'a0Coordinates launching services.\
+\'95 Also configuring?\
+\
+\ul Invariant\
+\ulnone * Verifies State is legit.\
+\'95 If not logs and kills itself (watchdog will notice).\
+\
+\ul Tester\ulnone \
+\'95\'a0Used with State, Logic, and Invariant.\
+\'95\'a0Modifies state using Logic and uses snapshot testing to verify all is as expected.\
+\
+\ul Debugger\
+\ulnone \'95\'a0Command line debugger.\
+\'95\'a0Should support both viewing state and modifying state.\
+\'95\'a0Later could add a web based debugger.\
+\
+
+\f0\b Advantages & Disadvantages\
+
+\f1\b0 + clean with nice separation of concerns\
++ easy to have different/optional services , e.g. Ui, fake player\
++ replay should be straightforward \
++ should be able to support rollback \
++ can use different languages with different services\
++ hot restarts make tweaks easier \
++ easier testing?\
++ easier to change the internals of a service because they are so well encapsulated\
++ easier experimentation with new stuff, eg visual debugger or player aids\
++ potentially concurrency, eg invariant or maybe logic could make plans while player moves \
++ maybe basis for multiplayer \
+- debugging might be harder \
+- profiling is more complex\
+- security might be harder \
+\
+
+\f0\b provide an example of message flow
+\f1\b0 \
 }
