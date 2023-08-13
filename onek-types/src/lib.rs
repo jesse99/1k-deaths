@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 // use std::fmt::Display;
 
@@ -11,10 +12,12 @@ pub use edit_count::EditCount;
 pub use oid::Oid;
 pub use point::Point;
 
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Terrain {
     Dirt,
     Wall,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Cell {
     pub terrain: Terrain,
     pub identifiers: Vec<Oid>,
@@ -22,18 +25,21 @@ pub struct Cell {
 }
 
 /// These take the name of a channel to send a [`StateResponse`] to.
+#[derive(Debug, Serialize, Deserialize)]
 pub enum StateQueries {
     // TODO: these should go into a module
     PlayerView(ChannelName),
 }
 
-/// these update internal state and then send a StateResponse.Updated message to services
+/// These update internal state and then send a StateResponse.Updated message to services
 /// that used RegisterForUpdate.
+#[derive(Debug, Serialize, Deserialize)]
 pub enum StateMutators {
     MovePlayer(Point),
 }
 
 /// Messages that the state service receives.
+#[derive(Debug, Serialize, Deserialize)]
 pub enum StateMessages {
     Mutate(StateMutators),
     Query(StateQueries),
@@ -42,6 +48,7 @@ pub enum StateMessages {
 }
 
 /// Messages that the state service sends to other services.
+#[derive(Debug, Serialize, Deserialize)]
 pub enum StateResponse {
     Map(HashMap<Point, Cell>),
     Updated(EditCount),

@@ -1,21 +1,18 @@
 use ipmpsc::{Sender, SharedRingBuffer};
-use std::io::{self, BufRead};
+use onek_types::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Receiver mist have already created this.
     // TODO: do a better job with errors, should log and return a decent error
     let tx = Sender::new(SharedRingBuffer::open("/tmp/tester-state-buffer")?);
 
-    let mut buffer = String::new();
-    let stdin = io::stdin();
-    let mut handle = stdin.lock();
+    let mesg = StateMessages::Mutate(StateMutators::MovePlayer(Point::new(1, 1)));
+    tx.send(&mesg)?;
 
-    println!("Ready!  Enter some lines of text to send them to the receiver.");
+    let mesg = StateMessages::Mutate(StateMutators::MovePlayer(Point::new(2, 1)));
+    tx.send(&mesg)?;
 
-    while handle.read_line(&mut buffer)? > 0 {
-        tx.send(&buffer)?;
-        buffer.clear();
-    }
+    let mesg = StateMessages::Mutate(StateMutators::MovePlayer(Point::new(3, 1)));
+    tx.send(&mesg)?;
 
     Ok(())
 }

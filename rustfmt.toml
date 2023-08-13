@@ -1,2 +1,4 @@
 # See https://rust-lang.github.io/rustfmt/?version=v1.4.38
+array_width = 100
 max_width = 120
+ignore = ["**/Cargo.toml"] # this isn't working, still requires nightly?

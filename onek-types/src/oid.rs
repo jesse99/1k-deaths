@@ -1,10 +1,11 @@
 use arraystring::{typenum::U16, ArrayString};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 pub type TagStr = ArrayString<U16>;
 
 /// Used to uniquely identify objects.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Oid {
     // Used by Display so that we get more informative logging.
     #[cfg(debug_assertions)]
@@ -49,7 +50,9 @@ impl fmt::Display for Oid {
         } else {
             match self.value {
                 0 => write!(f, "player#{}", self.value),
-                1 => write!(f, "default cell#{}", self.value),
+                1 => {
+                    write!(f, "default cell#{}", self.value)
+                }
                 2 => write!(f, "game#{}", self.value),
                 _ => panic!("excpected a tag"),
             }

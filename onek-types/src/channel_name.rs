@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 /// Name of a channel to use to communicate between services. Typically a service will
 /// create a receiver and then send the channel name to other services so that they can
 /// create senders.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ChannelName {
     name: String,
 }

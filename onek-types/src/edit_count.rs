@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 /// Monotonically increasing number that is incremented each time state changes.
-#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct EditCount {
     count: u64,
 }
