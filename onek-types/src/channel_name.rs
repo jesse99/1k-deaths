@@ -17,9 +17,6 @@ impl ChannelName {
     pub fn as_str(&self) -> &str {
         &self.name
     }
-
-    // TODO: probably want methods to create tx and rx endpoints
-    // TODO: or maybe just a method to create tx endpoint
 }
 
 impl fmt::Display for ChannelName {
