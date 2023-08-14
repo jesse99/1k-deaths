@@ -1,9 +1,58 @@
 #[cfg(test)]
 use ipmpsc::{Receiver, Sender, SharedRingBuffer};
-#[cfg(test)]
 use onek_types::*;
 #[cfg(test)]
 use std::time::Duration;
+
+trait ToSnapshot {
+    fn to_snapshot(&self, tx: &ipmpsc::Sender) -> String;
+}
+
+fn terrain_to_char(terrain: Terrain) -> char {
+    match terrain {
+        Terrain::Dirt => ' ',
+        Terrain::Wall => '#',
+    }
+}
+
+impl ToSnapshot for EditCount {
+    fn to_snapshot(&self, _tx: &ipmpsc::Sender) -> String {
+        format!("edit {self}")
+    }
+}
+
+impl ToSnapshot for StateResponse {
+    fn to_snapshot(&self, tx: &ipmpsc::Sender) -> String {
+        match self {
+            StateResponse::Map(map) => map.to_snapshot(tx),
+            StateResponse::Updated(count) => count.to_snapshot(tx),
+        }
+    }
+}
+
+impl ToSnapshot for View {
+    fn to_snapshot(&self, _tx: &ipmpsc::Sender) -> String {
+        let mut result = String::with_capacity(200);
+        for y in self.top_left.y..=self.top_left.y + self.size().height {
+            for x in self.top_left.x..=self.top_left.x + self.size().width {
+                let loc = Point::new(x, y);
+                match self.cells.get(&loc) {
+                    Some(cell) => {
+                        if cell.character.unwrap_or(NULL_ID) == PLAYER_ID {
+                            result.push('@');
+                        } else {
+                            result.push(terrain_to_char(cell.terrain));
+                        }
+                    }
+                    None => result.push(' '),
+                }
+            }
+            result.push('\n');
+        }
+        // At some point will need to use tx to include details about objects.
+        result
+    }
+}
 
 #[cfg(test)]
 fn state_sender() -> ipmpsc::Sender {
@@ -63,9 +112,9 @@ fn test_from_str() {
 
     let (rx_name, rx) = state_receiver(&tx);
     let state = get_player_view(&tx, &rx, &rx_name);
-    insta::assert_display_snapshot!(state);
+    insta::assert_display_snapshot!(state.to_snapshot(&tx));
 }
 
 fn main() {
-    println!("Run this as a unit test");
+    println!("Run this as a cargo insta test");
 }

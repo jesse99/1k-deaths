@@ -2,6 +2,10 @@ use arraystring::{typenum::U16, ArrayString};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+pub static NULL_ID: Oid = Oid::without_tag(0);
+pub static PLAYER_ID: Oid = Oid::without_tag(1);
+pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(2);
+
 pub type TagStr = ArrayString<U16>;
 
 /// Used to uniquely identify objects.

@@ -6,22 +6,72 @@ mod channel_name;
 mod edit_count;
 mod oid;
 mod point;
+mod size;
 
 pub use channel_name::ChannelName;
 pub use edit_count::EditCount;
-pub use oid::Oid;
+pub use oid::*;
 pub use point::Point;
+pub use size::Size;
 
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Terrain {
     Dirt,
     Wall,
 }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Cell {
     pub terrain: Terrain,
-    pub identifiers: Vec<Oid>,
+    pub objects: Vec<Oid>,
     pub character: Option<Oid>,
+}
+
+/// Represents a portion of a level. Typically cells visible to a character.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct View {
+    pub cells: HashMap<Point, Cell>,
+
+    /// top_left and bottom_right are the smallest rectangle enclosing all the locations.
+    pub top_left: Point,
+    pub bottom_right: Point,
+}
+
+impl View {
+    pub fn new() -> View {
+        View {
+            cells: HashMap::new(),
+            top_left: Point::origin(),
+            bottom_right: Point::origin(),
+        }
+    }
+
+    pub fn insert(&mut self, loc: Point, cell: Cell) {
+        if self.cells.is_empty() {
+            self.top_left = loc;
+            self.bottom_right = loc;
+        } else {
+            if loc.x < self.top_left.x {
+                self.top_left.x = loc.x;
+            }
+            if loc.y < self.top_left.y {
+                self.top_left.y = loc.y;
+            }
+
+            if loc.x > self.bottom_right.x {
+                self.bottom_right.x = loc.x;
+            }
+            if loc.y > self.bottom_right.y {
+                self.bottom_right.y = loc.y;
+            }
+        }
+
+        self.cells.insert(loc, cell);
+    }
+
+    pub fn size(&self) -> Size {
+        self.bottom_right - self.top_left
+    }
 }
 
 /// These take the name of a channel to send a [`StateResponse`] to.
@@ -53,8 +103,8 @@ pub enum StateMessages {
 /// Messages that the state service sends to other services.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateResponse {
-    // TODO: ready to move should include all that are ready
-    Map(HashMap<Point, Cell>),
+    // TODO: ready to move should include all objects that are ready
+    Map(View),
     Updated(EditCount),
 }
 
@@ -71,5 +121,37 @@ mod display_impl {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{:?}", self)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_view() {
+        #[rustfmt::skip]
+        let mut view = View::new();
+        let cell = Cell {
+            terrain: Terrain::Dirt,
+            objects: Vec::new(),
+            character: None,
+        };
+
+        view.insert(Point::new(10, 10), cell.clone());
+        assert_eq!(view.top_left, Point::new(10, 10));
+        assert_eq!(view.bottom_right, Point::new(10, 10));
+
+        view.insert(Point::new(15, 15), cell.clone());
+        assert_eq!(view.top_left, Point::new(10, 10));
+        assert_eq!(view.bottom_right, Point::new(15, 15));
+
+        view.insert(Point::new(5, 12), cell.clone());
+        assert_eq!(view.top_left, Point::new(5, 10));
+        assert_eq!(view.bottom_right, Point::new(15, 15));
+
+        view.insert(Point::new(12, 20), cell.clone());
+        assert_eq!(view.top_left, Point::new(5, 10));
+        assert_eq!(view.bottom_right, Point::new(15, 20));
     }
 }

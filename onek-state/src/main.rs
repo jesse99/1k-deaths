@@ -2,9 +2,6 @@ use ipmpsc::{Receiver, Sender, SharedRingBuffer};
 use onek_types::*;
 use std::collections::HashMap;
 
-pub static PLAYER_ID: Oid = Oid::without_tag(0);
-pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(1);
-
 struct Game {
     terrain: HashMap<Point, Terrain>,
     player_loc: Point,
@@ -69,8 +66,27 @@ fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     }
 }
 
-fn handle_player_view(game: &mut Game, name: ChannelName) {
-    let view = HashMap::new(); // TODO: need to populate this
+fn handle_player_view(game: &Game, name: ChannelName) {
+    let mut view = View::new();
+
+    for (&loc, &terrain) in game.terrain.iter() {
+        // TODO: need to handle LOS
+        let cell = if loc == game.player_loc {
+            Cell {
+                terrain,
+                objects: Vec::new(),
+                character: Some(PLAYER_ID),
+            }
+        } else {
+            Cell {
+                terrain,
+                objects: Vec::new(),
+                character: None,
+            }
+        };
+        view.insert(loc, cell);
+    }
+
     match game.reply_senders.get(&name) {
         Some(tx) => {
             let mesg = StateResponse::Map(view);
@@ -82,7 +98,7 @@ fn handle_player_view(game: &mut Game, name: ChannelName) {
 }
 
 // TODO: should have modules for queries and mutators
-fn handle_query(game: &mut Game, mesg: StateQueries) {
+fn handle_query(game: &Game, mesg: StateQueries) {
     match mesg {
         StateQueries::PlayerView(channel_name) => handle_player_view(game, channel_name),
     }
