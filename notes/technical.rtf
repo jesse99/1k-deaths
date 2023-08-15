@@ -69,10 +69,7 @@ Micro-services inspired design. Components are separated into distinct processes
 \ul Invariant\
 \ulnone * Verifies State is legit.\
 \'95 If not logs and kills itself (watchdog will notice).\
-\
-\ul Tester\ulnone \
-\'95\'a0Used with State, Logic, and Invariant.\
-\'95\'a0Modifies state using Logic and uses snapshot testing to verify all is as expected.\
+\'95\'a0Also contains snapshot tests of Logic and State services.\
 \
 \ul Debugger\
 \ulnone \'95\'a0Command line debugger.\

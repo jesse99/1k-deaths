@@ -144,5 +144,5 @@ fn test_from_str() {
 }
 
 fn main() {
-    println!("Run this as a cargo insta test");
+    println!("TODO: validate State");
 }

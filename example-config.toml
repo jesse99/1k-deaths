@@ -5,9 +5,8 @@
 
 [default]
 log_level = "info"   # trace, debug, info, warn, error, or off
-log_location= "off"  # log file and line number at and above the specified log level
+log_location = "off" # log file and line number at and above the specified log level
 
 [onek-state]
-log_level = "debug" 
+log_level = "debug"
 log_path = "state.log" # path to log file
-

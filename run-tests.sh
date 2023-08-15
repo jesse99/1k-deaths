@@ -7,7 +7,7 @@ run_state() {
 
 cargo build &&
 run_state && sleep 1 &&
-cargo test -p onek-types &&
-cargo insta test --review -p onek-tester
+cargo test -p onek-state &&
+cargo insta test --review -p onek-invariant
 killall -q onek-state
 
