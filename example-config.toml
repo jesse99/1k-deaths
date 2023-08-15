@@ -1,0 +1,13 @@
+# Used to configure the services.
+# Settings under default apply to all the services but may be over-ridden
+# in service sections.
+# Services will look for a file called "config.toml" in the working directory.
+
+[default]
+log_level = "info"   # trace, debug, info, warn, error, or off
+log_location= "off"  # log file and line number at and above the specified log level
+
+[onek-state]
+log_level = "debug" 
+log_path = "state.log" # path to log file
+

@@ -29,6 +29,14 @@ fn handle_mesg(game: &mut Game, mesg: StateMessages) {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = Config::load("onek-state");
+
+    let err = config.error();
+    if err.is_some() {
+        println!("error loading config: {}", err.as_ref().unwrap()); // TODO: log instead
+    }
+    println!("log level is {}", config.str_value("log_level", "some default value"));
+
     let map_file = "/tmp/state-sink";
     let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
 

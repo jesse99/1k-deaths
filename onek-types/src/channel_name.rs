@@ -11,6 +11,7 @@ pub struct ChannelName {
 
 impl ChannelName {
     pub fn new(name: &str) -> ChannelName {
+        debug_assert!(!name.is_empty());
         ChannelName { name: name.to_string() }
     }
 

@@ -14,3 +14,4 @@ postcard = { version = "1.0.6", features = [
 ] } # binary backend for serde
 serde = { version = "1.0.183", features = ["derive"] } # serialization framework
 serde_derive = "1.0.183" # serde derive macros
+toml = "0.7.6" # TOML parser
