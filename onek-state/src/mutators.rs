@@ -8,7 +8,13 @@ fn char_to_terrain(ch: char) -> Option<Terrain> {
     }
 }
 
+fn handle_move_player(game: &mut Game, loc: Point) {
+    info!("moving plater to {loc}");
+    game.player_loc = loc;
+}
+
 fn handle_reset(game: &mut Game, map: &str) {
+    info!("resetting");
     game.terrain.clear();
     game.reply_senders.clear();
 
@@ -37,7 +43,7 @@ fn handle_reset(game: &mut Game, map: &str) {
 
 pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     match mesg {
-        StateMutators::MovePlayer(loc) => game.player_loc = loc,
+        StateMutators::MovePlayer(loc) => handle_move_player(game, loc),
         StateMutators::Reset(map) => handle_reset(game, &map),
     }
 }

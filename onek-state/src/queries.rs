@@ -24,6 +24,7 @@ fn handle_player_view(game: &Game, name: ChannelName) {
     match game.reply_senders.get(&name) {
         Some(tx) => {
             let mesg = StateResponse::Map(view);
+            debug!("sending {mesg}");
             let result = tx.send(&mesg);
             assert!(!result.is_err(), "error sending reply: {result:?}");
         }

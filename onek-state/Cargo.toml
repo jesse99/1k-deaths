@@ -6,5 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.26"                       # time library
 ipmpsc = "0.5.1"                        # inter-process channels
+log = "0.4.20"                          # standard logging API
 onek-types = { path = "../onek-types" } # IPC message types
+simplelog = "0.12.1"                    # logging facade
