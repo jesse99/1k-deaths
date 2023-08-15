@@ -75,6 +75,7 @@ pub enum StateQueries {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateMutators {
     // TODO: might need transaction support (so invariant doesn't check at a bad time)
+    // could have a variant that takes a list of mutators but that might blow ring buffer budget
     MovePlayer(Point), // TODO: invariant (or maybe watchdog) could catch overly long transactions
     Reset(String),     // could include an arg to map weird chars to some sort of object enum
 }

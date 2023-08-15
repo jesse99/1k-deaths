@@ -91,6 +91,14 @@ other rogue-likes\
 	- can we test the invariant service?\
 		` really want one test app\
 		maybe can poke it to put it into some special mode?\
+	- support watchdog\
+		` services could poke watchdog every N seconds\
+		` services would need to use recv_timeout\
+		` poke would include pid\
+		` UI probably wouldn\'92t poke\
+		` watchdog could force kill hung services\
+		` clean kill others\
+		` force kill any that don\'92t cleanly die\
 	- might be able to use test first design\
 	- add support for other services (note that tester should go trhough logic)\
 	- handle channel errors somehow, don\'92t need anything fancy atm\
