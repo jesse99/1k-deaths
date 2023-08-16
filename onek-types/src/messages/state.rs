@@ -66,7 +66,6 @@ impl View {
 /// These take the name of a channel to send a [`StateResponse`] to.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateQueries {
-    // TODO: invariant service will need a get all state (to ensure atomicity, or maybe use a transaction)
     PlayerView(ChannelName),
 }
 
@@ -74,10 +73,14 @@ pub enum StateQueries {
 /// that used RegisterForUpdate.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateMutators {
-    // TODO: might need transaction support (so invariant doesn't check at a bad time)
-    // could have a variant that takes a list of mutators but that might blow ring buffer budget
-    MovePlayer(Point), // TODO: invariant (or maybe watchdog) could catch overly long transactions
-    Reset(String),     // could include an arg to map weird chars to some sort of object enum
+    /// Read transactions allow services to get a consistent view of state: any mutation
+    /// requests that come in during the transaction are deferred until the transaction
+    /// ends. The String argument is an ID used to match up the begin and end of transactions.
+    BeginReadTransaction(String),
+    EndReadTransaction(String),
+
+    MovePlayer(Point),
+    Reset(String), // could include an arg to map weird chars to some sort of object enum
 }
 
 /// Messages that the state service receives.

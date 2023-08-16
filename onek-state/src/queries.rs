@@ -33,7 +33,8 @@ fn handle_player_view(game: &Game, name: ChannelName) {
 }
 
 pub fn handle_query(game: &Game, mesg: StateQueries) {
+    use StateQueries::*;
     match mesg {
-        StateQueries::PlayerView(channel_name) => handle_player_view(game, channel_name),
+        PlayerView(channel_name) => handle_player_view(game, channel_name),
     }
 }

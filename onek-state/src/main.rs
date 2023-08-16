@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let err = config.error();
     if err.is_some() {
-        error!("error loading config: {}", err.as_ref().unwrap()); // TODO: log instead
+        error!("error loading config: {}", err.as_ref().unwrap());
     }
 
     let map_file = "/tmp/state-sink";
@@ -81,5 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Result::Err(Box::new(err));
             }
         }
+        // TODO: panic if a transaction lingers for too long
+        // will probably need to add a time snapshot to transaction elements
     }
 }

@@ -84,10 +84,11 @@ other rogue-likes\
 
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 3 It\'92s a boy!
 \f1\b0 \
+	- add an invariant function\
+		` should check state using a transaction\
+		` snapshot tests should manually call this\
 	- support player movement (this will need the logic service)\
-	- can we test the invariant service?\
-		` really want one test app\
-		maybe can poke it to put it into some special mode?\
+	- state handle methods should probably be methods on Game\
 	- support watchdog\
 		` services could poke watchdog every N seconds\
 		` services would need to use recv_timeout\
