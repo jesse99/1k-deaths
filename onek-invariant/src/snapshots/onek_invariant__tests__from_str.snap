@@ -1,0 +1,8 @@
+---
+source: onek-invariant/src/tests.rs
+expression: view.to_snapshot(&state)
+---
+###
+#@#
+###
+

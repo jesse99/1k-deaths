@@ -67,6 +67,7 @@ impl View {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateQueries {
     PlayerView(ChannelName),
+    PlayerLoc(ChannelName),
 }
 
 /// These update internal state and then send a StateResponse.Updated message to services
@@ -96,6 +97,7 @@ pub enum StateMessages {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateResponse {
     // TODO: ready to move should include all objects that are ready
+    Location(Point),
     Map(View),
     Updated(EditCount),
 }
