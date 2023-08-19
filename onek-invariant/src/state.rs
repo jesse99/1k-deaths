@@ -42,11 +42,15 @@ impl State {
         }
     }
 
-    // pub fn send_mutate(&self, mutate: StateMutators) {
-    //     let mesg = StateMessages::Mutate(mutate.clone());
-    //     let result = self.tx.send(&mesg);
-    //     assert!(!result.is_err(), "error sending {mutate:?} to State: {result:?}")
-    // }
+    pub fn begin_read_transaction(&self, name: String) {
+        let mutate = StateMutators::BeginReadTransaction(name);
+        self.send_mutate(mutate);
+    }
+
+    pub fn end_read_transaction(&self, name: String) {
+        let mutate = StateMutators::EndReadTransaction(name);
+        self.send_mutate(mutate);
+    }
 
     pub fn get_player_view(&self) -> View {
         let query = StateQueries::PlayerView(self.rx_name.clone());
@@ -66,16 +70,22 @@ impl State {
         }
     }
 
-    pub fn send_query(&self, query: StateQueries) -> StateResponse {
-        let mesg = StateMessages::Query(query.clone());
+    pub fn send_mutate(&self, mutate: StateMutators) {
+        let mesg = StateMessages::Mutate(mutate);
         let result = self.tx.send(&mesg);
-        assert!(!result.is_err(), "error sending {query:?} to State: {result:?}");
+        assert!(!result.is_err(), "error sending {mesg} to State: {result:?}")
+    }
+
+    pub fn send_query(&self, query: StateQueries) -> StateResponse {
+        let mesg = StateMessages::Query(query);
+        let result = self.tx.send(&mesg);
+        assert!(!result.is_err(), "error sending {mesg} to State: {result:?}");
 
         let result = self.rx.recv_timeout(Duration::from_millis(100));
         assert!(!result.is_err(), "error receiving from State: {result:?}");
 
         let option = result.unwrap();
-        assert!(option.is_some(), "timed out receiving {query:?} from State");
+        assert!(option.is_some(), "timed out receiving {mesg} from State");
 
         option.unwrap()
     }

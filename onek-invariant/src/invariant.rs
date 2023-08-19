@@ -9,6 +9,8 @@ use onek_types::PLAYER_ID;
 // but that could blow the message queue!
 #[cfg(test)]
 pub fn invariant(state: &State) {
+    state.begin_read_transaction("invariant".to_string());
+
     let view = state.get_player_view();
     assert!(!view.cells.is_empty(), "need at least the cell the player is at");
 
@@ -21,4 +23,6 @@ pub fn invariant(state: &State) {
 
     let oid = ch.unwrap();
     assert!(oid == PLAYER_ID, "expected player at {loc} not {oid}");
+
+    state.end_read_transaction("invariant".to_string());
 }
