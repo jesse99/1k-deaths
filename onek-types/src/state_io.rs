@@ -1,20 +1,18 @@
-#[cfg(test)]
+use super::*;
 use ipmpsc::{Receiver, Sender, SharedRingBuffer};
-#[cfg(test)]
-use onek_types::*;
-#[cfg(test)]
 use std::time::Duration;
 
-#[cfg(test)] // TODO: get rid of this once we start listening to State updates
-pub struct State {
-    pub tx: ipmpsc::Sender,
-    pub rx: ipmpsc::Receiver,
-    pub rx_name: ChannelName,
+/// Used by services to communicate with the state service.
+pub struct StateIO {
+    tx: ipmpsc::Sender,
+    rx: ipmpsc::Receiver,
+    rx_name: ChannelName,
 }
 
-#[cfg(test)]
-impl State {
-    pub fn new(map: &str) -> State {
+// New functions
+impl StateIO {
+    // TODO: rename this new_for_tests (have a private new that takes an Option<Map>)
+    pub fn new(map: &str) -> StateIO {
         let tx = match SharedRingBuffer::open("/tmp/state-sink") {
             Ok(buffer) => Sender::new(buffer),
             Err(err) => panic!("error opening state-sink: {err:?}"),
@@ -35,23 +33,16 @@ impl State {
         let result = tx.send(&mesg);
         assert!(!result.is_err(), "error sending RegisterForQuery to State: {result:?}");
 
-        State {
+        StateIO {
             tx,
             rx,
             rx_name: ChannelName::new(name),
         }
     }
+}
 
-    pub fn begin_read_transaction(&self, name: String) {
-        let mutate = StateMutators::BeginReadTransaction(name);
-        self.send_mutate(mutate);
-    }
-
-    pub fn end_read_transaction(&self, name: String) {
-        let mutate = StateMutators::EndReadTransaction(name);
-        self.send_mutate(mutate);
-    }
-
+// Queries
+impl StateIO {
     pub fn get_player_view(&self) -> View {
         let query = StateQueries::PlayerView(self.rx_name.clone());
         let response = self.send_query(query);
@@ -69,14 +60,7 @@ impl State {
             _ => panic!("Expected Point from PlayerLoc query not {response}"),
         }
     }
-
-    pub fn send_mutate(&self, mutate: StateMutators) {
-        let mesg = StateMessages::Mutate(mutate);
-        let result = self.tx.send(&mesg);
-        assert!(!result.is_err(), "error sending {mesg} to State: {result:?}")
-    }
-
-    pub fn send_query(&self, query: StateQueries) -> StateResponse {
+    fn send_query(&self, query: StateQueries) -> StateResponse {
         let mesg = StateMessages::Query(query);
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending {mesg} to State: {result:?}");
@@ -88,5 +72,24 @@ impl State {
         assert!(option.is_some(), "timed out receiving {mesg} from State");
 
         option.unwrap()
+    }
+}
+
+// Mutators (in general only the logic service should send these)
+impl StateIO {
+    pub fn begin_read_transaction(&self, name: String) {
+        let mutate = StateMutators::BeginReadTransaction(name);
+        self.send_mutate(mutate);
+    }
+
+    pub fn end_read_transaction(&self, name: String) {
+        let mutate = StateMutators::EndReadTransaction(name);
+        self.send_mutate(mutate);
+    }
+
+    fn send_mutate(&self, mutate: StateMutators) {
+        let mesg = StateMessages::Mutate(mutate);
+        let result = self.tx.send(&mesg);
+        assert!(!result.is_err(), "error sending {mesg} to State: {result:?}")
     }
 }

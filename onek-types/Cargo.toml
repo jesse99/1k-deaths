@@ -9,6 +9,7 @@ edition = "2021"
 arraystring = { version = "0.3.0", features = [
     "serde-traits",
 ] } # copyable fixed width strings
+ipmpsc = "0.5.1" # inter-process channels
 postcard = { version = "1.0.6", features = [
     "alloc",
 ] } # binary backend for serde

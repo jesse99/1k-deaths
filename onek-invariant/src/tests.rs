@@ -1,13 +1,11 @@
 #[cfg(test)]
 use super::invariant::*;
 #[cfg(test)]
-use super::state::*;
-#[cfg(test)]
 use onek_types::*;
 
 #[cfg(test)]
 trait ToSnapshot {
-    fn to_snapshot(&self, state: &State) -> String;
+    fn to_snapshot(&self, state: &StateIO) -> String;
 }
 
 #[cfg(test)]
@@ -20,7 +18,7 @@ fn terrain_to_char(terrain: Terrain) -> char {
 
 #[cfg(test)]
 impl ToSnapshot for StateResponse {
-    fn to_snapshot(&self, state: &State) -> String {
+    fn to_snapshot(&self, state: &StateIO) -> String {
         match self {
             StateResponse::Map(map) => map.to_snapshot(state),
             _ => panic!("snapshots are not supported for {self}"),
@@ -30,7 +28,7 @@ impl ToSnapshot for StateResponse {
 
 #[cfg(test)]
 impl ToSnapshot for View {
-    fn to_snapshot(&self, _test: &State) -> String {
+    fn to_snapshot(&self, _test: &StateIO) -> String {
         let mut result = String::with_capacity(200);
         for y in self.top_left.y..=self.top_left.y + self.size().height {
             for x in self.top_left.x..=self.top_left.x + self.size().width {
@@ -53,13 +51,9 @@ impl ToSnapshot for View {
     }
 }
 
-// Mutators
-#[cfg(test)]
-impl State {}
-
 #[test]
 fn test_from_str() {
-    let state = State::new(
+    let state = StateIO::new(
         "###\n\
              #@#\n\
              ###",

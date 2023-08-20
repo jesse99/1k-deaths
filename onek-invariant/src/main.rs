@@ -1,5 +1,5 @@
 mod invariant;
-mod state;
+mod mutate_state;
 mod tests;
 
 fn main() {

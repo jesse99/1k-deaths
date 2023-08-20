@@ -1,14 +1,12 @@
 #[cfg(test)]
-use super::state::*;
-#[cfg(test)]
-use onek_types::PLAYER_ID;
+use onek_types::*;
 
 // TODO: probably should check the entire map
 // expensive but this is in its own process and we don't have to
 // process every update
 // but that could blow the message queue!
 #[cfg(test)]
-pub fn invariant(state: &State) {
+pub fn invariant(state: &StateIO) {
     state.begin_read_transaction("invariant".to_string());
 
     let view = state.get_player_view();
