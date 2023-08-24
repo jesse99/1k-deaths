@@ -2,6 +2,17 @@
 use super::invariant::*;
 #[cfg(test)]
 use onek_types::*;
+#[cfg(test)]
+use std::sync::Mutex;
+#[cfg(test)]
+use std::sync::OnceLock;
+
+// Snapshot tests need to run sequentially because they talk to external processes like
+// the state service. Unit tests can be run using one thread via `--test-threads=1` but
+// that doesn't seem to work with `cargo insta test`. So we'll use this mutex to serialize
+// them.
+#[cfg(test)]
+static MUTEX: OnceLock<Mutex<i32>> = OnceLock::new();
 
 #[cfg(test)]
 trait ToSnapshot {
@@ -53,11 +64,31 @@ impl ToSnapshot for View {
 
 #[test]
 fn test_from_str() {
-    let state = StateIO::new(
+    let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let state = StateIO::new_with_map(
         "###\n\
              #@#\n\
              ###",
+        "/tmp/state-to-logic",
     );
+
+    invariant(&state);
+
+    let view = state.get_player_view();
+    insta::assert_display_snapshot!(view.to_snapshot(&state));
+}
+
+#[test]
+fn test_bump_move() {
+    let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let state = StateIO::new_with_map(
+        "####\n\
+             #@ #\n\
+             ####",
+        "/tmp/state-to-logic",
+    );
+    let logic = LogicIO::new();
+    logic.bump(PLAYER_ID, Point::new(2, 1));
 
     invariant(&state);
 

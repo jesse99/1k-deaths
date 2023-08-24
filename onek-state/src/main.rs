@@ -18,7 +18,7 @@ use queries::*;
 fn create_sender(name: &ChannelName) -> ipmpsc::Sender {
     match SharedRingBuffer::open(name.as_str()) {
         Ok(buffer) => Sender::new(buffer),
-        Err(err) => panic!("error opening sender: {err:?}"),
+        Err(err) => panic!("error opening sender {name}: {err:?}"),
     }
 }
 

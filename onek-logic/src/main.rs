@@ -2,36 +2,23 @@
 extern crate log;
 extern crate simplelog;
 
-use ipmpsc::{Receiver, Sender, SharedRingBuffer};
+use ipmpsc::{Receiver, SharedRingBuffer};
 use onek_types::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
 
-mod game;
-mod mutators;
-mod queries;
-
-use game::*;
-use mutators::*;
-use queries::*;
-
-fn create_sender(name: &ChannelName) -> ipmpsc::Sender {
-    match SharedRingBuffer::open(name.as_str()) {
-        Ok(buffer) => Sender::new(buffer),
-        Err(err) => panic!("error opening sender: {err:?}"),
+fn handle_bump(state: &StateIO, oid: Oid, loc: Point) {
+    if oid == PLAYER_ID {
+        state.send_mutate(StateMutators::MovePlayer(loc));
+    } else {
+        todo!("non-player movement isn't implemented yet");
     }
 }
 
-fn handle_mesg(game: &mut Game, mesg: LogicMessages) {
-    debug!("received {mesg}");
+fn handle_mesg(state: &StateIO, mesg: LogicMessages) {
+    debug!("received {mesg:?}");
     match mesg {
-        LogicMessages::Mutate(mesg) => handle_mutate(game, mesg),
-        LogicMessages::Query(mesg) => handle_query(game, mesg),
-        LogicMessages::RegisterForQuery(channel_name) => {
-            let sender = create_sender(&channel_name);
-            game.reply_senders.insert(channel_name, sender);
-        }
-        LogicMessages::RegisterForUpdate(_channel_name) => println!("RegisterForUpdate isn't implemented yet"),
+        LogicMessages::Bump(oid, loc) => handle_bump(state, oid, loc),
     }
 }
 
@@ -68,18 +55,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let map_file = "/tmp/logic-sink";
     let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
 
-    let mut game = Game::new();
-
+    let state = StateIO::new("/tmp/state-to-logic");
     loop {
         match rx.recv() {
-            // TODO: do we want zero-copy?
-            Ok(mesg) => handle_mesg(&mut game, mesg),
+            Ok(mesg) => handle_mesg(&state, mesg),
             Err(err) => {
                 error!("rx error: {err}");
                 return Result::Err(Box::new(err));
             }
         }
-        // TODO: panic if a transaction lingers for too long
-        // will probably need to add a time snapshot to transaction elements
     }
 }

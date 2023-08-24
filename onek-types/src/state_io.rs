@@ -9,35 +9,42 @@ pub struct StateIO {
     rx_name: ChannelName,
 }
 
-// New functions
+// Constructors
 impl StateIO {
-    // TODO: rename this new_for_tests (have a private new that takes an Option<Map>)
-    pub fn new(map: &str) -> StateIO {
+    /// Typically rx_channel_name is something like "/tmp/state-to-SERVICE_NAME".
+    pub fn new(rx_channel_name: &str) -> StateIO {
+        StateIO::new_with_option(None, rx_channel_name)
+    }
+
+    /// For testing
+    pub fn new_with_map(map: &str, rx_channel_name: &str) -> StateIO {
+        StateIO::new_with_option(Some(map), rx_channel_name)
+    }
+
+    fn new_with_option(map: Option<&str>, rx_channel_name: &str) -> StateIO {
         let tx = match SharedRingBuffer::open("/tmp/state-sink") {
             Ok(buffer) => Sender::new(buffer),
             Err(err) => panic!("error opening state-sink: {err:?}"),
         };
 
-        // Note that we have to do this early because Reset will zap the RegisterForQuery below.
-        let mesg = StateMessages::Mutate(StateMutators::Reset(map.to_string()));
-        let result = tx.send(&mesg);
-        assert!(!result.is_err(), "error sending Reset to State: {result:?}");
+        if let Some(map) = map {
+            // Note that we have to do this early because Reset will zap the RegisterForQuery below.
+            let mesg = StateMessages::Mutate(StateMutators::Reset(map.to_string()));
+            let result = tx.send(&mesg);
+            assert!(!result.is_err(), "error sending Reset to State: {result:?}");
+        }
 
-        let name = "/tmp/tester-sink";
-        let rx = match SharedRingBuffer::create(name, 32 * 1024) {
+        let rx = match SharedRingBuffer::create(rx_channel_name, 32 * 1024) {
             Ok(buffer) => Receiver::new(buffer),
-            Err(err) => panic!("error opening tester-sink: {err:?}"),
+            Err(err) => panic!("error opening {rx_channel_name}: {err:?}"),
         };
 
-        let mesg = StateMessages::RegisterForQuery(ChannelName::new(name));
+        let rx_name = ChannelName::new(rx_channel_name);
+        let mesg = StateMessages::RegisterForQuery(rx_name.clone());
         let result = tx.send(&mesg);
         assert!(!result.is_err(), "error sending RegisterForQuery to State: {result:?}");
 
-        StateIO {
-            tx,
-            rx,
-            rx_name: ChannelName::new(name),
-        }
+        StateIO { tx, rx, rx_name }
     }
 }
 
@@ -60,6 +67,7 @@ impl StateIO {
             _ => panic!("Expected Point from PlayerLoc query not {response}"),
         }
     }
+
     fn send_query(&self, query: StateQueries) -> StateResponse {
         let mesg = StateMessages::Query(query);
         let result = self.tx.send(&mesg);
@@ -87,7 +95,7 @@ impl StateIO {
         self.send_mutate(mutate);
     }
 
-    fn send_mutate(&self, mutate: StateMutators) {
+    pub fn send_mutate(&self, mutate: StateMutators) {
         let mesg = StateMessages::Mutate(mutate);
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending {mesg} to State: {result:?}")
