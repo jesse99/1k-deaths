@@ -10,9 +10,9 @@ arraystring = { version = "0.3.0", features = [
     "serde-traits",
 ] } # copyable fixed width strings
 ipmpsc = "0.5.1" # inter-process channels
-postcard = { version = "1.0.6", features = [
+postcard = { version = "1.0.8", features = [
     "alloc",
 ] } # binary backend for serde
-serde = { version = "1.0.183", features = ["derive"] } # serialization framework
-serde_derive = "1.0.183" # serde derive macros
-toml = "0.7.6" # TOML parser
+serde = { version = "1.0.195", features = ["derive"] } # serialization framework
+serde_derive = "1.0.195" # serde derive macros
+toml = "0.8.8" # TOML parser
