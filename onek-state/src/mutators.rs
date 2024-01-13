@@ -43,8 +43,8 @@ fn handle_end_transaction(game: &mut Game, id: String) {
         let mut mesgs = Vec::new();
         mem::swap(&mut mesgs, &mut game.queued_mutates);
 
-        for (name, mesg) in mesgs {
-            handle_mutate(name, game, mesg);
+        for mesg in mesgs {
+            handle_mutate(game, mesg);
         }
     }
 }
@@ -83,14 +83,14 @@ fn handle_reset(game: &mut Game, map: &str) {
     }
 }
 
-pub fn handle_mutate(name: ChannelName, game: &mut Game, mesg: StateMutators) {
+pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     use StateMutators::*;
     match mesg {
         BeginReadTransaction(_) => (),
         EndReadTransaction(_) => (),
         _ => {
             if !game.read_transactions.is_empty() {
-                game.queued_mutates.push((name, mesg));
+                game.queued_mutates.push(mesg);
                 debug_assert!(game.read_transactions.len() < 5000); // sanity check
                 return;
             }
@@ -103,5 +103,5 @@ pub fn handle_mutate(name: ChannelName, game: &mut Game, mesg: StateMutators) {
         MovePlayer(loc) => handle_move_player(game, loc),
         Reset(map) => handle_reset(game, &map),
     }
-    game.send_response(name, StateResponse::Mutated());
+    // game.send_response(name, StateResponse::Mutated());
 }

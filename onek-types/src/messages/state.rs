@@ -102,7 +102,7 @@ pub enum StateMutators {
 /// Messages that the state service receives.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateMessages {
-    Mutate(ChannelName, StateMutators),
+    Mutate(StateMutators),
     Query(StateQueries),
     RegisterForQuery(ChannelName),
     RegisterForUpdate(ChannelName),
@@ -115,10 +115,6 @@ pub enum StateResponse {
     Cell(Cell),
     Location(Point),
     Map(View),
-
-    /// Mutate messages will typically reply with this. Because services wait for this
-    /// response mutations are a synchronous operation which avoids icky race conditions.
-    Mutated(),
     Notes(Vec<Note>),
     Updated(EditCount),
 }

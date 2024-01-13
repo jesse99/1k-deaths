@@ -25,7 +25,7 @@ fn create_sender(name: &ChannelName) -> ipmpsc::Sender {
 fn handle_mesg(game: &mut Game, mesg: StateMessages) {
     debug!("received {mesg}");
     match mesg {
-        StateMessages::Mutate(channel_name, mesg) => handle_mutate(channel_name, game, mesg),
+        StateMessages::Mutate(mesg) => handle_mutate(game, mesg),
         StateMessages::Query(mesg) => handle_query(game, mesg),
         StateMessages::RegisterForQuery(channel_name) => {
             info!("registering {channel_name} reply sender");

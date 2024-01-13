@@ -34,11 +34,11 @@ impl StateIO {
     }
 
     pub fn reset(&self, map: &str) {
-        let mesg = StateMessages::Mutate(self.rx_name.clone(), StateMutators::Reset(map.to_string()));
+        let mesg = StateMessages::Mutate(StateMutators::Reset(map.to_string()));
         info!("sending {mesg}");
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending Reset to State: {result:?}");
-        let _: Result<Option<StateResponse>> = self.rx.recv_timeout(Duration::from_millis(100));
+        // let _: Result<Option<StateResponse>> = self.rx.recv_timeout(Duration::from_millis(100));
     }
 }
 
@@ -108,7 +108,7 @@ impl StateIO {
     }
 
     pub fn send_mutate(&self, mutate: StateMutators) {
-        let mesg = StateMessages::Mutate(self.rx_name.clone(), mutate);
+        let mesg = StateMessages::Mutate(mutate);
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending {mesg} to State: {result:?}");
 

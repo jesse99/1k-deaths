@@ -8,7 +8,7 @@ pub struct Game {
     pub notes: VecDeque<Note>,
     pub reply_senders: HashMap<ChannelName, ipmpsc::Sender>,
     pub read_transactions: Vec<String>,
-    pub queued_mutates: Vec<(ChannelName, StateMutators)>,
+    pub queued_mutates: Vec<StateMutators>,
 }
 
 impl Game {
