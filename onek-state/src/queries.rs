@@ -52,12 +52,12 @@ fn handle_player_view(game: &Game, name: ChannelName) {
     game.send_response(name, response);
 }
 
-pub fn handle_query(game: &Game, mesg: StateQueries) {
+pub fn handle_query(channel_name: ChannelName, game: &Game, mesg: StateQueries) {
     use StateQueries::*;
     match mesg {
-        CellAt(channel_name, loc) => handle_cell_at(game, channel_name, loc),
-        Notes(channel_name, count) => handle_notes(game, channel_name, count),
-        PlayerLoc(channel_name) => handle_player_loc(game, channel_name),
-        PlayerView(channel_name) => handle_player_view(game, channel_name),
+        CellAt(loc) => handle_cell_at(game, channel_name, loc),
+        Notes(count) => handle_notes(game, channel_name, count),
+        PlayerLoc() => handle_player_loc(game, channel_name),
+        PlayerView() => handle_player_view(game, channel_name),
     }
 }

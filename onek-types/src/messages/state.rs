@@ -75,13 +75,12 @@ impl View {
     }
 }
 
-/// These take the name of a channel to send a [`StateResponse`] to.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateQueries {
-    CellAt(ChannelName, Point),
-    Notes(ChannelName, usize),
-    PlayerView(ChannelName),
-    PlayerLoc(ChannelName),
+    CellAt(Point),
+    Notes(usize),
+    PlayerView(),
+    PlayerLoc(),
 }
 
 /// These update internal state and then send a StateResponse.Updated message to services
@@ -102,9 +101,16 @@ pub enum StateMutators {
 /// Messages that the state service receives.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateMessages {
+    /// These do not send a reply.
     Mutate(StateMutators),
-    Query(StateQueries),
+
+    /// Reply is sent to ChannelName.
+    Query(ChannelName, StateQueries),
+
+    /// Registers a channel to be used for Query replies.
     RegisterForQuery(ChannelName),
+
+    /// Registers a channel to be used for push notifications on mutations.
     RegisterForUpdate(ChannelName),
 }
 

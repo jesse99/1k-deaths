@@ -45,7 +45,7 @@ impl StateIO {
 // Queries
 impl StateIO {
     pub fn get_cell_at(&self, loc: Point) -> Cell {
-        let query = StateQueries::CellAt(self.rx_name.clone(), loc);
+        let query = StateQueries::CellAt(loc);
         let response = self.send_query(query);
         match response {
             StateResponse::Cell(cell) => cell,
@@ -54,7 +54,7 @@ impl StateIO {
     }
 
     pub fn get_notes(&self, count: usize) -> Vec<Note> {
-        let query = StateQueries::Notes(self.rx_name.clone(), count);
+        let query = StateQueries::Notes(count);
         let response = self.send_query(query);
         match response {
             StateResponse::Notes(notes) => notes,
@@ -63,7 +63,7 @@ impl StateIO {
     }
 
     pub fn get_player_view(&self) -> View {
-        let query = StateQueries::PlayerView(self.rx_name.clone());
+        let query = StateQueries::PlayerView();
         let response = self.send_query(query);
         match response {
             StateResponse::Map(map) => map,
@@ -72,7 +72,7 @@ impl StateIO {
     }
 
     pub fn get_player_loc(&self) -> Point {
-        let query = StateQueries::PlayerLoc(self.rx_name.clone());
+        let query = StateQueries::PlayerLoc();
         let response = self.send_query(query);
         match response {
             StateResponse::Location(loc) => loc,
@@ -81,7 +81,7 @@ impl StateIO {
     }
 
     fn send_query(&self, query: StateQueries) -> StateResponse {
-        let mesg = StateMessages::Query(query);
+        let mesg = StateMessages::Query(self.rx_name.clone(), query);
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending {mesg} to State: {result:?}");
 

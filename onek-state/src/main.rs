@@ -26,7 +26,7 @@ fn handle_mesg(game: &mut Game, mesg: StateMessages) {
     debug!("received {mesg}");
     match mesg {
         StateMessages::Mutate(mesg) => handle_mutate(game, mesg),
-        StateMessages::Query(mesg) => handle_query(game, mesg),
+        StateMessages::Query(channel_name, mesg) => handle_query(channel_name, game, mesg),
         StateMessages::RegisterForQuery(channel_name) => {
             info!("registering {channel_name} reply sender");
             let sender = create_sender(&channel_name);
