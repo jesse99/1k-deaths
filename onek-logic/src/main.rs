@@ -15,7 +15,7 @@ fn player_can_move(state: &StateIO, to: Point) -> Option<Note> {
             NoteKind::Environmental,
             "You splash through the water.".to_owned(),
         )),
-        Terrain::DeepWater => Some(Note::new(NoteKind::Error, "That water is too deep.".to_owned())),
+        Terrain::DeepWater => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
         Terrain::Wall => Some(Note::new(NoteKind::Error, "You bounce off the wall.".to_owned())),
     }
 }
