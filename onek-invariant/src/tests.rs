@@ -23,6 +23,8 @@ trait ToSnapshot {
 fn terrain_to_char(terrain: Terrain) -> char {
     match terrain {
         Terrain::Dirt => ' ',
+        Terrain::ShallowWater => '~',
+        Terrain::DeepWater => 'W',
         Terrain::Wall => '#',
     }
 }
@@ -155,6 +157,44 @@ fn test_bump_wall() {
     );
     let logic = LogicIO::new();
     logic.bump(PLAYER_ID, Point::new(0, 1));
+
+    invariant(&state);
+
+    // TODO: other tests should use new goo
+    let info = GameInfo::new(&state);
+    insta::assert_display_snapshot!(info.to_snapshot(&state));
+}
+
+#[test]
+fn test_bump_shallow() {
+    let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let state = StateIO::new("/tmp/state-to-test");
+    state.reset(
+        "####\n\
+             #@~#\n\
+             ####",
+    );
+    let logic = LogicIO::new();
+    logic.bump(PLAYER_ID, Point::new(2, 1));
+
+    invariant(&state);
+
+    // TODO: other tests should use new goo
+    let info = GameInfo::new(&state);
+    insta::assert_display_snapshot!(info.to_snapshot(&state));
+}
+
+#[test]
+fn test_bump_deep() {
+    let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let state = StateIO::new("/tmp/state-to-test");
+    state.reset(
+        "####\n\
+             #@W#\n\
+             ####",
+    );
+    let logic = LogicIO::new();
+    logic.bump(PLAYER_ID, Point::new(2, 1));
 
     invariant(&state);
 

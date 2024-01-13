@@ -66,14 +66,11 @@ other rogue-likes\
 		then it\'92s broken door: can\'92t close or spike or lock\
 	can spike shut?\
 	optionally lock or unlock\
-	may have a material\
+	may have a material  \
 	
 \f3\b \
 
 \f1\b0 command-. will fill match arms, also clicking the little light bulb icon\
-\
-note\
-memo\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f3\b \cf4 \
@@ -90,10 +87,6 @@ memo\
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 3 It\'92s a boy!    
 \f1\b0 \
 	- support player movement (this will need the logic service)\
-		` RegisterForQuery and RegisterForUpdate should return a response\
-		` do we still need mutexes for unit tests?\
-		` should StateMessages::Query take the ChannelName?\
-		` add a test for moving into a wall\
 		` maybe another for moving into shallow water\
 		` do a commit\
 		` create a logic/bump.rs file\
@@ -107,6 +100,7 @@ memo\
 		` watchdog could force kill hung services\
 		` clean kill others\
 		` force kill any that don\'92t cleanly die\
+		` write a test for this, maybe query with no rx, or just sleep for a long time\
 	- might be able to use test first design\
 	- add support for other services (note that tester should go trhough logic)\
 	- handle channel errors somehow, don\'92t need anything fancy atm\

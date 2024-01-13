@@ -5,6 +5,11 @@ use std::fmt;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum NoteKind {
+    /// Something happened in the world potentially affecting the player, e.g. heard a
+    /// noise outside his LOS.
+    Environmental,
+
+    /// Player can't do some action, e.g. walking into a wall.
     Error,
 }
 
@@ -15,9 +20,17 @@ pub struct Note {
     pub kind: NoteKind,
 }
 
+impl Note {
+    pub fn new(kind: NoteKind, text: String) -> Note {
+        Note { text: text, kind }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Terrain {
+    DeepWater,
     Dirt,
+    ShallowWater,
     Wall,
 }
 

@@ -38,7 +38,6 @@ impl StateIO {
         info!("sending {mesg}");
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending Reset to State: {result:?}");
-        // let _: Result<Option<StateResponse>> = self.rx.recv_timeout(Duration::from_millis(100));
     }
 }
 

@@ -4,6 +4,8 @@ use std::mem;
 fn char_to_terrain(ch: char) -> Option<Terrain> {
     match ch {
         '#' => Some(Terrain::Wall),
+        '~' => Some(Terrain::ShallowWater),
+        'W' => Some(Terrain::DeepWater),
         ' ' => Some(Terrain::Dirt),
         _ => None,
     }
@@ -55,10 +57,11 @@ fn handle_move_player(game: &mut Game, loc: Point) {
 }
 
 fn handle_reset(game: &mut Game, map: &str) {
+    // TODO: should have an arg for default_terrain
     info!("resetting");
+    game.player_loc = Point::new(-1, -1);
     game.terrain.clear();
-    // game.reply_senders.clear();
-    // info!("cleared reply senders");
+    game.notes.clear();
 
     let mut loc = Point::new(0, 0);
     for ch in map.chars() {
@@ -81,6 +84,7 @@ fn handle_reset(game: &mut Game, map: &str) {
             },
         }
     }
+    assert!(game.player_loc.x >= 0, "map is missing @");
 }
 
 pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {

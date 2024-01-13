@@ -1,0 +1,13 @@
+---
+source: onek-invariant/src/tests.rs
+expression: info.to_snapshot(&state)
+---
+player_loc: (1, 1)
+view:
+####
+#@W#
+####
+
+notes:
+0) [Error] That water is too deep.
+
