@@ -3,6 +3,18 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum NoteKind {
+    Error,
+}
+
+/// These are in-game messages for the player, e.g. combat results or status messages.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Note {
+    pub text: String,
+    pub kind: NoteKind,
+}
+
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Terrain {
     Dirt,
@@ -66,12 +78,14 @@ impl View {
 /// These take the name of a channel to send a [`StateResponse`] to.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateQueries {
+    CellAt(ChannelName, Point),
+    Notes(ChannelName, usize),
     PlayerView(ChannelName),
     PlayerLoc(ChannelName),
 }
 
 /// These update internal state and then send a StateResponse.Updated message to services
-/// that used RegisterForUpdate.
+/// that used RegisterForUpdate. These return StateResponse.Mutated.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateMutators {
     /// Read transactions allow services to get a consistent view of state: any mutation
@@ -80,6 +94,7 @@ pub enum StateMutators {
     BeginReadTransaction(String),
     EndReadTransaction(String),
 
+    AddNote(Note),
     MovePlayer(Point),
     Reset(String), // could include an arg to map weird chars to some sort of object enum
 }
@@ -87,7 +102,7 @@ pub enum StateMutators {
 /// Messages that the state service receives.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateMessages {
-    Mutate(StateMutators),
+    Mutate(ChannelName, StateMutators),
     Query(StateQueries),
     RegisterForQuery(ChannelName),
     RegisterForUpdate(ChannelName),
@@ -97,8 +112,14 @@ pub enum StateMessages {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateResponse {
     // TODO: ready to move should include all objects that are ready
+    Cell(Cell),
     Location(Point),
     Map(View),
+
+    /// Mutate messages will typically reply with this. Because services wait for this
+    /// response mutations are a synchronous operation which avoids icky race conditions.
+    Mutated(),
+    Notes(Vec<Note>),
     Updated(EditCount),
 }
 

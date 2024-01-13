@@ -62,14 +62,62 @@ impl ToSnapshot for View {
     }
 }
 
+#[cfg(test)]
+impl ToSnapshot for Note {
+    fn to_snapshot(&self, _state: &StateIO) -> String {
+        let mut result = String::with_capacity(200);
+        result.push_str(&format!("[{:?}] {}\n", self.kind, self.text));
+        result
+    }
+}
+
+#[cfg(test)]
+struct GameInfo {
+    player_loc: Point,
+    view: View,
+    notes: Vec<Note>,
+}
+
+#[cfg(test)]
+impl GameInfo {
+    fn new(state: &StateIO) -> GameInfo {
+        const NUM_NOTES: usize = 8;
+
+        let player_loc = state.get_player_loc();
+        let view = state.get_player_view();
+        let notes = state.get_notes(NUM_NOTES);
+        GameInfo {
+            player_loc,
+            view,
+            notes,
+        }
+    }
+}
+
+#[cfg(test)]
+impl ToSnapshot for GameInfo {
+    fn to_snapshot(&self, state: &StateIO) -> String {
+        let mut result = String::with_capacity(800);
+
+        result.push_str(&format!("player_loc: {}\n", self.player_loc));
+        result.push_str(&format!("view:\n{}\n", self.view.to_snapshot(state)));
+        result.push_str("notes:\n");
+        for (i, note) in self.notes.iter().enumerate() {
+            let s = note.to_snapshot(state);
+            result.push_str(&format!("{i}) {s}"));
+        }
+        result
+    }
+}
+
 #[test]
 fn test_from_str() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
-    let state = StateIO::new_with_map(
+    let state = StateIO::new("/tmp/state-to-test");
+    state.reset(
         "###\n\
              #@#\n\
              ###",
-        "/tmp/state-to-logic",
     );
 
     invariant(&state);
@@ -81,11 +129,11 @@ fn test_from_str() {
 #[test]
 fn test_bump_move() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
-    let state = StateIO::new_with_map(
+    let state = StateIO::new("/tmp/state-to-test");
+    state.reset(
         "####\n\
              #@ #\n\
              ####",
-        "/tmp/state-to-logic",
     );
     let logic = LogicIO::new();
     logic.bump(PLAYER_ID, Point::new(2, 1));
@@ -94,4 +142,23 @@ fn test_bump_move() {
 
     let view = state.get_player_view();
     insta::assert_display_snapshot!(view.to_snapshot(&state));
+}
+
+#[test]
+fn test_bump_wall() {
+    let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let state = StateIO::new("/tmp/state-to-test");
+    state.reset(
+        "####\n\
+             #@ #\n\
+             ####",
+    );
+    let logic = LogicIO::new();
+    logic.bump(PLAYER_ID, Point::new(0, 1));
+
+    invariant(&state);
+
+    // TODO: other tests should use new goo
+    let info = GameInfo::new(&state);
+    insta::assert_display_snapshot!(info.to_snapshot(&state));
 }

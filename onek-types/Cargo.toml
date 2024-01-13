@@ -9,6 +9,7 @@ edition = "2021"
 arraystring = { version = "0.3.0", features = [
     "serde-traits",
 ] } # copyable fixed width strings
+log = "0.4.20" # standard logging API
 ipmpsc = "0.5.1" # inter-process channels
 postcard = { version = "1.0.8", features = [
     "alloc",

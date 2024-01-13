@@ -9,6 +9,20 @@ fn char_to_terrain(ch: char) -> Option<Terrain> {
     }
 }
 
+const MAX_NOTES: usize = 100;
+
+fn handle_add_note(game: &mut Game, note: Note) {
+    info!("adding note {note:?}");
+
+    game.notes.push_back(note);
+    if game.notes.len() > MAX_NOTES {
+        // Because notes is a VecDeque pop_front is constant time so there's no real harm
+        // in popping after every add.
+        game.notes.pop_front();
+    }
+    assert!(game.notes.len() <= MAX_NOTES);
+}
+
 fn handle_begin_transaction(game: &mut Game, id: String) {
     info!("begin read transaction with {id}");
     game.read_transactions.push(id);
@@ -29,8 +43,8 @@ fn handle_end_transaction(game: &mut Game, id: String) {
         let mut mesgs = Vec::new();
         mem::swap(&mut mesgs, &mut game.queued_mutates);
 
-        for mesg in mesgs {
-            handle_mutate(game, mesg);
+        for (name, mesg) in mesgs {
+            handle_mutate(name, game, mesg);
         }
     }
 }
@@ -43,7 +57,8 @@ fn handle_move_player(game: &mut Game, loc: Point) {
 fn handle_reset(game: &mut Game, map: &str) {
     info!("resetting");
     game.terrain.clear();
-    game.reply_senders.clear();
+    // game.reply_senders.clear();
+    // info!("cleared reply senders");
 
     let mut loc = Point::new(0, 0);
     for ch in map.chars() {
@@ -68,23 +83,25 @@ fn handle_reset(game: &mut Game, map: &str) {
     }
 }
 
-pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
+pub fn handle_mutate(name: ChannelName, game: &mut Game, mesg: StateMutators) {
     use StateMutators::*;
     match mesg {
         BeginReadTransaction(_) => (),
         EndReadTransaction(_) => (),
         _ => {
             if !game.read_transactions.is_empty() {
-                game.queued_mutates.push(mesg);
+                game.queued_mutates.push((name, mesg));
                 debug_assert!(game.read_transactions.len() < 5000); // sanity check
                 return;
             }
         }
     }
     match mesg {
+        AddNote(note) => handle_add_note(game, note),
         BeginReadTransaction(id) => handle_begin_transaction(game, id),
         EndReadTransaction(id) => handle_end_transaction(game, id),
         MovePlayer(loc) => handle_move_player(game, loc),
         Reset(map) => handle_reset(game, &map),
     }
+    game.send_response(name, StateResponse::Mutated());
 }

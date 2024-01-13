@@ -7,7 +7,7 @@ use onek_types::*;
 // but that could blow the message queue!
 #[cfg(test)]
 pub fn invariant(state: &StateIO) {
-    state.begin_read_transaction("invariant".to_string());
+    state.begin_read_transaction("invariant".to_string()); // TODO: should probably use RAII here
 
     let view = state.get_player_view();
     assert!(!view.cells.is_empty(), "need at least the cell the player is at");

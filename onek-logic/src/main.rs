@@ -7,12 +7,34 @@ use onek_types::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
 
+fn player_can_move(state: &StateIO, to: Point) -> Option<&'static str> {
+    let cell = state.get_cell_at(to);
+    match cell.terrain {
+        Terrain::Dirt => None, // TODO: should depend on character type (and maybe affects)
+        Terrain::Wall => Some("You bounce off the wall."),
+    }
+}
+
+// TODO: should we rule out bumps more than one square from oid?
+// TODO: what about stuff like hoppinh? maybe those are restricted to moves?
 fn handle_bump(state: &StateIO, oid: Oid, loc: Point) {
-    if oid == PLAYER_ID {
-        state.send_mutate(StateMutators::MovePlayer(loc));
-    } else {
+    if oid != PLAYER_ID {
         todo!("non-player movement isn't implemented yet");
     }
+
+    // At some point may want a dispatch table, e.g.
+    // (Actor, Action, Obj) -> Handler(actor, obj)
+    let response = match player_can_move(state, loc) {
+        None => StateMutators::MovePlayer(loc),
+        Some(err) => {
+            let note = Note {
+                text: err.to_string(),
+                kind: NoteKind::Error,
+            };
+            StateMutators::AddNote(note)
+        }
+    };
+    state.send_mutate(response);
 }
 
 fn handle_mesg(state: &StateIO, mesg: LogicMessages) {
