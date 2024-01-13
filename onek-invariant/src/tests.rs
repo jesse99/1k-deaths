@@ -1,25 +1,20 @@
-#[cfg(test)]
+#![cfg(test)]
+
 use super::invariant::*;
-#[cfg(test)]
 use onek_types::*;
-#[cfg(test)]
 use std::sync::Mutex;
-#[cfg(test)]
 use std::sync::OnceLock;
 
 // Snapshot tests need to run sequentially because they talk to external processes like
 // the state service. Unit tests can be run using one thread via `--test-threads=1` but
 // that doesn't seem to work with `cargo insta test`. So we'll use this mutex to serialize
 // them.
-#[cfg(test)]
 static MUTEX: OnceLock<Mutex<i32>> = OnceLock::new();
 
-#[cfg(test)]
 trait ToSnapshot {
     fn to_snapshot(&self, state: &StateIO) -> String;
 }
 
-#[cfg(test)]
 fn terrain_to_char(terrain: Terrain) -> char {
     match terrain {
         Terrain::Dirt => ' ',
@@ -29,7 +24,6 @@ fn terrain_to_char(terrain: Terrain) -> char {
     }
 }
 
-#[cfg(test)]
 impl ToSnapshot for StateResponse {
     fn to_snapshot(&self, state: &StateIO) -> String {
         match self {
@@ -39,7 +33,6 @@ impl ToSnapshot for StateResponse {
     }
 }
 
-#[cfg(test)]
 impl ToSnapshot for View {
     fn to_snapshot(&self, _test: &StateIO) -> String {
         let mut result = String::with_capacity(200);
@@ -64,7 +57,6 @@ impl ToSnapshot for View {
     }
 }
 
-#[cfg(test)]
 impl ToSnapshot for Note {
     fn to_snapshot(&self, _state: &StateIO) -> String {
         let mut result = String::with_capacity(200);
@@ -73,14 +65,12 @@ impl ToSnapshot for Note {
     }
 }
 
-#[cfg(test)]
 struct GameInfo {
     player_loc: Point,
     view: View,
     notes: Vec<Note>,
 }
 
-#[cfg(test)]
 impl GameInfo {
     fn new(state: &StateIO) -> GameInfo {
         const NUM_NOTES: usize = 8;
@@ -96,7 +86,6 @@ impl GameInfo {
     }
 }
 
-#[cfg(test)]
 impl ToSnapshot for GameInfo {
     fn to_snapshot(&self, state: &StateIO) -> String {
         let mut result = String::with_capacity(800);
