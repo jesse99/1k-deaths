@@ -86,32 +86,28 @@ other rogue-likes\
 
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 3 It\'92s a boy!    
 \f1\b0 \
-	- support player movement (this will need the logic service)\
-		` can we make an entire file cfg test?\
-	- state handle methods should probably be methods on Game\
-	- support watchdog\
-		` services could poke watchdog every N seconds\
-		` services would need to use recv_timeout\
-		` poke would include pid\
-		` UI probably wouldn\'92t poke\
-		` watchdog could force kill hung services\
-		` clean kill others\
-		` force kill any that don\'92t cleanly die\
-		` write a test for this, maybe query with no rx, or just sleep for a long time\
-	- might be able to use test first design\
-	- add support for other services (note that tester should go trhough logic)\
+	- add support for other services (note that tester should go through logic)\
 	- handle channel errors somehow, don\'92t need anything fancy atm\
 	- add support for replay, be sure to test this\
 	- maybe add support for rollback\
 	- logic should not allow movement into walls\
 	- support LOS?\
 
-\f3\b 4 the map
+\f3\b 4a the map
 \f1\b0 \
 	- add ui service\
 	- support scrolling in the ui\
 	- support moving the player using keys\
 	- add doors\
+
+\f3\b 4b app\
+
+\f1\b0 	- should be responsible for launching services\
+	- could use config file to specify how and what to launch\
+	- should be able to use std::process to launch and kill processes\
+	- services (except UI) should regularly poke app (use recv_timeout)\
+	- update run-tests.sh\
+	- use a script to test wathdog? maybe option to override max poke duration\
 
 \f3\b 5 saving/loading
 \f1\b0 \

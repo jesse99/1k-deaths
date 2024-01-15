@@ -16,11 +16,15 @@ run_logic() {
     sleep 1
 }
 
+run_watchdog() {
+    ./target/debug/onek-watchdog&
+}
 
 cargo build &&
-run_state && run_logic &&
+run_watchdog && run_state && run_logic &&
 cargo test -p onek-state &&
 cargo insta test --review -p onek-invariant
+killall -q onek-watchdog
 killall -q onek-logic
 killall -q onek-state
 
