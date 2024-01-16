@@ -54,6 +54,10 @@ fn handle_end_transaction(game: &mut Game, id: String) {
 fn handle_move_player(game: &mut Game, loc: Point) {
     info!("moving player to {loc}");
     game.player_loc = loc;
+    game.pov.dirty();
+
+    OldPoV::update(game); // TODO: this should happen when time advances
+    PoV::refresh(game);
 }
 
 fn handle_reset(game: &mut Game, map: &str) {
@@ -62,6 +66,7 @@ fn handle_reset(game: &mut Game, map: &str) {
     game.player_loc = Point::new(-1, -1);
     game.terrain.clear();
     game.notes.clear();
+    game.pov.dirty();
 
     let mut loc = Point::new(0, 0);
     for ch in map.chars() {
@@ -85,6 +90,9 @@ fn handle_reset(game: &mut Game, map: &str) {
         }
     }
     assert!(game.player_loc.x >= 0, "map is missing @");
+
+    OldPoV::update(game);
+    PoV::refresh(game);
 }
 
 pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {

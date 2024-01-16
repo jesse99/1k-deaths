@@ -6,6 +6,7 @@ use std::fmt::{self, Formatter};
 /// create senders.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ChannelName {
+    // TODO: should we use newtype idiom here?
     name: String,
 }
 

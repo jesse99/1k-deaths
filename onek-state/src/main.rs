@@ -7,12 +7,19 @@ use onek_types::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
 
+mod fov;
 mod game;
 mod mutators;
+mod old_pov;
+mod pov;
 mod queries;
+mod vec2d;
 
+use fov::*;
 use game::*;
 use mutators::*;
+use old_pov::*;
+use pov::*;
 use queries::*;
 
 fn create_sender(name: &ChannelName) -> ipmpsc::Sender {

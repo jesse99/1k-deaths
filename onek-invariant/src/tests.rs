@@ -21,6 +21,7 @@ fn terrain_to_char(terrain: Terrain) -> char {
         Terrain::ShallowWater => '~',
         Terrain::DeepWater => 'W',
         Terrain::Wall => '#',
+        Terrain::Unknown => '?',
     }
 }
 
@@ -149,7 +150,6 @@ fn test_bump_wall() {
 
     invariant(&state);
 
-    // TODO: other tests should use new goo
     let info = GameInfo::new(&state);
     insta::assert_display_snapshot!(info.to_snapshot(&state));
 }
@@ -168,7 +168,6 @@ fn test_bump_shallow() {
 
     invariant(&state);
 
-    // TODO: other tests should use new goo
     let info = GameInfo::new(&state);
     insta::assert_display_snapshot!(info.to_snapshot(&state));
 }
@@ -187,7 +186,25 @@ fn test_bump_deep() {
 
     invariant(&state);
 
-    // TODO: other tests should use new goo
+    let info = GameInfo::new(&state);
+    insta::assert_display_snapshot!(info.to_snapshot(&state));
+}
+
+// There are LOS unit tests so we don't need a lot here.
+#[test]
+fn test_los() {
+    let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let state = StateIO::new("/tmp/state-to-test");
+    state.reset(
+        "############\n\
+             #          #\n\
+             #   @   #  #\n\
+             #   #      #\n\
+             ############",
+    );
+    let _ = LogicIO::new();
+    invariant(&state);
+
     let info = GameInfo::new(&state);
     insta::assert_display_snapshot!(info.to_snapshot(&state));
 }

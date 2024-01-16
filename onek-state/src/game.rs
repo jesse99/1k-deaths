@@ -1,3 +1,4 @@
+use super::{OldPoV, PoV};
 use onek_types::*;
 use std::collections::{HashMap, VecDeque};
 
@@ -6,6 +7,8 @@ pub struct Game {
     pub default_terrain: Terrain,
     pub player_loc: Point,
     pub notes: VecDeque<Note>,
+    pub pov: PoV,        // locations that the player can currently see
+    pub old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
     pub reply_senders: HashMap<ChannelName, ipmpsc::Sender>,
     pub read_transactions: Vec<String>,
     pub queued_mutates: Vec<StateMutators>,
@@ -18,6 +21,8 @@ impl Game {
             default_terrain: Terrain::Wall,
             player_loc: Point::new(0, 0),
             notes: VecDeque::new(),
+            pov: PoV::new(),
+            old_pov: OldPoV::new(),
             reply_senders: HashMap::new(),
             read_transactions: Vec::new(),
             queued_mutates: Vec::new(),

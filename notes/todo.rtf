@@ -86,12 +86,19 @@ other rogue-likes\
 
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 3 It\'92s a boy!    
 \f1\b0 \
-	- add support for other services (note that tester should go through logic)\
-	- handle channel errors somehow, don\'92t need anything fancy atm\
-	- add support for replay, be sure to test this\
-	- maybe add support for rollback\
-	- logic should not allow movement into walls\
-	- support LOS?\
+	- support LOS\
+	- may want a test for pov outside RADIUS\
+	- add a snapshot test for old_pov?\
+	- fix any warnings\
+	- do a commit and a push\
+	- work on objects, replace Terrain enum\
+		` could keep stuff in different python files\
+		` read all py files in the dir\
+		` concat them together\
+		` maybe instead of `terrains = [\'85]` use `objects += [\'85]`\
+		` parse them and get a list of all objects (exemplars)\
+		` verify that id\'92s are unique\
+		` OldPoV should store trimmed Cell: back_color and last symbol\
 
 \f3\b 4a the map
 \f1\b0 \
@@ -108,10 +115,18 @@ other rogue-likes\
 	- services (except UI) should regularly poke app (use recv_timeout)\
 	- update run-tests.sh\
 	- use a script to test wathdog? maybe option to override max poke duration\
+	- probably want an option to replay instead of starting a new game\
 
 \f3\b 5 saving/loading
 \f1\b0 \
-	- mutator events should be serialized to a special log using json\
+	- add support for replay\
+		` state(?) should persist mutate methods using json\
+		` maybe use a more efficient format in release\
+		` probably want a replay message\
+		` message takes number of messages to replay\
+		` add a query that returns true if there are still messages to replay\
+		` also a message to stop replay\
+		` write a test for this?\
 	- load would replay events\
 	- probably want to allow the ui to have some control over this\
 	- would be great to have a roll back option, maybe in debugger service?\
@@ -127,9 +142,13 @@ other rogue-likes\
 	- could just keep track of key/values ourself\'85\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 Step 6 - It\'92s Alive! Alive!
+\f3\b \cf4 Step 6a - It\'92s Alive! Alive!
 \f1\b0 \
 \'95\'a0Implement NPCs (and time)\
+	- start using Objects, probably just collection of toml values\
+	   ` or potentially some other config file format\
+	   ` note that we do need something pretty good at nesting, eg for inventory\
+	   ` probably want typed accessaors for content\
 	- add ai\
 	- add scheduler\
 	- hook up the scheduler\
@@ -139,7 +158,15 @@ other rogue-likes\
 	- would be nice to have some more snapshot tests\
 	- make sure both sets of tests still work\
 
-\f3\b Step 7 - Interaction\
+\f3\b Step 6b - Debugger service\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\b0 \cf4 \'95\'a0Should be a regular command line app (so it\'92ll work with web based UIs)\
+\'95\'a0Will need commands to inspect objects (and to select them)\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f3\b \cf4 Step 7 - Interaction\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf4 \'95\'a0Add character stats (add these as they are needed)\

@@ -1,18 +1,35 @@
 use super::*;
 
 fn cell_at(game: &Game, loc: Point) -> Cell {
-    let terrain = *game.terrain.get(&loc).unwrap_or(&game.default_terrain);
-    if loc == game.player_loc {
-        Cell {
-            terrain,
-            objects: Vec::new(),
-            character: Some(PLAYER_ID),
+    if game.pov.visible(game, &loc) {
+        let terrain = *game.terrain.get(&loc).unwrap_or(&game.default_terrain);
+        if loc == game.player_loc {
+            Cell {
+                terrain,
+                objects: Vec::new(),
+                character: Some(PLAYER_ID),
+            }
+        } else {
+            Cell {
+                terrain,
+                objects: Vec::new(),
+                character: None,
+            }
         }
     } else {
-        Cell {
-            terrain,
-            objects: Vec::new(),
-            character: None,
+        match game.old_pov.get(&loc) {
+            Some(&terrain) => Cell {
+                // old state
+                terrain,
+                objects: Vec::new(),
+                character: None,
+            },
+            None => Cell {
+                // never seen
+                terrain: Terrain::Unknown,
+                objects: Vec::new(),
+                character: None,
+            },
         }
     }
 }
@@ -42,10 +59,16 @@ fn handle_player_loc(game: &Game, name: ChannelName) {
 fn handle_player_view(game: &Game, name: ChannelName) {
     let mut view = View::new();
 
-    // TODO: need to handle LOS
-    for (&loc, _) in game.terrain.iter() {
-        let cell = cell_at(game, loc);
-        view.insert(loc, cell);
+    let start_loc = Point::new(
+        game.player_loc.x - super::pov::RADIUS,
+        game.player_loc.y - super::pov::RADIUS,
+    );
+    for dy in 0..2 * super::pov::RADIUS {
+        for dx in 0..2 * super::pov::RADIUS {
+            let loc = Point::new(start_loc.x + dx, start_loc.y + dy);
+            let cell = cell_at(game, loc);
+            view.insert(loc, cell);
+        }
     }
 
     let response = StateResponse::Map(view);

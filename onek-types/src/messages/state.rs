@@ -32,7 +32,11 @@ pub enum Terrain {
     Dirt,
     ShallowWater,
     Wall,
+    Unknown,
 }
+
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct Symbol(char);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Cell {

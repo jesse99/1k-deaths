@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.31"                       # time library
+fnv = "1.0.7"                           # custom hasher that is much more performant for small keys
 ipmpsc = "0.5.1"                        # inter-process channels
 log = "0.4.20"                          # standard logging API
 onek-types = { path = "../onek-types" } # IPC message types

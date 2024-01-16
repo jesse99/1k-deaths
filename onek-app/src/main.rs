@@ -35,7 +35,7 @@ fn check_services(app: &mut App) {
                         );
                         // force kill hung service
                         // clean kill others, wait a bit and force kill if not killed?
-                        // exit App?
+                        // restart services, may want an option for this
                     }
                 },
                 None => {
