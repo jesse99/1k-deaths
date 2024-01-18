@@ -29,7 +29,11 @@ impl Note {
 /// First Object will be terrain.
 pub type Cell = Vec<Object>;
 
-/// Represents a portion of a level. Typically cells visible to a character.
+/// Represents a portion of a level. Typically cells visible to a character. Note that
+/// cells that were previously visible are returned in truncated form: they only include
+/// "description", "symbol", "color", "back_color" fields plus "id" which is set to
+/// "stale". This is because those cells are now outside the player's LOS and cannot be
+/// interacted with and may not even exist now.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct View {
     pub cells: HashMap<Point, Cell>,

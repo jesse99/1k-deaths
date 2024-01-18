@@ -1,5 +1,6 @@
-use super::{Cell, Game, Point, DEFAULT_CELL_ID};
+use super::{Cell, Game, Id, Point, Value, DEFAULT_CELL_ID};
 use fnv::FnvHashMap;
+use onek_types::Object;
 
 /// Locations that were visible to a character. Note that PoV overrides
 /// this so, as an optimization, this may include locations that are actually
@@ -24,10 +25,10 @@ impl OldPoV {
             for loc in game.pov.locations() {
                 let default = vec![DEFAULT_CELL_ID];
                 let oids = game.level.get(&loc).unwrap_or(&default);
-                // TODO: should we create a trimmed object? something like just description, symbol, color
-                // TODO: if we do we'd have to document this in messages/state.rd
-                // TODO: think that makes sense: more efficient and player shouldn't be interacting with them
-                let objects = oids.iter().map(|oid| game.objects.get(&oid).unwrap().clone()).collect();
+                let objects = oids
+                    .iter()
+                    .map(|oid| stale_obj(game.objects.get(&oid).unwrap()))
+                    .collect();
                 game.old_pov.old.insert(*loc, objects);
             }
             game.old_pov.edition = game.pov.edition();
@@ -37,4 +38,17 @@ impl OldPoV {
     pub fn get(&self, loc: &Point) -> Option<&Cell> {
         self.old.get(loc)
     }
+}
+
+fn stale_obj(old_object: &Object) -> Object {
+    let mut object = Object::default();
+
+    object.insert("id".to_owned(), Value::Id(Id("stale".to_owned())));
+    for name in vec!["description", "symbol", "color", "back_color"] {
+        if let Some(value) = old_object.get(name) {
+            object.insert(name.to_owned(), value.clone());
+        }
+    }
+
+    object
 }

@@ -30,7 +30,7 @@ pub enum Value {
 /// benefits:
 /// 1) We can define Value variants for custom types like Id and Oid.
 /// 2) Usage is simpler, e.g. Object keys are String instead of a Value type.
-/// 3) It's easiser to add methods onto our own type. TODO: is this true?
+/// 3) It's easiser to add methods onto our own type.
 /// 4) There should be an efficiency win because we use FnvHashMap.
 /// 5) It insulates us from the config language.
 pub type Object = FnvHashMap<String, Value>;
