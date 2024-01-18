@@ -1,5 +1,5 @@
 use super::FoV;
-use super::{Game, Point, Terrain};
+use super::{Game, Point};
 use fnv::FnvHashSet;
 
 pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? or gear?
@@ -19,6 +19,12 @@ impl PoV {
             visible: FnvHashSet::default(),
             dirty: true,
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.edition = 0;
+        self.visible.clear();
+        self.dirty = true;
     }
 
     pub fn dirty(&mut self) {
@@ -65,7 +71,7 @@ impl PoV {
             visible_tile: |loc| {
                 new_locs.push(loc);
             },
-            blocks_los: { |loc| blocks_los(game.terrain.get(&loc)) },
+            blocks_los: { |loc| blocks_los(game, &loc) },
         };
         view.visit();
 
@@ -75,18 +81,17 @@ impl PoV {
     }
 }
 
-// TODO: This is a bit tricky: we'd like objects (like a closed door or some statues) to
-// block LOS but we want to minimize logic in the state service. Probably should handle
-// this by having a blocks_los field in objects.
-fn blocks_los<'a>(t: Option<&Terrain>) -> bool {
-    match t {
-        Some(terrain) => match terrain {
-            Terrain::DeepWater => false,
-            Terrain::Dirt => false,
-            Terrain::ShallowWater => false,
-            Terrain::Wall => true,
-            Terrain::Unknown => true,
-        },
-        None => true, // non-existent cell
+fn blocks_los<'a>(game: &Game, loc: &Point) -> bool {
+    if let Some(oids) = game.level.get(&loc) {
+        for oid in oids.iter() {
+            if let Some(object) = game.objects.get(oid) {
+                if let Some(blocks) = object.get("blocks_los") {
+                    if blocks.to_bool() {
+                        return true;
+                    }
+                }
+            }
+        }
     }
+    false
 }

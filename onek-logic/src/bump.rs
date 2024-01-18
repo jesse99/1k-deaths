@@ -2,15 +2,18 @@ use onek_types::*;
 
 fn player_can_move(state: &StateIO, to: Point) -> Option<Note> {
     let cell = state.get_cell_at(to);
-    match cell.terrain {
-        Terrain::Dirt => None, // TODO: these should depend on character type (and maybe affects)
-        Terrain::ShallowWater => Some(Note::new(
-            NoteKind::Environmental,
-            "You splash through the water.".to_owned(),
-        )),
-        Terrain::DeepWater => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
-        Terrain::Wall => Some(Note::new(NoteKind::Error, "You bounce off the wall.".to_owned())),
-        Terrain::Unknown => panic!("Attempt to move into unknown cell"),
+    if cell.is_empty() {
+        panic!("Attempt to move into unknown cell")
+    } else {
+        match cell[0].get("id").unwrap().to_id().0.as_str() {
+            "deep water" => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
+            "shallow water" => Some(Note::new(
+                NoteKind::Environmental,
+                "You splash through the water.".to_owned(),
+            )),
+            "stone wall" => Some(Note::new(NoteKind::Error, "You bounce off the wall.".to_owned())),
+            _ => None,
+        }
     }
 }
 
@@ -26,6 +29,7 @@ pub fn handle_bump(state: &StateIO, oid: Oid, loc: Point) {
 
     // If the move resulted in a note then add it to state.
     let note = player_can_move(state, loc);
+    info!("note: {note:?}");
     match &note {
         None => (),
         Some(note) => state.send_mutate(StateMutators::AddNote(note.clone())),

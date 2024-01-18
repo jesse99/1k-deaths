@@ -1,6 +1,7 @@
 use arraystring::{typenum::U16, ArrayString};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 pub static NULL_ID: Oid = Oid::without_tag(0);
 pub static PLAYER_ID: Oid = Oid::without_tag(1);
@@ -9,7 +10,7 @@ pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(2);
 pub type TagStr = ArrayString<U16>;
 
 /// Used to uniquely identify objects.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, Serialize, Deserialize)]
 pub struct Oid {
     // Used by Display so that we get more informative logging.
     #[cfg(debug_assertions)]
@@ -46,6 +47,18 @@ impl Oid {
     }
 }
 
+impl PartialEq for Oid {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl Hash for Oid {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.value.hash(state);
+    }
+}
+
 impl fmt::Display for Oid {
     #[cfg(debug_assertions)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -66,5 +79,11 @@ impl fmt::Display for Oid {
     #[cfg(not(debug_assertions))]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "#{}", self.value)
+    }
+}
+
+impl fmt::Debug for Oid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self}")
     }
 }

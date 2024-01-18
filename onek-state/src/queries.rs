@@ -2,34 +2,19 @@ use super::*;
 
 fn cell_at(game: &Game, loc: Point) -> Cell {
     if game.pov.visible(game, &loc) {
-        let terrain = *game.terrain.get(&loc).unwrap_or(&game.default_terrain);
-        if loc == game.player_loc {
-            Cell {
-                terrain,
-                objects: Vec::new(),
-                character: Some(PLAYER_ID),
-            }
-        } else {
-            Cell {
-                terrain,
-                objects: Vec::new(),
-                character: None,
-            }
-        }
+        // info!("level: {:?}", game.level);
+        // info!("objects: {:?}", game.objects);
+        // info!("player_loc: {:?}", game.player_loc);
+        // info!("next_id: {:?}", game.next_id);
+        let default = game.objects.get(&DEFAULT_CELL_ID).unwrap();
+        let oids = game.level.get(&loc).unwrap();
+        oids.iter()
+            .map(|oid| game.objects.get(&oid).unwrap_or(default).clone())
+            .collect()
     } else {
         match game.old_pov.get(&loc) {
-            Some(&terrain) => Cell {
-                // old state
-                terrain,
-                objects: Vec::new(),
-                character: None,
-            },
-            None => Cell {
-                // never seen
-                terrain: Terrain::Unknown,
-                objects: Vec::new(),
-                character: None,
-            },
+            Some(cell) => cell.clone(),
+            None => vec![],
         }
     }
 }

@@ -1,4 +1,4 @@
-use super::{Game, Point, Terrain};
+use super::{Cell, Game, Point, DEFAULT_CELL_ID};
 use fnv::FnvHashMap;
 
 /// Locations that were visible to a character. Note that PoV overrides
@@ -6,8 +6,8 @@ use fnv::FnvHashMap;
 /// visible. Currently this is only used for the Player to render locations
 /// that he has seen before.
 pub struct OldPoV {
-    old: FnvHashMap<Point, Terrain>, // may not match the current Level state
-    edition: u32,                    // current PoV edition
+    old: FnvHashMap<Point, Cell>, // may not match the current level state
+    edition: u32,                 // current PoV edition
 }
 
 impl OldPoV {
@@ -22,14 +22,19 @@ impl OldPoV {
     pub fn update(game: &mut Game) {
         if game.pov.edition() != game.old_pov.edition {
             for loc in game.pov.locations() {
-                let terrain = game.terrain.get(&loc).unwrap_or(&Terrain::Unknown);
-                game.old_pov.old.insert(*loc, *terrain);
+                let default = vec![DEFAULT_CELL_ID];
+                let oids = game.level.get(&loc).unwrap_or(&default);
+                // TODO: should we create a trimmed object? something like just description, symbol, color
+                // TODO: if we do we'd have to document this in messages/state.rd
+                // TODO: think that makes sense: more efficient and player shouldn't be interacting with them
+                let objects = oids.iter().map(|oid| game.objects.get(&oid).unwrap().clone()).collect();
+                game.old_pov.old.insert(*loc, objects);
             }
             game.old_pov.edition = game.pov.edition();
         }
     }
 
-    pub fn get(&self, loc: &Point) -> Option<&Terrain> {
+    pub fn get(&self, loc: &Point) -> Option<&Cell> {
         self.old.get(loc)
     }
 }

@@ -26,24 +26,8 @@ impl Note {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum Terrain {
-    DeepWater,
-    Dirt,
-    ShallowWater,
-    Wall,
-    Unknown,
-}
-
-#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct Symbol(char);
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Cell {
-    pub terrain: Terrain,
-    pub objects: Vec<Oid>,
-    pub character: Option<Oid>,
-}
+/// First Object will be terrain.
+pub type Cell = Vec<Object>;
 
 /// Represents a portion of a level. Typically cells visible to a character.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -112,7 +96,7 @@ pub enum StateMutators {
 
     AddNote(Note),
     MovePlayer(Point),
-    Reset(String), // could include an arg to map weird chars to some sort of object enum
+    Reset(String, String), // reason, map could include an arg to map weird chars to some sort of object enum
 }
 
 /// Messages that the state service receives.
@@ -166,11 +150,9 @@ mod tests {
     fn test_view() {
         #[rustfmt::skip]
         let mut view = View::new();
-        let cell = Cell {
-            terrain: Terrain::Dirt,
-            objects: Vec::new(),
-            character: None,
-        };
+
+        let value: ron::Value = ron::from_str("Terrain(id: \"dirt\")").unwrap();
+        let cell: Cell = value.into_rust().unwrap();
 
         view.insert(Point::new(10, 10), cell.clone());
         assert_eq!(view.top_left, Point::new(10, 10));

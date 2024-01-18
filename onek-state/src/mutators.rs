@@ -1,16 +1,6 @@
 use super::*;
 use std::mem;
 
-fn char_to_terrain(ch: char) -> Option<Terrain> {
-    match ch {
-        '#' => Some(Terrain::Wall),
-        '~' => Some(Terrain::ShallowWater),
-        'W' => Some(Terrain::DeepWater),
-        ' ' => Some(Terrain::Dirt),
-        _ => None,
-    }
-}
-
 const MAX_NOTES: usize = 100;
 
 fn handle_add_note(game: &mut Game, note: Note) {
@@ -53,6 +43,8 @@ fn handle_end_transaction(game: &mut Game, id: String) {
 
 fn handle_move_player(game: &mut Game, loc: Point) {
     info!("moving player to {loc}");
+    game.remove_oid(game.player_loc, PLAYER_ID);
+    game.append_oid(loc, PLAYER_ID);
     game.player_loc = loc;
     game.pov.dirty();
 
@@ -60,33 +52,57 @@ fn handle_move_player(game: &mut Game, loc: Point) {
     PoV::refresh(game);
 }
 
-fn handle_reset(game: &mut Game, map: &str) {
+// pub level: HashMap<Point, Vec<Oid>>,
+
+fn handle_reset(game: &mut Game, reason: &str, map: &str) {
     // TODO: should have an arg for default_terrain
-    info!("resetting");
+    info!("resetting for {reason}");
     game.player_loc = Point::new(-1, -1);
-    game.terrain.clear();
+    game.level.clear();
+    game.objects.clear();
     game.notes.clear();
-    game.pov.dirty();
+
+    game.next_id = 1;
+    game.new_object("player"); // player
+    game.new_object("stone wall"); // default terrain
+    game.pov.reset();
+
+    // Note that terrain objects are reused. If their durability drops (because of something
+    // like digging) a new object will be created.
+    let dirt = game.new_object("dirt");
+    let wall = game.new_object("stone wall");
+    let deep_water = game.new_object("deep water");
+    let shallow_water = game.new_object("shallow water");
 
     let mut loc = Point::new(0, 0);
     for ch in map.chars() {
         match ch {
             '@' => {
-                game.terrain.insert(loc, Terrain::Dirt);
+                game.level.insert(loc, vec![dirt, PLAYER_ID]);
                 game.player_loc = loc;
+                loc.x += 1;
+            }
+            '#' => {
+                game.level.insert(loc, vec![wall]);
+                loc.x += 1;
+            }
+            '~' => {
+                game.level.insert(loc, vec![shallow_water]);
+                loc.x += 1;
+            }
+            'W' => {
+                game.level.insert(loc, vec![deep_water]);
+                loc.x += 1;
+            }
+            ' ' => {
+                game.level.insert(loc, vec![dirt]);
                 loc.x += 1;
             }
             '\n' => {
                 loc.x = 0;
                 loc.y += 1;
             }
-            _ => match char_to_terrain(ch) {
-                Some(terrain) => {
-                    game.terrain.insert(loc, terrain);
-                    loc.x += 1;
-                }
-                None => panic!("bad char in map: {ch}"),
-            },
+            _ => panic!("bad char in map: {ch}"),
         }
     }
     assert!(game.player_loc.x >= 0, "map is missing @");
@@ -113,7 +129,7 @@ pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
         BeginReadTransaction(id) => handle_begin_transaction(game, id),
         EndReadTransaction(id) => handle_end_transaction(game, id),
         MovePlayer(loc) => handle_move_player(game, loc),
-        Reset(map) => handle_reset(game, &map),
+        Reset(reason, map) => handle_reset(game, &reason, &map),
     }
     // game.send_response(name, StateResponse::Mutated());
 }

@@ -11,4 +11,5 @@ fnv = "1.0.7"                           # custom hasher that is much more perfor
 ipmpsc = "0.5.1"                        # inter-process channels
 log = "0.4.20"                          # standard logging API
 onek-types = { path = "../onek-types" } # IPC message types
+ron = "0.8.1"                           # rusty config language
 simplelog = "0.12.1"                    # logging facade

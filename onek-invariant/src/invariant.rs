@@ -16,11 +16,18 @@ pub fn invariant(state: &StateIO) {
     let cell = view.cells.get(&loc);
     assert!(cell.is_some(), "expected a cell for the player at {loc}");
 
-    let ch = cell.unwrap().character;
-    assert!(ch.is_some(), "expected a character for the player at {loc}");
+    let cell = cell.unwrap();
+    assert!(
+        cell.len() >= 2,
+        "expected cell {cell:?} to have at least terrain and the player"
+    );
 
-    let oid = ch.unwrap();
-    assert!(oid == PLAYER_ID, "expected player at {loc} not {oid}");
+    let object = cell.last().unwrap();
+    let id = object.get("id").unwrap().to_id();
+    assert!(id.0 == "player", "expected a player but found {object:?}");
+
+    let oid = object.get("oid").unwrap().to_oid();
+    assert!(*oid == PLAYER_ID, "expected player at {loc} not {oid}");
 
     state.end_read_transaction("invariant".to_string());
 }

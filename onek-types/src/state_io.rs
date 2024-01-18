@@ -33,8 +33,8 @@ impl StateIO {
         StateIO { tx, rx, rx_name }
     }
 
-    pub fn reset(&self, map: &str) {
-        let mesg = StateMessages::Mutate(StateMutators::Reset(map.to_string()));
+    pub fn reset(&self, reason: &str, map: &str) {
+        let mesg = StateMessages::Mutate(StateMutators::Reset(reason.to_string(), map.to_string()));
         info!("sending {mesg}");
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending Reset to State: {result:?}");

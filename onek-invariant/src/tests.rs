@@ -15,14 +15,13 @@ trait ToSnapshot {
     fn to_snapshot(&self, state: &StateIO) -> String;
 }
 
-fn terrain_to_char(terrain: Terrain) -> char {
-    match terrain {
-        Terrain::Dirt => ' ',
-        Terrain::ShallowWater => '~',
-        Terrain::DeepWater => 'W',
-        Terrain::Wall => '#',
-        Terrain::Unknown => '?',
+fn cell_to_char(cell: &Cell) -> char {
+    for obj in cell.iter().rev() {
+        if let Some(value) = obj.get("symbol") {
+            return value.to_char();
+        }
     }
+    '?'
 }
 
 impl ToSnapshot for StateResponse {
@@ -41,13 +40,7 @@ impl ToSnapshot for View {
             for x in self.top_left.x..=self.top_left.x + self.size().width {
                 let loc = Point::new(x, y);
                 match self.cells.get(&loc) {
-                    Some(cell) => {
-                        if cell.character.unwrap_or(NULL_ID) == PLAYER_ID {
-                            result.push('@');
-                        } else {
-                            result.push(terrain_to_char(cell.terrain));
-                        }
-                    }
+                    Some(cell) => result.push(cell_to_char(cell)),
                     None => result.push(' '),
                 }
             }
@@ -79,6 +72,7 @@ impl GameInfo {
         let player_loc = state.get_player_loc();
         let view = state.get_player_view();
         let notes = state.get_notes(NUM_NOTES);
+        eprintln!("notes: {notes:?}");
         GameInfo {
             player_loc,
             view,
@@ -107,6 +101,7 @@ fn test_from_str() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
     let state = StateIO::new("/tmp/state-to-test");
     state.reset(
+        "test_from_str",
         "###\n\
              #@#\n\
              ###",
@@ -123,6 +118,7 @@ fn test_bump_move() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
     let state = StateIO::new("/tmp/state-to-test");
     state.reset(
+        "test_bump_move",
         "####\n\
              #@ #\n\
              ####",
@@ -141,6 +137,7 @@ fn test_bump_wall() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
     let state = StateIO::new("/tmp/state-to-test");
     state.reset(
+        "test_bump_wall",
         "####\n\
              #@ #\n\
              ####",
@@ -159,6 +156,7 @@ fn test_bump_shallow() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
     let state = StateIO::new("/tmp/state-to-test");
     state.reset(
+        "test_bump_shallow",
         "####\n\
              #@~#\n\
              ####",
@@ -177,6 +175,7 @@ fn test_bump_deep() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
     let state = StateIO::new("/tmp/state-to-test");
     state.reset(
+        "test_bump_deep",
         "####\n\
              #@W#\n\
              ####",
@@ -196,6 +195,7 @@ fn test_los() {
     let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().unwrap();
     let state = StateIO::new("/tmp/state-to-test");
     state.reset(
+        "test_los",
         "############\n\
              #          #\n\
              #   @   #  #\n\
