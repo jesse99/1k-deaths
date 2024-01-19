@@ -84,34 +84,56 @@ other rogue-likes\
 \CocoaLigature1 \outl0\strokewidth0 \strokec5 \
 \pard\pardeftab720\sl420\partightenfactor0
 
-\f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 3 It\'92s a boy!    
+\f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 X revamp archiecture\
+
+\f1\b0 \'95\'a0Put this in a new git branch? modular?\
+\'95\'a0Switch to having a backend and multiple front ends\
+	- terminal UI, web UI, debugger, maybe stats collector\
+	- make these separate processes and use ipc\
+	- instead of types have a shared lib\
+	- update technical doc\
+		` maybe point out that components get dicy\
+		     timing introduces non-determinism\
+		     tooling is a lot more complex (eg profiling)\
+		     doesn\'92t really help, other than with UI\
+		     less efficient (eg invariant)\
+	- probably want to get rid of watchdog\
+\'95 Rename state to backend\
+\'95\'a0Merge (some) logic and invariant into backend\
+	- should be able to remove some Message types\
+\'95 Rename logic to terminal\
+\'95 Probably want to get rid of watchdog (aka app)\
+\'95\'a0Should be able to drop mutex from unit tests\
+	\
+
+\f3\b 3 It\'92s a boy!    
 \f1\b0 \
-	- work on objects, replace Terrain enum\
-		` OldPoV should store trimmed Cell: back_color and last symbol\
-		` be sure to document this\
-	- invariant should verify that first object in a cell is terrain\
+\'95 invariant should verify that first object in a cell is terrain\
 
-\f3\b 4a the map
+\f3\b \
+4a the map
 \f1\b0 \
-	- add ui service\
-	- might want Value::Color variant\
-	- support scrolling in the ui\
-	- support moving the player using keys\
-	- add doors\
+\'95 add ui front end\
+\'95 might want Value::Color variant\
+\'95 support scrolling in the ui\
+\'95 support moving the player using keys\
+\'95 add doors\
 
-\f3\b 4b app\
+\f3\b \
+4b app\
 
-\f1\b0 	- should be responsible for launching services\
-	- could use config file to specify how and what to launch\
-	- should be able to use std::process to launch and kill processes\
-	- services (except UI) should regularly poke app (use recv_timeout)\
+\f1\b0 \'95 should be responsible for launching services\
+\'95 could use config file to specify how and what to launch\
+\'95 should be able to use std::process to launch and kill processes\
+\'95 services (except UI) should regularly poke app (use recv_timeout)\
 	- update run-tests.sh\
 	- use a script to test wathdog? maybe option to override max poke duration\
 	- probably want an option to replay instead of starting a new game\
 
-\f3\b 5 saving/loading
+\f3\b \
+5 saving/loading
 \f1\b0 \
-	- add support for replay\
+\'95 add support for replay\
 		` state(?) should persist mutate methods using json\
 		` maybe use a more efficient format in release\
 		` probably want a replay message\
@@ -119,11 +141,11 @@ other rogue-likes\
 		` add a query that returns true if there are still messages to replay\
 		` also a message to stop replay\
 		` write a test for this?\
-	- load would replay events\
-	- probably want to allow the ui to have some control over this\
-	- would be great to have a roll back option, maybe in debugger service?\
+\'95 load would replay events\
+\'95 probably want to allow the ui to have some control over this\
+\'95 would be great to have a roll back option, maybe in debugger service?\
 * Get persistence working\
-	- change Entity to a string\
+\'95 change Entity to a string\
 	- see if we can use newtype and from/into attributes\
 	- will need to do some custom serialization for Game\
 		slog-serde?\
@@ -134,7 +156,8 @@ other rogue-likes\
 	- could just keep track of key/values ourself\'85\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 Step 6a - It\'92s Alive! Alive!
+\f3\b \cf4 \
+Step 6a - It\'92s Alive! Alive!
 \f1\b0 \
 \'95\'a0Implement NPCs (and time)\
 	- start using Objects, probably just collection of toml values\
@@ -150,7 +173,8 @@ other rogue-likes\
 	- would be nice to have some more snapshot tests\
 	- make sure both sets of tests still work\
 
-\f3\b Step 6b - Debugger service\
+\f3\b \
+Step 6b - Debugger service\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f1\b0 \cf4 \'95\'a0Should be a regular command line app (so it\'92ll work with web based UIs)\
