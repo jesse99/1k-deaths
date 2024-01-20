@@ -6,7 +6,7 @@
 #[cfg(test)] // for now this is only used within unit tests
 use super::vec2d::Vec2d;
 use fnv::FnvHashSet;
-use onek_types::*;
+use onek_shared::*;
 
 /// Field of View struct. Calls the visible_tile callback for each cell
 /// visible from start point. For example walls will normally block line of

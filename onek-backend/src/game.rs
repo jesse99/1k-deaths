@@ -1,5 +1,5 @@
 use super::{OldPoV, PoV};
-use onek_types::*;
+use onek_shared::*;
 use std::collections::{HashMap, VecDeque};
 
 pub struct Game {

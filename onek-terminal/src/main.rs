@@ -6,7 +6,7 @@ mod bump;
 
 use bump::*;
 use ipmpsc::{Receiver, SharedRingBuffer};
-use onek_types::*;
+use onek_shared::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
 

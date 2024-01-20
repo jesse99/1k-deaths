@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::invariant::*;
-use onek_types::*;
+use onek_shared::*;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 

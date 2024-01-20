@@ -1,6 +1,6 @@
 use super::{Cell, Game, Id, Point, Value, DEFAULT_CELL_ID};
 use fnv::FnvHashMap;
-use onek_types::Object;
+use onek_shared::Object;
 
 /// Locations that were visible to a character. Note that PoV overrides
 /// this so, as an optimization, this may include locations that are actually

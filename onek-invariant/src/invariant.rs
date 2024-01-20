@@ -1,5 +1,5 @@
 #[cfg(test)]
-use onek_types::*;
+use onek_shared::*;
 
 // TODO: probably should check the entire map
 // expensive but this is in its own process and we don't have to

@@ -1,4 +1,4 @@
-use onek_types::*;
+use onek_shared::*;
 use std::fmt;
 
 #[derive(Clone)]

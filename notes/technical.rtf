@@ -7,8 +7,8 @@
 
 \f0\b\fs48 \cf2 Goals\
 
-\f1\b0 \'95\'a0Sharp system boundaries with well defined APIs. 
-\f2\i This should result in a cleaner design and will make testing the trickiest bits easier.\
+\f1\b0 \'95\'a0Sharp boundary between the backend and UI(s). 
+\f2\i This makes testing easier and should make it easier to add a web UI later.\
 
 \f1\i0 \'95 Games should support replay and live rollback. 
 \f2\i Much easier to repro bugs and to backup to investigate problems. Also would enable regression testing by replaying old games and verifying end states (or maybe that they don\'92t just panic or log errors).
@@ -20,8 +20,13 @@
 \f2\i This isn\'92t entirely straight-forward because it depends on the target and the RNG will play a role but we could simulate the behavior against a target picked by the user for a lot of rounds and report the result.\
 
 \f1\i0 \'95\'a0Events should not use floating point. 
-\f2\i This side steps complexities involved in persistence as well as sticky isses like when are two floating point numbers equal. I think that this will mainly affect time which can be stored as integral milliseconds.
-\f1\i0 \
+\f2\i This side steps complexities involved in persistence as well as sticky isses like when are two floating point numbers equal. I think that this will mainly affect time which can be stored as integral milliseconds.\
+
+\f1\i0 \'95\'a0Enable support for stuff like a terminal based debugger and potentially some sort of stats collector process.
+\f2\i \
+\
+
+\f1\i0 I had experimented with something resembling a micro-services architecture using ipmpsc for IPC with state, logic, invariant, UI, debugger, etc services. Biggest problem with that is that the IPC introduces non-determinism. For example, the invariant service may complain but not for a replay because the timing may be slightly different. Micro-services also make debugging and profiling more complex and doesn\'92t seem to provide much value over the current coarse-grained approach.\
 \
 
 \f0\b Non-Goals\
@@ -38,63 +43,6 @@
 \f0\b\fs58 \cf3 \expnd0\expndtw0\kerning0
 Design
 \f1\b0\fs48 \
-Micro-services inspired design. Components are separated into distinct processes that use typed channels to communicate. Note that these are simple processes and don\'92t rely on containers. The services are:\
+Backend and UI(s) are separate processes using typed channels to communicate (ipmpsc crate). All the state and logic is maintained by the backend process. Backend mutate messages are logged to allow for replay and rollback.\
 \
-\ul State\ulnone \
-\'95\'a0Contains all the game state.\
-\'95\'a0No real logic other than what is required for acceptable performance (e.g. LOS algorithms).\
-\'95 Supports query messages, e.g. what is visible near a character.\
-\'95\'a0Supports mutator messages, e.g. move character to position X.\
-\'95\'a0Mutator messages are logged using json to allow for replay and rollback.\
-\
-\ul Logic\ulnone \
-\'95\'a0Has all the game logic, eg what happens when a character bumps into another object.\
-\'95\'a0Also has NPC AI. Might want to move this into its own service.\
-\'95\'a0Handles all validation.\
-\'95\'a0Should be the only source of non-determinism.\
-\
-\ul UI\
-\ulnone \'95\'a0Initially terminal based, later could be web page.\
-\'95\'a0Takes in player input and sends associated message to Logic.\
-\'95\'a0Directly queries State when rendering.\
-\
-\ul Watchdog\ulnone \
-\'95\'a0Restarts or kills processes that have hung.\
-\'95\'a0Maybe decision is made with a per-service config option.\
-\
-\ul Game\
-\ulnone \'95\'a0Coordinates launching services.\
-\'95 Also configuring?\
-\
-\ul Invariant\
-\ulnone * Verifies State is legit.\
-\'95 If not logs and kills itself (watchdog will notice).\
-\'95\'a0Also contains snapshot tests of Logic and State services.\
-\
-\ul Debugger\
-\ulnone \'95\'a0Command line debugger.\
-\'95\'a0Should support both viewing state and modifying state.\
-\'95\'a0Later could add a web based debugger.\
-\
-
-\f0\b Advantages & Disadvantages\
-
-\f1\b0 + clean with nice separation of concerns\
-+ easy to have different/optional services , e.g. Ui, fake player\
-+ replay should be straightforward \
-+ should be able to support rollback \
-+ can use different languages with different services\
-+ hot restarts make tweaks easier \
-+ easier testing?\
-+ easier to change the internals of a service because they are so well encapsulated\
-+ easier experimentation with new stuff, eg visual debugger or player aids\
-+ potentially concurrency, eg invariant or maybe logic could make plans while player moves \
-+ maybe basis for multiplayer \
-- debugging might be harder \
-- profiling is more complex\
-- security might be harder \
-\
-
-\f0\b provide an example of message flow
-\f1\b0 \
 }

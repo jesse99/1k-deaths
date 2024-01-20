@@ -1,4 +1,4 @@
-use onek_types::*;
+use onek_shared::*;
 
 fn player_can_move(state: &StateIO, to: Point) -> Option<Note> {
     let cell = state.get_cell_at(to);

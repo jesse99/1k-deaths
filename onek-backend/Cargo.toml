@@ -1,0 +1,15 @@
+[package]
+name = "onek-backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.31"                         # time library
+fnv = "1.0.7"                             # custom hasher that is much more performant for small keys
+ipmpsc = "0.5.1"                          # inter-process channels
+log = "0.4.20"                            # standard logging API
+onek-shared = { path = "../onek-shared" } # IPC message types
+ron = "0.8.1"                             # rusty config language
+simplelog = "0.12.1"                      # logging facade

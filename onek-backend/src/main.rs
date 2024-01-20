@@ -3,7 +3,7 @@ extern crate log;
 extern crate simplelog;
 
 use ipmpsc::{Receiver, Sender, SharedRingBuffer};
-use onek_types::*;
+use onek_shared::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
 
