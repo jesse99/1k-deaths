@@ -96,16 +96,6 @@ impl StateIO {
 
 // Mutators (in general only the logic service should send these)
 impl StateIO {
-    pub fn begin_read_transaction(&self, name: String) {
-        let mutate = StateMutators::BeginReadTransaction(name);
-        self.send_mutate(mutate);
-    }
-
-    pub fn end_read_transaction(&self, name: String) {
-        let mutate = StateMutators::EndReadTransaction(name);
-        self.send_mutate(mutate);
-    }
-
     pub fn send_mutate(&self, mutate: StateMutators) {
         let mesg = StateMessages::Mutate(mutate);
         let result = self.tx.send(&mesg);

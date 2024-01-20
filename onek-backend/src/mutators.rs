@@ -1,5 +1,5 @@
 use super::*;
-use std::mem;
+// use std::mem;
 
 const MAX_NOTES: usize = 100;
 
@@ -15,32 +15,6 @@ fn handle_add_note(game: &mut Game, note: Note) {
     assert!(game.notes.len() <= MAX_NOTES);
 }
 
-fn handle_begin_transaction(game: &mut Game, id: String) {
-    info!("begin read transaction with {id}");
-    game.read_transactions.push(id);
-    debug_assert!(game.read_transactions.len() < 100); // sanity check
-}
-
-fn handle_end_transaction(game: &mut Game, id: String) {
-    info!("end read transaction with {id}");
-
-    // Read transactions can overlap instead of always being strictly nested so we need
-    // to search for the transacvtion id.
-    match game.read_transactions.iter().position(|value| *value == id) {
-        Some(index) => game.read_transactions.remove(index),
-        None => panic!("failed to find read transaction {id}"),
-    };
-
-    if game.read_transactions.is_empty() {
-        let mut mesgs = Vec::new();
-        mem::swap(&mut mesgs, &mut game.queued_mutates);
-
-        for mesg in mesgs {
-            handle_mutate(game, mesg);
-        }
-    }
-}
-
 fn handle_move_player(game: &mut Game, loc: Point) {
     info!("moving player to {loc}");
     game.remove_oid(game.player_loc, PLAYER_ID);
@@ -52,7 +26,10 @@ fn handle_move_player(game: &mut Game, loc: Point) {
     PoV::refresh(game);
 }
 
-// pub level: HashMap<Point, Vec<Oid>>,
+fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
+    info!("{oid} bump to {loc}");
+    // TODO: implement this
+}
 
 fn handle_reset(game: &mut Game, reason: &str, map: &str) {
     // TODO: should have an arg for default_terrain
@@ -114,22 +91,7 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
 pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     use StateMutators::*;
     match mesg {
-        BeginReadTransaction(_) => (),
-        EndReadTransaction(_) => (),
-        _ => {
-            if !game.read_transactions.is_empty() {
-                game.queued_mutates.push(mesg);
-                debug_assert!(game.read_transactions.len() < 5000); // sanity check
-                return;
-            }
-        }
-    }
-    match mesg {
-        AddNote(note) => handle_add_note(game, note),
-        BeginReadTransaction(id) => handle_begin_transaction(game, id),
-        EndReadTransaction(id) => handle_end_transaction(game, id),
-        MovePlayer(loc) => handle_move_player(game, loc),
+        Bump(oid, loc) => handle_bump(game, oid, loc),
         Reset(reason, map) => handle_reset(game, &reason, &map),
     }
-    // game.send_response(name, StateResponse::Mutated());
 }

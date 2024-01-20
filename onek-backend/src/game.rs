@@ -10,8 +10,6 @@ pub struct Game {
     pub pov: PoV,        // locations that the player can currently see
     pub old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
     pub reply_senders: HashMap<ChannelName, ipmpsc::Sender>,
-    pub read_transactions: Vec<String>,
-    pub queued_mutates: Vec<StateMutators>,
     pub next_id: u32, // 0 is null, 1 is the player, 2 is default terrain
     exemplars: HashMap<Id, Object>,
 }
@@ -28,8 +26,6 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             reply_senders: HashMap::new(),
-            read_transactions: Vec::new(),
-            queued_mutates: Vec::new(),
         };
         game.new_object("player"); // player
         game.new_object("stone wall"); // default terrain

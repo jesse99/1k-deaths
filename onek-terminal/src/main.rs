@@ -2,20 +2,17 @@
 extern crate log;
 extern crate simplelog;
 
-mod bump;
-
-use bump::*;
 use ipmpsc::{Receiver, SharedRingBuffer};
 use onek_shared::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
 
-fn handle_mesg(state: &StateIO, mesg: LogicMessages) {
-    debug!("received {mesg:?}");
-    match mesg {
-        LogicMessages::Bump(oid, loc) => handle_bump(state, oid, loc),
-    }
-}
+// fn handle_mesg(state: &StateIO, mesg: LogicMessages) {
+//     debug!("received {mesg:?}");
+//     match mesg {
+//         LogicMessages::Bump(oid, loc) => handle_bump(state, oid, loc),
+//     }
+// }
 
 fn init_logging(config: &Config) {
     // See https://docs.rs/simplelog/0.12.1/simplelog/struct.ConfigBuilder.html
@@ -48,16 +45,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let map_file = "/tmp/logic-sink";
+    // let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
     let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
 
-    let state = StateIO::new("/tmp/state-to-logic");
-    loop {
-        match rx.recv() {
-            Ok(mesg) => handle_mesg(&state, mesg),
-            Err(err) => {
-                error!("rx error: {err}");
-                return Result::Err(Box::new(err));
-            }
-        }
-    }
+    Result::Ok(())
+
+    // let state = StateIO::new("/tmp/state-to-logic");
+    // loop {
+    //     match rx.recv() {
+    //         Ok(mesg) => handle_mesg(&state, mesg),
+    //         Err(err) => {
+    //             error!("rx error: {err}");
+    //             return Result::Err(Box::new(err));
+    //         }
+    //     }
+    // }
 }

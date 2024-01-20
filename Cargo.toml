@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["onek-shared", "onek-invariant", "onek-terminal", "onek-backend"]
+members = ["onek-shared", "onek-terminal", "onek-backend"]

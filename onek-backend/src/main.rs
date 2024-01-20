@@ -41,7 +41,6 @@ fn handle_mesg(game: &mut Game, mesg: StateMessages) {
             let sender = create_sender(&channel_name);
             game.reply_senders.insert(channel_name, sender);
         }
-        StateMessages::RegisterForUpdate(_channel_name) => println!("RegisterForUpdate isn't implemented yet"),
     }
 }
 
