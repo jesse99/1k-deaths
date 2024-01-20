@@ -13,3 +13,6 @@ log = "0.4.20"                            # standard logging API
 onek-shared = { path = "../onek-shared" } # IPC message types
 ron = "0.8.1"                             # rusty config language
 simplelog = "0.12.1"                      # logging facade
+
+[dev-dependencies]
+insta = { version = "1.34.0", features = ["yaml"] } # snapshot testing

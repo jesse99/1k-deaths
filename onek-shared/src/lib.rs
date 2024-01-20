@@ -1,7 +1,6 @@
 mod channel_name;
 mod config;
 mod edit_count;
-mod logic_io;
 mod messages;
 mod object;
 mod oid;
@@ -12,7 +11,6 @@ mod state_io;
 pub use channel_name::ChannelName;
 pub use config::Config;
 pub use edit_count::EditCount;
-pub use logic_io::*;
 pub use messages::*;
 pub use object::*;
 pub use oid::*;

@@ -16,6 +16,9 @@ mod pov;
 mod queries;
 mod vec2d;
 
+#[cfg(test)]
+mod tests;
+
 use fov::*;
 use game::*;
 use mutators::*;
