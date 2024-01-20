@@ -107,8 +107,6 @@ fn test_from_str() {
     );
     handle_mutate(&mut game, mesg);
 
-    // invariant(&state);
-
     let info = GameInfo::new(&game);
     insta::assert_display_snapshot!(info.to_snapshot());
 }
@@ -127,8 +125,6 @@ fn test_bump_move() {
 
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(2, 1));
     handle_mutate(&mut game, mesg);
-
-    // invariant(&state);
 
     let info = GameInfo::new(&game);
     insta::assert_display_snapshot!(info.to_snapshot());
@@ -149,8 +145,6 @@ fn test_bump_wall() {
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(0, 1));
     handle_mutate(&mut game, mesg);
 
-    // invariant(&state);
-
     let info = GameInfo::new(&game);
     insta::assert_display_snapshot!(info.to_snapshot());
 }
@@ -169,8 +163,6 @@ fn test_bump_shallow() {
 
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(2, 1));
     handle_mutate(&mut game, mesg);
-
-    // invariant(&state);
 
     let info = GameInfo::new(&game);
     insta::assert_display_snapshot!(info.to_snapshot());
@@ -191,8 +183,6 @@ fn test_bump_deep() {
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(2, 1));
     handle_mutate(&mut game, mesg);
 
-    // invariant(&state);
-
     let info = GameInfo::new(&game);
     insta::assert_display_snapshot!(info.to_snapshot());
 }
@@ -211,8 +201,6 @@ fn test_los() {
             .to_owned(),
     );
     handle_mutate(&mut game, mesg);
-
-    // invariant(&state);
 
     let info = GameInfo::new(&game);
     insta::assert_display_snapshot!(info.to_snapshot());

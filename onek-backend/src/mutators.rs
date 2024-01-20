@@ -1,5 +1,5 @@
+use super::invariant::*;
 use super::*;
-// use std::mem;
 
 const MAX_NOTES: usize = 100;
 
@@ -135,4 +135,6 @@ pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
         Bump(oid, loc) => handle_bump(game, oid, loc),
         Reset(reason, map) => handle_reset(game, &reason, &map),
     }
+
+    invariant(&game);
 }

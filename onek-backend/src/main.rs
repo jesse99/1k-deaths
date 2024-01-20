@@ -9,6 +9,7 @@ use std::{fs::File, str::FromStr};
 
 mod fov;
 mod game;
+mod invariant;
 mod mutators;
 mod objects;
 mod old_pov;

@@ -87,17 +87,8 @@ other rogue-likes\
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 X revamp archiecture\
 
 \f1\b0 \'95\'a0Merge (some) logic and (some) invariant into backend\
-	- can we put snapshot tests into backend\
-	   ` would be great if we could run these in parallel\
-	   ` also wouldn\'92t need a script to coordinate process execution\
-\'95 Rename logic to terminal\
-	- can move invariant unit tests here\
-\'95 Probably want to get rid of watchdog (aka app)\
-\'95\'a0Should be able to drop mutex from unit tests\
-	\
-
-\f3\b 3 It\'92s a boy!    
-\f1\b0 \
+	 ` snapshot tests should check invariants\
+	 ` post mutate should check invariant\
 \'95 invariant should verify that first object in a cell is terrain\
 
 \f3\b \
