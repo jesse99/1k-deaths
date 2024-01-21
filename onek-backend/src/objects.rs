@@ -1,4 +1,4 @@
-use super::{Id, Object, Value};
+use super::{Color, Id, Object, Value};
 use std::collections::HashMap;
 
 pub fn load_objects() -> HashMap<Id, Object> {
@@ -20,14 +20,6 @@ fn add_objects(text: &str, objects: &mut HashMap<Id, Object>) {
     }
 }
 
-// fn property<'a>(object: &'a ron::Value, name: &str) -> &'a ron::Value {
-//     let key = ron::Value::String(name.to_owned());
-//     match object {
-//         ron::Value::Map(map) => &map[&key],
-//         _ => panic!("object {object:?} has no '{name}' property"),
-//     }
-// }
-
 fn onek_object(map: ron::Map) -> Object {
     let mut object = Object::default();
 
@@ -36,6 +28,8 @@ fn onek_object(map: ron::Map) -> Object {
         let value = into_obj(value);
         if key == "id" {
             object.insert(key, Value::Id(Id(value.to_str().to_owned())));
+        } else if key == "color" || key == "back_color" {
+            object.insert(key, Value::Color(Color::new(value.to_str())));
         } else {
             object.insert(key, value);
         }
@@ -66,10 +60,3 @@ fn into_str(object: ron::Value) -> String {
         _ => panic!("object {object:?} is not a String"),
     }
 }
-
-// pub fn str_value<'a>(object: &'a ron::Value) -> &'a String {
-//     match object {
-//         ron::Value::String(s) => &s,
-//         _ => panic!("object {object:?} is not a String"),
-//     }
-// }

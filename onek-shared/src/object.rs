@@ -1,4 +1,4 @@
-use super::Oid;
+use super::{Color, Oid};
 use fnv::FnvHashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -12,6 +12,7 @@ pub struct Id(pub String);
 pub enum Value {
     Bool(bool),
     Char(char),
+    Color(Color),
     Id(Id),
     Int(i32),
     Oid(Oid),
@@ -50,6 +51,13 @@ impl Value {
         }
     }
 
+    pub fn to_color(&self) -> Color {
+        match self {
+            Value::Color(v) => *v,
+            _ => panic!("{self:?} isn't a Color"),
+        }
+    }
+
     pub fn to_id(&self) -> &Id {
         match self {
             Value::Id(v) => v,
@@ -77,6 +85,7 @@ impl fmt::Debug for Value {
         match self {
             Value::Bool(v) => write!(f, "{v}"),
             Value::Char(v) => write!(f, "'{v}'"),
+            Value::Color(v) => write!(f, "{v:?}"),
             Value::Id(v) => write!(f, "Id({})", v.0),
             Value::Int(v) => write!(f, "{v}"),
             Value::Oid(v) => write!(f, "{v:?}"),

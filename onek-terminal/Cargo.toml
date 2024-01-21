@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.31"                         # time library
-ipmpsc = "0.5.1"                          # inter-process channelschrono = "0.4.31"                        # time library
+ipmpsc = "0.5.1"                          # inter-process channels
 log = "0.4.20"                            # standard logging API
 onek-shared = { path = "../onek-shared" } # IPC message types
 simplelog = "0.12.1"                      # logging facade
+termion = "3.0.0"                         # cross-platform terminal library

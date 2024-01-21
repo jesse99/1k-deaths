@@ -2,3 +2,4 @@
 array_width = 100
 max_width = 120
 ignore = ["**/Cargo.toml"] # this isn't working, still requires nightly?
+unstable_features = true   # for ignore

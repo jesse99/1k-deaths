@@ -18,7 +18,7 @@ fn init_logging(config: &Config) {
     // See https://docs.rs/simplelog/0.12.1/simplelog/struct.ConfigBuilder.html
     let location = LevelFilter::from_str(&config.str_value("log_location", "off")).expect("bad log_location");
     let log_level = LevelFilter::from_str(&config.str_value("log_level", "info")).expect("bad log_level");
-    let log_path = config.str_value("log_path", "logic.log");
+    let log_path = config.str_value("log_path", "terminal.log");
     let config = ConfigBuilder::new()
         .set_location_level(location) // file names and line numbers
         .set_target_level(LevelFilter::Off) // don't log exe name
@@ -29,6 +29,9 @@ fn init_logging(config: &Config) {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Could use command line to set options instead of a config file. Config file seems
+    // a bit nicer when dealing with multiple processes but maybe it'd be better to switch
+    // to something like clap later.
     let config = Config::load("onek-logic");
     init_logging(&config);
 
