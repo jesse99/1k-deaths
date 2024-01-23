@@ -1,5 +1,20 @@
 use super::*;
 
+fn unseen_obj() -> Object {
+    let mut object = Object::default();
+
+    object.insert("id".to_owned(), Value::Id(Id("unseen".to_owned())));
+    object.insert(
+        "description".to_owned(),
+        Value::String("You can't see there.".to_owned()),
+    );
+    object.insert("symbol".to_owned(), Value::Char('?'));
+    object.insert("color".to_owned(), Value::Color(Color::White));
+    object.insert("back_color".to_owned(), Value::Color(Color::Black));
+
+    object
+}
+
 pub fn cell_at(game: &Game, loc: Point) -> Cell {
     if game.pov.visible(game, &loc) {
         let default = game.objects.get(&DEFAULT_CELL_ID).unwrap();
@@ -10,7 +25,7 @@ pub fn cell_at(game: &Game, loc: Point) -> Cell {
     } else {
         match game.old_pov.get(&loc) {
             Some(cell) => cell.clone(),
-            None => vec![],
+            None => vec![unseen_obj()],
         }
     }
 }

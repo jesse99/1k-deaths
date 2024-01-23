@@ -80,7 +80,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         error!("error loading config: {}", err.as_ref().unwrap());
     }
 
-    let map_file = "/tmp/state-sink";
+    let map_file = "/tmp/backend-sink";
     let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
 
     let mut game = Game::new();

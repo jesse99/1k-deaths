@@ -98,13 +98,13 @@ impl ToSnapshot for GameInfo {
 #[test]
 fn test_from_str() {
     let mut game = Game::new();
-    let mesg = StateMutators::Reset(
-        "test_from_str".to_owned(),
-        "###\n\
+    let mesg = StateMutators::Reset {
+        reason: "test_from_str".to_owned(),
+        map: "###\n\
          #@#\n\
          ###"
         .to_owned(),
-    );
+    };
     handle_mutate(&mut game, mesg);
 
     let info = GameInfo::new(&game);
@@ -114,13 +114,13 @@ fn test_from_str() {
 #[test]
 fn test_bump_move() {
     let mut game = Game::new();
-    let mesg = StateMutators::Reset(
-        "test_bump_move".to_owned(),
-        "####\n\
+    let mesg = StateMutators::Reset {
+        reason: "test_bump_move".to_owned(),
+        map: "####\n\
          #@ #\n\
          ####"
             .to_owned(),
-    );
+    };
     handle_mutate(&mut game, mesg);
 
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(2, 1));
@@ -133,13 +133,13 @@ fn test_bump_move() {
 #[test]
 fn test_bump_wall() {
     let mut game = Game::new();
-    let mesg = StateMutators::Reset(
-        "test_bump_wall".to_owned(),
-        "####\n\
+    let mesg = StateMutators::Reset {
+        reason: "test_bump_wall".to_owned(),
+        map: "####\n\
          #@ #\n\
          ####"
             .to_owned(),
-    );
+    };
     handle_mutate(&mut game, mesg);
 
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(0, 1));
@@ -152,13 +152,13 @@ fn test_bump_wall() {
 #[test]
 fn test_bump_shallow() {
     let mut game = Game::new();
-    let mesg = StateMutators::Reset(
-        "test_bump_shallow".to_owned(),
-        "####\n\
+    let mesg = StateMutators::Reset {
+        reason: "test_bump_shallow".to_owned(),
+        map: "####\n\
          #@~#\n\
          ####"
             .to_owned(),
-    );
+    };
     handle_mutate(&mut game, mesg);
 
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(2, 1));
@@ -171,13 +171,13 @@ fn test_bump_shallow() {
 #[test]
 fn test_bump_deep() {
     let mut game = Game::new();
-    let mesg = StateMutators::Reset(
-        "test_bump_deep".to_owned(),
-        "####\n\
+    let mesg = StateMutators::Reset {
+        reason: "test_bump_deep".to_owned(),
+        map: "####\n\
          #@W#\n\
          ####"
             .to_owned(),
-    );
+    };
     handle_mutate(&mut game, mesg);
 
     let mesg = StateMutators::Bump(PLAYER_ID, Point::new(2, 1));
@@ -191,15 +191,15 @@ fn test_bump_deep() {
 #[test]
 fn test_los() {
     let mut game = Game::new();
-    let mesg = StateMutators::Reset(
-        "test_los".to_owned(),
-        "############\n\
+    let mesg = StateMutators::Reset {
+        reason: "test_los".to_owned(),
+        map: "############\n\
          #          #\n\
          #   @   #  #\n\
          #   #      #\n\
          ############"
             .to_owned(),
-    );
+    };
     handle_mutate(&mut game, mesg);
 
     let info = GameInfo::new(&game);

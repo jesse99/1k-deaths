@@ -3,20 +3,20 @@ use ipmpsc::{Receiver, Result, Sender, SharedRingBuffer};
 use log::info;
 use std::time::Duration;
 
-/// Used by services to communicate with the state service.
-pub struct StateIO {
+/// Used by frontend's to communicate with the backend.
+pub struct IPC {
     tx: ipmpsc::Sender,
     rx: ipmpsc::Receiver,
     rx_name: ChannelName,
 }
 
 // Constructors
-impl StateIO {
-    /// Typically rx_channel_name is something like "/tmp/state-to-SERVICE_NAME".
-    pub fn new(rx_channel_name: &str) -> StateIO {
-        let tx = match SharedRingBuffer::open("/tmp/state-sink") {
+impl IPC {
+    /// Typically rx_channel_name is something like "/tmp/to-APP_NAME".
+    pub fn new(rx_channel_name: &str) -> IPC {
+        let tx = match SharedRingBuffer::open("/tmp/backend-sink") {
             Ok(buffer) => Sender::new(buffer),
-            Err(err) => panic!("error opening state-sink: {err:?}"),
+            Err(err) => panic!("error opening backend-sink: {err:?}"),
         };
 
         let rx_name = ChannelName::new(rx_channel_name);
@@ -30,11 +30,14 @@ impl StateIO {
         let result = tx.send(&mesg);
         assert!(!result.is_err(), "error sending RegisterForQuery to State: {result:?}");
 
-        StateIO { tx, rx, rx_name }
+        IPC { tx, rx, rx_name }
     }
 
     pub fn reset(&self, reason: &str, map: &str) {
-        let mesg = StateMessages::Mutate(StateMutators::Reset(reason.to_string(), map.to_string()));
+        let mesg = StateMessages::Mutate(StateMutators::Reset {
+            reason: reason.to_string(),
+            map: map.to_string(),
+        });
         info!("sending {mesg}");
         let result = self.tx.send(&mesg);
         assert!(!result.is_err(), "error sending Reset to State: {result:?}");
@@ -42,7 +45,7 @@ impl StateIO {
 }
 
 // Queries
-impl StateIO {
+impl IPC {
     pub fn get_cell_at(&self, loc: Point) -> Cell {
         let query = StateQueries::CellAt(loc);
         let response = self.send_query(query);
@@ -94,8 +97,8 @@ impl StateIO {
     }
 }
 
-// Mutators (in general only the logic service should send these)
-impl StateIO {
+// Mutators
+impl IPC {
     pub fn send_mutate(&self, mutate: StateMutators) {
         let mesg = StateMessages::Mutate(mutate);
         let result = self.tx.send(&mesg);

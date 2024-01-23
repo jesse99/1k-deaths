@@ -2,10 +2,31 @@
 extern crate log;
 extern crate simplelog;
 
-use ipmpsc::{Receiver, SharedRingBuffer};
+mod help;
+mod main_mode;
+mod map_view;
+mod messages_view;
+mod mode;
+mod terminal;
+mod termion_utils;
+mod text_mode;
+mod text_view;
+mod ui;
+
+use help::*;
+use main_mode::*;
+use map_view::*;
+use messages_view::*;
+use mode::*;
 use onek_shared::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::{fs::File, str::FromStr};
+use termion_utils::*;
+use text_mode::*;
+use text_view::*;
+use ui::*;
+
+use crate::terminal::Terminal;
 
 // fn handle_mesg(state: &StateIO, mesg: LogicMessages) {
 //     debug!("received {mesg:?}");
@@ -47,20 +68,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         error!("error loading config: {}", err.as_ref().unwrap());
     }
 
-    let map_file = "/tmp/logic-sink";
-    // let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
-    let rx = Receiver::new(SharedRingBuffer::create(map_file, 32 * 1024)?);
+    let ipc = IPC::new("/tmp/to-terminal");
+    let mut terminal = Terminal::new(ipc);
+    terminal.run();
 
     Result::Ok(())
-
-    // let state = StateIO::new("/tmp/state-to-logic");
-    // loop {
-    //     match rx.recv() {
-    //         Ok(mesg) => handle_mesg(&state, mesg),
-    //         Err(err) => {
-    //             error!("rx error: {err}");
-    //             return Result::Err(Box::new(err));
-    //         }
-    //     }
-    // }
 }

@@ -11,6 +11,23 @@ pub enum NoteKind {
 
     /// Player can't do some action, e.g. walking into a wall.
     Error,
+
+    /// Used for stuff like the examine command.
+    Info,
+    // Critical => Color::Red,
+    // Error => Color::Red,
+    // Debug => Color::Gray,
+    // Normal => Color::Black,
+    // Failed => Color::Red,
+    // Important => Color::Blue,
+    // NpcIsDamaged => Color::LightSkyBlue,
+    // NpcIsNotDamaged => Color::Black,
+    // NPCSpeaks => Color::Coral,
+    // PlayerDidDamage => Color::Goldenrod,
+    // PlayerDidNoDamage => Color::Khaki,
+    // PlayerIsDamaged => Color::Crimson,
+    // PlayerIsNotDamaged => Color::Pink,
+    // Warning => Color::Orange,
 }
 
 /// These are in-game messages for the player, e.g. combat results or status messages.
@@ -29,11 +46,16 @@ impl Note {
 /// First Object will be terrain.
 pub type Cell = Vec<Object>;
 
-/// Represents a portion of a level. Typically cells visible to a character. Note that
-/// cells that were previously visible are returned in truncated form: they only include
+/// Represents a portion of a level. There are three types of cell:
+/// 1) Those that are currently visible to the player. In this case cells is what is
+/// actually in the game level.
+/// 2) Those that were visible to the player but are not now. These represent objects that
+/// may or may not exist now. These are returned in truncated form: they only include
 /// "description", "symbol", "color", "back_color" fields plus "id" which is set to
-/// "stale". This is because those cells are now outside the player's LOS and cannot be
-/// interacted with and may not even exist now.
+/// "stale".
+/// 3) Those that are not and never have been visible to the player. They may not even
+/// part of the game level. These are of the same form as in #2 except id is set to
+/// "unseen".
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct View {
     pub cells: HashMap<Point, Cell>,
@@ -95,10 +117,15 @@ pub enum StateMutators {
     /// the character and it can be further away for something like Crawl's rampage ability.
     Bump(Oid, Point),
 
+    /// Print descriptions for objects at the cell. Note that any cell can be examined but
+    /// cells that are not in the player's PoV will have either an unhelpful description or
+    /// a stale description.
+    Examine { loc: Point, wizard: bool },
+
     /// Arguments are a reason and the contents of a level ('#' for walls, '.' for dirt,
     /// etc). Intended for unit tests. TODO: may want to allow map to be augmented with
     /// some sort of mapping of map characters to object id.
-    Reset(String, String),
+    Reset { reason: String, map: String },
 }
 
 /// Messages that the state service receives.
@@ -150,8 +177,10 @@ mod tests {
         #[rustfmt::skip]
         let mut view = View::new();
 
-        let value: ron::Value = ron::from_str("Terrain(id: \"dirt\")").unwrap();
-        let cell: Cell = value.into_rust().unwrap();
+        let value = Value::Id(Id("dirt".to_owned()));
+        let mut object = fnv::FnvHashMap::default();
+        object.insert("id".to_owned(), value);
+        let cell: Cell = vec![object];
 
         view.insert(Point::new(10, 10), cell.clone());
         assert_eq!(view.top_left, Point::new(10, 10));

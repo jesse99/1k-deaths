@@ -71,22 +71,32 @@ other rogue-likes\
 \f3\b \
 
 \f1\b0 command-. will fill match arms, also clicking the little light bulb icon\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-
-\f3\b \cf4 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-
-\f0\b0\fs36 \cf2 \CocoaLigature0 ./target/debug/onek-state \
-./target/debug/onek-tester \
 \pard\pardeftab720\partightenfactor0
 
-\fs32 \cf5 \expnd0\expndtw0\kerning0
-\CocoaLigature1 \outl0\strokewidth0 \strokec5 \
+\f0\fs32 \cf5 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec5 \
 \pard\pardeftab720\sl420\partightenfactor0
 
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 4a the map
 \f1\b0 \
-\'95 might want Value::Color variant\
+\'95\'a0Get tests working\
+	- need to update run-tests\
+	  
+\f0\fs36 \cf2 \CocoaLigature0 cargo insta test --review -p onek-backend\cb3 \
+	  	this runs unit tests too\
+	 \cb1 cargo test -p onek-shared\cb3 \
+	 	runs unit tests
+\f1\fs48 \cf4 \cb1 \CocoaLigature1 \
+
+\f0\fs36 \cf2 \CocoaLigature0 	 cargo test -p onek-terminal\
+	 	not sure we want this\
+
+\f1\fs48 \cf4 \CocoaLigature1 	- fix shared unit test
+\f0\fs36 \cf2 \CocoaLigature0 \
+
+\f1\fs48 \cf4 \CocoaLigature1 \'95\'a0Get terminal working\
+	- try and get an idea of speed (maybe in release)\
+	- rename UI to Window?\
 \'95 support scrolling in the ui\
 \'95 support moving the player using keys\
 \'95 add doors\

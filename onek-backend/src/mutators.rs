@@ -72,6 +72,33 @@ fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
     }
 }
 
+fn handle_examine(game: &mut Game, loc: Point, wizard: bool) {
+    info!("examine {loc}");
+
+    let notes = if game.pov.visible(&game, &loc) {
+        let oids = game.level.get(&loc).unwrap();
+        oids.iter()
+            .map(|oid| {
+                let object = game.objects.get(oid).unwrap();
+                let mut desc = object.get("description").unwrap().to_str().to_owned();
+                if wizard {
+                    desc.push_str(&format!(" loc: {loc}"));
+                }
+                desc
+            })
+            .collect()
+    } else {
+        vec!["You can't see there.".to_owned()]
+    };
+    for note in notes {
+        let note = Note {
+            kind: NoteKind::Info,
+            text: note,
+        };
+        handle_add_note(game, note);
+    }
+}
+
 fn handle_reset(game: &mut Game, reason: &str, map: &str) {
     // TODO: should have an arg for default_terrain
     info!("resetting for {reason}");
@@ -133,7 +160,8 @@ pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     use StateMutators::*;
     match mesg {
         Bump(oid, loc) => handle_bump(game, oid, loc),
-        Reset(reason, map) => handle_reset(game, &reason, &map),
+        Examine { loc, wizard } => handle_examine(game, loc, wizard),
+        Reset { reason, map } => handle_reset(game, &reason, &map),
     }
 
     invariant(&game);
