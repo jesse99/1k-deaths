@@ -19,7 +19,6 @@ clear && printf '\\e[3J' && cargo test\
 cargo doc --open\
 \
 cargo insta test --review\cb3 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 \cb1 cargo new onek-tester\cb3 \
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
@@ -39,24 +38,24 @@ other rogue-likes\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 \cf4 enum ObjectTag\
 	Range(i32)          
-\f2\i \cf4 ranged weapon, spell, etc
-\f1\i0 \cf4 \
+\f2\i ranged weapon, spell, etc
+\f1\i0 \
 	Brand(element)\
 	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\i \cf4 	
-\f1\i0 \cf4 Binding(String) 
-\f2\i \cf4 used to associate objects, eg a key and a door
-\f1\i0 \cf4 	\
+\f1\i0 Binding(String) 
+\f2\i used to associate objects, eg a key and a door
+\f1\i0 	\
 	Fountain(type)   
-\f2\i \cf4 water or blood\
+\f2\i water or blood\
 	
-\f1\i0 \cf4 Key                    
-\f2\i \cf4 keys should have a binding\
+\f1\i0 Key                    
+\f2\i keys should have a binding\
 	
-\f1\i0 \cf4 Chest(contents)
-\f2\i \cf4  has a binding if a key is required\
+\f1\i0 Chest(contents)
+\f2\i  has a binding if a key is required\
 	\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
@@ -74,33 +73,22 @@ other rogue-likes\
 \pard\pardeftab720\partightenfactor0
 
 \f0\fs32 \cf5 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec5 \
+\
 \pard\pardeftab720\sl420\partightenfactor0
 
-\f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 4a the map
+\f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 4a the map
 \f1\b0 \
-\'95\'a0Get tests working\
-	- need to update run-tests\
-	  
-\f0\fs36 \cf2 \CocoaLigature0 cargo insta test --review -p onek-backend\cb3 \
-	  	this runs unit tests too\
-	 \cb1 cargo test -p onek-shared\cb3 \
-	 	runs unit tests
-\f1\fs48 \cf4 \cb1 \CocoaLigature1 \
-
-\f0\fs36 \cf2 \CocoaLigature0 	 cargo test -p onek-terminal\
-	 	not sure we want this\
-
-\f1\fs48 \cf4 \CocoaLigature1 	- fix shared unit test
-\f0\fs36 \cf2 \CocoaLigature0 \
-
-\f1\fs48 \cf4 \CocoaLigature1 \'95\'a0Get terminal working\
-	- try and get an idea of speed (maybe in release)\
+\'95\'a0Get terminal working\
+	- run-app screws up terminion\'92s into raw mode\
+		` maybe can not run terminal in the background?\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 	- need to load a default map\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 	- try and get an idea of speed (maybe in release)\
 	- rename UI to Window?\
 \'95 support scrolling in the ui\
 \'95 support moving the player using keys\
 \'95 add doors\
-- rename shared::state_io.rs\
 
 \f3\b \
 4b app\
@@ -158,37 +146,30 @@ Step 6a - It\'92s Alive! Alive!
 
 \f3\b \
 Step 6b - Debugger service\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Should be a regular command line app (so it\'92ll work with web based UIs)\
+\f1\b0 \'95\'a0Should be a regular command line app (so it\'92ll work with web based UIs)\
 \'95\'a0Will need commands to inspect objects (and to select them)\
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 Step 7 - Interaction\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\f3\b Step 7 - Interaction\
 
-\f1\b0 \cf4 \'95\'a0Add character stats (add these as they are needed)\
+\f1\b0 \'95\'a0Add character stats (add these as they are needed)\
 \'95\'a0Add AIs for NPCs\
 \'95\'a0Get basic combat working (no weapons or armor)\
 \'95 Nuke the old code\
 \'95\'a0Merge back into main branch\
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 Step 8 - Data files\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\f3\b Step 8 - Data files\
 
-\f1\b0 \cf4 \'95\'a0Use data files to read in the level and character info\
+\f1\b0 \'95\'a0Use data files to read in the level and character info\
 	- or just do this in rust? maybe macros?\
 \'95\'a0Would be nice to have a config file for keybindings\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 \
+\f3\b \
 Step 9 - Items (this is where normalized left off)\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Player (and probably NPCs) need to be able to pickup items\
+\f1\b0 \'95\'a0Player (and probably NPCs) need to be able to pickup items\
 \'95\'a0Support equipping items\
 	- combat should use equipped items\
 \'95\'a0Support dropping items\
@@ -265,13 +246,11 @@ Step 9 - Items (this is where normalized left off)\
 	  https://docs.rs/sqlite/latest/sqlite\
 		not sure we\'92d really need a full db\
 		tho we probably eventually will need persistence\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 \
+\f3\b \
 Step 10 - Magic\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Add some basic spells \
+\f1\b0 \'95\'a0Add some basic spells \
 \'95\'a0Maybe just a few from one warren\
 \'95\'a0NPCs should also be able to cast spells (or use a particular ability that amounts to a spell)
 \f3\b \
@@ -282,13 +261,11 @@ Step 10 - Magic\
 	- focus weapons are usually staffs\
 	- focus weapons can improve either all spells or a school\
 	- can melee with focus weapons\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f3\b \cf4 \
+\f3\b \
 Step 11 - Simple game\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
+\f1\b0 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
 	- inside is arena with spectators\
 \'95 Shadow warren could have deep shadow instead of walls\
 	- can move into them as far as you want\

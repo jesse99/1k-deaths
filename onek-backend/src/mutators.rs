@@ -70,6 +70,7 @@ fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
         }) => (),
         _ => handle_move_player(game, loc),
     }
+    PoV::refresh(game)
 }
 
 fn handle_examine(game: &mut Game, loc: Point, wizard: bool) {
@@ -147,13 +148,19 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
                 loc.x = 0;
                 loc.y += 1;
             }
-            _ => panic!("bad char in map: {ch}"),
+            _ => handle_add_note(
+                game,
+                Note {
+                    text: format!("bad char in map: {ch}"),
+                    kind: NoteKind::Error,
+                },
+            ),
         }
     }
     assert!(game.player_loc.x >= 0, "map is missing @");
 
     OldPoV::update(game);
-    PoV::refresh(game);
+    PoV::refresh(game)
 }
 
 pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {

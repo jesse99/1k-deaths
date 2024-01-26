@@ -65,7 +65,7 @@ fn init_logging(config: &Config) {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = Config::load("onek-state");
+    let config = Config::load("onek-backend");
     init_logging(&config);
 
     let local = chrono::Local::now();

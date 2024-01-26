@@ -28,13 +28,6 @@ use ui::*;
 
 use crate::terminal::Terminal;
 
-// fn handle_mesg(state: &StateIO, mesg: LogicMessages) {
-//     debug!("received {mesg:?}");
-//     match mesg {
-//         LogicMessages::Bump(oid, loc) => handle_bump(state, oid, loc),
-//     }
-// }
-
 fn init_logging(config: &Config) {
     // See https://docs.rs/simplelog/0.12.1/simplelog/struct.ConfigBuilder.html
     let location = LevelFilter::from_str(&config.str_value("log_location", "off")).expect("bad log_location");
@@ -69,6 +62,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let ipc = IPC::new("/tmp/to-terminal");
+    ipc.send_mutate(StateMutators::Reset {
+        reason: "new game".to_owned(),
+        map: "#########\n#       #\n#  @  # #\n#     # #\n#########".to_owned(),
+    });
     let mut terminal = Terminal::new(ipc);
     terminal.run();
 

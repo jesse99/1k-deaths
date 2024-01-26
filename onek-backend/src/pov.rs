@@ -17,7 +17,7 @@ impl PoV {
         PoV {
             edition: 0,
             visible: FnvHashSet::default(),
-            dirty: true,
+            dirty: false,
         }
     }
 
