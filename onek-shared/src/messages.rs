@@ -122,6 +122,9 @@ pub enum StateMutators {
     /// a stale description.
     Examine { loc: Point, wizard: bool },
 
+    /// Argument is the name of a level file to load.
+    NewLevel(String),
+
     /// Arguments are a reason and the contents of a level ('#' for walls, '.' for dirt,
     /// etc). Intended for unit tests. TODO: may want to allow map to be augmented with
     /// some sort of mapping of map characters to object id.

@@ -1,5 +1,6 @@
 use super::invariant::*;
 use super::*;
+use fnv::FnvHashSet;
 
 const MAX_NOTES: usize = 100;
 
@@ -100,6 +101,17 @@ fn handle_examine(game: &mut Game, loc: Point, wizard: bool) {
     }
 }
 
+static STARTING_LEVEL: &'static str = include_str!("../data/start.txt");
+
+fn handle_new_level(game: &mut Game, name: String) {
+    if name == "start" {
+        let reason = format!("new level {name}");
+        handle_reset(game, &reason, STARTING_LEVEL);
+    } else {
+        panic!("'{name}' isn't a known level");
+    }
+}
+
 fn handle_reset(game: &mut Game, reason: &str, map: &str) {
     // TODO: should have an arg for default_terrain
     info!("resetting for {reason}");
@@ -121,6 +133,7 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
     let shallow_water = game.new_object("shallow water");
 
     let mut loc = Point::new(0, 0);
+    let mut bad_chars = FnvHashSet::default();
     for ch in map.chars() {
         match ch {
             '@' => {
@@ -148,13 +161,18 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
                 loc.x = 0;
                 loc.y += 1;
             }
-            _ => handle_add_note(
-                game,
-                Note {
-                    text: format!("bad char in map: {ch}"),
-                    kind: NoteKind::Error,
-                },
-            ),
+            _ => {
+                if !bad_chars.contains(&ch) {
+                    handle_add_note(
+                        game,
+                        Note {
+                            text: format!("bad char in map: {ch}"),
+                            kind: NoteKind::Error,
+                        },
+                    );
+                    bad_chars.insert(ch);
+                }
+            }
         }
     }
     assert!(game.player_loc.x >= 0, "map is missing @");
@@ -168,6 +186,7 @@ pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     match mesg {
         Bump(oid, loc) => handle_bump(game, oid, loc),
         Examine { loc, wizard } => handle_examine(game, loc, wizard),
+        NewLevel(name) => handle_new_level(game, name),
         Reset { reason, map } => handle_reset(game, &reason, &map),
     }
 

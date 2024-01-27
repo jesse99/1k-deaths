@@ -62,10 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let ipc = IPC::new("/tmp/to-terminal");
-    ipc.send_mutate(StateMutators::Reset {
-        reason: "new game".to_owned(),
-        map: "#########\n#       #\n#  @  # #\n#     # #\n#########".to_owned(),
-    });
+    ipc.send_mutate(StateMutators::NewLevel("start".to_owned()));
     let mut terminal = Terminal::new(ipc);
     terminal.run();
 

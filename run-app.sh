@@ -16,4 +16,4 @@ run_terminal() {
 }
 
 cargo build && run_backend && run_terminal
-killall -q onek-backend
+killall -q onek-backend # might be better if terminal sent an Exit message
