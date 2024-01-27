@@ -3,7 +3,7 @@ use super::*;
 fn unseen_obj() -> Object {
     let mut object = Object::default();
 
-    object.insert("id".to_owned(), Value::Id(Id("unseen".to_owned())));
+    object.insert("tag".to_owned(), Value::Tag(Tag("unseen".to_owned())));
     object.insert(
         "description".to_owned(),
         Value::String("You can't see there.".to_owned()),
@@ -16,7 +16,7 @@ fn unseen_obj() -> Object {
 }
 
 /// Note that this returns the visible cell at loc and will always return something
-/// though it may return an object with id "unseen".
+/// though it may return an object with tag "unseen".
 pub fn visible_cell(game: &Game, loc: Point) -> Cell {
     if game.pov.visible(game, &loc) {
         if let Some(oids) = game.level.get(&loc) {

@@ -4,8 +4,8 @@ use fnv::FnvHashSet;
 
 const MAX_NOTES: usize = 100;
 
-fn player_can_move_in(id: &Id) -> Option<Note> {
-    match id.0.as_str() {
+fn player_can_move_in(tag: &Tag) -> Option<Note> {
+    match tag.0.as_str() {
         "deep water" => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
         "shallow water" => Some(Note::new(
             NoteKind::Environmental,
@@ -18,11 +18,11 @@ fn player_can_move_in(id: &Id) -> Option<Note> {
 
 fn player_can_move(game: &Game, to: Point) -> Option<Note> {
     if let Some(cell) = logical_cell(game, to) {
-        let id = cell[0].get("id").unwrap().to_id();
-        player_can_move_in(id)
+        let tag = cell[0].get("tag").unwrap().to_tag();
+        player_can_move_in(tag)
     } else {
-        let id = game.objects.get(&DEFAULT_CELL_ID).unwrap().get("id").unwrap().to_id();
-        player_can_move_in(id)
+        let tag = game.objects.get(&DEFAULT_CELL_ID).unwrap().get("tag").unwrap().to_tag();
+        player_can_move_in(tag)
     }
 }
 

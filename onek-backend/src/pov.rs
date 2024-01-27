@@ -1,7 +1,7 @@
 use super::FoV;
 use super::{Game, Point};
 use fnv::FnvHashSet;
-use onek_shared::{Id, Oid, DEFAULT_CELL_ID};
+use onek_shared::{Oid, DEFAULT_CELL_ID};
 
 pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? or gear?
 

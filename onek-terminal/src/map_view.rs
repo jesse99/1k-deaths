@@ -40,7 +40,7 @@ fn render_cell(cell: Cell) -> (Color, Color, char) {
 
 impl From<Cell> for RunTile {
     fn from(cell: Cell) -> Self {
-        match cell[0].get("id").unwrap().to_id().0.as_str() {
+        match cell[0].get("tag").unwrap().to_tag().0.as_str() {
             "stale" => {
                 let (bg, fg, symbol) = render_cell(cell);
                 RunTile::Stale { bg, fg, symbol }

@@ -11,7 +11,7 @@ pub struct Game {
     pub old_pov: OldPoV, // locations that the user has seen in the past (this will often be stale data)
     pub reply_senders: HashMap<ChannelName, ipmpsc::Sender>,
     pub next_id: u32, // 0 is null, 1 is the player, 2 is default terrain
-    exemplars: HashMap<Id, Object>,
+    exemplars: HashMap<Tag, Object>,
 }
 
 impl Game {
@@ -46,9 +46,9 @@ impl Game {
         }
     }
 
-    pub fn new_object(&mut self, id: &str) -> Oid {
-        let oid = Oid::new(&id, self.next_id);
-        let mut object = self.exemplars.get(&Id(id.to_owned())).unwrap().clone();
+    pub fn new_object(&mut self, tag: &str) -> Oid {
+        let oid = Oid::new(&tag, self.next_id);
+        let mut object = self.exemplars.get(&Tag(tag.to_owned())).unwrap().clone();
         object.insert("oid".to_owned(), Value::Oid(oid));
         self.objects.insert(oid, object);
         assert!(self.next_id < std::u32::MAX);

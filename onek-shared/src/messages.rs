@@ -51,10 +51,10 @@ pub type Cell = Vec<Object>;
 /// actually in the game level.
 /// 2) Those that were visible to the player but are not now. These represent objects that
 /// may or may not exist now. These are returned in truncated form: they only include
-/// "description", "symbol", "color", "back_color" fields plus "id" which is set to
+/// "description", "symbol", "color", "back_color" fields plus "tag" which is set to
 /// "stale".
 /// 3) Those that are not and never have been visible to the player. They may not even
-/// part of the game level. These are of the same form as in #2 except id is set to
+/// part of the game level. These are of the same form as in #2 except tag is set to
 /// "unseen".
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct View {
@@ -127,7 +127,7 @@ pub enum StateMutators {
 
     /// Arguments are a reason and the contents of a level ('#' for walls, '.' for dirt,
     /// etc). Intended for unit tests. TODO: may want to allow map to be augmented with
-    /// some sort of mapping of map characters to object id.
+    /// some sort of mapping of map characters to object tag.
     Reset { reason: String, map: String },
 }
 
@@ -180,9 +180,9 @@ mod tests {
         #[rustfmt::skip]
         let mut view = View::new();
 
-        let value = Value::Id(Id("dirt".to_owned()));
+        let value = Value::Tag(Tag("dirt".to_owned()));
         let mut object = fnv::FnvHashMap::default();
-        object.insert("id".to_owned(), value);
+        object.insert("tag".to_owned(), value);
         let cell: Cell = vec![object];
 
         view.insert(Point::new(10, 10), cell.clone());

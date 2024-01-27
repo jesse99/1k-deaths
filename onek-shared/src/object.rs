@@ -5,7 +5,7 @@ use std::fmt;
 
 /// Used to identify an Object exemplar.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct Id(pub String);
+pub struct Tag(pub String);
 
 /// The value of an [`Object`] property.
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -13,11 +13,11 @@ pub enum Value {
     Bool(bool),
     Char(char),
     Color(Color),
-    Id(Id),
     Int(i32),
     Oid(Oid),
     String(String),
     Seq(Vec<Value>),
+    Tag(Tag),
 }
 
 /// Objects are used to represent most things in the game: terrain, characters, items,
@@ -58,13 +58,6 @@ impl Value {
         }
     }
 
-    pub fn to_id(&self) -> &Id {
-        match self {
-            Value::Id(v) => v,
-            _ => panic!("{self:?} isn't an Id"),
-        }
-    }
-
     pub fn to_oid(&self) -> &Oid {
         match self {
             Value::Oid(v) => v,
@@ -78,6 +71,13 @@ impl Value {
             _ => panic!("{self:?} isn't a String"),
         }
     }
+
+    pub fn to_tag(&self) -> &Tag {
+        match self {
+            Value::Tag(v) => v,
+            _ => panic!("{self:?} isn't a Tag"),
+        }
+    }
 }
 
 impl fmt::Debug for Value {
@@ -86,7 +86,6 @@ impl fmt::Debug for Value {
             Value::Bool(v) => write!(f, "{v}"),
             Value::Char(v) => write!(f, "'{v}'"),
             Value::Color(v) => write!(f, "{v:?}"),
-            Value::Id(v) => write!(f, "Id({})", v.0),
             Value::Int(v) => write!(f, "{v}"),
             Value::Oid(v) => write!(f, "{v:?}"),
             Value::String(v) => write!(f, "\"{v}\""),
@@ -97,6 +96,7 @@ impl fmt::Debug for Value {
                 }
                 write!(f, "]")
             }
+            Value::Tag(v) => write!(f, "Tag({})", v.0),
         }
     }
 }

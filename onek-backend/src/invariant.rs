@@ -22,8 +22,8 @@ pub fn invariant(game: &Game) {
                 );
             }
 
-            // all objects should have id, oid, description, symbol
-            assert!(object.contains_key("id"), "first object at {loc} is missing id");
+            // all objects should have tag, oid, description, symbol
+            assert!(object.contains_key("tag"), "first object at {loc} is missing tag");
             assert!(object.contains_key("oid"), "first object at {loc} is missing oid");
             assert!(
                 object.contains_key("description"),

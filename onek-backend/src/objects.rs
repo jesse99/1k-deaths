@@ -1,22 +1,22 @@
-use super::{Color, Id, Object, Value};
+use super::{Color, Object, Tag, Value};
 use std::collections::HashMap;
 
-pub fn load_objects() -> HashMap<Id, Object> {
+pub fn load_objects() -> HashMap<Tag, Object> {
     let mut result = HashMap::new();
     add_objects(include_str!("../data/terrain.ron"), &mut result);
     result
 }
 
-fn add_objects(text: &str, objects: &mut HashMap<Id, Object>) {
+fn add_objects(text: &str, objects: &mut HashMap<Tag, Object>) {
     let value: ron::Value = ron::from_str(text).unwrap();
     let seq: Vec<ron::Value> = value.into_rust().unwrap();
 
     for object in seq {
         let map: ron::Map = object.into_rust().unwrap();
         let object = onek_object(map);
-        let id = object.get("id").unwrap().to_id().clone();
-        let old = objects.insert(id.to_owned(), object);
-        assert!(old.is_none(), "id '{id:?}' already exists'");
+        let tag = object.get("tag").unwrap().to_tag().clone();
+        let old = objects.insert(tag.to_owned(), object);
+        assert!(old.is_none(), "tag '{tag:?}' already exists'");
     }
 }
 
@@ -26,8 +26,8 @@ fn onek_object(map: ron::Map) -> Object {
     for (key, value) in map {
         let key = into_str(key);
         let value = into_obj(value);
-        if key == "id" {
-            object.insert(key, Value::Id(Id(value.to_str().to_owned())));
+        if key == "tag" {
+            object.insert(key, Value::Tag(Tag(value.to_str().to_owned())));
         } else if key == "color" || key == "back_color" {
             object.insert(key, Value::Color(Color::new(value.to_str())));
         } else {

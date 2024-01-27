@@ -1,4 +1,4 @@
-use super::{Cell, Game, Id, Point, Value, DEFAULT_CELL_ID};
+use super::{Cell, Game, Point, Tag, Value, DEFAULT_CELL_ID};
 use fnv::FnvHashMap;
 use onek_shared::Object;
 
@@ -43,7 +43,7 @@ impl OldPoV {
 fn stale_obj(old_object: &Object) -> Object {
     let mut object = Object::default();
 
-    object.insert("id".to_owned(), Value::Id(Id("stale".to_owned())));
+    object.insert("tag".to_owned(), Value::Tag(Tag("stale".to_owned())));
     for name in vec!["description", "symbol", "color", "back_color"] {
         if let Some(value) = old_object.get(name) {
             object.insert(name.to_owned(), value.clone());

@@ -5,18 +5,18 @@
 //   https://camo.githubusercontent.com/18622d6a234413cbc0aba27a09146797bf1eef4d/68747470733a2f2f692e696d6775722e636f6d2f4b696c72306d432e706e673f31
 //   http://cng.seas.rochester.edu/CNG/docs/x11color.html
 // description - text used when examining an object
-// id - unique identifier for an object exemplar
+// tag - unique identifier for an object exemplar
 // symbol - character used for text based UIs
 [
     Player(             // TODO: move this elsewhere
-        id: "player",
+        tag: "player",
         description: "yourself",
         symbol: '@',
         color: "White",
     ),
 
     Terrain(
-        id: "dirt",
+        tag: "dirt",
         description: "a patch of dirt",
         symbol: '.',
         color: "LightSlateGray",
@@ -25,7 +25,7 @@
     ),
 
     Terrain(
-        id: "deep water",
+        tag: "deep water",
         description: "deep water",
         symbol: '~',
         color: "Blue",
@@ -34,7 +34,7 @@
     ),
 
     Terrain(
-        id: "rubble",
+        tag: "rubble",
         description: "a destroyed wall",
         symbol: '*',
         color: "Chocolate",
@@ -43,7 +43,7 @@
     ),
 
     Terrain(
-        id: "shallow water",
+        tag: "shallow water",
         description: "shallow water",
         symbol: '~',
         color: "LightBlue",
@@ -51,9 +51,9 @@
         blocks_los: false,
     ),
 
-    // TODO: need some sort of durability and a destroyed_id, maybe material too
+    // TODO: need some sort of durability and a destroyed_tag, maybe material too
     Terrain(
-        id: "stone wall",
+        tag: "stone wall",
         description: "a stone wall",
         symbol: '#',
         color: "Chocolate",
