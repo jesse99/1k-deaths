@@ -134,6 +134,10 @@ impl MainMode {
         let mut loc = ipc.get_player_loc();
         loc.x += dx;
         loc.y += dy;
+        // info!(
+        //     "ipc.send_mutate(StateMutators::Bump(PLAYER_ID, Point::new({}, {})));",
+        //     loc.x, loc.y
+        // );
         ipc.send_mutate(StateMutators::Bump(PLAYER_ID, loc));
         InputAction::UpdatedGame
     }

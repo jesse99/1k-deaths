@@ -79,13 +79,15 @@ other rogue-likes\
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 4a the map
 \f1\b0 \
 \'95\'a0Get terminal working\
-\pard\pardeftab720\sl420\partightenfactor0
-\cf4 	- need to load a default map\
-\pard\pardeftab720\sl420\partightenfactor0
-\cf4 	- try and get an idea of speed (maybe in release)\
+	- rename DEFAULT_CELL_ID to DEFAULT_CELL_OID\
+	- try and get an idea of speed (maybe in release)\
+		` can we add a benchmark test?\
+		` special mode in terminal? that way we\'92d also measure render time\
+		` probably just a new app crate\
+		` could (for now) just hardcode move messages\
+		` maybe just have a script to time results\
+		` later could use criterion (or cargo bench if it ever stabilizes)\
 	- rename UI to Window?\
-\'95 support scrolling in the ui\
-\'95 support moving the player using keys\
 \'95 add doors\
 
 \f3\b \

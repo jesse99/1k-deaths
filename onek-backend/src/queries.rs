@@ -15,24 +15,41 @@ fn unseen_obj() -> Object {
     object
 }
 
-pub fn cell_at(game: &Game, loc: Point) -> Cell {
+/// Note that this returns the visible cell at loc and will always return something
+/// though it may return an object with id "unseen".
+pub fn visible_cell(game: &Game, loc: Point) -> Cell {
     if game.pov.visible(game, &loc) {
-        let default = game.objects.get(&DEFAULT_CELL_ID).unwrap();
-        let oids = game.level.get(&loc).unwrap();
-        oids.iter()
-            .map(|oid| game.objects.get(&oid).unwrap_or(default).clone())
-            .collect()
+        if let Some(oids) = game.level.get(&loc) {
+            // Cell is visible and there's something there.
+            oids.iter().map(|oid| game.objects.get(&oid).unwrap().clone()).collect()
+        } else {
+            // Cell is visible but there's nothing at that loc.
+            let default = game.objects.get(&DEFAULT_CELL_ID).unwrap();
+            vec![default.clone()]
+        }
     } else {
         match game.old_pov.get(&loc) {
+            // Cell was visible but now its state is stale.
             Some(cell) => cell.clone(),
+
+            // Cell was never visible.
             None => vec![unseen_obj()],
         }
     }
 }
 
+/// Returns the actual cell at loc (if present). Note that this ignores PoV.
+pub fn logical_cell(game: &Game, loc: Point) -> Option<Cell> {
+    if let Some(oids) = game.level.get(&loc) {
+        Some(oids.iter().map(|oid| game.objects.get(&oid).unwrap().clone()).collect())
+    } else {
+        None
+    }
+}
+
 // These are public for testing.
 pub fn handle_cell_at(game: &Game, loc: Point) -> StateResponse {
-    let cell = cell_at(game, loc);
+    let cell = visible_cell(game, loc);
     StateResponse::Cell(cell)
 }
 
@@ -60,7 +77,7 @@ pub fn handle_player_view(game: &Game) -> StateResponse {
     for dy in 0..2 * super::pov::RADIUS {
         for dx in 0..2 * super::pov::RADIUS {
             let loc = Point::new(start_loc.x + dx, start_loc.y + dy);
-            let cell = cell_at(game, loc);
+            let cell = visible_cell(game, loc);
             view.insert(loc, cell);
         }
     }

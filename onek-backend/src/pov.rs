@@ -1,6 +1,7 @@
 use super::FoV;
 use super::{Game, Point};
 use fnv::FnvHashSet;
+use onek_shared::{Id, Oid, DEFAULT_CELL_ID};
 
 pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? or gear?
 
@@ -81,17 +82,24 @@ impl PoV {
     }
 }
 
+fn oid_blocks_los(game: &Game, oid: &Oid) -> bool {
+    let object = game.objects.get(oid).unwrap();
+    if let Some(blocks) = object.get("blocks_los") {
+        blocks.to_bool()
+    } else {
+        false
+    }
+}
+
 fn blocks_los<'a>(game: &Game, loc: &Point) -> bool {
     if let Some(oids) = game.level.get(&loc) {
         for oid in oids.iter() {
-            if let Some(object) = game.objects.get(oid) {
-                if let Some(blocks) = object.get("blocks_los") {
-                    if blocks.to_bool() {
-                        return true;
-                    }
-                }
+            if oid_blocks_los(game, oid) {
+                return true;
             }
         }
+        false
+    } else {
+        oid_blocks_los(game, &DEFAULT_CELL_ID)
     }
-    false
 }

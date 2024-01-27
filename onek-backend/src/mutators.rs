@@ -4,20 +4,25 @@ use fnv::FnvHashSet;
 
 const MAX_NOTES: usize = 100;
 
+fn player_can_move_in(id: &Id) -> Option<Note> {
+    match id.0.as_str() {
+        "deep water" => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
+        "shallow water" => Some(Note::new(
+            NoteKind::Environmental,
+            "You splash through the water.".to_owned(),
+        )),
+        "stone wall" => Some(Note::new(NoteKind::Error, "You bounce off the wall.".to_owned())),
+        _ => None,
+    }
+}
+
 fn player_can_move(game: &Game, to: Point) -> Option<Note> {
-    let cell = cell_at(game, to);
-    if cell.is_empty() {
-        panic!("Attempt to move into unknown cell")
+    if let Some(cell) = logical_cell(game, to) {
+        let id = cell[0].get("id").unwrap().to_id();
+        player_can_move_in(id)
     } else {
-        match cell[0].get("id").unwrap().to_id().0.as_str() {
-            "deep water" => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
-            "shallow water" => Some(Note::new(
-                NoteKind::Environmental,
-                "You splash through the water.".to_owned(),
-            )),
-            "stone wall" => Some(Note::new(NoteKind::Error, "You bounce off the wall.".to_owned())),
-            _ => None,
-        }
+        let id = game.objects.get(&DEFAULT_CELL_ID).unwrap().get("id").unwrap().to_id();
+        player_can_move_in(id)
     }
 }
 
@@ -57,7 +62,6 @@ fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
 
     // If the move resulted in a note then add it to state.
     let note = player_can_move(game, loc);
-    info!("note: {note:?}");
     match &note {
         None => (),
         Some(note) => handle_add_note(game, note.clone()),
