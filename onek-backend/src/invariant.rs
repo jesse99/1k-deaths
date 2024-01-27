@@ -40,12 +40,12 @@ pub fn invariant(game: &Game) {
         let oid = oids.last().unwrap();
         if *loc == game.player_loc {
             assert!(
-                *oid == PLAYER_ID,
+                *oid == PLAYER_OID,
                 "last object at player_loc should be the player not {oid}"
             );
         } else {
             assert!(
-                *oid != PLAYER_ID,
+                *oid != PLAYER_OID,
                 "last object at {loc} is the player but player_loc is {}",
                 game.player_loc
             );

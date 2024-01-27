@@ -1,4 +1,4 @@
-use super::{Cell, Game, Point, Tag, Value, DEFAULT_CELL_ID};
+use super::{Cell, Game, Point, Tag, Value, DEFAULT_CELL_OID};
 use fnv::FnvHashMap;
 use onek_shared::Object;
 
@@ -23,7 +23,7 @@ impl OldPoV {
     pub fn update(game: &mut Game) {
         if game.pov.edition() != game.old_pov.edition {
             for loc in game.pov.locations() {
-                let default = vec![DEFAULT_CELL_ID];
+                let default = vec![DEFAULT_CELL_OID];
                 let oids = game.level.get(&loc).unwrap_or(&default);
                 let objects = oids
                     .iter()

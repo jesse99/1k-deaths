@@ -24,7 +24,7 @@ pub fn visible_cell(game: &Game, loc: Point) -> Cell {
             oids.iter().map(|oid| game.objects.get(&oid).unwrap().clone()).collect()
         } else {
             // Cell is visible but there's nothing at that loc.
-            let default = game.objects.get(&DEFAULT_CELL_ID).unwrap();
+            let default = game.objects.get(&DEFAULT_CELL_OID).unwrap();
             vec![default.clone()]
         }
     } else {

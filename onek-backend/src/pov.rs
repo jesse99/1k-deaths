@@ -1,7 +1,7 @@
 use super::FoV;
 use super::{Game, Point};
 use fnv::FnvHashSet;
-use onek_shared::{Oid, DEFAULT_CELL_ID};
+use onek_shared::{Oid, DEFAULT_CELL_OID};
 
 pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? or gear?
 
@@ -100,6 +100,6 @@ fn blocks_los<'a>(game: &Game, loc: &Point) -> bool {
         }
         false
     } else {
-        oid_blocks_los(game, &DEFAULT_CELL_ID)
+        oid_blocks_los(game, &DEFAULT_CELL_OID)
     }
 }

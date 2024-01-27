@@ -21,7 +21,13 @@ fn player_can_move(game: &Game, to: Point) -> Option<Note> {
         let tag = cell[0].get("tag").unwrap().to_tag();
         player_can_move_in(tag)
     } else {
-        let tag = game.objects.get(&DEFAULT_CELL_ID).unwrap().get("tag").unwrap().to_tag();
+        let tag = game
+            .objects
+            .get(&DEFAULT_CELL_OID)
+            .unwrap()
+            .get("tag")
+            .unwrap()
+            .to_tag();
         player_can_move_in(tag)
     }
 }
@@ -40,8 +46,8 @@ fn handle_add_note(game: &mut Game, note: Note) {
 
 fn handle_move_player(game: &mut Game, loc: Point) {
     info!("moving player to {loc}");
-    game.remove_oid(game.player_loc, PLAYER_ID);
-    game.append_oid(loc, PLAYER_ID);
+    game.remove_oid(game.player_loc, PLAYER_OID);
+    game.append_oid(loc, PLAYER_OID);
     game.player_loc = loc;
     game.pov.dirty();
 
@@ -53,7 +59,7 @@ fn handle_move_player(game: &mut Game, loc: Point) {
 // TODO: what about stuff like hopping? maybe those are restricted to moves?
 fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
     info!("{oid} bump to {loc}");
-    if oid != PLAYER_ID {
+    if oid != PLAYER_OID {
         todo!("non-player movement isn't implemented yet");
     }
 
@@ -141,7 +147,7 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
     for ch in map.chars() {
         match ch {
             '@' => {
-                game.level.insert(loc, vec![dirt, PLAYER_ID]);
+                game.level.insert(loc, vec![dirt, PLAYER_OID]);
                 game.player_loc = loc;
                 loc.x += 1;
             }

@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-pub static NULL_ID: Oid = Oid::without_tag(0);
-pub static PLAYER_ID: Oid = Oid::without_tag(1);
-pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(2);
+pub static NULL_OID: Oid = Oid::without_tag(0);
+pub static PLAYER_OID: Oid = Oid::without_tag(1);
+pub static DEFAULT_CELL_OID: Oid = Oid::without_tag(2);
 
 pub type TagStr = ArrayString<U16>;
 
