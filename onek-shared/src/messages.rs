@@ -1,6 +1,6 @@
 use crate::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -46,67 +46,67 @@ impl Note {
 /// First Object will be terrain.
 pub type Cell = Vec<Object>;
 
-/// Represents a portion of a level. There are three types of cell:
-/// 1) Those that are currently visible to the player. In this case cells is what is
-/// actually in the game level.
-/// 2) Those that were visible to the player but are not now. These represent objects that
-/// may or may not exist now. These are returned in truncated form: they only include
-/// "description", "symbol", "color", "back_color" fields plus "tag" which is set to
-/// "stale".
-/// 3) Those that are not and never have been visible to the player. They may not even
-/// part of the game level. These are of the same form as in #2 except tag is set to
-/// "unseen".
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct View {
-    pub cells: HashMap<Point, Cell>,
+// /// Represents a portion of a level. There are three types of cell:
+// /// 1) Those that are currently visible to the player. In this case cells is what is
+// /// actually in the game level.
+// /// 2) Those that were visible to the player but are not now. These represent objects that
+// /// may or may not exist now. These are returned in truncated form: they only include
+// /// "description", "symbol", "color", "back_color" fields plus "tag" which is set to
+// /// "stale".
+// /// 3) Those that are not and never have been visible to the player. They may not even
+// /// part of the game level. These are of the same form as in #2 except tag is set to
+// /// "unseen".
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+// pub struct View {
+//     pub cells: HashMap<Point, Cell>,
 
-    /// top_left and bottom_right are the smallest rectangle enclosing all the locations.
-    pub top_left: Point,
-    pub bottom_right: Point,
-}
+//     /// top_left and bottom_right are the smallest rectangle enclosing all the locations.
+//     pub top_left: Point,
+//     pub bottom_right: Point,
+// }
 
-impl View {
-    pub fn new() -> View {
-        View {
-            cells: HashMap::new(),
-            top_left: Point::origin(),
-            bottom_right: Point::origin(),
-        }
-    }
+// impl View {
+//     pub fn new() -> View {
+//         View {
+//             cells: HashMap::new(),
+//             top_left: Point::origin(),
+//             bottom_right: Point::origin(),
+//         }
+//     }
 
-    pub fn insert(&mut self, loc: Point, cell: Cell) {
-        if self.cells.is_empty() {
-            self.top_left = loc;
-            self.bottom_right = loc;
-        } else {
-            if loc.x < self.top_left.x {
-                self.top_left.x = loc.x;
-            }
-            if loc.y < self.top_left.y {
-                self.top_left.y = loc.y;
-            }
+//     pub fn insert(&mut self, loc: Point, cell: Cell) {
+//         if self.cells.is_empty() {
+//             self.top_left = loc;
+//             self.bottom_right = loc;
+//         } else {
+//             if loc.x < self.top_left.x {
+//                 self.top_left.x = loc.x;
+//             }
+//             if loc.y < self.top_left.y {
+//                 self.top_left.y = loc.y;
+//             }
 
-            if loc.x > self.bottom_right.x {
-                self.bottom_right.x = loc.x;
-            }
-            if loc.y > self.bottom_right.y {
-                self.bottom_right.y = loc.y;
-            }
-        }
+//             if loc.x > self.bottom_right.x {
+//                 self.bottom_right.x = loc.x;
+//             }
+//             if loc.y > self.bottom_right.y {
+//                 self.bottom_right.y = loc.y;
+//             }
+//         }
 
-        self.cells.insert(loc, cell);
-    }
+//         self.cells.insert(loc, cell);
+//     }
 
-    pub fn size(&self) -> Size {
-        self.bottom_right - self.top_left
-    }
-}
+//     pub fn size(&self) -> Size {
+//         self.bottom_right - self.top_left
+//     }
+// }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateQueries {
     CellAt(Point),
     Notes(usize),
-    PlayerView(),
+    // PlayerView(),
     PlayerLoc(),
 }
 
@@ -150,7 +150,7 @@ pub enum StateResponse {
     // TODO: ready to move should include all objects that are ready
     Cell(Cell),
     Location(Point),
-    Map(View),
+    // Map(View),
     Notes(Vec<Note>),
     Updated(EditCount),
 }
@@ -171,34 +171,34 @@ mod display_impl {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn test_view() {
-        #[rustfmt::skip]
-        let mut view = View::new();
+//     #[test]
+//     fn test_view() {
+//         #[rustfmt::skip]
+//         let mut view = View::new();
 
-        let value = Value::Tag(Tag("dirt".to_owned()));
-        let mut object = fnv::FnvHashMap::default();
-        object.insert("tag".to_owned(), value);
-        let cell: Cell = vec![object];
+//         let value = Value::Tag(Tag("dirt".to_owned()));
+//         let mut object = fnv::FnvHashMap::default();
+//         object.insert("tag".to_owned(), value);
+//         let cell: Cell = vec![object];
 
-        view.insert(Point::new(10, 10), cell.clone());
-        assert_eq!(view.top_left, Point::new(10, 10));
-        assert_eq!(view.bottom_right, Point::new(10, 10));
+//         view.insert(Point::new(10, 10), cell.clone());
+//         assert_eq!(view.top_left, Point::new(10, 10));
+//         assert_eq!(view.bottom_right, Point::new(10, 10));
 
-        view.insert(Point::new(15, 15), cell.clone());
-        assert_eq!(view.top_left, Point::new(10, 10));
-        assert_eq!(view.bottom_right, Point::new(15, 15));
+//         view.insert(Point::new(15, 15), cell.clone());
+//         assert_eq!(view.top_left, Point::new(10, 10));
+//         assert_eq!(view.bottom_right, Point::new(15, 15));
 
-        view.insert(Point::new(5, 12), cell.clone());
-        assert_eq!(view.top_left, Point::new(5, 10));
-        assert_eq!(view.bottom_right, Point::new(15, 15));
+//         view.insert(Point::new(5, 12), cell.clone());
+//         assert_eq!(view.top_left, Point::new(5, 10));
+//         assert_eq!(view.bottom_right, Point::new(15, 15));
 
-        view.insert(Point::new(12, 20), cell.clone());
-        assert_eq!(view.top_left, Point::new(5, 10));
-        assert_eq!(view.bottom_right, Point::new(15, 20));
-    }
-}
+//         view.insert(Point::new(12, 20), cell.clone());
+//         assert_eq!(view.top_left, Point::new(5, 10));
+//         assert_eq!(view.bottom_right, Point::new(15, 20));
+//     }
+// }

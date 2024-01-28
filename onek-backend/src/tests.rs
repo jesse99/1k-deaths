@@ -1,4 +1,5 @@
 #![cfg(test)]
+use std::collections::HashMap;
 
 use super::*;
 
@@ -11,9 +12,21 @@ fn cell_to_char(cell: &Cell) -> char {
     '?'
 }
 
+struct View {
+    cells: HashMap<Point, Cell>,
+    top_left: Point,
+    bottom_right: Point,
+}
+
+impl View {
+    pub fn size(&self) -> Size {
+        self.bottom_right - self.top_left
+    }
+}
+
 struct GameInfo {
     player_loc: Point,
-    view: StateResponse,
+    view: View,
     notes: StateResponse,
 }
 
@@ -22,7 +35,7 @@ impl GameInfo {
         const NUM_NOTES: usize = 8;
 
         let player_loc = game.player_loc;
-        let view = handle_player_view(game);
+        let view = GameInfo::find_view(game);
         let notes = handle_notes(game, NUM_NOTES);
         GameInfo {
             player_loc,
@@ -30,11 +43,51 @@ impl GameInfo {
             notes,
         }
     }
+
+    fn find_view(game: &Game) -> View {
+        let mut cells = HashMap::new();
+        let mut top_left = Point::new(i32::MAX, i32::MAX);
+        let mut bottom_right = Point::new(i32::MIN, i32::MIN);
+        for &loc in game.pov.locations() {
+            let cell = visible_cell(game, loc);
+            cells.insert(loc, cell);
+
+            if loc.y < top_left.y || (loc.y == top_left.y && loc.x < top_left.x) {
+                top_left = loc;
+            }
+            if loc.y > bottom_right.y || (loc.y == bottom_right.y && loc.x > bottom_right.x) {
+                bottom_right = loc;
+            }
+        }
+        View {
+            cells,
+            top_left,
+            bottom_right,
+        }
+    }
 }
 
 trait ToSnapshot {
     fn to_snapshot(&self) -> String;
 }
+
+// impl ToSnapshot for View {
+//     fn to_snapshot(&self) -> String {
+//         let mut result = String::with_capacity(200);
+//         for y in self.top_left.y..=self.top_left.y + self.size().height {
+//             for x in self.top_left.x..=self.top_left.x + self.size().width {
+//                 let loc = Point::new(x, y);
+//                 match self.cells.get(&loc) {
+//                     Some(cell) => result.push(cell_to_char(cell)),
+//                     None => result.push(' '),
+//                 }
+//             }
+//             result.push('\n');
+//         }
+//         // At some point will need to use tx to include details about objects.
+//         result
+//     }
+// }
 
 impl ToSnapshot for View {
     fn to_snapshot(&self) -> String {
@@ -77,7 +130,7 @@ impl ToSnapshot for Vec<Note> {
 impl ToSnapshot for StateResponse {
     fn to_snapshot(&self) -> String {
         match self {
-            StateResponse::Map(map) => map.to_snapshot(),
+            // StateResponse::Map(map) => map.to_snapshot(),
             StateResponse::Notes(notes) => notes.to_snapshot(),
             _ => panic!("snapshots are not supported for {self}"),
         }

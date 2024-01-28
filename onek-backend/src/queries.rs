@@ -67,23 +67,23 @@ pub fn handle_player_loc(game: &Game) -> StateResponse {
     StateResponse::Location(game.player_loc)
 }
 
-pub fn handle_player_view(game: &Game) -> StateResponse {
-    let mut view = View::new();
+// pub fn handle_player_view(game: &Game) -> StateResponse {
+//     let mut view = View::new();
 
-    let start_loc = Point::new(
-        game.player_loc.x - super::pov::RADIUS,
-        game.player_loc.y - super::pov::RADIUS,
-    );
-    for dy in 0..2 * super::pov::RADIUS {
-        for dx in 0..2 * super::pov::RADIUS {
-            let loc = Point::new(start_loc.x + dx, start_loc.y + dy);
-            let cell = visible_cell(game, loc);
-            view.insert(loc, cell);
-        }
-    }
+//     let start_loc = Point::new(
+//         game.player_loc.x - super::pov::RADIUS,
+//         game.player_loc.y - super::pov::RADIUS,
+//     );
+//     for dy in 0..2 * super::pov::RADIUS {
+//         for dx in 0..2 * super::pov::RADIUS {
+//             let loc = Point::new(start_loc.x + dx, start_loc.y + dy);
+//             let cell = visible_cell(game, loc);
+//             view.insert(loc, cell);
+//         }
+//     }
 
-    StateResponse::Map(view)
-}
+//     StateResponse::Map(view)
+// }
 
 pub fn handle_query(channel_name: ChannelName, game: &Game, mesg: StateQueries) {
     use StateQueries::*;
@@ -91,7 +91,7 @@ pub fn handle_query(channel_name: ChannelName, game: &Game, mesg: StateQueries) 
         CellAt(loc) => handle_cell_at(game, loc),
         Notes(count) => handle_notes(game, count),
         PlayerLoc() => handle_player_loc(game),
-        PlayerView() => handle_player_view(game),
+        // PlayerView() => handle_player_view(game),
     };
     game.send_response(channel_name, response);
 }

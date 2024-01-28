@@ -36,10 +36,11 @@ impl Game {
     pub fn send_response(&self, name: ChannelName, response: StateResponse) {
         match self.reply_senders.get(&name) {
             Some(tx) => {
-                match response {
-                    StateResponse::Map(_) => debug!("sending Map(...) to {name}"),
-                    _ => debug!("sending {response} to {name}"),
-                }
+                // match response {
+                //     StateResponse::Map(_) => debug!("sending Map(...) to {name}"),
+                //     _ => debug!("sending {response} to {name}"),
+                // }
+                debug!("sending {response} to {name}");
                 let result = tx.send(&response);
                 assert!(!result.is_err(), "error sending reply: {result:?}");
             }

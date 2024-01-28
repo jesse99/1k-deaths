@@ -37,6 +37,7 @@ impl PoV {
     }
 
     /// Returns an iterator covering all the visible locations.
+    #[cfg(test)]
     pub fn locations(&self) -> std::collections::hash_set::Iter<'_, Point> {
         self.visible.iter()
     }

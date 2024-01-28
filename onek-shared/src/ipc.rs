@@ -64,14 +64,14 @@ impl IPC {
         }
     }
 
-    pub fn get_player_view(&self) -> View {
-        let query = StateQueries::PlayerView();
-        let response = self.send_query(query);
-        match response {
-            StateResponse::Map(map) => map,
-            _ => panic!("Expected View from PlayerView query not {response}"),
-        }
-    }
+    // pub fn get_player_view(&self) -> View {
+    //     let query = StateQueries::PlayerView();
+    //     let response = self.send_query(query);
+    //     match response {
+    //         StateResponse::Map(map) => map,
+    //         _ => panic!("Expected View from PlayerView query not {response}"),
+    //     }
+    // }
 
     pub fn get_player_loc(&self) -> Point {
         let query = StateQueries::PlayerLoc();
