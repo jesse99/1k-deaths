@@ -40,9 +40,28 @@ impl Config {
         &self.err
     }
 
+    pub fn bool_value(&self, key: &str, default: bool) -> bool {
+        self.section_bool_value(&self.service, key)
+            .unwrap_or_else(|| self.section_bool_value("default", key).unwrap_or(default))
+    }
+
     pub fn str_value(&self, key: &str, default: &str) -> String {
         self.section_str_value(&self.service, key)
             .unwrap_or_else(|| self.section_str_value("default", key).unwrap_or(default.to_string()))
+    }
+
+    fn section_bool_value(&self, section: &str, key: &str) -> Option<bool> {
+        self.table
+            .get(section)
+            .and_then(|value| match value {
+                toml::Value::Table(table) => Some(table),
+                _ => None,
+            })
+            .and_then(|table| table.get(key))
+            .and_then(|value| match value.as_bool() {
+                Some(s) => Some(s),
+                None => None, // awkward case: found value but it wasn't a bool
+            })
     }
 
     fn section_str_value(&self, section: &str, key: &str) -> Option<String> {

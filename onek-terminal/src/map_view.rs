@@ -105,9 +105,9 @@ impl MapView {
             } => (b, f, s), // TODO: use black if there is a character or item?
             RunTile::Stale {
                 bg: b,
-                fg: f,
+                fg: _,
                 symbol: s,
-            } => (b, f, s), // TODO: use black if there is a character or item?
+            } => (b, Color::Gray, s), // TODO: use black if there is a character or item?
             RunTile::NotVisible => (Color::Black, Color::Black, ' '),
         };
         let text = symbol.to_string().repeat(count);

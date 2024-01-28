@@ -26,6 +26,9 @@ pub enum Value {
 /// instead of a property like is_weapon objects have properties like melee_damage so
 /// that objects can be used in multiple roles.
 ///
+/// The key is something like "description", "symbol", "color", etc and the value is the
+/// associated [`Value`].
+///
 /// Objects are constructed from config files (currently ron files). It'd be possible
 /// to use ron::Map directly but mapping them onto our own Object type does have
 /// benefits:

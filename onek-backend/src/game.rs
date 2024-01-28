@@ -1,10 +1,11 @@
 use super::{OldPoV, PoV};
+use fnv::FnvHashMap;
 use onek_shared::*;
 use std::collections::{HashMap, VecDeque};
 
 pub struct Game {
-    pub level: HashMap<Point, Vec<Oid>>,
-    pub objects: HashMap<Oid, Object>,
+    pub level: FnvHashMap<Point, Vec<Oid>>,
+    pub objects: FnvHashMap<Oid, Object>,
     pub player_loc: Point,
     pub notes: VecDeque<Note>,
     pub pov: PoV,        // locations that the player can currently see
@@ -17,8 +18,8 @@ pub struct Game {
 impl Game {
     pub fn new() -> Game {
         let mut game = Game {
-            level: HashMap::new(),
-            objects: HashMap::new(),
+            level: FnvHashMap::default(),
+            objects: FnvHashMap::default(),
             exemplars: super::objects::load_objects(),
             next_id: 1,
             player_loc: Point::new(0, 0),

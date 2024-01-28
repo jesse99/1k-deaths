@@ -13,3 +13,7 @@ log = "0.4.20"                            # standard logging API
 onek-shared = { path = "../onek-shared" } # IPC message types
 simplelog = "0.12.1"                      # logging facade
 termion = "3.0.0"                         # cross-platform terminal library
+
+# Better profiling in release TODO: set this to false
+[profile.release]
+debug = true

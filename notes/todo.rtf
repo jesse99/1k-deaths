@@ -71,6 +71,8 @@ other rogue-likes\
 
 \f1\b0 command-. will fill match arms, also clicking the little light bulb icon\
 \
+78% of time was in OldPov::update\
+\
 \
 \pard\pardeftab720\partightenfactor0
 
@@ -81,28 +83,15 @@ other rogue-likes\
 \f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 4a the map
 \f1\b0 \
 \'95\'a0Get terminal working\
-	- rename DEFAULT_CELL_ID to DEFAULT_CELL_OID\
-		` or rename id? maybe to tag?\
-	- try and get an idea of speed (maybe in release)\
-		` can we add a benchmark test?\
-		` special mode in terminal? that way we\'92d also measure render time\
-		` probably just a new app crate\
-		` could (for now) just hardcode move messages\
-		` maybe just have a script to time results\
-		` later could use criterion (or cargo bench if it ever stabilizes)\
+	- do a commit\
+	- do an optimization pass\
+		` get_cell_at is taking 70% of the time\
+		` use get_cell_row? how much time is that taking on back end?\
 	- rename UI to Window?\
+\'95 do a cargo clean\
+	- make sure /var/folders/m1/xm159_cs25l9b9jmlfxsn7zw0000gn/T/cargo-install2NaAe5\
+	  is deleted\
 \'95 add doors\
-
-\f3\b \
-4b app\
-
-\f1\b0 \'95 should be responsible for launching services\
-\'95 could use config file to specify how and what to launch\
-\'95 should be able to use std::process to launch and kill processes\
-\'95 services (except UI) should regularly poke app (use recv_timeout)\
-	- update run-tests.sh\
-	- use a script to test wathdog? maybe option to override max poke duration\
-	- probably want an option to replay instead of starting a new game\
 
 \f3\b \
 5 saving/loading
@@ -148,7 +137,7 @@ Step 6a - It\'92s Alive! Alive!
 	- make sure both sets of tests still work\
 
 \f3\b \
-Step 6b - Debugger service\
+Step 6b - Debugger app\
 
 \f1\b0 \'95\'a0Should be a regular command line app (so it\'92ll work with web based UIs)\
 \'95\'a0Will need commands to inspect objects (and to select them)\

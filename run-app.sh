@@ -7,13 +7,15 @@ trap 'exit 0' TERM
 
 # bash gets weird when trying to do `command& &&`
 run_backend() {
-	./target/debug/onek-backend&
+	# ./target/debug/onek-backend&
+	./target/release/onek-backend&
     sleep 1
 }
 
 run_terminal() {
-    ./target/debug/onek-terminal
+    # ./target/debug/onek-terminal
+    ./target/release/onek-terminal
 }
 
-cargo build && run_backend && run_terminal
+cargo build --release && run_backend && run_terminal
 killall -q onek-backend # might be better if terminal sent an Exit message

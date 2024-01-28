@@ -9,7 +9,7 @@ pub const RADIUS: i32 = 10; // TODO: should this depend on race or perception? o
 /// (e.g. terrain changes).
 pub struct PoV {
     edition: u32, // incremented each time visible is updated
-    visible: FnvHashSet<Point>,
+    pub visible: FnvHashSet<Point>,
     dirty: bool, // true if visible is invalid
 }
 

@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Could use command line to set options instead of a config file. Config file seems
     // a bit nicer when dealing with multiple processes but maybe it'd be better to switch
     // to something like clap later.
-    let config = Config::load("onek-logic");
+    let config = Config::load("onek-terminal");
     init_logging(&config);
 
     let local = chrono::Local::now();
@@ -64,7 +64,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ipc = IPC::new("/tmp/to-terminal");
     ipc.send_mutate(StateMutators::NewLevel("start".to_owned()));
     let mut terminal = Terminal::new(ipc);
-    terminal.run();
+
+    if config.bool_value("benchmark", false) {
+        terminal.benchmark();
+    } else {
+        terminal.run();
+    }
 
     Result::Ok(())
 }

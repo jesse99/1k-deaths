@@ -200,5 +200,6 @@ pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
         Reset { reason, map } => handle_reset(game, &reason, &map),
     }
 
+    #[cfg(debug_assertions)]
     invariant(&game);
 }
