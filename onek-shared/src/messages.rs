@@ -65,49 +65,41 @@ pub type Cell = Vec<Object>;
 //     pub bottom_right: Point,
 // }
 
-// impl View {
-//     pub fn new() -> View {
-//         View {
-//             cells: HashMap::new(),
-//             top_left: Point::origin(),
-//             bottom_right: Point::origin(),
-//         }
-//     }
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum TerminalCell {
+    /// The player can currently see the cell so the cell contents are up to date.
+    Seen {
+        symbol: char,
+        color: Color,
+        back_color: Color,
+    },
 
-//     pub fn insert(&mut self, loc: Point, cell: Cell) {
-//         if self.cells.is_empty() {
-//             self.top_left = loc;
-//             self.bottom_right = loc;
-//         } else {
-//             if loc.x < self.top_left.x {
-//                 self.top_left.x = loc.x;
-//             }
-//             if loc.y < self.top_left.y {
-//                 self.top_left.y = loc.y;
-//             }
+    /// The player was able to see the cell but can't now: symbol may or may not be accurate.
+    Stale {
+        symbol: char,
+        back_color: Color,
+    },
 
-//             if loc.x > self.bottom_right.x {
-//                 self.bottom_right.x = loc.x;
-//             }
-//             if loc.y > self.bottom_right.y {
-//                 self.bottom_right.y = loc.y;
-//             }
-//         }
+    // The player was never able to see this cell.
+    Unseen,
+}
 
-//         self.cells.insert(loc, cell);
-//     }
-
-//     pub fn size(&self) -> Size {
-//         self.bottom_right - self.top_left
-//     }
-// }
+// Query returns only a row at a time to avoid blowing SharedRingBuffer capacity.
+// TODO: could up the capacity and return the entire view but that would require a
+// pretty large buffer for large terminal windows. Note that TerminalCell is only
+// 8 bytes atm.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TerminalRow {
+    /// The i32 is the number of times that the cell appears within a run.
+    pub row: Vec<(TerminalCell, i32)>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateQueries {
     CellAt(Point),
     Notes(usize),
-    // PlayerView(),
-    PlayerLoc(),
+    PlayerLoc,
+    TerminalRow { start: Point, len: i32 },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -150,9 +142,9 @@ pub enum StateResponse {
     // TODO: ready to move should include all objects that are ready
     Cell(Cell),
     Location(Point),
-    // Map(View),
     Notes(Vec<Note>),
     Updated(EditCount),
+    TerminalRow(TerminalRow),
 }
 
 mod display_impl {

@@ -46,6 +46,15 @@ impl IPC {
 
 // Queries
 impl IPC {
+    pub fn get_terminal_row(&self, start: Point, len: i32) -> TerminalRow {
+        let query = StateQueries::TerminalRow { start, len };
+        let response = self.send_query(query);
+        match response {
+            StateResponse::TerminalRow(row) => row,
+            _ => panic!("Expected TerminalRow from TerminalRow query not {response}"),
+        }
+    }
+
     pub fn get_cell_at(&self, loc: Point) -> Cell {
         let query = StateQueries::CellAt(loc);
         let response = self.send_query(query);
@@ -74,7 +83,7 @@ impl IPC {
     // }
 
     pub fn get_player_loc(&self) -> Point {
-        let query = StateQueries::PlayerLoc();
+        let query = StateQueries::PlayerLoc;
         let response = self.send_query(query);
         match response {
             StateResponse::Location(loc) => loc,

@@ -53,8 +53,12 @@ impl Terminal {
         }
     }
 
-    // debug:   60s
-    // release: 45s
+    // initial times
+    //    debug:   60s
+    //    release: 45s
+    // after a couple optimization passes
+    //    debug:   32s
+    //    release: 30s
     pub fn benchmark(&mut self) {
         // TODO: It'd be better to just replay a saved game.
         // TODO: Might be better to use something like the criterion crate (or cargo

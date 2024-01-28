@@ -3,6 +3,7 @@ use fnv::FnvHashMap;
 // use std::fs::File;
 // use std::io::{Error, Write};
 // use std::path::Path;
+use std::cell::RefCell;
 use termion::event::Key;
 
 const NUM_MESSAGES: i32 = 5;
@@ -52,6 +53,7 @@ impl MainMode {
             map: MapView {
                 origin: Point::new(0, 0),
                 size: Size::new(width - details_width, height - NUM_MESSAGES),
+                string_cache: RefCell::new(FnvHashMap::default()),
             },
             // details: DetailsView {
             //     origin: Point::new(width - details_width, 0),
