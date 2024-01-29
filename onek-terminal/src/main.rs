@@ -11,7 +11,7 @@ mod terminal;
 mod termion_utils;
 mod text_mode;
 mod text_view;
-mod ui;
+mod window;
 
 use help::*;
 use main_mode::*;
@@ -24,7 +24,7 @@ use std::{fs::File, str::FromStr};
 use termion_utils::*;
 use text_mode::*;
 use text_view::*;
-use ui::*;
+use window::*;
 
 use crate::terminal::Terminal;
 

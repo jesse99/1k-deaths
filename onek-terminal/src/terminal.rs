@@ -12,7 +12,7 @@ use termion::raw::IntoRawMode;
 // }
 
 pub struct Terminal {
-    ui: UI,
+    window: Window,
     ipc: IPC,
     stdout: Box<dyn Write>,
 }
@@ -38,7 +38,7 @@ impl Terminal {
 
         Terminal {
             // ui: UI::new(width, height, replay),
-            ui: UI::new(width, height),
+            window: Window::new(width, height),
             ipc,
             stdout: Box::new(stdout),
         }
@@ -47,7 +47,7 @@ impl Terminal {
     pub fn run(&mut self) {
         loop {
             self.render();
-            if self.ui.handle_input(&mut self.stdout, &mut self.ipc) != LifeCycle::Running {
+            if self.window.handle_input(&mut self.stdout, &mut self.ipc) != LifeCycle::Running {
                 break;
             }
         }
@@ -362,7 +362,7 @@ impl Terminal {
     }
 
     fn render(&mut self) {
-        self.ui.render(&mut self.stdout, &mut self.ipc);
+        self.window.render(&mut self.stdout, &mut self.ipc);
         self.stdout.flush().unwrap();
     }
 }

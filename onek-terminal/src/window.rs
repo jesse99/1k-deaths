@@ -12,13 +12,13 @@ pub enum LifeCycle {
     Quit,
 }
 
-pub struct UI {
+pub struct Window {
     modes: Vec<Box<dyn Mode>>,
     recv: Receiver<Key>,
 }
 
-impl UI {
-    pub fn new(width: i32, height: i32) -> UI {
+impl Window {
+    pub fn new(width: i32, height: i32) -> Window {
         let (send, recv) = mpsc::channel();
         let _ = thread::spawn(move || {
             let stdin = io::stdin();
@@ -41,7 +41,7 @@ impl UI {
         // if !replay.is_empty() {
         //     modes.push(ReplayMode::create(replay));
         // }
-        UI { modes, recv }
+        Window { modes, recv }
     }
 
     pub fn render(&self, stdout: &mut Box<dyn Write>, ipc: &IPC) {
