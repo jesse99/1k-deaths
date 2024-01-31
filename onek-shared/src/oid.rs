@@ -66,11 +66,11 @@ impl fmt::Display for Oid {
             write!(f, "{}#{}", tag, self.value)
         } else {
             match self.value {
-                0 => write!(f, "player#{}", self.value),
-                1 => {
-                    write!(f, "default cell#{}", self.value)
+                0 => write!(f, "null#{}", self.value),
+                1 => write!(f, "player#{}", self.value),
+                2 => {
+                    write!(f, "default obj#{}", self.value)
                 }
-                2 => write!(f, "game#{}", self.value),
                 _ => panic!("excpected a tag"),
             }
         }

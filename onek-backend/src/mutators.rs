@@ -4,31 +4,42 @@ use fnv::FnvHashSet;
 
 const MAX_NOTES: usize = 100;
 
-fn player_can_move_in(tag: &Tag) -> Option<Note> {
-    match tag.0.as_str() {
-        "deep water" => Some(Note::new(NoteKind::Error, "The water is too deep.".to_owned())),
-        "shallow water" => Some(Note::new(
-            NoteKind::Environmental,
-            "You splash through the water.".to_owned(),
-        )),
-        "stone wall" => Some(Note::new(NoteKind::Error, "You bounce off the wall.".to_owned())),
-        _ => None,
+fn player_can_move_in(object: &Object) -> Option<Note> {
+    if let Some(value) = object.get("blocks_move") {
+        Some(Note::new(NoteKind::Error, value.to_str().to_owned()))
+    } else {
+        None
+    }
+}
+
+fn player_move_mesg(object: &Object) -> Option<Note> {
+    if let Some(value) = object.get("move_mesg") {
+        Some(Note::new(NoteKind::Environmental, value.to_str().to_owned()))
+    } else {
+        None
     }
 }
 
 fn player_can_move(game: &Game, to: Point) -> Option<Note> {
     if let Some(cell) = logical_cell(game, to) {
-        let tag = cell[0].get("tag").unwrap().to_tag();
-        player_can_move_in(tag)
+        for object in cell.iter() {
+            if let Some(note) = player_can_move_in(&object) {
+                return Some(note);
+            }
+        }
+        for object in cell {
+            if let Some(note) = player_move_mesg(&object) {
+                return Some(note);
+            }
+        }
+        None
     } else {
-        let tag = game
-            .objects
-            .get(&DEFAULT_CELL_OID)
-            .unwrap()
-            .get("tag")
-            .unwrap()
-            .to_tag();
-        player_can_move_in(tag)
+        let object = game.objects.get(&DEFAULT_CELL_OID).unwrap();
+        if let Some(note) = player_can_move_in(object) {
+            Some(note)
+        } else {
+            player_move_mesg(object)
+        }
     }
 }
 
@@ -55,18 +66,35 @@ fn handle_move_player(game: &mut Game, loc: Point) {
     PoV::refresh(game);
 }
 
-// TODO: should we rule out bumps more than one square from oid?
-// TODO: what about stuff like hopping? maybe those are restricted to moves?
-fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
-    info!("{oid} bump to {loc}");
-    if oid != PLAYER_OID {
-        todo!("non-player movement isn't implemented yet");
+fn find_closed_door(game: &mut Game, loc: Point) -> Option<Oid> {
+    if let Some(oids) = game.level.get(&loc) {
+        for oid in oids {
+            let object = game.objects.get(&oid).unwrap();
+            if let Some(value) = object.get("tag") {
+                let tag = value.to_tag();
+                if tag.0 == "closed door" {
+                    return Some(*oid);
+                }
+            }
+        }
     }
+    None
+}
 
-    // At some point may want a dispatch table, e.g.
-    // (Actor, Action, Obj) -> Handler(actor, obj)
+fn bumped_object(game: &mut Game, loc: Point) -> bool {
+    if let Some(old_oid) = find_closed_door(game, loc) {
+        let new_oid = game.new_object("open door");
+        game.replace_oid(loc, old_oid, new_oid);
+        OldPoV::update(game); // TODO: this should happen when time advances
+        PoV::refresh(game);
+        return true;
+    }
+    false
+}
 
-    // If the move resulted in a note then add it to state.
+fn attempt_player_move(game: &mut Game, loc: Point) {
+    // Can the player move? If not we'll get an error note. If so we may get an
+    // environmental note.
     let note = player_can_move(game, loc);
     match &note {
         None => (),
@@ -82,6 +110,21 @@ fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
         _ => handle_move_player(game, loc),
     }
     PoV::refresh(game)
+}
+
+// TODO: should we rule out bumps more than one square from oid?
+// TODO: what about stuff like hopping? maybe those are restricted to moves?
+fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
+    info!("{oid} bump to {loc}");
+    if oid != PLAYER_OID {
+        todo!("non-player movement isn't implemented yet");
+    }
+
+    // At some point may want a dispatch table, e.g.
+    // (Actor, Action, Obj) -> Handler(actor, obj)
+    if !bumped_object(game, loc) {
+        attempt_player_move(game, loc);
+    }
 }
 
 fn handle_examine(game: &mut Game, loc: Point, wizard: bool) {
@@ -149,6 +192,11 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
             '@' => {
                 game.level.insert(loc, vec![dirt, PLAYER_OID]);
                 game.player_loc = loc;
+                loc.x += 1;
+            }
+            '+' => {
+                let closed_door = game.new_object("closed door");
+                game.level.insert(loc, vec![dirt, closed_door]);
                 loc.x += 1;
             }
             '#' => {

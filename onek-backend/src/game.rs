@@ -68,4 +68,12 @@ impl Game {
         let oids = self.level.get_mut(&to).unwrap();
         oids.push(oid);
     }
+
+    pub fn replace_oid(&mut self, from: Point, old_oid: Oid, new_oid: Oid) {
+        let oids = self.level.get_mut(&from).unwrap();
+        let index = oids.iter().position(|&candidate| candidate == old_oid).unwrap();
+        oids.remove(index);
+        oids.insert(index, new_oid);
+        self.objects.remove(&old_oid);
+    }
 }
