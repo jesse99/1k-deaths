@@ -1,6 +1,5 @@
 mod channel_name;
 mod color;
-mod config;
 mod edit_count;
 mod ipc;
 mod messages;
@@ -11,7 +10,6 @@ mod size;
 
 pub use channel_name::ChannelName;
 pub use color::*;
-pub use config::Config;
 pub use edit_count::EditCount;
 pub use ipc::*;
 pub use messages::*;

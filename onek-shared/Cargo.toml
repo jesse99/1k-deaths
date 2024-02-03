@@ -18,7 +18,6 @@ postcard = { version = "1.0.8", features = [
 ron = "0.8.1" # rusty config language
 serde = { version = "1.0.195", features = ["derive"] } # serialization framework
 serde_derive = "1.0.195" # serde derive macros
-toml = "0.8.8" # TOML parser
 
 # Better profiling in release TODO: set this to false
 [profile.release]

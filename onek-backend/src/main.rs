@@ -39,6 +39,7 @@ pub enum LoggingLevel {
     Trace,
 }
 
+// TODO: add seed
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)] // TODO: could do better here but terminal support wil go away at some point
 struct Args {
