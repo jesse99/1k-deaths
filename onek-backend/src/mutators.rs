@@ -114,11 +114,8 @@ fn attempt_player_move(game: &mut Game, loc: Point) {
 
 // TODO: should we rule out bumps more than one square from oid?
 // TODO: what about stuff like hopping? maybe those are restricted to moves?
-fn handle_bump(game: &mut Game, oid: Oid, loc: Point) {
-    info!("{oid} bump to {loc}");
-    if oid != PLAYER_OID {
-        todo!("non-player movement isn't implemented yet");
-    }
+fn handle_player_bump(game: &mut Game, loc: Point) {
+    info!("player bump to {loc}");
 
     // At some point may want a dispatch table, e.g.
     // (Actor, Action, Obj) -> Handler(actor, obj)
@@ -242,7 +239,7 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
 pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     use StateMutators::*;
     match mesg {
-        Bump(oid, loc) => handle_bump(game, oid, loc),
+        Bump(loc) => handle_player_bump(game, loc),
         Examine { loc, wizard } => handle_examine(game, loc, wizard),
         NewLevel(name) => handle_new_level(game, name),
         Reset { reason, map } => handle_reset(game, &reason, &map),

@@ -72,27 +72,19 @@ other rogue-likes\
 \f1\b0 command-. will fill match arms, also clicking the little light bulb icon\
 \
 \
-\pard\pardeftab720\partightenfactor0
-
-\f0\fs32 \cf5 \expnd0\expndtw0\kerning0
-\
 \pard\pardeftab720\sl420\partightenfactor0
 
-\f3\b\fs48 \cf4 \kerning1\expnd0\expndtw0 4a the map
-\f1\b0 \
-\'95 add doors\
-
-\f3\b \
-5 saving/loading
+\f3\b \cf4 5 saving/loading
 \f1\b0 \
 \'95 add support for replay\
-		` state(?) should persist mutate methods using json\
-		` maybe use a more efficient format in release\
-		` probably want a replay message\
-		` message takes number of messages to replay\
-		` add a query that returns true if there are still messages to replay\
-		` also a message to stop replay\
-		` write a test for this?\
+	- terminal should persist sent mutate messages using json\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 	- maybe use a more efficient format in release\
+	- probably want a replay message\
+	- message takes number of messages to replay\
+	- add a query that returns true if there are still messages to replay\
+	- also a message to stop replay\
+	- write a test for this?\
 \'95 load would replay events\
 \'95 probably want to allow the ui to have some control over this\
 \'95 would be great to have a roll back option, maybe in debugger service?\

@@ -140,7 +140,7 @@ impl MainMode {
         //     "ipc.send_mutate(StateMutators::Bump(PLAYER_ID, Point::new({}, {})));",
         //     loc.x, loc.y
         // );
-        ipc.send_mutate(StateMutators::Bump(PLAYER_OID, loc));
+        ipc.send_mutate(StateMutators::Bump(loc));
         InputAction::UpdatedGame
     }
 

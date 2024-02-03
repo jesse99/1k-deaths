@@ -176,7 +176,7 @@ fn test_bump_move() {
     };
     handle_mutate(&mut game, mesg);
 
-    let mesg = StateMutators::Bump(PLAYER_OID, Point::new(2, 1));
+    let mesg = StateMutators::Bump(Point::new(2, 1));
     handle_mutate(&mut game, mesg);
 
     let info = GameInfo::new(&game);
@@ -195,7 +195,7 @@ fn test_bump_wall() {
     };
     handle_mutate(&mut game, mesg);
 
-    let mesg = StateMutators::Bump(PLAYER_OID, Point::new(0, 1));
+    let mesg = StateMutators::Bump(Point::new(0, 1));
     handle_mutate(&mut game, mesg);
 
     let info = GameInfo::new(&game);
@@ -214,7 +214,7 @@ fn test_bump_shallow() {
     };
     handle_mutate(&mut game, mesg);
 
-    let mesg = StateMutators::Bump(PLAYER_OID, Point::new(2, 1));
+    let mesg = StateMutators::Bump(Point::new(2, 1));
     handle_mutate(&mut game, mesg);
 
     let info = GameInfo::new(&game);
@@ -233,7 +233,7 @@ fn test_bump_deep() {
     };
     handle_mutate(&mut game, mesg);
 
-    let mesg = StateMutators::Bump(PLAYER_OID, Point::new(2, 1));
+    let mesg = StateMutators::Bump(Point::new(2, 1));
     handle_mutate(&mut game, mesg);
 
     let info = GameInfo::new(&game);

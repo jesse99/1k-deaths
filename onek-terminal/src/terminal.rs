@@ -355,7 +355,7 @@ impl Terminal {
         let start = Instant::now();
         for loc in locs {
             self.render();
-            self.ipc.send_mutate(StateMutators::Bump(PLAYER_OID, loc));
+            self.ipc.send_mutate(StateMutators::Bump(loc));
         }
         let elapsed = start.elapsed();
         info!("benchmark took {:?} secs", elapsed.as_secs());
