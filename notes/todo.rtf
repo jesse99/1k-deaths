@@ -76,8 +76,17 @@ other rogue-likes\
 
 \f3\b \cf4 5 saving/loading
 \f1\b0 \
-\'95 add support for replay\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 \'95 switch from toml to command line\
+	- backend will get some and terminal will get some\
+	- get rid of Config from shared\
+	- get rid of toml crate and the toml config file\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 \'95 add support for replay\
 	- terminal should persist sent mutate messages using json\
+	- may want a unit test to verify that old saved mutate messages deserialize OK\
+		i.e. new variants weren\'92t added to the middle\
+		probably only need to test last variant\
 \pard\pardeftab720\sl420\partightenfactor0
 \cf4 	- maybe use a more efficient format in release\
 	- probably want a replay message\

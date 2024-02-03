@@ -11,6 +11,7 @@ fnv = "1.0.7"                             # custom hasher that is much more perf
 ipmpsc = "0.5.1"                          # inter-process channels
 log = "0.4.20"                            # standard logging API
 onek-shared = { path = "../onek-shared" } # IPC message types
+postcard = "1.0.8"                        # binary backend for serde
 simplelog = "0.12.1"                      # logging facade
 termion = "3.0.0"                         # cross-platform terminal library
 

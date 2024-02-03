@@ -13,6 +13,8 @@ pub struct Game {
     pub reply_senders: HashMap<ChannelName, ipmpsc::Sender>,
     pub next_id: u32, // 0 is null, 1 is the player, 2 is default terrain
     exemplars: HashMap<Tag, Object>,
+    #[cfg(debug_assertions)]
+    pub invariants: bool, // if true then expensive checks are enabled
 }
 
 impl Game {
@@ -27,10 +29,18 @@ impl Game {
             pov: PoV::new(),
             old_pov: OldPoV::new(),
             reply_senders: HashMap::new(),
+            #[cfg(debug_assertions)]
+            invariants: false,
         };
         game.new_object("player"); // player
         game.new_object("stone wall"); // default terrain
         game
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn set_invariants(&mut self, enable: bool) {
+        // TODO: might want a wizard command to enable these
+        self.invariants = enable;
     }
 
     pub fn send_response(&self, name: ChannelName, response: StateResponse) {

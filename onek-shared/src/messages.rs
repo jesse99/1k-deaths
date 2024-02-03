@@ -102,6 +102,9 @@ pub enum StateQueries {
     TerminalRow { start: Point, len: i32 },
 }
 
+// Note that new variants must be added to the end. This is because terminal uses postcard
+// to serialize these and the de-serialization will break if a variant is added at the
+// start or middle.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StateMutators {
     /// Perform a default action to a nearby cell. Typically this will be something like
