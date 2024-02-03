@@ -7,6 +7,7 @@ mod main_mode;
 mod map_view;
 mod messages_view;
 mod mode;
+// mod persistence;
 mod terminal;
 mod termion_utils;
 mod text_mode;
@@ -47,6 +48,10 @@ struct Args {
     #[clap(long)]
     benchmark: bool,
 
+    /// Path to saved file
+    #[clap(long, value_name = "PATH")]
+    load: Option<String>,
+
     /// Logging verbosity
     #[clap(long, value_enum, value_name = "NAME", default_value_t = LoggingLevel::Info)]
     log_level: LoggingLevel,
@@ -54,6 +59,10 @@ struct Args {
     /// Path to saved file
     #[clap(long, value_name = "PATH", default_value_t = String::from("terminal.log"))]
     log_path: String,
+
+    /// Ignore any saved files
+    #[clap(long)]
+    new_game: bool,
 }
 
 fn to_filter(level: LoggingLevel) -> LevelFilter {
