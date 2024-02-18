@@ -3,21 +3,40 @@ use fnv::FnvHashMap;
 use termion::event::Key;
 
 pub enum CommandResult {
-    UpdatedGame,
+    /// Used to push a transient mode (e.g. [`ExamineMode`]) onto a [`Window`].
+    Push(Box<dyn Mode>),
+
+    /// Used to pop a transient mode from a [`Window`].
+    Pop,
+
+    /// Exit a transient mode or the game itself.
     Quit,
 
-    /// This is used for transient modes, e.g. [`ExamineMode`].
-    Push(Box<dyn Mode>),
-    Pop,
+    /// Command mutated the backend.
+    UpdatedGame,
 }
 
+/// Key strokes are mapped to commands which are then persisted and executed. Some
+/// commands (like Scroll) apply to the UI. Others (like Bump) will mutate the backend.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Command {
+    /// Move player or interact with adjacent object (e.g. opening a door).
     Bump(i32, i32),
+
+    /// Show help for a mode.
     Help,
+
+    /// Scroll a [`TextMode`] up or down by a page.
     Page(i32),
+
+    /// Scroll a [`TextMode`] up or down N lines.
     Scroll(i32),
+
+    /// Scroll a [`TextMode`] up or down by a multiple of N lines where the multiple
+    /// defaults to 1.
     ScrollBy(i32),
+
+    /// Exit a transient mode or the game itself.
     Quit,
 }
 
