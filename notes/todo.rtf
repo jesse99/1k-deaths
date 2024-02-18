@@ -79,12 +79,12 @@ other rogue-likes\
 \f3\b \cf4 5 saving/loading
 \f1\b0 \
 \'95 add support for replay\
-	- add actions struct?\
-		` has private ipc field\
-		` command keys are mapped onto enum action variants\
-		` allows query logic to be tested\
-		` rename InputAction to CommandResult?\
-	- terminal should persist sent mutate messages\
+	- make sure game still works\
+	- document Command\
+	- do a commit (but not a push)\
+	- start implementing persistence\
+		` may want to add a note saying Command allows query logic to be tested\
+		` also better visual fidelity for replay\
 	- may want a unit test to verify that old saved mutate messages deserialize OK\
 		i.e. new variants weren\'92t added to the middle\
 		probably only need to test last variant\

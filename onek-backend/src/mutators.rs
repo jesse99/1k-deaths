@@ -227,6 +227,8 @@ fn handle_reset(game: &mut Game, reason: &str, map: &str) {
                     );
                     bad_chars.insert(ch);
                 }
+                game.level.insert(loc, vec![dirt]);
+                loc.x += 1;
             }
         }
     }

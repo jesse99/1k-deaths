@@ -10,7 +10,9 @@ pub trait Mode {
     /// it should return false (and possibly augment context).
     fn render(&self, context: &mut RenderContext) -> bool;
 
-    fn handle_input(&mut self, ipc: &IPC, key: Key) -> InputAction;
+    fn handle_input(&self, key: Key) -> Option<Command>;
+
+    fn handle_command(&mut self, ipc: &IPC, command: Command) -> CommandResult;
 
     /// Normally this will return None so we'll block forever waiting for the player to
     /// press a key. But ReplayMode will set this to a smaller value so that Terminal can
@@ -25,15 +27,4 @@ pub struct RenderContext<'a> {
     pub stdout: &'a mut Box<dyn Write>,
     pub ipc: &'a IPC,
     pub examined: Option<Point>, // ExamineMode will set this
-}
-
-pub enum InputAction {
-    UpdatedGame,
-    Quit,
-
-    /// This is used for transient modes, e.g. [`ExamineMode`].
-    Push(Box<dyn Mode>),
-    Pop,
-
-    NotHandled,
 }

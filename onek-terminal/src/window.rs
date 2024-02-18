@@ -75,25 +75,25 @@ impl Window {
     }
 
     pub(super) fn handle_input(&mut self, stdout: &mut Box<dyn Write>, ipc: &IPC) -> LifeCycle {
-        use InputAction::*;
+        use CommandResult::*;
         let key = self.get_key();
         let mode = self.modes.last_mut().unwrap();
-        match mode.handle_input(ipc, key) {
-            UpdatedGame => (),
-            Quit => return LifeCycle::Quit,
-            Push(mode) => {
-                self.modes.push(mode);
-                self.clear(stdout);
-            }
-            Pop => {
-                let _ = self.modes.pop();
-                assert!(!self.modes.is_empty());
-                self.clear(stdout);
-            }
-            NotHandled => {
-                debug!("player pressed {key:?}"); // TODO: beep?
-            }
+        if let Some(command) = mode.handle_input(key) {
+            match mode.handle_command(ipc, command) {
+                UpdatedGame => (),
+                Quit => return LifeCycle::Quit,
+                Push(mode) => {
+                    self.modes.push(mode);
+                    self.clear(stdout);
+                }
+                Pop => {
+                    let _ = self.modes.pop();
+                    assert!(!self.modes.is_empty());
+                    self.clear(stdout);
+                }
+            } // else beep?
         }
+
         LifeCycle::Running
     }
 

@@ -8,9 +8,6 @@ use termion::event::Key;
 
 const NUM_MESSAGES: i32 = 5;
 
-type KeyHandler = fn(&mut MainMode, &IPC) -> InputAction;
-type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
-
 pub struct MainMode {
     map: MapView,
     // details: DetailsView,
@@ -21,31 +18,32 @@ pub struct MainMode {
 
 impl MainMode {
     pub fn create(width: i32, height: i32) -> Box<dyn Mode> {
-        let mut commands: CommandTable = FnvHashMap::default();
-        commands.insert(Key::Left, Box::new(|s, game| s.do_move(game, -1, 0)));
-        commands.insert(Key::Right, Box::new(|s, game| s.do_move(game, 1, 0)));
-        commands.insert(Key::Up, Box::new(|s, game| s.do_move(game, 0, -1)));
-        commands.insert(Key::Down, Box::new(|s, game| s.do_move(game, 0, 1)));
-        commands.insert(Key::Char('1'), Box::new(|s, game| s.do_move(game, -1, 1)));
-        commands.insert(Key::Char('2'), Box::new(|s, game| s.do_move(game, 0, 1)));
-        commands.insert(Key::Char('3'), Box::new(|s, game| s.do_move(game, 1, 1)));
-        commands.insert(Key::Char('4'), Box::new(|s, game| s.do_move(game, -1, 0)));
-        // commands.insert(Key::Char('5'), Box::new(|s, game| s.do_rest(game)));
-        // commands.insert(Key::Char('s'), Box::new(|s, game| s.do_rest(game)));
-        commands.insert(Key::Char('6'), Box::new(|s, game| s.do_move(game, 1, 0)));
-        commands.insert(Key::Char('7'), Box::new(|s, game| s.do_move(game, -1, -1)));
-        commands.insert(Key::Char('8'), Box::new(|s, game| s.do_move(game, 0, -1)));
-        commands.insert(Key::Char('9'), Box::new(|s, game| s.do_move(game, 1, -1)));
-        // commands.insert(Key::Char('i'), Box::new(|s, game| s.do_inventory(game)));
-        // commands.insert(Key::Char('x'), Box::new(|s, game| s.do_examine(game)));
+        let mut commands = FnvHashMap::default();
+
+        commands.insert(Key::Left, Command::Bump(-1, 0));
+        commands.insert(Key::Right, Command::Bump(1, 0));
+        commands.insert(Key::Up, Command::Bump(0, -1));
+        commands.insert(Key::Down, Command::Bump(0, 1));
+        commands.insert(Key::Char('1'), Command::Bump(-1, 1));
+        commands.insert(Key::Char('2'), Command::Bump(0, 1));
+        commands.insert(Key::Char('3'), Command::Bump(1, 1));
+        commands.insert(Key::Char('4'), Command::Bump(-1, 0));
+        // commands.insert(Key::Char('5'), Command::Rest);
+        // commands.insert(Key::Char('s'), Command::Rest);
+        commands.insert(Key::Char('6'), Command::Bump(1, 0));
+        commands.insert(Key::Char('7'), Command::Bump(-1, -1));
+        commands.insert(Key::Char('8'), Command::Bump(0, -1));
+        commands.insert(Key::Char('9'), Command::Bump(1, -1));
+        // commands.insert(Key::Char('i'), Command::Inventory);
+        // commands.insert(Key::Char('x'), Command::Examine);
         // if super::wizard_mode() {
-        //     commands.insert(Key::Ctrl('d'), Box::new(|s, game| s.do_save_state(game)));
+        //     commands.insert(Key::Ctrl('d'), Command::SaveState);
         // }
 
         // We don't receive ctrl-m so we use ctrl-p because that's what Crawl does.
-        // commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_show_messages(game)));
-        commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
-        commands.insert(Key::Char('q'), Box::new(|s, game| s.do_quit(game)));
+        // Key::Ctrl('p'), Command::ShowMessages);
+        commands.insert(Key::Char('?'), Command::Help);
+        commands.insert(Key::Char('q'), Command::Quit);
 
         // let details_width = 20;
         let details_width = 0;
@@ -77,10 +75,17 @@ impl Mode for MainMode {
         true
     }
 
-    fn handle_input(&mut self, ipc: &IPC, key: Key) -> InputAction {
-        match self.commands.get(&key).cloned() {
-            Some(handler) => handler(self, ipc),
-            None => InputAction::NotHandled,
+    // TODO: use a commands table
+    fn handle_input(&self, key: Key) -> Option<Command> {
+        self.commands.get(&key).copied()
+    }
+
+    fn handle_command(&mut self, ipc: &IPC, command: Command) -> CommandResult {
+        match command {
+            Command::Bump(dx, dy) => self.do_bump(ipc, dx, dy),
+            Command::Help => self.do_help(ipc),
+            Command::Quit => self.do_quit(ipc),
+            _ => panic!("didn't handle {command:?}"),
         }
     }
 
@@ -90,10 +95,10 @@ impl Mode for MainMode {
 }
 
 impl MainMode {
-    // fn do_examine(&mut self, ipc: &IPC) -> InputAction {
+    // fn do_examine(&mut self, ipc: &IPC) -> CommandResult {
     //     let loc = ipc.player_loc();
     //     let window = super::examine_mode::ExamineMode::create(loc);
-    //     InputAction::Push(window)
+    //     CommandResult::Push(window)
     // }
 
     // TODO: help commands to be supported
@@ -101,7 +106,7 @@ impl MainMode {
     // [[i]] manage inventory items.
     // [[x]] examine visible cells.
     // [[control-p]] show recent messages.
-    fn do_help(&mut self, _ipc: &IPC) -> InputAction {
+    fn do_help(&mut self, _ipc: &IPC) -> CommandResult {
         let help = r#"Help for the main game. Note that help is context sensitive,
     e.g. examine mode has its own set of commands and its own help screen.
 
@@ -124,15 +129,15 @@ impl MainMode {
         validate_help("main", &help, self.commands.keys());
 
         let lines = format_help(&help, self.commands.keys());
-        InputAction::Push(TextMode::at_top().create(lines))
+        CommandResult::Push(TextMode::at_top().create(lines))
     }
 
-    // fn do_inventory(&mut self, ipc: &IPC) -> InputAction {
+    // fn do_inventory(&mut self, ipc: &IPC) -> CommandResult {
     //     let window = super::inventory_mode::InventoryMode::create(ipc, self.screen_size);
-    //     InputAction::Push(window)
+    //     CommandResult::Push(window)
     // }
 
-    fn do_move(&mut self, ipc: &IPC, dx: i32, dy: i32) -> InputAction {
+    fn do_bump(&mut self, ipc: &IPC, dx: i32, dy: i32) -> CommandResult {
         let mut loc = ipc.get_player_loc();
         loc.x += dx;
         loc.y += dy;
@@ -141,16 +146,16 @@ impl MainMode {
         //     loc.x, loc.y
         // );
         ipc.send_mutate(StateMutators::Bump(loc));
-        InputAction::UpdatedGame
+        CommandResult::UpdatedGame
     }
 
-    fn do_quit(&mut self, _ipc: &IPC) -> InputAction {
-        InputAction::Quit
+    fn do_quit(&mut self, _ipc: &IPC) -> CommandResult {
+        CommandResult::Quit
     }
 
-    // fn do_rest(&mut self, ipc: &IPC) -> InputAction {
+    // fn do_rest(&mut self, ipc: &IPC) -> CommandResult {
     //     ipc.player_acted(Action::Rest);
-    //     InputAction::UpdatedGame
+    //     CommandResult::UpdatedGame
     // }
 
     // fn state_path(&self, base: &str) -> String {
@@ -173,7 +178,7 @@ impl MainMode {
     // }
 
     // // Dumps game state into a human readable file.
-    // fn do_save_state(&mut self, ipc: &IPC) -> InputAction {
+    // fn do_save_state(&mut self, ipc: &IPC) -> CommandResult {
     //     let path = self.state_path("state");
     //     info!("dumped game to {path}");
     //     if let Err(err) = File::create(&path).and_then(|mut file| self.save_state(&path, &mut file, ipc)) {
@@ -182,7 +187,7 @@ impl MainMode {
     //             text: format!("Couldn't save state to {path}: {err}"),
     //         })
     //     }
-    //     InputAction::UpdatedGame
+    //     CommandResult::UpdatedGame
     // }
 
     // fn do_show_messages(&mut self, ipc: &IPC) -> InputAction {

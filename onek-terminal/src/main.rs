@@ -2,6 +2,7 @@
 extern crate log;
 extern crate simplelog;
 
+mod commands;
 mod help;
 mod main_mode;
 mod map_view;
@@ -15,6 +16,7 @@ mod text_view;
 mod window;
 
 use clap::{Parser, ValueEnum};
+use commands::*;
 use help::*;
 use main_mode::*;
 use map_view::*;

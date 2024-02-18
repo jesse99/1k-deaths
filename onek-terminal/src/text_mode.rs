@@ -1,9 +1,5 @@
 use super::*;
-use fnv::FnvHashMap;
 use termion::event::Key;
-
-type KeyHandler = fn(&mut TextMode, &IPC) -> InputAction;
-type CommandTable = FnvHashMap<Key, Box<KeyHandler>>;
 
 pub struct TextMode {
     text: TextView,
@@ -29,46 +25,7 @@ impl TextModeBuilder {
 
 impl TextMode {
     fn create(lines: Vec<Line>, at_top: bool, bg: Color) -> TextMode {
-        let mut commands: CommandTable = FnvHashMap::default();
-
-        // Commands are a subset of those in less, see https://man7.org/linux/man-pages/man1/less.1.html.
-        // commands.insert(Key::PageDown, Box::new(|s, game| s.do_page(game, 1))); // TODO: we're not catching these
-        commands.insert(Key::Char(' '), Box::new(|s, game| s.do_page(game, 1)));
-        commands.insert(Key::Char('f'), Box::new(|s, game| s.do_page(game, 1)));
-        commands.insert(Key::Ctrl('f'), Box::new(|s, game| s.do_page(game, 1)));
-        commands.insert(Key::Ctrl('v'), Box::new(|s, game| s.do_page(game, 1)));
-
-        // commands.insert(Key::PageUp, Box::new(|s, game| s.do_page(game, -1)));
-        commands.insert(Key::Char('b'), Box::new(|s, game| s.do_page(game, -1)));
-        commands.insert(Key::Ctrl('b'), Box::new(|s, game| s.do_page(game, -1)));
-
-        commands.insert(Key::Down, Box::new(|s, game| s.do_scroll(game, 1)));
-        commands.insert(Key::Char('\n'), Box::new(|s, game| s.do_scroll(game, 1)));
-        commands.insert(Key::Char('e'), Box::new(|s, game| s.do_scroll(game, 1)));
-        commands.insert(Key::Char('j'), Box::new(|s, game| s.do_scroll(game, 1)));
-        commands.insert(Key::Ctrl('e'), Box::new(|s, game| s.do_scroll(game, 1)));
-        commands.insert(Key::Ctrl('j'), Box::new(|s, game| s.do_scroll(game, 1)));
-        commands.insert(Key::Ctrl('n'), Box::new(|s, game| s.do_scroll(game, 1)));
-
-        commands.insert(Key::Up, Box::new(|s, game| s.do_scroll(game, -1)));
-        commands.insert(Key::Char('k'), Box::new(|s, game| s.do_scroll(game, -1)));
-        commands.insert(Key::Char('p'), Box::new(|s, game| s.do_scroll(game, -1)));
-        commands.insert(Key::Char('y'), Box::new(|s, game| s.do_scroll(game, -1)));
-        commands.insert(Key::Ctrl('k'), Box::new(|s, game| s.do_scroll(game, -1)));
-        commands.insert(Key::Ctrl('p'), Box::new(|s, game| s.do_scroll(game, -1)));
-        commands.insert(Key::Ctrl('y'), Box::new(|s, game| s.do_scroll(game, -1)));
-
-        commands.insert(Key::Char('d'), Box::new(|s, game| s.do_scroll_by(game, 1)));
-        commands.insert(Key::Ctrl('d'), Box::new(|s, game| s.do_scroll_by(game, 1)));
-
-        commands.insert(Key::Char('u'), Box::new(|s, game| s.do_scroll_by(game, -1)));
-        commands.insert(Key::Ctrl('u'), Box::new(|s, game| s.do_scroll_by(game, -1)));
-
-        // commands.insert(Key::Home, Box::new(|s, game| s.do_scroll_to_start(game)));
-        // commands.insert(Key::End, Box::new(|s, game| s.do_scroll_to_end(game)));
-        commands.insert(Key::Char('?'), Box::new(|s, game| s.do_help(game)));
-        commands.insert(Key::Char('q'), Box::new(|s, game| s.do_pop(game)));
-        commands.insert(Key::Esc, Box::new(|s, game| s.do_pop(game)));
+        let mut commands = CommandTable::default();
 
         // less supports other good stuff, most of which requires additional user input.
         // Not clear how to do that atm and we want to transition to a web UI so there's
@@ -80,6 +37,45 @@ impl TextMode {
         // &pattern show only lines that match an re
         // v invoke an editor
         // s save the file to a path
+
+        // Commands are a subset of those in less, see https://man7.org/linux/man-pages/man1/less.1.html.
+        // commands.insert(Key::PageDown, Box::new(|s, game| s.do_page(game, 1))); // TODO: we're not catching these
+        commands.insert(Key::Char(' '), Command::Page(1));
+        commands.insert(Key::Char('f'), Command::Page(1));
+        commands.insert(Key::Ctrl('f'), Command::Page(1));
+        commands.insert(Key::Ctrl('v'), Command::Page(1));
+
+        // commands.insert(Key::PageUp, Command::Page(-1));
+        commands.insert(Key::Char('b'), Command::Page(-1));
+        commands.insert(Key::Ctrl('b'), Command::Page(-1));
+
+        commands.insert(Key::Down, Command::Scroll(1));
+        commands.insert(Key::Char('\n'), Command::Scroll(1));
+        commands.insert(Key::Char('e'), Command::Scroll(1));
+        commands.insert(Key::Char('j'), Command::Scroll(1));
+        commands.insert(Key::Ctrl('e'), Command::Scroll(1));
+        commands.insert(Key::Ctrl('j'), Command::Scroll(1));
+        commands.insert(Key::Ctrl('n'), Command::Scroll(1));
+
+        commands.insert(Key::Up, Command::Scroll(-1));
+        commands.insert(Key::Char('k'), Command::Scroll(-1));
+        commands.insert(Key::Char('p'), Command::Scroll(-1));
+        commands.insert(Key::Char('y'), Command::Scroll(-1));
+        commands.insert(Key::Ctrl('k'), Command::Scroll(-1));
+        commands.insert(Key::Ctrl('p'), Command::Scroll(-1));
+        commands.insert(Key::Ctrl('y'), Command::Scroll(-1));
+
+        commands.insert(Key::Char('d'), Command::ScrollBy(1));
+        commands.insert(Key::Ctrl('d'), Command::ScrollBy(1));
+
+        commands.insert(Key::Char('u'), Command::ScrollBy(-1));
+        commands.insert(Key::Ctrl('u'), Command::ScrollBy(-1));
+
+        // commands.insert(Key::Home, Command::ScrollToStart);
+        // commands.insert(Key::End, Command::ScrollToEnd);
+        commands.insert(Key::Char('?'), Command::Help);
+        commands.insert(Key::Char('q'), Command::Quit);
+        commands.insert(Key::Esc, Command::Quit);
 
         let mut view = TextView::new(lines, bg);
         if !at_top {
@@ -118,16 +114,24 @@ impl Mode for TextMode {
         None
     }
 
-    fn handle_input(&mut self, ipc: &IPC, key: Key) -> InputAction {
-        match self.commands.get(&key).cloned() {
-            Some(handler) => handler(self, ipc),
-            None => InputAction::NotHandled,
+    fn handle_input(&self, key: Key) -> Option<Command> {
+        self.commands.get(&key).copied()
+    }
+
+    fn handle_command(&mut self, ipc: &IPC, command: Command) -> CommandResult {
+        match command {
+            Command::Help => self.do_help(ipc),
+            Command::Page(sign) => self.do_page(ipc, sign),
+            Command::Scroll(delta) => self.do_scroll(ipc, delta),
+            Command::ScrollBy(sign) => self.do_scroll_by(ipc, sign),
+            Command::Quit => self.do_pop(ipc),
+            _ => panic!("didn't handle {command:?}"),
         }
     }
 }
 
 impl TextMode {
-    fn do_help(&mut self, _ipc: &IPC) -> InputAction {
+    fn do_help(&mut self, _ipc: &IPC) -> CommandResult {
         let help = r#"There are a number of keys that allow the screen to be scrolled.
 
 Scroll down by one full screen:
@@ -148,25 +152,25 @@ Scroll up by one line:
         validate_help("text", help, self.commands.keys());
 
         let lines = format_help(help, self.commands.keys());
-        InputAction::Push(TextMode::at_top().create(lines))
+        CommandResult::Push(TextMode::at_top().create(lines))
     }
 
-    fn do_page(&mut self, _ipc: &IPC, sign: i32) -> InputAction {
+    fn do_page(&mut self, _ipc: &IPC, sign: i32) -> CommandResult {
         self.text.scroll(sign * self.text.size().height);
-        InputAction::UpdatedGame
+        CommandResult::UpdatedGame
     }
 
-    fn do_pop(&mut self, _ipc: &IPC) -> InputAction {
-        InputAction::Pop
+    fn do_pop(&mut self, _ipc: &IPC) -> CommandResult {
+        CommandResult::Pop
     }
 
-    fn do_scroll(&mut self, _ipc: &IPC, delta: i32) -> InputAction {
+    fn do_scroll(&mut self, _ipc: &IPC, delta: i32) -> CommandResult {
         self.text.scroll(delta);
-        InputAction::UpdatedGame
+        CommandResult::UpdatedGame
     }
 
-    fn do_scroll_by(&mut self, _ipc: &IPC, sign: i32) -> InputAction {
+    fn do_scroll_by(&mut self, _ipc: &IPC, sign: i32) -> CommandResult {
         self.text.scroll(sign * self.scroll_by);
-        InputAction::UpdatedGame
+        CommandResult::UpdatedGame
     }
 }
