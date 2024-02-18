@@ -8,7 +8,7 @@ mod main_mode;
 mod map_view;
 mod messages_view;
 mod mode;
-// mod persistence;
+mod persistence;
 mod terminal;
 mod termion_utils;
 mod text_mode;
