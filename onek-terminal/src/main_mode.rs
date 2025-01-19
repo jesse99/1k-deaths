@@ -1,8 +1,5 @@
 use super::*;
 use fnv::FnvHashMap;
-// use std::fs::File;
-// use std::io::{Error, Write};
-// use std::path::Path;
 use std::cell::RefCell;
 use termion::event::Key;
 
@@ -75,7 +72,6 @@ impl Mode for MainMode {
         true
     }
 
-    // TODO: use a commands table
     fn handle_input(&self, key: Key) -> Option<Command> {
         self.commands.get(&key).copied()
     }

@@ -103,7 +103,7 @@ pub fn open_game(path: &str) -> Result<File, Box<dyn Error>> {
 pub fn append_game(file: &mut File, commands: &[Command]) -> Result<(), Box<dyn Error>> {
     let bytes: Vec<u8> = postcard::to_allocvec(commands)?; // TODO: compress commands?
     write_len(file, bytes.len())?;
-    file.write_all(&bytes)?;
+    file.write_all(&bytes)?; // TODO: flush?
     Ok(())
 }
 

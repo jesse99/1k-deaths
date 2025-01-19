@@ -40,6 +40,21 @@ pub enum Command {
     /// defaults to 1.
     ScrollBy(i32),
 
+    /// Don't update UI when replaying.
+    SkipReplay,
+
+    /// Replay fewer commands when stepping.
+    SlowDownReplay,
+
+    /// Replay more commands when stepping.
+    SpeedUpReplay,
+
+    /// Replay N commands.
+    StepReplay,
+
+    /// Start or stop replay of a saved game.
+    ToggleReplay,
+
     /// Exit a transient mode or the game itself.
     Quit,
 }

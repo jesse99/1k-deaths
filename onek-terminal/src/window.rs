@@ -15,10 +15,12 @@ pub enum LifeCycle {
 pub struct Window {
     modes: Vec<Box<dyn Mode>>,
     recv: Receiver<Key>,
+    file: Option<File>,
+    replay: Vec<Command>,
 }
 
 impl Window {
-    pub fn new(width: i32, height: i32) -> Window {
+    pub fn new(width: i32, height: i32, file: Option<File>, replay: Vec<Command>) -> Window {
         let (send, recv) = mpsc::channel();
         let _ = thread::spawn(move || {
             let stdin = io::stdin();
@@ -36,12 +38,16 @@ impl Window {
             }
         });
 
-        let modes = vec![MainMode::create(width, height)];
-        // let mut modes = vec![MainMode::create(width, height)];
-        // if !replay.is_empty() {
-        //     modes.push(ReplayMode::create(replay));
-        // }
-        Window { modes, recv }
+        let mut modes = vec![MainMode::create(width, height)];
+        if !replay.is_empty() {
+            modes.push(ReplayMode::create(replay));
+        }
+        Window {
+            modes,
+            recv,
+            file,
+            replay,
+        }
     }
 
     pub fn render(&self, stdout: &mut Box<dyn Write>, ipc: &IPC) {
@@ -79,6 +85,9 @@ impl Window {
         let key = self.get_key();
         let mode = self.modes.last_mut().unwrap();
         if let Some(command) = mode.handle_input(key) {
+            if let Some(mut file) = self.file {
+                persistence::append_game(&mut file, &vec![command]);
+            }
             match mode.handle_command(ipc, command) {
                 UpdatedGame => (),
                 Quit => return LifeCycle::Quit,

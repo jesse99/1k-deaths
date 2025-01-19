@@ -79,23 +79,20 @@ other rogue-likes\
 \f3\b \cf4 5 saving/loading
 \f1\b0 \
 \'95 add support for replay\
-	- do query messages take a onst reference?\
-	- start implementing persistence\
-		` may want to add a note saying Command allows query logic to be tested\
-		` also better visual fidelity for replay\
+	- need to do some design work for ReplayMode \
+	- do query messages take a const reference?\
 	- may want a unit test to verify that old saved mutate messages deserialize OK\
 		i.e. new variants weren\'92t added to the middle\
-		probably only need to test last variant\
+		probably only need to test last variant  \
+	- wire up persistence\
+	- add a replay mode with commands to control replay? \
 \pard\pardeftab720\sl420\partightenfactor0
 \cf4 	- probably want a replay message\
 	- message takes number of messages to replay\
 	- add a query that returns true if there are still messages to replay\
 	- also a message to stop replay\
 	- write a test for this?\
-\'95 load would replay events\
-\'95 probably want to allow the ui to have some control over this\
 \'95 would be great to have a roll back option, maybe in debugger service?\
-* Get persistence working\
 \'95 change Entity to a string\
 	- see if we can use newtype and from/into attributes\
 	- will need to do some custom serialization for Game\

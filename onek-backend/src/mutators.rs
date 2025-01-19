@@ -153,12 +153,28 @@ fn handle_examine(game: &mut Game, loc: Point, wizard: bool) {
 
 static STARTING_LEVEL: &'static str = include_str!("../data/start.txt");
 
-fn handle_new_level(game: &mut Game, name: String) {
-    if name == "start" {
-        let reason = format!("new level {name}");
-        handle_reset(game, &reason, STARTING_LEVEL);
-    } else {
-        panic!("'{name}' isn't a known level");
+fn handle_new_game(game: &mut Game, notes: Vec<Note>) {
+    let reason = "new level start";
+    handle_reset(game, reason, STARTING_LEVEL);
+
+    handle_add_note(
+        game,
+        Note::new(NoteKind::Important, String::from("Welcome to 1k-deaths!")),
+    );
+    handle_add_note(
+        game,
+        Note::new(
+            NoteKind::Important,
+            String::from("Are you the hero who will destroy the Crippled God's sword?"),
+        ),
+    );
+    handle_add_note(
+        game,
+        Note::new(NoteKind::Important, String::from("Press the '?' key for help.")),
+    );
+
+    for note in notes {
+        handle_add_note(game, note);
     }
 }
 
@@ -243,7 +259,7 @@ pub fn handle_mutate(game: &mut Game, mesg: StateMutators) {
     match mesg {
         Bump(loc) => handle_player_bump(game, loc),
         Examine { loc, wizard } => handle_examine(game, loc, wizard),
-        NewLevel(name) => handle_new_level(game, name),
+        NewGame(notes) => handle_new_game(game, notes),
         Reset { reason, map } => handle_reset(game, &reason, &map),
     }
 

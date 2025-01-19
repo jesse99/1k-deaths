@@ -12,14 +12,20 @@ pub enum NoteKind {
     /// Player can't do some action, e.g. walking into a wall.
     Error,
 
+    /// Major event though not one related to health, e.g. annoucement of a transient
+    /// portal opened somewhere on the current level.
+    Important,
+
     /// Used for stuff like the examine command.
     Info,
+
+    /// There was a problem but it doesn't affect the player's ability to play the game.
+    Warning,
     // Critical => Color::Red,
     // Error => Color::Red,
     // Debug => Color::Gray,
     // Normal => Color::Black,
     // Failed => Color::Red,
-    // Important => Color::Blue,
     // NpcIsDamaged => Color::LightSkyBlue,
     // NpcIsNotDamaged => Color::Black,
     // NPCSpeaks => Color::Coral,
@@ -27,7 +33,6 @@ pub enum NoteKind {
     // PlayerDidNoDamage => Color::Khaki,
     // PlayerIsDamaged => Color::Crimson,
     // PlayerIsNotDamaged => Color::Pink,
-    // Warning => Color::Orange,
 }
 
 /// These are in-game messages for the player, e.g. combat results or status messages.
@@ -118,8 +123,9 @@ pub enum StateMutators {
     /// or a stale description.
     Examine { loc: Point, wizard: bool },
 
-    /// Argument is the name of a level file to load.
-    NewLevel(String),
+    /// If present notes are typically warnings or errors related to command line options
+    /// or saved files.
+    NewGame(Vec<Note>),
 
     /// Arguments are a reason and the contents of a level ('#' for walls, '.' for dirt,
     /// etc). Intended for unit tests. TODO: may want to allow map to be augmented with
@@ -166,35 +172,3 @@ mod display_impl {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn test_view() {
-//         #[rustfmt::skip]
-//         let mut view = View::new();
-
-//         let value = Value::Tag(Tag("dirt".to_owned()));
-//         let mut object = fnv::FnvHashMap::default();
-//         object.insert("tag".to_owned(), value);
-//         let cell: Cell = vec![object];
-
-//         view.insert(Point::new(10, 10), cell.clone());
-//         assert_eq!(view.top_left, Point::new(10, 10));
-//         assert_eq!(view.bottom_right, Point::new(10, 10));
-
-//         view.insert(Point::new(15, 15), cell.clone());
-//         assert_eq!(view.top_left, Point::new(10, 10));
-//         assert_eq!(view.bottom_right, Point::new(15, 15));
-
-//         view.insert(Point::new(5, 12), cell.clone());
-//         assert_eq!(view.top_left, Point::new(5, 10));
-//         assert_eq!(view.bottom_right, Point::new(15, 15));
-
-//         view.insert(Point::new(12, 20), cell.clone());
-//         assert_eq!(view.top_left, Point::new(5, 10));
-//         assert_eq!(view.bottom_right, Point::new(15, 20));
-//     }
-// }

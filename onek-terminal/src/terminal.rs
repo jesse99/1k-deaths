@@ -18,8 +18,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    // pub fn new(ipc: IPC, replay: Vec<Action>) -> Terminal {
-    pub fn new(ipc: IPC) -> Terminal {
+    pub fn new(ipc: IPC, file: Option<File>, replay: Vec<Command>) -> Terminal {
         let stdout = io::stdout();
         let mut stdout = stdout.into_raw_mode().unwrap();
         write!(
@@ -38,7 +37,7 @@ impl Terminal {
 
         Terminal {
             // ui: UI::new(width, height, replay),
-            window: Window::new(width, height),
+            window: Window::new(width, height, file, replay),
             ipc,
             stdout: Box::new(stdout),
         }

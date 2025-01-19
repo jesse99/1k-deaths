@@ -9,6 +9,7 @@ mod map_view;
 mod messages_view;
 mod mode;
 mod persistence;
+mod replay_mode;
 mod terminal;
 mod termion_utils;
 mod text_mode;
@@ -23,8 +24,10 @@ use map_view::*;
 use messages_view::*;
 use mode::*;
 use onek_shared::*;
+use replay_mode::*;
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
+use std::path::Path;
 use termion_utils::*;
 use text_mode::*;
 use text_view::*;
@@ -92,6 +95,68 @@ fn init_logging(options: &Args) {
     let _ = WriteLogger::init(log_level, config, File::create(&options.log_path).unwrap()).unwrap();
 }
 
+// Start a brand new game and save it to path.
+fn new_game(ipc: &IPC, path: &str, seed: u64) -> Option<File> {
+    let mut notes = Vec::new();
+
+    info!("new {path}");
+    let file = match persistence::new_game(path, seed) {
+        Ok(se) => Some(se),
+        Err(err) => {
+            notes.push(Note::new(
+                NoteKind::Error,
+                format!("Couldn't open {path} for writing: {err}"),
+            ));
+            None
+        }
+    };
+
+    ipc.send_mutate(StateMutators::NewGame(notes));
+    file
+}
+
+// Load a saved game and return the actions so that they can be replayed.
+fn old_game(ipc: &IPC, path: &str, warnings: Vec<String>) -> (Option<File>, Vec<Command>) {
+    let mut seed = 1;
+    let mut commands = Vec::new();
+    let mut notes = Vec::new();
+
+    let mut file = None;
+    info!("loading {path}");
+    match persistence::load_game(path) {
+        Ok((s, a)) => {
+            seed = s;
+            commands = a;
+        }
+        Err(err) => {
+            info!("loading file had err: {err}");
+            notes.push(Note::new(
+                NoteKind::Error,
+                format!("Couldn't open {path} for reading: {err}"),
+            ));
+        }
+    };
+
+    if !commands.is_empty() {
+        info!("opening {path}");
+        file = match persistence::open_game(path) {
+            Ok(se) => Some(se),
+            Err(err) => {
+                notes.push(Note::new(
+                    NoteKind::Error,
+                    format!("Couldn't open {path} for appending: {err}"),
+                ));
+                None
+            }
+        };
+    }
+
+    notes.extend(warnings.iter().map(|w| Note::new(NoteKind::Warning, w.clone())));
+    ipc.send_mutate(StateMutators::NewGame(notes));
+
+    (file, commands)
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = Args::parse();
     init_logging(&options);
@@ -104,12 +169,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let ipc = IPC::new("/tmp/to-terminal");
-    ipc.send_mutate(StateMutators::NewLevel("start".to_owned()));
-    let mut terminal = Terminal::new(ipc);
-
     if options.benchmark {
+        let note = Note::new(NoteKind::Important, "Benchmarking".to_owned());
+        ipc.send_mutate(StateMutators::NewGame(vec![note]));
+
+        let mut terminal = Terminal::new(ipc, None, Vec::new());
         terminal.benchmark();
     } else {
+        let mut warnings = Vec::new();
+        // if options.seed.is_some() && (options.load.is_some() || Path::new("saved.game").is_file()) && !options.new_game
+        // {
+        //     // --new-game --load is a bit odd but means start a new game saved to the specified
+        //     // path. But --seed --load without the --new-game is wrong because we need to replay
+        //     // saved games using the original seed (we could reset the seed once we're finished
+        //     // replaying but that's kind of a pain).
+        //     warnings.push("Ignoring --seed (game is being replayed so the original seed is being used.)".to_string());
+        // }
+
+        // TODO: probably need to make --seed and old_game into a warning
+        // (can't just set the seed because we'd have to do it after replay finishes)
+
+        // Timestamps are a poor seed but should be fine for our purposes.
+        let seed = 1;
+        // let seed = options.seed.unwrap_or(chrono::Utc::now().timestamp_millis() as u64);
+        let (file, commands) = match options.load {
+            Some(ref path) if options.new_game => (new_game(&ipc, path, seed), Vec::new()),
+            Some(ref path) => old_game(&ipc, path, warnings),
+            None if Path::new("saved.game").is_file() && !options.new_game => old_game(&ipc, "saved.game", warnings),
+            None => (new_game(&ipc, "saved.game", seed), Vec::new()),
+        };
+
+        // TODO: should we allow the game to be played if there is no file?
+        let mut terminal = Terminal::new(ipc, file, commands);
         terminal.run();
     }
 
