@@ -1,10 +1,10 @@
+use super::color::*;
 use crate::shared::*;
 use crossterm::{
     cursor,
     event::{self, KeyEvent},
     style::{self, Stylize},
-    terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand, QueueableCommand,
+    terminal, QueueableCommand,
 };
 use std::io::{self, Write};
 
@@ -54,7 +54,8 @@ impl Console {
         let mut stdout = io::stdout();
 
         let ploc = self.game.player_loc();
-        let default = self.game.default();
+        let dt = self.game.default();
+        let dc = self.compose_tile(dt);
         let (width, height) = terminal::size().unwrap();
         for v in 0..height {
             for h in 0..width {
@@ -62,9 +63,10 @@ impl Console {
                 let dy = v as i32 - (height / 2) as i32;
                 let loc = Point::new(ploc.x + dx, ploc.y + dy);
                 if let Some(tile) = &self.game.tile(loc) {
-                    self.render_tile(h, v, tile)?;
+                    let composed = self.compose_tile(tile);
+                    self.render_tile(h, v, composed)?;
                 } else {
-                    self.render_tile(h, v, default)?;
+                    self.render_tile(h, v, dc)?;
                 }
             }
         }
@@ -72,19 +74,24 @@ impl Console {
         Ok(())
     }
 
-    // TODO maybe this should return fg and bg info and not actually render
-    fn render_tile(&self, h: u16, v: u16, tile: &Tile) -> io::Result<()> {
+    fn render_tile(&self, h: u16, v: u16, composed: (char, Color, Color)) -> io::Result<()> {
         let mut stdout = io::stdout();
         stdout.queue(cursor::MoveTo(h, v))?;
+        stdout.queue(style::PrintStyledContent(
+            composed.0.with(to_crossterm(composed.1)).on(to_crossterm(composed.2)),
+        ))?;
+        Ok(())
+    }
+
+    fn compose_tile(&self, tile: &Tile) -> (char, Color, Color) {
         if tile.character.is_some() {
-            stdout.queue(style::PrintStyledContent("@".red()))?;
+            ('@', Color::Yellow, Color::Black)
         } else {
             match tile.terrain {
-                Terrain::Dirt => stdout.queue(style::PrintStyledContent(".".black()))?,
-                Terrain::RockWall => stdout.queue(style::PrintStyledContent("#".dark_red()))?,
-            };
+                Terrain::Dirt => (' ', Color::White, Color::Black),
+                Terrain::RockWall => ('#', Color::RosyBrown, Color::Black),
+            }
         }
-        Ok(())
     }
 
     // TODO can special case keypad using https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement

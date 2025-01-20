@@ -146,8 +146,8 @@ pub enum Color {
     Black,
 }
 
-// See https://camo.githubusercontent.com/18622d6a234413cbc0aba27a09146797bf1eef4d/68747470733a2f2f692e696d6775722e636f6d2f4b696c72306d432e706e673f31
-// and http://cng.seas.rochester.edu/CNG/docs/x11color.html
+// See https://www.cgl.ucsf.edu/chimerax/docs/user/commands/colornames.html
+// and https://en.wikipedia.org/wiki/Web_colors#X11_color_names
 pub fn to_termion(color: Color) -> AnsiValue {
     match color {
         Color::LightPink => AnsiValue::rgb(5, 3, 5),
