@@ -51,6 +51,8 @@ impl Console {
         Ok(())
     }
 
+    // TODO don't allow user to move off screen
+    // TODO print a message if user moves off screen
     fn render(&self) -> io::Result<()> {
         // let (width, height) = terminal::size().unwrap();
         // let x = width / 2 - (prompt.bytes().len() / 2) as u16;
@@ -66,12 +68,13 @@ impl Console {
         Ok(())
     }
 
+    // TODO can special case keypad using https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
     fn handle_key(&mut self, key: KeyEvent) {
         match key.code {
-            event::KeyCode::Left => self.player_x -= 1,
-            event::KeyCode::Right => self.player_x += 1,
-            event::KeyCode::Up => self.player_y -= 1,
-            event::KeyCode::Down => self.player_y += 1,
+            event::KeyCode::Left | event::KeyCode::Char('4') => self.player_x -= 1,
+            event::KeyCode::Right | event::KeyCode::Char('6') => self.player_x += 1,
+            event::KeyCode::Up | event::KeyCode::Char('8') => self.player_y -= 1,
+            event::KeyCode::Down | event::KeyCode::Char('2') => self.player_y += 1,
             event::KeyCode::Char('q') => self.running = false,
             _ => (), // TODO beep
         }
@@ -88,16 +91,5 @@ impl Drop for Console {
         let _ = stdout.queue(cursor::Show {});
 
         let _ = terminal::disable_raw_mode();
-        // let _ = write!(
-        //     self.stdout,
-        //     "{}{}{}{}",
-        //     termion::style::Reset,
-        //     termion::cursor::Restore,
-        //     termion::cursor::Show,
-        //     termion::cursor::Goto(1, 1)
-        // );
-        // let _ = write!(self.stdout, "{}", termion::clear::All);
-        // self.stdout.flush().unwrap();
-        // let _ = process::Command::new("reset").output(); // new line mode isn't reset w/o this
     }
 }
