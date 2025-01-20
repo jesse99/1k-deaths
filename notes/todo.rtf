@@ -5,12 +5,10 @@
 \red60\green60\blue59;}
 {\*\expandedcolortbl;;\csgray\c0;\cssrgb\c100000\c91449\c82330;\csgenericrgb\c784\c784\c784;
 \cssrgb\c30196\c30196\c29804;}
-\deftab720
-\pard\pardeftab720\sl300\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f0\fs36 \cf2 \CocoaLigature0 clear && printf '\\e[3J' && cargo build && RUST_BACKTRACE=1 ./target/debug/one-thousand-deaths\
-\pard\pardeftab963\pardirnatural\partightenfactor0
-\
+\f0\fs36 \cf2 \CocoaLigature0 clear && printf '\\e[3J' && RUST_BACKTRACE=1 cargo run\cb3 \
+\cb1 \
 \pard\pardeftab720\sl300\partightenfactor0
 clear && printf '\\e[3J' && cargo test\
 \pard\pardeftab720\sl380\partightenfactor0
@@ -38,14 +36,6 @@ other rogue-likes\
 
 \f2\b \cf4 3 it\'92s a boy
 \f1\b0 \cf4 \
-\'95\'a0use traits to wrap modules\
-	- add a shared (or types) module\
-		` has module wrapper traits\
-	- add a terminal module\
-		` only public module stuff should be types and some sort of accessor that\
-	       returns a trait\
-	- mention the modular monolith design\
-\'95 get an @ moving around\
 \'95\'a0add a messages window\
 	- message if try to go off screen\
 	- could have a dump player info command\

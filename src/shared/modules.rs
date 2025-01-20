@@ -3,5 +3,5 @@
 use std::io;
 
 pub trait UI {
-    fn run(&self) -> io::Result<()>;
+    fn run(&mut self) -> io::Result<()>;
 }
