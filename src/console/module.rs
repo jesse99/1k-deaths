@@ -1,24 +1,21 @@
-use crate::shared::UI;
+use crate::shared::*;
 use crossterm::{
     cursor,
     event::{self, KeyEvent},
     style::{self, Stylize},
-    terminal, ExecutableCommand, QueueableCommand,
+    terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand, QueueableCommand,
 };
 use std::io::{self, Write};
 
 struct Console {
-    player_x: u16,
-    player_y: u16,
+    game: Box<dyn Backend>,
     running: bool,
 }
 
-pub fn new() -> Box<dyn UI> {
-    Box::new(Console {
-        player_x: 10,
-        player_y: 10,
-        running: true,
-    })
+pub fn new(game: Box<dyn Backend>) -> Box<dyn UI> {
+    let running = true;
+    Box::new(Console { game, running })
 }
 
 // Note that there is support for non-blocking reads
@@ -54,30 +51,58 @@ impl Console {
     // TODO don't allow user to move off screen
     // TODO print a message if user moves off screen
     fn render(&self) -> io::Result<()> {
-        // let (width, height) = terminal::size().unwrap();
-        // let x = width / 2 - (prompt.bytes().len() / 2) as u16;
-        // let y = height / 2;
-
         let mut stdout = io::stdout();
-        stdout.execute(terminal::Clear(terminal::ClearType::All))?;
 
-        stdout
-            .queue(cursor::MoveTo(self.player_x, self.player_y))?
-            .queue(style::PrintStyledContent("@".red()))?;
+        let ploc = self.game.player_loc();
+        let default = self.game.default();
+        let (width, height) = terminal::size().unwrap();
+        for v in 0..height {
+            for h in 0..width {
+                let dx = h as i32 - (width / 2) as i32;
+                let dy = v as i32 - (height / 2) as i32;
+                let loc = Point::new(ploc.x + dx, ploc.y + dy);
+                if let Some(tile) = &self.game.tile(loc) {
+                    self.render_tile(h, v, tile)?;
+                } else {
+                    self.render_tile(h, v, default)?;
+                }
+            }
+        }
         stdout.flush()?;
+        Ok(())
+    }
+
+    // TODO maybe this should return fg and bg info and not actually render
+    fn render_tile(&self, h: u16, v: u16, tile: &Tile) -> io::Result<()> {
+        let mut stdout = io::stdout();
+        stdout.queue(cursor::MoveTo(h, v))?;
+        if tile.character.is_some() {
+            stdout.queue(style::PrintStyledContent("@".red()))?;
+        } else {
+            match tile.terrain {
+                Terrain::Dirt => stdout.queue(style::PrintStyledContent(".".black()))?,
+                Terrain::RockWall => stdout.queue(style::PrintStyledContent("#".dark_red()))?,
+            };
+        }
         Ok(())
     }
 
     // TODO can special case keypad using https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
     fn handle_key(&mut self, key: KeyEvent) {
         match key.code {
-            event::KeyCode::Left | event::KeyCode::Char('4') => self.player_x -= 1,
-            event::KeyCode::Right | event::KeyCode::Char('6') => self.player_x += 1,
-            event::KeyCode::Up | event::KeyCode::Char('8') => self.player_y -= 1,
-            event::KeyCode::Down | event::KeyCode::Char('2') => self.player_y += 1,
+            event::KeyCode::Left | event::KeyCode::Char('4') => self.move_player(-1, 0),
+            event::KeyCode::Right | event::KeyCode::Char('6') => self.move_player(1, 0),
+            event::KeyCode::Up | event::KeyCode::Char('8') => self.move_player(0, -1),
+            event::KeyCode::Down | event::KeyCode::Char('2') => self.move_player(0, 1),
             event::KeyCode::Char('q') => self.running = false,
             _ => (), // TODO beep
         }
+    }
+
+    fn move_player(&mut self, dx: i32, dy: i32) {
+        // let (width, height) = terminal::size().unwrap();
+        let delta = Point::new(dx, dy);
+        self.game.execute(Command::Move(delta));
     }
 }
 
