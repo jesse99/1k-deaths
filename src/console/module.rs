@@ -9,11 +9,11 @@ use crossterm::{
 use std::io::{self, Write};
 
 struct Console {
-    game: Box<dyn Backend>,
+    game: Box<dyn Game>,
     running: bool,
 }
 
-pub fn new(game: Box<dyn Backend>) -> Box<dyn UI> {
+pub fn new(game: Box<dyn Game>) -> Box<dyn UI> {
     let running = true;
     Box::new(Console { game, running })
 }

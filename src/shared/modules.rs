@@ -34,7 +34,7 @@ pub struct Tile {
     // equipped: Vec<Item>,    // TODO might also want something like aura
 }
 
-pub trait Backend {
+pub trait Game {
     fn player_loc(&self) -> Point;
 
     fn execute(&mut self, command: Command);

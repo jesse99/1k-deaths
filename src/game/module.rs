@@ -10,7 +10,7 @@ struct Game {
     default: Tile,
 }
 
-pub fn new() -> Box<dyn Backend> {
+pub fn new() -> Box<dyn crate::shared::Game> {
     let player_loc = Point::new(10, 10);
     let terrain = default_map();
     let default = Tile {
@@ -25,7 +25,7 @@ pub fn new() -> Box<dyn Backend> {
     })
 }
 
-impl Backend for Game {
+impl crate::shared::Game for Game {
     fn player_loc(&self) -> Point {
         self.player_loc
     }
