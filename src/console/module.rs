@@ -18,7 +18,7 @@ pub fn new(game: Box<dyn Backend>) -> Box<dyn UI> {
     Box::new(Console { game, running })
 }
 
-// Note that there is support for non-blocking reads
+// Note that there is support for non-blocking reads.
 impl UI for Console {
     fn run(&mut self) -> io::Result<()> {
         self.setup()?;
@@ -32,7 +32,7 @@ impl UI for Console {
                 event::Event::Key(e) => self.handle_key(e),
                 event::Event::Mouse(_) => (),
                 event::Event::Paste(_) => (),
-                event::Event::Resize(_, _) => (),
+                event::Event::Resize(_, _) => (), // TODO make sure resizing terminal works ok
             }
         }
         Ok(())
