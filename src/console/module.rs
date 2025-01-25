@@ -8,6 +8,8 @@ use crossterm::{
 };
 use std::io::{self, Write};
 
+const MAX_MESSAGES: u16 = 6;
+
 struct Console {
     game: Box<dyn Game>,
     running: bool,
@@ -51,12 +53,50 @@ impl Console {
     // TODO don't allow user to move off screen
     // TODO print a message if user moves off screen
     fn render(&self) -> io::Result<()> {
-        let mut stdout = io::stdout();
+        let (width, height) = terminal::size().unwrap();
+        self.render_map(width, height - MAX_MESSAGES)?;
+        self.render_messages(width, height - MAX_MESSAGES)?;
 
+        let mut stdout = io::stdout();
+        stdout.flush()?;
+        Ok(())
+    }
+
+    fn render_messages(&self, width: u16, start_y: u16) -> io::Result<()> {
+        let messages = self.game.messages();
+        let count = messages.len().min(MAX_MESSAGES as usize);
+        let n = if messages.len() >= count {
+            messages.len() - count
+        } else {
+            0
+        };
+        let mut v = start_y;
+        let mut stdout = io::stdout();
+        for m in messages.iter().skip(n) {
+            stdout.queue(cursor::MoveTo(0, v))?;
+            if m.text.chars().count() <= width as usize {
+                let color = message_to_color(m);
+                stdout.queue(style::PrintStyledContent(m.text[..].with(color)))?;
+                let padding = " ".repeat(width as usize - m.text.chars().count());
+                stdout.queue(style::PrintStyledContent(padding.black()))?;
+            } else {
+                stdout.queue(style::PrintStyledContent(m.text[..width as usize].black()))?;
+            }
+            v += 1;
+        }
+        let padding = " ".repeat(width as usize);
+        for _ in 0..(MAX_MESSAGES as usize - count) {
+            stdout.queue(cursor::MoveTo(0, v))?;
+            stdout.queue(style::PrintStyledContent(padding[..].black()))?;
+            v += 1;
+        }
+        Ok(())
+    }
+
+    fn render_map(&self, width: u16, height: u16) -> io::Result<()> {
         let ploc = self.game.player_loc();
         let dt = self.game.default();
         let dc = self.compose_tile(dt);
-        let (width, height) = terminal::size().unwrap();
         for v in 0..height {
             for h in 0..width {
                 let dx = h as i32 - (width / 2) as i32;
@@ -70,7 +110,6 @@ impl Console {
                 }
             }
         }
-        stdout.flush()?;
         Ok(())
     }
 
@@ -123,5 +162,11 @@ impl Drop for Console {
         let _ = stdout.queue(cursor::Show {});
 
         let _ = terminal::disable_raw_mode();
+    }
+}
+
+fn message_to_color(message: &Message) -> style::Color {
+    match message.kind {
+        MessageKind::PlayerFailed => to_crossterm(Color::Red3),
     }
 }

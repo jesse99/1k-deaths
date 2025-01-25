@@ -1,7 +1,20 @@
 //! Traits used to wrap modules. This is essentially a modular monolith design, see
 //! https://www.geeksforgeeks.org/what-is-a-modular-monolith for more.
 use super::Point;
+use std::collections::VecDeque;
 use std::io;
+
+#[derive(Debug)]
+pub enum MessageKind {
+    /// Player tried to do something but failed, e.g. move into a wall.
+    PlayerFailed,
+}
+
+#[derive(Debug)]
+pub struct Message {
+    pub kind: MessageKind,
+    pub text: String,
+}
 
 #[derive(Debug)]
 pub enum Command {
@@ -41,6 +54,9 @@ pub trait Game {
     fn execute(&mut self, command: Command);
 
     fn tile(&self, loc: Point) -> Option<Tile>;
+
+    /// Returns oldest to newest messages.
+    fn messages(&self) -> &VecDeque<Message>;
 
     /// The tile to use when the tile function returns None.
     fn default(&self) -> &Tile;

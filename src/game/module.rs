@@ -1,5 +1,8 @@
 use crate::shared::*;
 use fnv::FnvHashMap;
+use std::collections::VecDeque;
+
+const MAX_MESSAGES: usize = 10;
 
 // It'd be more efficient to use some sort of 2D array for terrain but we use a hash map
 // so that it is more dynamic, e.g. this way it's easy to support things like the player
@@ -8,6 +11,7 @@ struct Game {
     player_loc: Point,
     terrain: FnvHashMap<Point, Terrain>,
     default: Tile,
+    messages: VecDeque<Message>,
 }
 
 pub fn new() -> Box<dyn crate::shared::Game> {
@@ -18,10 +22,12 @@ pub fn new() -> Box<dyn crate::shared::Game> {
         items: Vec::new(),
         character: None,
     };
+    let messages = VecDeque::new();
     Box::new(Game {
         player_loc,
         terrain,
         default,
+        messages,
     })
 }
 
@@ -35,7 +41,9 @@ impl crate::shared::Game for Game {
         match command {
             Command::Move(delta) => {
                 let loc = Point::new(self.player_loc.x + delta.x, self.player_loc.y + delta.y);
-                if self.can_move_to(loc) {
+                if let (Some(err)) = self.can_move_to(loc) {
+                    self.add_message(MessageKind::PlayerFailed, err);
+                } else {
                     self.player_loc = loc;
                 }
             }
@@ -75,14 +83,31 @@ impl crate::shared::Game for Game {
     fn default(&self) -> &Tile {
         &self.default
     }
+
+    // Would be quite a bit better to return an iterator but that's very problematic:
+    // `impl Iterator<Item = &Message>` isn't object safe so we can't use it with the Game trait
+    // `Box<dyn Iterator<Item = &Message>>` doesn't have a good way to specify the Message lifetime
+    // passing in a closure also isn't object safe
+    // could use a fn but that's quite limiting
+    fn messages(&self) -> &VecDeque<Message> {
+        &self.messages
+    }
 }
 
 impl Game {
-    fn can_move_to(&self, loc: Point) -> bool {
+    fn can_move_to(&self, loc: Point) -> Option<String> {
         let terrain = self.terrain.get(&loc).unwrap_or(&self.default.terrain);
         match terrain {
-            Terrain::Dirt => true, // TODO also check for characters
-            Terrain::RockWall => false,
+            Terrain::Dirt => None, // TODO also check for characters
+            Terrain::RockWall => Some(format!("A wall at {loc} is in the way.")),
+        }
+    }
+
+    fn add_message(&mut self, kind: MessageKind, text: String) {
+        self.messages.push_back(Message { kind, text });
+
+        while self.messages.len() > MAX_MESSAGES {
+            self.messages.pop_front();
         }
     }
 }
