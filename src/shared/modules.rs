@@ -37,8 +37,10 @@ pub enum Species {
 
 #[derive(Copy, Clone)]
 pub enum Terrain {
+    DeepWater,
     Dirt,
     RockWall,
+    ShallowWater,
 }
 
 pub struct Tile {

@@ -127,8 +127,10 @@ impl Console {
             ('@', Color::Yellow, Color::Black)
         } else {
             match tile.terrain {
+                Terrain::DeepWater => ('w', Color::CornflowerBlue, Color::Black),
                 Terrain::Dirt => (' ', Color::White, Color::Black),
                 Terrain::RockWall => ('#', Color::RosyBrown, Color::Black),
+                Terrain::ShallowWater => ('~', Color::SteelBlue1, Color::Black),
             }
         }
     }

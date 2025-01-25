@@ -98,8 +98,10 @@ impl Game {
     fn can_move_to(&self, loc: Point) -> Option<String> {
         let terrain = self.terrain.get(&loc).unwrap_or(&self.default.terrain);
         match terrain {
+            Terrain::DeepWater => Some("The water is too deep.".to_owned()),
             Terrain::Dirt => None, // TODO also check for characters
-            Terrain::RockWall => Some(format!("A wall at {loc} is in the way.")),
+            Terrain::RockWall => Some("A wall is in the way.".to_owned()),
+            Terrain::ShallowWater => None, // TODO should take extra time (and include a message)
         }
     }
 
@@ -124,9 +126,9 @@ fn default_map() -> FnvHashMap<Point, Terrain> {
 #                                                         #
 #                                                         #
 #                   @                                     #
-#                                                         #
-#                                                         #
-#                                                         #
+#                                ~                        #
+#                               ~w~                       #
+#                                ~                        #
 #                                                         #
 #                                                         #
 #            A                                            #
@@ -147,6 +149,12 @@ fn default_map() -> FnvHashMap<Point, Terrain> {
                 's' => (), // TODO handle items
                 ' ' => {
                     let _ = map.insert(loc, Terrain::Dirt);
+                }
+                '~' => {
+                    let _ = map.insert(loc, Terrain::ShallowWater);
+                }
+                'w' => {
+                    let _ = map.insert(loc, Terrain::DeepWater);
                 }
                 _ => panic!("bad char: {}", ch),
             };
