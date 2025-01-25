@@ -55,8 +55,6 @@ other rogue-likes\
 
 \f2\b \cf4 4 the map
 \f1\b0 \cf4 \
-\'95\'a0get logging in\
-	- log command execution (at debug)\
 \'95\'a0add a messages window\
 	- bump into wall\
 	- splash through water\
@@ -66,11 +64,47 @@ other rogue-likes\
 	- could be an examine command\
 	- in debug should more details (or maybe use a separate command)\
 	- or just dump this to log?\
-\pard\pardeftab720\sl420\partightenfactor0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf4 \
-5 saving/loading
+Step 6a - It\'92s Alive! Alive!
 \f1\b0 \
+\'95\'a0Implement NPCs (and time)\
+	- start using Objects\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf4 	   ` think the way to go here is a map of Property enum to Value enum\
+	   		flexibly while still being efficient and type safe\
+	   ` API would be has_prop() and prop(), prop would panic if missing\
+	   ` would be nice if objects were built from config file, maybe toml\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf4 	   ` or potentially some other config file format\
+	   ` note that we do need something pretty good at nesting, eg for inventory\
+	   ` probably want typed accessaors for content\
+	   ` \
+	- add ai\
+	- add scheduler\
+	- hook up the scheduler\
+	- add flooding, should this be special water terrain? or a special attribute?\
+	- player_actions should call into actions\
+	- make sure dump dumps the scheduler\
+	- would be nice to have some more snapshot tests\
+	- make sure both sets of tests still work\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 \'95 change Entity to a string\
+	- see if we can use newtype and from/into attributes\
+	- will need to do some custom serialization for Game\
+		slog-serde?\
+	- make sure we aren\'92t using write! for errors\
+	- Logger has a list method, can use that list to re-create a Logger\
+	- implements KV which has a serialize method\
+	- not sure about the reverse\
+	- could just keep track of key/values ourself\'85\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f2\b \cf4 \
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 5 saving/loading
+\f1\b0 \cf4 \
 \'95 get save and load working\
 \'95 add support for replay\
 	- need to do some design work for ReplayMode \
@@ -86,35 +120,9 @@ other rogue-likes\
 	- also a message to stop replay\
 	- write a test for this?\
 \'95 would be great to have a roll back option, maybe in debugger service?\
-\'95 change Entity to a string\
-	- see if we can use newtype and from/into attributes\
-	- will need to do some custom serialization for Game\
-		slog-serde?\
-	- make sure we aren\'92t using write! for errors\
-	- Logger has a list method, can use that list to re-create a Logger\
-	- implements KV which has a serialize method\
-	- not sure about the reverse\
-	- could just keep track of key/values ourself\'85\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf4 \
-Step 6a - It\'92s Alive! Alive!
-\f1\b0 \
-\'95\'a0Implement NPCs (and time)\
-	- start using Objects, probably just collection of toml values\
-	   ` or potentially some other config file format\
-	   ` note that we do need something pretty good at nesting, eg for inventory\
-	   ` probably want typed accessaors for content\
-	- add ai\
-	- add scheduler\
-	- hook up the scheduler\
-	- add flooding, should this be special water terrain? or a special attribute?\
-	- player_actions should call into actions\
-	- make sure dump dumps the scheduler\
-	- would be nice to have some more snapshot tests\
-	- make sure both sets of tests still work\
-
-\f2\b \
 Step 6b - Debugger app\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 

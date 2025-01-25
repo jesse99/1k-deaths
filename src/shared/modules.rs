@@ -3,6 +3,7 @@
 use super::Point;
 use std::io;
 
+#[derive(Debug)]
 pub enum Command {
     /// Typically this will be a move to an adjacent cell bu something like a chage can
     /// be used to move multiple cells in one go.

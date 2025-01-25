@@ -31,6 +31,7 @@ impl crate::shared::Game for Game {
     }
 
     fn execute(&mut self, command: Command) {
+        debug!("executing {command:?}");
         match command {
             Command::Move(delta) => {
                 let loc = Point::new(self.player_loc.x + delta.x, self.player_loc.y + delta.y);
