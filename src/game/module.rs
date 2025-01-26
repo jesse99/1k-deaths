@@ -26,7 +26,7 @@ pub fn new() -> Box<dyn crate::shared::Game> {
 #                                                         #
 #                   @                                     #
 #                                ~                        #
-#                               ~w~                       #
+#                               ~_~                       #
 #                                ~                        #
 #                                                         #
 #                                                         #
@@ -118,7 +118,7 @@ impl crate::shared::Game for Game {
     fn snapshot(&self, args: SnapshotArgs) -> String {
         fn terrain_to_char(terrain: Terrain) -> char {
             match terrain {
-                Terrain::DeepWater => 'w',
+                Terrain::DeepWater => '_',
                 Terrain::Dirt => '.',
                 Terrain::RockWall => '#',
                 Terrain::ShallowWater => '~',
@@ -212,7 +212,7 @@ fn build_level(game: &mut Game, level: &str) {
                 '~' => {
                     let _ = game.terrain.insert(loc, Terrain::ShallowWater);
                 }
-                'w' => {
+                '_' => {
                     let _ = game.terrain.insert(loc, Terrain::DeepWater);
                 }
                 _ => panic!("bad char: {}", ch),
