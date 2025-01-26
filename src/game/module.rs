@@ -1,6 +1,6 @@
 use crate::shared::*;
 use fnv::FnvHashMap;
-use std::{collections::VecDeque, default};
+use std::collections::VecDeque;
 
 const MAX_MESSAGES: usize = 10;
 
@@ -15,20 +15,42 @@ struct Game {
 }
 
 pub fn new() -> Box<dyn crate::shared::Game> {
-    let player_loc = Point::new(10, 10);
-    let terrain = default_map();
+    let level = "
+###########################################################
+#                                                         #
+#       #######                                           #
+#       #a   s#                                           #
+#       #     #                                           #
+#       ### ###                            A              #
+#                                                         #
+#                                                         #
+#                   @                                     #
+#                                ~                        #
+#                               ~w~                       #
+#                                ~                        #
+#                                                         #
+#                                                         #
+#            A                                            #
+#                                      A                  #
+#                                                         #
+###########################################################";
+    with_level(level)
+}
+
+pub fn with_level(level: &str) -> Box<dyn crate::shared::Game> {
     let default = Tile {
         terrain: Terrain::RockWall,
         items: Vec::new(),
         character: None,
     };
-    let messages = VecDeque::new();
-    Box::new(Game {
-        player_loc,
-        terrain,
+    let mut game = Box::new(Game {
+        player_loc: Point::new(0, 0),
+        terrain: FnvHashMap::default(),
         default,
-        messages,
-    })
+        messages: VecDeque::new(),
+    });
+    build_level(&mut game, level);
+    game
 }
 
 impl crate::shared::Game for Game {
@@ -41,7 +63,7 @@ impl crate::shared::Game for Game {
         match command {
             Command::Move(delta) => {
                 let loc = Point::new(self.player_loc.x + delta.x, self.player_loc.y + delta.y);
-                if let (Some(err)) = self.can_move_to(loc) {
+                if let Some(err) = self.can_move_to(loc) {
                     self.add_message(MessageKind::PlayerFailed, err);
                 } else {
                     self.player_loc = loc;
@@ -170,47 +192,28 @@ impl Game {
     }
 }
 
-// TODO maybe this should be named build_level and take a game ref
-fn default_map() -> FnvHashMap<Point, Terrain> {
-    let level = "
-###########################################################
-#                                                         #
-#       #######                                           #
-#       #a   s#                                           #
-#       #     #                                           #
-#       ### ###                            A              #
-#                                                         #
-#                                                         #
-#                   @                                     #
-#                                ~                        #
-#                               ~w~                       #
-#                                ~                        #
-#                                                         #
-#                                                         #
-#            A                                            #
-#                                      A                  #
-#                                                         #
-###########################################################
-";
-    let mut map = FnvHashMap::<Point, Terrain>::default();
+fn build_level(game: &mut Game, level: &str) {
     let mut loc = Point::new(0, -1);
     for ch in level.chars() {
         if ch != '\n' {
             match ch {
                 '\n' => (),
                 '#' => (),
-                '@' => (), // TODO handle player
+                '@' => {
+                    let _ = game.terrain.insert(loc, Terrain::Dirt);
+                    game.player_loc = loc;
+                }
                 'A' => (), // TODO handle chars
                 'a' => (), // TODO handle items
                 's' => (), // TODO handle items
                 ' ' => {
-                    let _ = map.insert(loc, Terrain::Dirt);
+                    let _ = game.terrain.insert(loc, Terrain::Dirt);
                 }
                 '~' => {
-                    let _ = map.insert(loc, Terrain::ShallowWater);
+                    let _ = game.terrain.insert(loc, Terrain::ShallowWater);
                 }
                 'w' => {
-                    let _ = map.insert(loc, Terrain::DeepWater);
+                    let _ = game.terrain.insert(loc, Terrain::DeepWater);
                 }
                 _ => panic!("bad char: {}", ch),
             };
@@ -219,5 +222,27 @@ fn default_map() -> FnvHashMap<Point, Terrain> {
             loc = Point::new(0, loc.y + 1);
         }
     }
-    map
+}
+
+// TODO: Depending on how much code coverage we have with unit tests we can just rely
+// on the snapshots to catch problems rather than adding complex invariant checks.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn move_into_wall() {
+        let level = "
+#################
+#               #
+#@              #
+#               #
+#################";
+        let mut game = with_level(level);
+        game.execute(Command::Move(Point::new(0, 1)));
+        game.execute(Command::Move(Point::new(-1, 0)));
+
+        let args = SnapshotArgs::new();
+        insta::assert_snapshot!(game.snapshot(args));
+    }
 }

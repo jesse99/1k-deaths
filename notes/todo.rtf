@@ -16,7 +16,8 @@ clear && printf '\\e[3J' && cargo test\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 cargo doc --open\
 \
-cargo insta test --review\cb3 \
+cargo insta test --review\
+cargo -v insta test --review -- --nocapture\cb3 \
 \cb1 cargo new onek-tester\cb3 \
 \
 
@@ -55,9 +56,7 @@ other rogue-likes\
 
 \f2\b \cf4 4 the map
 \f1\b0 \cf4 \
-\'95\'a0add snapshot tests\
-	- could use this for snapshot testing\
-		` could pass in some sort of args struct to limit what\'92s returned\
+\'95\'a0use _ for deep water\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf4 \

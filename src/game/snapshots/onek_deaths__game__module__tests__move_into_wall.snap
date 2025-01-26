@@ -1,0 +1,17 @@
+---
+source: src/game/module.rs
+expression: game.snapshot(args)
+snapshot_kind: text
+---
+     #    
+  ####### 
+ #########
+ ####.....
+ ####.....
+#####@....
+ #########
+ #########
+ #########
+  ####### 
+
+A wall is in the way.

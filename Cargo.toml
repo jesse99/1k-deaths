@@ -21,6 +21,9 @@ simplelog = "0.12.2"                                 # logging facade
 # serde = { version = "1.0.195", features = ["derive"] } # serialization framework
 # serde_derive = "1.0.195" # serde derive macros
 
+[dev-dependencies]
+insta = { version = "1.41.1", features = ["yaml"] }
+
 # Better profiling in release TODO: set this to false
 [profile.release]
 debug = true
