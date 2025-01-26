@@ -55,15 +55,7 @@ other rogue-likes\
 
 \f2\b \cf4 4 the map
 \f1\b0 \cf4 \
-\'95\'a0add a messages window\
-	- bump into wall\
-	- splash through water\
-	- could have a dump player info command\
-		\'93You\'92re at (10, 20).\
-\'95\'a0add debugging support\
-	- could be an examine command\
-	- in debug should more details (or maybe use a separate command)\
-	- or just dump this to log?\
+\'95\'a0add snapshot tests\
 	- could use this for snapshot testing\
 		` could pass in some sort of args struct to limit what\'92s returned\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
@@ -82,7 +74,6 @@ Step 6a - It\'92s Alive! Alive!
 \cf4 	   ` or potentially some other config file format\
 	   ` note that we do need something pretty good at nesting, eg for inventory\
 	   ` probably want typed accessaors for content\
-	   ` \
 	- add ai\
 	- add scheduler\
 	- hook up the scheduler\
@@ -101,6 +92,9 @@ Step 6a - It\'92s Alive! Alive!
 	- implements KV which has a serialize method\
 	- not sure about the reverse\
 	- could just keep track of key/values ourself\'85\
+\'95\'a0add an examine command\
+	- \'93You see a wolf. It hasn\'92t noticed you.\'94\
+	- could include more in debug, e.g. location\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf4 \

@@ -1,6 +1,6 @@
 use crate::shared::*;
 use fnv::FnvHashMap;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, default};
 
 const MAX_MESSAGES: usize = 10;
 
@@ -91,6 +91,62 @@ impl crate::shared::Game for Game {
     // could use a fn but that's quite limiting
     fn messages(&self) -> &VecDeque<Message> {
         &self.messages
+    }
+
+    fn snapshot(&self, args: SnapshotArgs) -> String {
+        fn terrain_to_char(terrain: Terrain) -> char {
+            match terrain {
+                Terrain::DeepWater => 'w',
+                Terrain::Dirt => '.',
+                Terrain::RockWall => '#',
+                Terrain::ShallowWater => '~',
+            }
+        }
+
+        fn snapshot_map(result: &mut String, game: &Game, radius: i32) {
+            let default = game.default.terrain;
+            for dy in -radius..radius {
+                for dx in -radius..radius {
+                    let loc = Point::new(game.player_loc.x + dx, game.player_loc.y + dy);
+                    let ch = if loc.distance2(game.player_loc) <= radius * radius {
+                        if loc == game.player_loc {
+                            '@'
+                        } else if let Some(terrain) = game.terrain.get(&loc) {
+                            terrain_to_char(*terrain)
+                        } else {
+                            terrain_to_char(default)
+                        }
+                    } else {
+                        ' '
+                    };
+                    result.push(ch);
+                }
+                result.push('\n');
+            }
+            result.push('\n');
+        }
+
+        fn snapshot_messages(result: &mut String, game: &Game, count: usize) {
+            let n = if game.messages.len() >= count {
+                game.messages.len() - count
+            } else {
+                0
+            };
+            for m in game.messages.iter().skip(n) {
+                result.push_str(&m.text);
+                result.push('\n');
+            }
+            result.push('\n');
+        }
+
+        let mut result = String::with_capacity(1024);
+        if args.radius > 0 {
+            snapshot_map(&mut result, self, args.radius);
+        }
+        if args.num_messages > 0 {
+            snapshot_messages(&mut result, self, args.num_messages as usize);
+        }
+        result
     }
 }
 

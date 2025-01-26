@@ -27,12 +27,12 @@ impl Point {
     //     dx <= 1 && dy <= 1 && !(dx == 0 && dy == 0)
     // }
 
-    // /// distance squared between two points
-    // pub fn distance2(&self, rhs: Point) -> i32 {
-    //     let dx = self.x - rhs.x;
-    //     let dy = self.y - rhs.y;
-    //     dx * dx + dy * dy
-    // }
+    /// distance squared between two points
+    pub fn distance2(&self, rhs: Point) -> i32 {
+        let dx = self.x - rhs.x;
+        let dy = self.y - rhs.y;
+        dx * dx + dy * dy
+    }
 }
 
 impl Ord for Point {

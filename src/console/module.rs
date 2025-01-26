@@ -6,6 +6,7 @@ use crossterm::{
     style::{self, Stylize},
     terminal, QueueableCommand,
 };
+use std::fs::OpenOptions;
 use std::io::{self, Write};
 
 const MAX_MESSAGES: u16 = 6;
@@ -142,8 +143,9 @@ impl Console {
             event::KeyCode::Right | event::KeyCode::Char('6') => self.move_player(1, 0),
             event::KeyCode::Up | event::KeyCode::Char('8') => self.move_player(0, -1),
             event::KeyCode::Down | event::KeyCode::Char('2') => self.move_player(0, 1),
+            event::KeyCode::Char('d') => self.dump_game(),
             event::KeyCode::Char('q') => self.running = false,
-            _ => (), // TODO beep
+            _ => info!("bad key: {key:?}"), // TODO beep
         }
     }
 
@@ -151,6 +153,23 @@ impl Console {
         // let (width, height) = terminal::size().unwrap();
         let delta = Point::new(dx, dy);
         self.game.execute(Command::Move(delta));
+    }
+
+    fn dump(&self) -> io::Result<()> {
+        let args = SnapshotArgs::new();
+        let text = self.game.snapshot(args);
+
+        let mut file = OpenOptions::new().append(true).create(true).open("state.txt")?;
+        file.write(text.as_bytes())?;
+        file.write("-".repeat(80).as_bytes())?;
+        file.write("\n".as_bytes())?;
+        Ok(())
+    }
+
+    fn dump_game(&self) {
+        if let Err(err) = self.dump() {
+            error!("failed to write state: {err}"); // TODO also write to messages?
+        }
     }
 }
 

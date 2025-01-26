@@ -50,6 +50,23 @@ pub struct Tile {
     // equipped: Vec<Item>,    // TODO might also want something like aura
 }
 
+pub struct SnapshotArgs {
+    /// Include cells within radius of the player. Defaults to 5.
+    pub radius: i32, // TODO: add include_map_details, eg positions for characters, maybe make this an i32 for extra details
+
+    /// Include the last N messages. Defaults to 4.
+    pub num_messages: i32,
+}
+
+impl SnapshotArgs {
+    pub fn new() -> SnapshotArgs {
+        SnapshotArgs {
+            radius: 5,
+            num_messages: 4,
+        }
+    }
+}
+
 pub trait Game {
     fn player_loc(&self) -> Point;
 
@@ -62,6 +79,9 @@ pub trait Game {
 
     /// The tile to use when the tile function returns None.
     fn default(&self) -> &Tile;
+
+    /// Returns game state.
+    fn snapshot(&self, args: SnapshotArgs) -> String;
 }
 
 pub trait UI {
