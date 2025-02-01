@@ -1,17 +1,23 @@
+use super::{Oid, Store};
 use crate::shared::*;
 use fnv::FnvHashMap;
 use std::collections::VecDeque;
 
 const MAX_MESSAGES: usize = 10;
 
+pub static PLAYER_ID: Oid = Oid::without_tag(0);
+// pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(1);
+// pub static GAME_ID: Oid = Oid::without_tag(2);
+// pub static LAST_ID: u32 = 2;
+
 // It'd be more efficient to use some sort of 2D array for terrain but we use a hash map
 // so that it is more dynamic, e.g. this way it's easy to support things like the player
 // extending the map with something like tunneling.
 struct Game {
-    player_loc: Point,
     terrain: FnvHashMap<Point, Terrain>,
     default: Tile,
     messages: VecDeque<Message>,
+    store: Store<Oid>,
 }
 
 pub fn new() -> Box<dyn crate::shared::Game> {
@@ -44,10 +50,10 @@ pub fn with_level(level: &str) -> Box<dyn crate::shared::Game> {
         character: None,
     };
     let mut game = Box::new(Game {
-        player_loc: Point::new(0, 0),
         terrain: FnvHashMap::default(),
         default,
         messages: VecDeque::new(),
+        store: Store::new(),
     });
     build_level(&mut game, level);
     game
@@ -55,18 +61,19 @@ pub fn with_level(level: &str) -> Box<dyn crate::shared::Game> {
 
 impl crate::shared::Game for Game {
     fn player_loc(&self) -> Point {
-        self.player_loc
+        self.store.find(PLAYER_ID).unwrap()
     }
 
     fn execute(&mut self, command: Command) {
         debug!("executing {command:?}");
         match command {
             Command::Move(delta) => {
-                let loc = Point::new(self.player_loc.x + delta.x, self.player_loc.y + delta.y);
-                if let Some(err) = self.can_move_to(loc) {
+                let old_loc = self.player_loc();
+                let new_loc = Point::new(old_loc.x + delta.x, old_loc.y + delta.y);
+                if let Some(err) = self.can_move_to(new_loc) {
                     self.add_message(MessageKind::PlayerFailed, err);
                 } else {
-                    self.player_loc = loc;
+                    self.store.replace(PLAYER_ID, new_loc);
                 }
             }
         }
@@ -75,8 +82,9 @@ impl crate::shared::Game for Game {
     // TODO maybe this should return a &Tile, that would allow us to cache this and
     // also get rid of the default method
     fn tile(&self, loc: Point) -> Option<Tile> {
+        let player_loc = self.player_loc();
         if let Some(&terrain) = self.terrain.get(&loc) {
-            if loc == self.player_loc {
+            if loc == player_loc {
                 Some(Tile {
                     terrain,
                     items: Vec::new(),
@@ -90,7 +98,7 @@ impl crate::shared::Game for Game {
                 })
             }
         } else {
-            if loc == self.player_loc {
+            if loc == player_loc {
                 Some(Tile {
                     terrain: Terrain::RockWall,
                     items: Vec::new(),
@@ -129,9 +137,10 @@ impl crate::shared::Game for Game {
             let default = game.default.terrain;
             for dy in -radius..radius {
                 for dx in -radius..radius {
-                    let loc = Point::new(game.player_loc.x + dx, game.player_loc.y + dy);
-                    let ch = if loc.distance2(game.player_loc) <= radius * radius {
-                        if loc == game.player_loc {
+                    let player_loc = game.player_loc();
+                    let loc = Point::new(player_loc.x + dx, player_loc.y + dy);
+                    let ch = if loc.distance2(player_loc) <= radius * radius {
+                        if loc == player_loc {
                             '@'
                         } else if let Some(terrain) = game.terrain.get(&loc) {
                             terrain_to_char(*terrain)
@@ -201,7 +210,7 @@ fn build_level(game: &mut Game, level: &str) {
                 '#' => (),
                 '@' => {
                     let _ = game.terrain.insert(loc, Terrain::Dirt);
-                    game.player_loc = loc;
+                    game.store.create(PLAYER_ID, loc);
                 }
                 'A' => (), // TODO handle chars
                 'a' => (), // TODO handle items

@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Sub;
 
 /// Represents a point in cartesian space, typically a location within a level.
-#[derive(Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
     pub y: i32,

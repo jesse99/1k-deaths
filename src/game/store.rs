@@ -100,14 +100,6 @@ where
             })
             .flatten()
     }
-
-    // #[must_use]
-    // pub fn expect<VALUE>(&self, key: KEY) -> VALUE
-    // where
-    //     VALUE: DeserializeOwned + TypeId + Display + Default,
-    // {
-    //     self.find(key).unwrap()
-    // }
 }
 
 // List values
