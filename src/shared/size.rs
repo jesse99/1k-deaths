@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
 
 /// Encapsulates a width and height. Similar to [`Point`] but with different semantics.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Size {
     pub width: i32,
     pub height: i32,

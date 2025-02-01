@@ -20,7 +20,7 @@
 // To work around those icky sorts of issues I've moved towards a more traditional energy
 // based system: objects accumulate time units and when they have enough time units they
 // perform an action. When an object does an action it decrements its time units accordingly.
-// When all objects have had a chance to move time is advanced an all objects are given
+// When all objects have had a chance to move time is advanced and all objects are given
 // that bit of extra time. So a wizard who casts a long spell may have to wait a while to
 // cast it and once it goes off everything else will be able to do quite a lot while the
 // wizard is recovering.

@@ -1,6 +1,7 @@
 //! Traits used to wrap modules. This is essentially a modular monolith design, see
 //! https://www.geeksforgeeks.org/what-is-a-modular-monolith for more.
 use super::Point;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::io;
 
@@ -8,6 +9,21 @@ use std::io;
 pub enum MessageKind {
     /// Player tried to do something but failed, e.g. move into a wall.
     PlayerFailed,
+    // /// Operation failed.
+    // Error,
+
+    // /// Player is near death, special message when entering a new level, etc.
+    // Critical,
+
+    // // Player took a critical hit, buff is wearing off, etc.
+    // Important,
+
+    // // Relatively spammy messages, e.g. player was hit.
+    // #[default]
+    // Normal,
+
+    // // Messages that are not normally shown.
+    // Debug,
 }
 
 #[derive(Debug)]
@@ -35,7 +51,7 @@ pub enum Species {
     Human,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Terrain {
     DeepWater,
     Dirt,
