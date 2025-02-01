@@ -3,6 +3,8 @@
 use super::Point;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
+use std::fmt;
+use std::fmt::Display;
 use std::io;
 
 #[derive(Debug)]
@@ -51,10 +53,12 @@ pub enum Species {
     Human,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub enum Terrain {
     DeepWater,
     Dirt,
+
+    #[default]
     RockWall,
     ShallowWater,
 }
@@ -94,7 +98,7 @@ pub trait Game {
     fn messages(&self) -> &VecDeque<Message>;
 
     /// The tile to use when the tile function returns None.
-    fn default(&self) -> &Tile;
+    fn default(&self) -> Tile;
 
     /// Returns game state.
     fn snapshot(&self, args: SnapshotArgs) -> String;
@@ -102,4 +106,10 @@ pub trait Game {
 
 pub trait UI {
     fn run(&mut self) -> io::Result<()>;
+}
+
+impl Display for Terrain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }

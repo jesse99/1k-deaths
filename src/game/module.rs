@@ -1,23 +1,19 @@
 use super::{Oid, Store};
 use crate::shared::*;
 use fnv::FnvHashMap;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, fmt::Display};
 
 const MAX_MESSAGES: usize = 10;
 
 pub static PLAYER_ID: Oid = Oid::without_tag(0);
-// pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(1);
-// pub static GAME_ID: Oid = Oid::without_tag(2);
-// pub static LAST_ID: u32 = 2;
+pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(1);
+pub static LAST_ID: u32 = 1;
 
-// It'd be more efficient to use some sort of 2D array for terrain but we use a hash map
-// so that it is more dynamic, e.g. this way it's easy to support things like the player
-// extending the map with something like tunneling.
 struct Game {
-    terrain: FnvHashMap<Point, Terrain>,
-    default: Tile,
     messages: VecDeque<Message>,
+    cell_ids: FnvHashMap<Point, Oid>,
     store: Store<Oid>,
+    next_oid: u32,
 }
 
 pub fn new() -> Box<dyn crate::shared::Game> {
@@ -44,16 +40,11 @@ pub fn new() -> Box<dyn crate::shared::Game> {
 }
 
 pub fn with_level(level: &str) -> Box<dyn crate::shared::Game> {
-    let default = Tile {
-        terrain: Terrain::RockWall,
-        items: Vec::new(),
-        character: None,
-    };
     let mut game = Box::new(Game {
-        terrain: FnvHashMap::default(),
-        default,
         messages: VecDeque::new(),
+        cell_ids: FnvHashMap::default(),
         store: Store::new(),
+        next_oid: LAST_ID + 1,
     });
     build_level(&mut game, level);
     game
@@ -83,35 +74,29 @@ impl crate::shared::Game for Game {
     // also get rid of the default method
     fn tile(&self, loc: Point) -> Option<Tile> {
         let player_loc = self.player_loc();
-        if let Some(&terrain) = self.terrain.get(&loc) {
-            if loc == player_loc {
-                Some(Tile {
-                    terrain,
-                    items: Vec::new(),
-                    character: Some(Species::Human),
-                })
-            } else {
-                Some(Tile {
-                    terrain,
-                    items: Vec::new(),
-                    character: None,
-                })
-            }
+        let oid = self.cell_ids.get(&loc).unwrap_or(&DEFAULT_CELL_ID);
+        let terrain = self.store.find(*oid).unwrap();
+        if loc == player_loc {
+            Some(Tile {
+                terrain,
+                items: Vec::new(),
+                character: Some(Species::Human),
+            })
         } else {
-            if loc == player_loc {
-                Some(Tile {
-                    terrain: Terrain::RockWall,
-                    items: Vec::new(),
-                    character: Some(Species::Human),
-                })
-            } else {
-                None
-            }
+            Some(Tile {
+                terrain,
+                items: Vec::new(),
+                character: None,
+            })
         }
     }
 
-    fn default(&self) -> &Tile {
-        &self.default
+    fn default(&self) -> Tile {
+        Tile {
+            terrain: self.store.find(DEFAULT_CELL_ID).unwrap(),
+            items: Vec::new(),
+            character: None,
+        }
     }
 
     // Would be quite a bit better to return an iterator but that's very problematic:
@@ -134,7 +119,7 @@ impl crate::shared::Game for Game {
         }
 
         fn snapshot_map(result: &mut String, game: &Game, radius: i32) {
-            let default = game.default.terrain;
+            let default = game.default().terrain;
             for dy in -radius..radius {
                 for dx in -radius..radius {
                     let player_loc = game.player_loc();
@@ -142,10 +127,8 @@ impl crate::shared::Game for Game {
                     let ch = if loc.distance2(player_loc) <= radius * radius {
                         if loc == player_loc {
                             '@'
-                        } else if let Some(terrain) = game.terrain.get(&loc) {
-                            terrain_to_char(*terrain)
                         } else {
-                            terrain_to_char(default)
+                            terrain_to_char(game.get_terrain(loc))
                         }
                     } else {
                         ' '
@@ -182,9 +165,20 @@ impl crate::shared::Game for Game {
 }
 
 impl Game {
+    // TODO: If find_cell turns out to be a bottle-neck then could add a get_cell
+    // function with methods like get_terrain, get_portables, and get_char.
+    pub fn get_terrain(&self, loc: Point) -> Terrain {
+        if let Some(&cell_oid) = self.cell_ids.get(&loc) {
+            let terrain = self.store.find::<Terrain>(cell_oid);
+            terrain.expect(&format!("expected a terrain for {cell_oid}"))
+        } else {
+            let terrain = self.store.find::<Terrain>(DEFAULT_CELL_ID);
+            terrain.expect(&format!("expected a terrain for the default cell"))
+        }
+    }
+
     fn can_move_to(&self, loc: Point) -> Option<String> {
-        let terrain = self.terrain.get(&loc).unwrap_or(&self.default.terrain);
-        match terrain {
+        match self.get_terrain(loc) {
             Terrain::DeepWater => Some("The water is too deep.".to_owned()),
             Terrain::Dirt => None, // TODO also check for characters
             Terrain::RockWall => Some("A wall is in the way.".to_owned()),
@@ -199,9 +193,19 @@ impl Game {
             self.messages.pop_front();
         }
     }
+
+    fn new_oid<T>(&mut self, obj: T) -> Oid
+    where
+        T: Display,
+    {
+        let oid = Oid::new(&format!("{obj}"), self.next_oid);
+        self.next_oid += 1;
+        oid
+    }
 }
 
 fn build_level(game: &mut Game, level: &str) {
+    game.store.create(DEFAULT_CELL_ID, Terrain::RockWall);
     let mut loc = Point::new(0, -1);
     for ch in level.chars() {
         if ch != '\n' {
@@ -209,20 +213,28 @@ fn build_level(game: &mut Game, level: &str) {
                 '\n' => (),
                 '#' => (),
                 '@' => {
-                    let _ = game.terrain.insert(loc, Terrain::Dirt);
+                    let oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, Terrain::Dirt);
                     game.store.create(PLAYER_ID, loc);
                 }
                 'A' => (), // TODO handle chars
                 'a' => (), // TODO handle items
                 's' => (), // TODO handle items
                 ' ' => {
-                    let _ = game.terrain.insert(loc, Terrain::Dirt);
+                    let oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, Terrain::Dirt);
                 }
                 '~' => {
-                    let _ = game.terrain.insert(loc, Terrain::ShallowWater);
+                    let oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, Terrain::ShallowWater);
                 }
                 '_' => {
-                    let _ = game.terrain.insert(loc, Terrain::DeepWater);
+                    let oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, Terrain::DeepWater);
                 }
                 _ => panic!("bad char: {}", ch),
             };

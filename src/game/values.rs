@@ -37,7 +37,7 @@ use std::fmt;
 //     pub oid: Oid,
 // }
 
-// /// Each cell on the level will have a unique Oid which looks like "(1, 2)". Levels may be
+// /// Each cell on the level will have a unique Oid which displays like "(1, 2)". Levels may be
 // /// irregular (and may grow as the result of actions like digging). Cell Oids store the
 // /// following:
 // /// * A Terrain value.
@@ -88,12 +88,6 @@ mod display_impl {
     // }
 
     // impl Display for Portable {
-    //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    //         write!(f, "{:?}", self)
-    //     }
-    // }
-
-    // impl Display for Terrain {
     //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     //         write!(f, "{:?}", self)
     //     }

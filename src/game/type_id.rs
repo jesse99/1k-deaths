@@ -30,11 +30,11 @@ impl TypeId for Point {
 //     }
 // }
 
-// impl TypeId for Terrain {
-//     fn id(&self) -> u16 {
-//         4
-//     }
-// }
+impl TypeId for Terrain {
+    fn id(&self) -> u16 {
+        4
+    }
+}
 
 // impl TypeId for Portable {
 //     fn id(&self) -> u16 {

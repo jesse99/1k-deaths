@@ -97,7 +97,7 @@ impl Console {
     fn render_map(&self, width: u16, height: u16) -> io::Result<()> {
         let ploc = self.game.player_loc();
         let dt = self.game.default();
-        let dc = self.compose_tile(dt);
+        let dc = self.compose_tile(&dt);
         for v in 0..height {
             for h in 0..width {
                 let dx = h as i32 - (width / 2) as i32;

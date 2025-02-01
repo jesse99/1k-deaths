@@ -52,7 +52,6 @@ impl fmt::Display for Oid {
             match self.value {
                 0 => write!(f, "player#{}", self.value),
                 1 => write!(f, "default cell#{}", self.value),
-                2 => write!(f, "game#{}", self.value),
                 _ => panic!("excpected a tag"),
             }
         }
