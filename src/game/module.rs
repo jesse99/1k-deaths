@@ -1,6 +1,9 @@
-use super::{Oid, Store};
+use super::{ActiveTime, Oid, Scheduler, Store};
 use crate::shared::*;
 use fnv::FnvHashMap;
+use rand::prelude::*;
+use rand::rngs::SmallRng;
+use std::cell::{RefCell, RefMut};
 use std::{collections::VecDeque, fmt::Display};
 
 const MAX_MESSAGES: usize = 10;
@@ -9,14 +12,16 @@ pub static PLAYER_ID: Oid = Oid::without_tag(0);
 pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(1);
 pub static LAST_ID: u32 = 1;
 
-struct Game {
-    messages: VecDeque<Message>,
-    cell_ids: FnvHashMap<Point, Oid>,
-    store: Store<Oid>,
+pub struct Game {
+    pub messages: VecDeque<Message>,
+    pub cell_ids: FnvHashMap<Point, Oid>,
+    pub store: Store<Oid>,
+    pub scheduler: Scheduler,
+    pub rng: RefCell<SmallRng>,
     next_oid: u32,
 }
 
-pub fn new() -> Box<dyn crate::shared::Game> {
+pub fn new(seed: u64) -> Box<dyn crate::shared::Game> {
     let level = "
 ###########################################################
 #                                                         #
@@ -36,15 +41,18 @@ pub fn new() -> Box<dyn crate::shared::Game> {
 #                                      A                  #
 #                                                         #
 ###########################################################";
-    with_level(level)
+    with_level(level, seed)
 }
 
-pub fn with_level(level: &str) -> Box<dyn crate::shared::Game> {
+pub fn with_level(level: &str, seed: u64) -> Box<dyn crate::shared::Game> {
+    let rng = RefCell::new(SmallRng::seed_from_u64(seed));
     let mut game = Box::new(Game {
         messages: VecDeque::new(),
         cell_ids: FnvHashMap::default(),
         store: Store::new(),
         next_oid: LAST_ID + 1,
+        scheduler: Scheduler::new(),
+        rng,
     });
     build_level(&mut game, level);
     game
@@ -119,7 +127,6 @@ impl crate::shared::Game for Game {
         }
 
         fn snapshot_map(result: &mut String, game: &Game, radius: i32) {
-            let default = game.default().terrain;
             for dy in -radius..radius {
                 for dx in -radius..radius {
                     let player_loc = game.player_loc();
@@ -177,6 +184,11 @@ impl Game {
         }
     }
 
+    // The RNG doesn't directly affect the game state so we use interior mutability for it.
+    pub fn rng(&self) -> RefMut<'_, dyn RngCore> {
+        self.rng.borrow_mut()
+    }
+
     fn can_move_to(&self, loc: Point) -> Option<String> {
         match self.get_terrain(loc) {
             Terrain::DeepWater => Some("The water is too deep.".to_owned()),
@@ -217,6 +229,7 @@ fn build_level(game: &mut Game, level: &str) {
                     game.cell_ids.insert(loc, oid);
                     game.store.create(oid, Terrain::Dirt);
                     game.store.create(PLAYER_ID, loc);
+                    game.store.create(PLAYER_ID, ActiveTime {});
                 }
                 'A' => (), // TODO handle chars
                 'a' => (), // TODO handle items
@@ -259,7 +272,7 @@ mod tests {
 #@              #
 #               #
 #################";
-        let mut game = with_level(level);
+        let mut game = with_level(level, 1);
         game.execute(Command::Move(Point::new(0, 1)));
         game.execute(Command::Move(Point::new(-1, 0)));
 

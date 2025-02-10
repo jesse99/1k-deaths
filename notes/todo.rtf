@@ -48,23 +48,27 @@ other rogue-likes\
 
 \f2\b \cf4 Step 6a - It\'92s Alive! Alive!
 \f1\b0 \
-\'95 start using Portable value for weapons\
 \'95\'a0Implement NPCs (and time)\
-	- start using Objects\
+	- add store entries for Ay and Bhederin\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf4 	   ` would be nice if objects were built from config file, maybe toml\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf4 	   ` or potentially some other config file format\
-	   ` note that we do need something pretty good at nesting, eg for inventory\
-	   ` probably want typed accessors for content\
-	- add ai\
-	- add scheduler\
+\cf4 	- add scheduler\
 	- hook up the scheduler\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf4 	- for now have NPCs random walk\
+	- add support for diagnol moves\
+	- might want to wait a simple wait command\
 	- add flooding, should this be special water terrain? or a special attribute?\
 	- player_actions should call into actions\
 	- make sure dump dumps the scheduler\
 	- would be nice to have some more snapshot tests\
 	- make sure both sets of tests still work\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf4 \'95 Start using Portable value for weapons\
+\'95 Would be nice if objects were built from config file, maybe toml\
+	- attic/old had some interesting stuff in build.rs\
+	- or potentially some other config file format\
+	- note that we do need something pretty good at nesting, eg for inventory\
+	- probably want typed accessors for content\
 \pard\pardeftab720\sl420\partightenfactor0
 \cf4 \'95 change Entity to a string\
 	- see if we can use newtype and from/into attributes\

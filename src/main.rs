@@ -75,7 +75,7 @@ fn main() -> io::Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    let game = game::new();
+    let game = game::new(1);
     let mut console = console::new(game);
     console.run()
 }

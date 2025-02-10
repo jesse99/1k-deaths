@@ -50,6 +50,7 @@ pub enum Item {
 #[derive(Copy, Clone)]
 pub enum Species {
     Ay,
+    Bhederin,
     Human,
 }
 

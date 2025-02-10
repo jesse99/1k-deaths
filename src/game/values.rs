@@ -1,4 +1,13 @@
-/// These are the non-primitive types that go into the [`Store`].
+//! These are the non-primitive types that go into the [`Store`].
+//! Vales are associated with an Oid.
+//!
+//! Character Oids will have:
+//! * A Species value.
+//! * A Point for location.
+//! * A list of inventory Oids (may be empty).
+//! * An ActiveTime struct if they take an action once they accumulate enough time.
+//! * An PassiveTime enum(?) if they need to respond to passing time (e.e. to heal up).
+//!
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -6,8 +15,14 @@ use std::fmt;
 // /// * A Character value.
 // /// * A location Point.
 // /// * A list of inventory Oid's (may be empty).
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ActiveTime {} // TODO: potentially this could have a min time needed to perform an action
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PassiveTime {} // TODO: make this an enum?
+
 // #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-// pub enum Character {
+// pub enum Character {     //TODO: rename this Species? would need something else to indicate player (maybe the oid)
 //     #[default]
 //     Guard,
 //     Player,
@@ -17,7 +32,7 @@ use std::fmt;
 // pub struct Durability {
 //     pub current: i32,
 //     pub max: i32,
-// }
+// }09
 
 // /// Objects that may be picked up and dropped off. These store:
 // /// * A Portable value.
@@ -74,6 +89,19 @@ use std::fmt;
 
 mod display_impl {
     use super::*;
+    use fmt::Display;
+
+    impl Display for ActiveTime {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "ActiveTime")
+        }
+    }
+
+    impl Display for PassiveTime {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "ActiveTime")
+        }
+    }
 
     // impl Display for Character {
     //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

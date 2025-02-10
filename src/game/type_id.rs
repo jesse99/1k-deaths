@@ -1,3 +1,4 @@
+use super::{ActiveTime, PassiveTime};
 use crate::shared::*;
 
 /// Every type used as a VALUE in the [`Store`] must implement this to return a unique
@@ -24,32 +25,44 @@ impl TypeId for Point {
     }
 }
 
-// impl TypeId for InvItem {
-//     fn id(&self) -> u16 {
-//         3
-//     }
-// }
+impl TypeId for ActiveTime {
+    fn id(&self) -> u16 {
+        3
+    }
+}
 
-impl TypeId for Terrain {
+impl TypeId for PassiveTime {
     fn id(&self) -> u16 {
         4
     }
 }
 
-// impl TypeId for Portable {
+// impl TypeId for InvItem {
 //     fn id(&self) -> u16 {
 //         5
 //     }
 // }
 
+impl TypeId for Terrain {
+    fn id(&self) -> u16 {
+        6
+    }
+}
+
+// impl TypeId for Portable {
+//     fn id(&self) -> u16 {
+//         7
+//     }
+// }
+
 // impl TypeId for Message {
 //     fn id(&self) -> u16 {
-//         6
+//         8
 //     }
 // }
 
 // impl TypeId for Durability {
 //     fn id(&self) -> u16 {
-//         7
+//         9
 //     }
 // }

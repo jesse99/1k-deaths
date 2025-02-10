@@ -20,14 +20,12 @@
 // To work around those icky sorts of issues I've moved towards a more traditional energy
 // based system: objects accumulate time units and when they have enough time units they
 // perform an action. When an object does an action it decrements its time units accordingly.
-// When all objects have had a chance to move time is advanced an all objects are given
+// When all objects have had a chance to move time is advanced and all objects are given
 // that bit of extra time. So a wizard who casts a long spell may have to wait a while to
 // cast it and once it goes off everything else will be able to do quite a lot while the
 // wizard is recovering.
-use super::ai::{self, Acted};
-use super::time;
-use super::{Action, Character, Game, Oid, Time};
-use crate::backend::Durability;
+use super::{ai, Acted, Game, Oid, Time};
+use super::{time, PassiveTime};
 use fnv::FnvHashMap;
 use rand::prelude::SliceRandom;
 use rand::rngs::SmallRng;
@@ -98,7 +96,7 @@ impl Scheduler {
                     }
                 })
                 .collect();
-            items.shuffle(&mut *game.rng());
+            items.shuffle(&mut game.rng());
             game.scheduler.round = items;
         }
         while !game.scheduler.round.is_empty() {
@@ -109,7 +107,7 @@ impl Scheduler {
                 // NPCs to do more.
                 return true;
             } else {
-                match ai::acted(game, entry.oid, entry.units) {
+                match ai::active_timer(game, entry.oid, entry.units) {
                     Acted::Acted(duration) => {
                         assert!(duration >= time::MIN_TIME);
                         assert!(duration <= entry.units);
@@ -118,7 +116,7 @@ impl Scheduler {
                     }
                     Acted::DidntAct => (),
                     Acted::Removed => {
-                        game.stream.push(Action::Object);
+                        // game.stream.push(Action::Object);
                         return false; // there's been some sort of state change so the UI may need to update
                     }
                 }
@@ -136,7 +134,7 @@ impl Scheduler {
         // of time that object has to do things. Time only advances after all the objects
         // have had a chance to move.
         let taken = taken.fuzz(rng);
-        let units = self.entries.get_mut(&Oid(0)).unwrap();
+        let units = self.entries.get_mut(&&Oid::without_tag(0)).unwrap();
         *units -= taken;
         trace!("   player acted for {taken} and has {units}");
     }
@@ -153,17 +151,18 @@ impl Scheduler {
         }
     }
 
-    pub fn dump<W: Write>(&self, writer: &mut W, game: &Game) -> Result<(), Error> {
+    pub fn dump<W: Write>(&self, writer: &mut W, _game: &Game) -> Result<(), Error> {
         write!(writer, "scheduler is at {}\n", self.now)?;
 
         let mut items: Vec<Entry> = self.entries.iter().map(|(&oid, &units)| Entry { oid, units }).collect();
         items.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
 
-        write!(writer, "   oid  units dname\n")?;
-        for entry in items.iter().rev() {
-            let obj = game.level.obj(entry.oid);
-            write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
-        }
+        // TODO: dump everything in the Store associated with the oid? or summary value?
+        // write!(writer, "   oid  units dname\n")?;
+        // for entry in items.iter().rev() {
+        //     let obj = game.level.obj(entry.oid);
+        //     write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
+        // }
         Ok(())
     }
 }
@@ -187,19 +186,15 @@ fn advance_time(game: &mut Game) {
         *units += time::DIAGNOL_MOVE;
     }
 
-    for oid in game.scheduler.entries.keys() {
-        if let Some(loc) = game.loc(*oid) {
-            if let Some((_, obj)) = game.level.get_mut(loc, CHARACTER_ID) {
-                if let Some(durability) = obj.durability_value() {
-                    if durability.current < durability.max {
-                        obj.replace(Tag::Durability(Durability {
-                            current: durability.current + 1, // TODO: should scale differently
-                            ..durability
-                        }));
-                    }
-                }
-            }
-        }
+    let oids: Vec<Oid> = game
+        .scheduler
+        .entries
+        .keys()
+        .filter(|oid| game.store.find::<PassiveTime>(**oid).is_some())
+        .copied()
+        .collect();
+    for oid in oids {
+        ai::passive_timer(game, oid, time::DIAGNOL_MOVE);
     }
 }
 
