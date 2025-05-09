@@ -9,22 +9,22 @@ edition = "2024"
 arraystring = { version = "0.3.0", features = [
     "serde-traits",
 ] } # fixed capacity strings
-chrono = "0.4.39" # time library
-clap = { version = "4.5.27", features = ["derive"] } # command line parser
+chrono = "0.4.41" # time library
+clap = { version = "4.5.37", features = ["derive"] } # command line parser
 crossterm = "0.28.1" # cross-platform terminal library
-log = "0.4.25" # simpler logging API
+log = "0.4.27" # simpler logging API
 fnv = "1.0.7" # custom hasher that is much more performant for small keys
 postcard = { version = "1.1.1", features = [
     "alloc",
 ] } # binary backend for serde
-rand = { version = "0.9.0", features = ["small_rng"] } # random numbers
-rand_distr = "0.5.0" # normal (and other) distributions
-serde = { version = "1.0.217", features = ["derive"] } # serialization framework
-serde_derive = "1.0.217" # serde derive macros
+rand = { version = "0.9.1", features = ["small_rng"] } # random numbers
+rand_distr = "0.5.1" # normal (and other) distributions
+serde = { version = "1.0.219", features = ["derive"] } # serialization framework
+serde_derive = "1.0.219" # serde derive macros
 simplelog = "0.12.2" # logging facade
 
 [dev-dependencies]
-insta = { version = "1.41.1", features = ["yaml"] }
+insta = { version = "1.43.1", features = ["yaml"] }
 
 # Better profiling in release TODO: set this to false
 [profile.release]
