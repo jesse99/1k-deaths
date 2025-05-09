@@ -2,9 +2,9 @@
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Bold;
 }
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red254\green228\blue200;\red2\green2\blue2;
-\red130\green130\blue130;\red60\green60\blue59;\red60\green60\blue59;}
+\red130\green130\blue130;\red60\green60\blue59;}
 {\*\expandedcolortbl;;\csgray\c0;\cssrgb\c100000\c91449\c82330;\csgenericrgb\c784\c784\c784;
-\cssrgb\c58039\c58039\c58039;\cssrgb\c30196\c30196\c29804;\cssrgb\c30196\c30196\c29804;}
+\cssrgb\c58039\c58039\c58039;\cssrgb\c30196\c30196\c29804;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f0\fs36 \cf2 \CocoaLigature0 clear && printf '\\e[3J' && RUST_BACKTRACE=1 cargo run\cb3 \
@@ -32,29 +32,31 @@ other rogue-likes\
 	brogue\
 	cogmind\
 	tome\
-	\
+		\
 \pard\pardeftab720\partightenfactor0
 
 \f0\fs32 \cf5 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec5 // rockwall has a durability\cf6 \strokec6 \
-\cf5 \strokec5 // characters have health, int, str, inventory, equipped, etc\cf6 \strokec6 \
-\cf5 \strokec5 // trap might have a timer\cf6 \strokec6 \
-\cf5 \strokec5 // think most of this would be private to backend: shared would have some sort of tile\cf6 \strokec6 \
+// rockwall has a durability\cf6 \
+\cf5 // characters have health, int, str, inventory, equipped, etc\cf6 \
+\cf5 // trap might have a timer\cf6 \
+\cf5 // think most of this would be private to backend: shared would have some sort of tile\cf6 \
 \
 \pard\pardeftab720\sl420\partightenfactor0
 
-\f1\fs48 \cf4 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 \
+\f1\fs48 \cf4 \kerning1\expnd0\expndtw0 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
 \f2\b \cf4 Step 6a - It\'92s Alive! Alive!
 \f1\b0 \
+\'95\'a0Make sure tests work\
+\'95 Commit and push\
+\'95\'a0Update libs (there\'92s a command for that)\
+\'95 Try Copilot\
 \'95\'a0Implement NPCs (and time)\
 	- add store entries for Ay and Bhederin\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf4 	- add scheduler\
+	- add scheduler\
 	- hook up the scheduler\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf4 	- for now have NPCs random walk\
+	- for now have NPCs random walk\
 	- add support for diagnol moves\
 	- might want to wait a simple wait command\
 	- add flooding, should this be special water terrain? or a special attribute?\
@@ -62,8 +64,7 @@ other rogue-likes\
 	- make sure dump dumps the scheduler\
 	- would be nice to have some more snapshot tests\
 	- make sure both sets of tests still work\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
-\cf4 \'95 Start using Portable value for weapons\
+\'95 Start using Portable value for weapons\
 \'95 Would be nice if objects were built from config file, maybe toml\
 	- attic/old had some interesting stuff in build.rs\
 	- or potentially some other config file format\
@@ -87,7 +88,7 @@ other rogue-likes\
 \f2\b \cf4 \
 \pard\pardeftab720\sl420\partightenfactor0
 \cf4 5 saving/loading
-\f1\b0 \cf4 \
+\f1\b0 \
 \'95 get save and load working\
 \'95 add support for replay\
 	- need to do some design work for ReplayMode \
@@ -107,37 +108,30 @@ other rogue-likes\
 
 \f2\b \cf4 \
 Step 6b - Debugger app\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Should be a module to make it easier to get to work with web based UIs\
+\f1\b0 \'95\'a0Should be a module to make it easier to get to work with web based UIs\
 \'95\'a0Will need commands to inspect objects (and to select them)\
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf4 Step 7 - Interaction\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\f2\b Step 7 - Interaction\
 
-\f1\b0 \cf4 \'95\'a0Add character stats (add these as they are needed)\
+\f1\b0 \'95\'a0Add character stats (add these as they are needed)\
 \'95\'a0Add AIs for NPCs\
 \'95\'a0Get basic combat working (no weapons or armor)\
 \'95 Nuke the old code\
 \'95\'a0Merge back into main branch\
 \
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf4 Step 8 - Data files\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\f2\b Step 8 - Data files\
 
-\f1\b0 \cf4 \'95\'a0Use data files to read in the level and character info\
+\f1\b0 \'95\'a0Use data files to read in the level and character info\
 	- or just do this in rust? maybe macros?\
 \'95\'a0Would be nice to have a config file for keybindings\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf4 \
+\f2\b \
 Step 9 - Items (this is where normalized left off)\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Player (and probably NPCs) need to be able to pickup items\
+\f1\b0 \'95\'a0Player (and probably NPCs) need to be able to pickup items\
 \'95\'a0Support equipping items\
 	- combat should use equipped items\
 \'95\'a0Support dropping items\
@@ -214,13 +208,11 @@ Step 9 - Items (this is where normalized left off)\
 	  https://docs.rs/sqlite/latest/sqlite\
 		not sure we\'92d really need a full db\
 		tho we probably eventually will need persistence\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf4 \
+\f2\b \
 Step 10 - Magic\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Add some basic spells \
+\f1\b0 \'95\'a0Add some basic spells \
 \'95\'a0Maybe just a few from one warren\
 \'95\'a0NPCs should also be able to cast spells (or use a particular ability that amounts to a spell)
 \f2\b \
@@ -231,13 +223,11 @@ Step 10 - Magic\
 	- focus weapons are usually staffs\
 	- focus weapons can improve either all spells or a school\
 	- can melee with focus weapons\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f2\b \cf4 \
+\f2\b \
 Step 11 - Simple game\
-\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
 
-\f1\b0 \cf4 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
+\f1\b0 \'95\'a0Put Rhulad in some sort of vault (with a large door)\
 	- inside is arena with spectators\
 \'95 Shadow warren could have deep shadow instead of walls\
 	- can move into them as far as you want\

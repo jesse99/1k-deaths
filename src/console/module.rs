@@ -1,10 +1,10 @@
 use super::color::*;
 use crate::shared::*;
 use crossterm::{
-    cursor,
+    QueueableCommand, cursor,
     event::{self, KeyEvent},
     style::{self, Stylize},
-    terminal, QueueableCommand,
+    terminal,
 };
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -152,7 +152,7 @@ impl Console {
     fn move_player(&mut self, dx: i32, dy: i32) {
         // let (width, height) = terminal::size().unwrap();
         let delta = Point::new(dx, dy);
-        self.game.execute(Command::Move(delta));
+        self.game.player_action(Command::Move(delta));
     }
 
     fn dump(&self) -> io::Result<()> {

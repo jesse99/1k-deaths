@@ -34,10 +34,13 @@ pub struct Message {
     pub text: String,
 }
 
+/// Represents what the player wants to do next. Most of these will use up the player's
+/// remaining time units, but some like (Examine) don't take any time.
 #[derive(Debug)]
 pub enum Command {
-    /// Typically this will be a move to an adjacent cell bu something like a chage can
-    /// be used to move multiple cells in one go.
+    /// Typically this will be a move to an adjacent cell but something like a charge can
+    /// be used to move multiple cells in one go. TODO: probably need to also use this
+    /// for interacting with objects: may want to rename it bump
     Move(Point),
 }
 
@@ -91,7 +94,15 @@ impl SnapshotArgs {
 pub trait Game {
     fn player_loc(&self) -> Point;
 
-    fn execute(&mut self, command: Command);
+    /// If this returns true then the UI should call player_acted, otherwise the UI should
+    /// call advance_time.
+    fn players_turn(&self) -> bool;
+
+    fn player_action(&mut self, command: Command);
+
+    /// Allow all objects that are ready to act a chance to act. Then advance time and
+    /// continue until the player accumulates enough time to act.
+    fn other_actions(&mut self, replay: bool);
 
     fn tile(&self, loc: Point) -> Option<Tile>;
 

@@ -19,6 +19,7 @@ pub struct Game {
     pub scheduler: Scheduler,
     pub rng: RefCell<SmallRng>,
     next_oid: u32,
+    players_move: bool,
 }
 
 pub fn new(seed: u64) -> Box<dyn crate::shared::Game> {
@@ -53,6 +54,7 @@ pub fn with_level(level: &str, seed: u64) -> Box<dyn crate::shared::Game> {
         next_oid: LAST_ID + 1,
         scheduler: Scheduler::new(),
         rng,
+        players_move: false,
     });
     build_level(&mut game, level);
     game
@@ -63,7 +65,11 @@ impl crate::shared::Game for Game {
         self.store.find(PLAYER_ID).unwrap()
     }
 
-    fn execute(&mut self, command: Command) {
+    fn players_turn(&self) -> bool {
+        self.players_move || self.game_over()
+    }
+
+    fn player_action(&mut self, command: Command) {
         debug!("executing {command:?}");
         match command {
             Command::Move(delta) => {
@@ -74,6 +80,20 @@ impl crate::shared::Game for Game {
                 } else {
                     self.store.replace(PLAYER_ID, new_loc);
                 }
+                self.players_move = false; // do this only for commands that take time
+            }
+        }
+    }
+
+    fn other_actions(&mut self, replay: bool) {
+        match Scheduler::execute_action(self) {
+            super::PlayersTurn::Yes => self.players_move = true,
+            super::PlayersTurn::No => {
+                // if !replay {
+                //     self.stream.push(Action::Object);
+                // }
+                // OldPoV::update(self);
+                // PoV::refresh(self);
             }
         }
     }
@@ -172,6 +192,11 @@ impl crate::shared::Game for Game {
 }
 
 impl Game {
+    fn game_over(&self) -> bool {
+        // matches!(self.state, State::LostGame | State::WonGame)
+        false
+    }
+
     // TODO: If find_cell turns out to be a bottle-neck then could add a get_cell
     // function with methods like get_terrain, get_portables, and get_char.
     pub fn get_terrain(&self, loc: Point) -> Terrain {
@@ -273,8 +298,8 @@ mod tests {
 #               #
 #################";
         let mut game = with_level(level, 1);
-        game.execute(Command::Move(Point::new(0, 1)));
-        game.execute(Command::Move(Point::new(-1, 0)));
+        game.player_action(Command::Move(Point::new(0, 1)));
+        game.player_action(Command::Move(Point::new(-1, 0)));
 
         let args = SnapshotArgs::new();
         insta::assert_snapshot!(game.snapshot(args));

@@ -33,6 +33,11 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::io::{Error, Write};
 
+pub enum PlayersTurn {
+    Yes,
+    No,
+}
+
 pub struct Scheduler {
     entries: FnvHashMap<Oid, Time>,
     now: Time,
@@ -78,8 +83,8 @@ impl Scheduler {
         self.entries.remove(&oid);
     }
 
-    /// Iterates through all objects in the current round until one performs an action.
-    pub fn player_is_ready(game: &mut Game) -> bool {
+    /// Gives the next object a chance to act.
+    pub fn execute_action(game: &mut Game) -> PlayersTurn {
         // To ensure fairness all objects with the minimum action time are collected
         // together into a "round". Once they have all had a chance to move time advances
         // and a new round starts.
@@ -105,25 +110,25 @@ impl Scheduler {
                 // The player can move whenever he has a bit of time. This may once in a
                 // while matter but he will go into negative time units which will allow
                 // NPCs to do more.
-                return true;
+                return PlayersTurn::Yes;
             } else {
                 match ai::active_timer(game, entry.oid, entry.units) {
                     Acted::Acted(duration) => {
                         assert!(duration >= time::MIN_TIME);
                         assert!(duration <= entry.units);
                         game.scheduler.obj_acted(entry.oid, duration, &game.rng);
-                        return false;
+                        return PlayersTurn::No;
                     }
                     Acted::DidntAct => (),
                     Acted::Removed => {
                         // game.stream.push(Action::Object);
-                        return false; // there's been some sort of state change so the UI may need to update
+                        return PlayersTurn::No; // there's been some sort of state change so the UI may need to update
                     }
                 }
             }
         }
         advance_time(game);
-        false
+        PlayersTurn::No
     }
 
     pub fn player_acted(&mut self, taken: Time, rng: &RefCell<SmallRng>) {
