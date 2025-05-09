@@ -1,3 +1,4 @@
+use super::time;
 use super::{ActiveTime, Oid, Scheduler, Store};
 use crate::shared::*;
 use fnv::FnvHashMap;
@@ -80,12 +81,17 @@ impl crate::shared::Game for Game {
                 } else {
                     self.store.replace(PLAYER_ID, new_loc);
                 }
-                self.players_move = false; // do this only for commands that take time
+                if delta.x == 0 || delta.y == 0 {
+                    self.scheduler.player_acted(time::CARDINAL_MOVE, &self.rng);
+                } else {
+                    self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
+                }
+                self.players_move = false; // TODO do this only for commands that take time
             }
         }
     }
 
-    fn other_actions(&mut self, replay: bool) {
+    fn other_actions(&mut self, _replay: bool) {
         match Scheduler::execute_action(self) {
             super::PlayersTurn::Yes => self.players_move = true,
             super::PlayersTurn::No => {
@@ -255,6 +261,7 @@ fn build_level(game: &mut Game, level: &str) {
                     game.store.create(oid, Terrain::Dirt);
                     game.store.create(PLAYER_ID, loc);
                     game.store.create(PLAYER_ID, ActiveTime {});
+                    game.scheduler.add(PLAYER_ID, time::DIAGNOL_MOVE);
                 }
                 'A' => (), // TODO handle chars
                 'a' => (), // TODO handle items

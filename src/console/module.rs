@@ -28,14 +28,10 @@ impl UI for Console {
         while self.running {
             self.render()?;
 
-            let event = event::read()?;
-            match event {
-                event::Event::FocusGained => (),
-                event::Event::FocusLost => (),
-                event::Event::Key(e) => self.handle_key(e),
-                event::Event::Mouse(_) => (),
-                event::Event::Paste(_) => (),
-                event::Event::Resize(_, _) => (), // TODO make sure resizing terminal works ok
+            if self.game.players_turn() {
+                self.handle_event()?
+            } else {
+                self.game.other_actions(false);
             }
         }
         Ok(())
@@ -48,6 +44,19 @@ impl Console {
 
         let mut stdout = io::stdout();
         stdout.queue(cursor::Hide {})?;
+        Ok(())
+    }
+
+    fn handle_event(&mut self) -> io::Result<()> {
+        let event = event::read()?;
+        match event {
+            event::Event::FocusGained => (),
+            event::Event::FocusLost => (),
+            event::Event::Key(e) => self.handle_key(e),
+            event::Event::Mouse(_) => (),
+            event::Event::Paste(_) => (),
+            event::Event::Resize(_, _) => (), // TODO make sure resizing terminal works ok
+        }
         Ok(())
     }
 
