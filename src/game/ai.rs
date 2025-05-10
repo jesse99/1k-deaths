@@ -1,7 +1,9 @@
+use rand::Rng;
+
 // use super::actions::Scheduled;
 // use super::primitives::PathFind;
 use super::*;
-// use super::*;
+use crate::shared::{Point, Terrain};
 
 pub enum Acted {
     /// An object did something that took time.
@@ -22,38 +24,45 @@ pub enum Acted {
 /// to other objects time units (it's used with objects that want to schedule future
 /// actions further into the future than would normally be the case).
 pub fn active_timer(game: &mut Game, oid: Oid, units: Time) -> Acted {
-    //     if let Some(obj) = game.level.try_obj(oid) {
-    //         if let Some(terrain) = obj.terrain_value() {
-    //             if terrain == Terrain::DeepWater {
-    //                 deep_flood(game, oid, units)
-    //             } else if terrain == Terrain::ShallowWater {
-    //                 shallow_flood(game, oid, units)
-    //             } else {
-    //                 unreachable!("{oid} is a scheduled terrain but not shallow or deep water!");
-    //             }
+    let terrain: Terrain = game.store.find(oid).unwrap();
+    if terrain == Terrain::ShallowWater {
+        shallow_flood(game, oid, units)
+    } else {
+        Acted::DidntAct
+    }
+
+    // if let Some(obj) = game.level.try_obj(oid) {
+    //     if let Some(terrain) = obj.terrain_value() {
+    //         if terrain == Terrain::DeepWater {
+    //             deep_flood(game, oid, units)
+    //         } else if terrain == Terrain::ShallowWater {
+    //             shallow_flood(game, oid, units)
     //         } else {
-    //             // TODO: will have to special case alternate goals, eg
-    //             // whether to go grab a good item that is in los
-    //             // whether to move closer to group/pack leader
-    //             //
-    //             // Currently NPCs don't make noise which is probably OK.
-    //             match obj.behavior_value() {
-    //                 Some(Behavior::Attacking(defender, defender_loc)) => attack(game, oid, defender, defender_loc, units),
-    //                 Some(Behavior::MovingTo(loc)) => move_towards(game, oid, loc, units),
-    //                 Some(Behavior::Sleeping) => Acted::DidntAct, // NPCs transition out of this via handle_noise
-    //                 Some(Behavior::Wandering(end)) => wander(game, oid, end, units),
-    //                 None => unreachable!("{obj} is scheduled but has no ai handler"),
-    //             }
+    //             unreachable!("{oid} is a scheduled terrain but not shallow or deep water!");
     //         }
     //     } else {
-    //         Acted::Removed
+    //         // TODO: will have to special case alternate goals, eg
+    //         // whether to go grab a good item that is in los
+    //         // whether to move closer to group/pack leader
+    //         //
+    //         // Currently NPCs don't make noise which is probably OK.
+    //         match obj.behavior_value() {
+    //             Some(Behavior::Attacking(defender, defender_loc)) => attack(game, oid, defender, defender_loc, units),
+    //             Some(Behavior::MovingTo(loc)) => move_towards(game, oid, loc, units),
+    //             Some(Behavior::Sleeping) => Acted::DidntAct, // NPCs transition out of this via handle_noise
+    //             Some(Behavior::Wandering(end)) => wander(game, oid, end, units),
+    //             None => unreachable!("{obj} is scheduled but has no ai handler"),
+    //         }
     //     }
-    Acted::DidntAct
+    // } else {
+    //     Acted::Removed
+    // }
+    // Acted::DidntAct
 }
 
 /// Called for objects that need to do something as time passes, e.g. regen health or misc
 /// debuffs.
-pub fn passive_timer(game: &mut Game, oid: Oid, units: Time) {}
+pub fn passive_timer(_game: &mut Game, _oid: Oid, _units: Time) {}
 
 // fn attack(game: &mut Game, attacker: Oid, defender: Oid, old_defender_loc: Point, units: Time) -> Acted {
 //     let attacker_loc = game.loc(attacker).unwrap();
@@ -190,27 +199,40 @@ pub fn passive_timer(game: &mut Game, oid: Oid, units: Time) {}
 //     }
 // }
 
-// fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
-//     if units >= time::FLOOD {
-//         let flood = {
-//             let rng = &mut *game.rng();
-//             rng.gen_bool(0.05)
-//         };
-//         let loc = game.loc(oid).unwrap();
-//         if flood {
-//             trace!("{oid} at {loc} is shallow flooding");
-//             match game.do_flood_shallow(oid, loc) {
-//                 Scheduled::Yes => (),
-//                 Scheduled::No => return Acted::Removed,
-//             }
-//         } else {
-//             trace!("{oid} at {loc} skipped shallow flooding");
-//         }
-//         Acted::Acted(time::FLOOD)
-//     } else {
-//         Acted::DidntAct
-//     }
-// }
+fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
+    if units >= time::FLOOD {
+        let flood = game.rng().random_bool(0.05);
+        let loc: Point = game.store.find(oid).unwrap();
+        if flood {
+            trace!("{oid} at {loc} is shallow flooding");
+            do_flood_shallow(game, oid, loc)
+        } else {
+            trace!("{oid} at {loc} skipped shallow flooding");
+            Acted::DidntAct
+        }
+    } else {
+        Acted::DidntAct
+    }
+}
+
+// TODO move do functions into their own module
+fn do_flood_shallow(game: &mut Game, oid: Oid, loc: Point) -> Acted {
+    if let Some(new_loc) = game.find_neighbor(&loc, |candidate| {
+        let neigh_oid = game.cell_ids.get(&candidate).unwrap_or(&DEFAULT_CELL_ID);
+        let terrain: Terrain = game.store.find(*neigh_oid).unwrap();
+        terrain == Terrain::Dirt
+    }) {
+        debug!("flood shallow from {loc} to {new_loc}");
+        let neigh_oid = game.cell_ids.get(&new_loc).unwrap_or(&DEFAULT_CELL_ID);
+        game.store.replace(*neigh_oid, Terrain::ShallowWater);
+        game.scheduler.add(*neigh_oid, Time::zero());
+        Acted::Acted(time::FLOOD)
+    } else {
+        // No where left to flood.
+        game.scheduler.remove(oid);
+        Acted::Removed
+    }
+}
 
 // fn find_flee_loc(game: &Game, attacker_loc: Point, defender_loc: Point) -> Option<Point> {
 //     let mut loc = None;

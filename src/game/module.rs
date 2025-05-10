@@ -220,6 +220,21 @@ impl Game {
         self.rng.borrow_mut()
     }
 
+    pub fn find_neighbor<F>(&self, loc: &Point, predicate: F) -> Option<Point>
+    where
+        F: Fn(&Point) -> bool,
+    {
+        let mut deltas = vec![(-1, -1), (-1, 1), (-1, 0), (1, -1), (1, 1), (1, 0), (0, -1), (0, 1)];
+        deltas.shuffle(&mut *self.rng());
+        for delta in deltas {
+            let new_loc = Point::new(loc.x + delta.0, loc.y + delta.1);
+            if predicate(&new_loc) {
+                return Some(new_loc);
+            }
+        }
+        None
+    }
+
     fn can_move_to(&self, loc: Point) -> Option<String> {
         match self.get_terrain(loc) {
             Terrain::DeepWater => Some("The water is too deep.".to_owned()),
@@ -269,16 +284,20 @@ fn build_level(game: &mut Game, level: &str) {
                 ' ' => {
                     let oid = game.new_oid(loc);
                     game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, loc);
                     game.store.create(oid, Terrain::Dirt);
                 }
                 '~' => {
                     let oid = game.new_oid(loc);
                     game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, loc);
                     game.store.create(oid, Terrain::ShallowWater);
+                    game.scheduler.add(oid, time::Time::zero());
                 }
                 '_' => {
                     let oid = game.new_oid(loc);
                     game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, loc);
                     game.store.create(oid, Terrain::DeepWater);
                 }
                 _ => panic!("bad char: {}", ch),

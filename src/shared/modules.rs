@@ -57,7 +57,7 @@ pub enum Species {
     Human,
 }
 
-#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Terrain {
     DeepWater,
     Dirt,
@@ -94,8 +94,8 @@ impl SnapshotArgs {
 pub trait Game {
     fn player_loc(&self) -> Point;
 
-    /// If this returns true then the UI should call player_acted, otherwise the UI should
-    /// call advance_time.
+    /// If this returns true then the UI should call player_action, otherwise the UI should
+    /// call other_actions.
     fn players_turn(&self) -> bool;
 
     fn player_action(&mut self, command: Command);
