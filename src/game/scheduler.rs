@@ -77,7 +77,7 @@ impl Scheduler {
     }
 
     pub fn is_scheduled(&self, oid: Oid) -> bool {
-        self.entries.get(&oid).is_some()
+        self.entries.contains_key(&oid)
     }
 
     // pub fn remove(&mut self, oid: Oid) {
@@ -108,8 +108,7 @@ impl Scheduler {
             items.shuffle(&mut game.rng());
             game.scheduler.round = items;
         }
-        while !game.scheduler.round.is_empty() {
-            let entry = game.scheduler.round.pop().unwrap();
+        while let Some(entry) = game.scheduler.round.pop() {
             if entry.oid.value == 0 {
                 // The player can move whenever he has a bit of time. This may once in a
                 // while matter but he will go into negative time units which will allow
@@ -144,14 +143,14 @@ impl Scheduler {
         // of time that object has to do things. Time only advances after all the objects
         // have had a chance to move.
         let taken = taken.fuzz(rng);
-        let units = self.entries.get_mut(&&Oid::without_tag(0)).unwrap();
+        let units = self.entries.get_mut(&Oid::without_tag(0)).unwrap();
         *units -= taken;
         debug!("   player acted for {taken} and has {units}");
     }
 
-    /// This is used when an object causes another object to use up some of its time.
-    /// Examples of this include stunning a character or a stronger character shoving a
-    /// weaker one out of the way.
+    // /// This is used when an object causes another object to use up some of its time.
+    // /// Examples of this include stunning a character or a stronger character shoving a
+    // /// weaker one out of the way.
     // pub fn force_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
     //     assert!(taken >= time::MIN_TIME);
     //     let taken = taken.fuzz(rng);
@@ -168,14 +167,14 @@ impl Scheduler {
         let mut round = self.round.clone();
         round.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
 
-        text.push_str(&format!("current round:\n"));
+        text.push_str("current round:\n");
         for item in &round {
             text.push_str(&format!("   {} has {}\n", game.obj_to_str(item.oid), item.units));
         }
 
-        text.push_str(&format!("other entries:\n"));
+        text.push_str("other entries:\n");
         for (oid, time) in self.entries.iter() {
-            if round.iter().find(|e| e.oid == *oid).is_none() {
+            if round.iter().any(|e| e.oid == *oid) {
                 text.push_str(&format!("   {} has {time}\n", game.obj_to_str(*oid)));
             }
         }
