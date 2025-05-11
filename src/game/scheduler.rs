@@ -52,9 +52,9 @@ impl Scheduler {
         }
     }
 
-    pub fn now(&self) -> Time {
-        self.now
-    }
+    // pub fn now(&self) -> Time {
+    //     self.now
+    // }
 
     /// Player starts with a small amount of time units. NPCs start out with zero time
     /// units. That way the player will always have the first move. Other objects may
@@ -80,12 +80,12 @@ impl Scheduler {
         self.entries.get(&oid).is_some()
     }
 
-    pub fn remove(&mut self, oid: Oid) {
-        // Note that objects can remove themselves from scheduling if they have nothing
-        // left to do so this may be a no-op.
-        self.entries.remove(&oid);
-        debug!("removed {oid} from the scheduler");
-    }
+    // pub fn remove(&mut self, oid: Oid) {
+    //     // Note that objects can remove themselves from scheduling if they have nothing
+    //     // left to do so this may be a no-op.
+    //     self.entries.remove(&oid);
+    //     debug!("removed {oid} from the scheduler");
+    // }
 
     /// Gives the next object a chance to act.
     pub fn execute_action(game: &mut Game) -> PlayersTurn {
@@ -152,14 +152,14 @@ impl Scheduler {
     /// This is used when an object causes another object to use up some of its time.
     /// Examples of this include stunning a character or a stronger character shoving a
     /// weaker one out of the way.
-    pub fn force_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
-        assert!(taken >= time::MIN_TIME);
-        let taken = taken.fuzz(rng);
-        if let Some(units) = self.entries.get_mut(&oid) {
-            *units -= taken;
-            debug!("   {oid} forced acted for {taken} and has {units}");
-        }
-    }
+    // pub fn force_acted(&mut self, oid: Oid, taken: Time, rng: &RefCell<SmallRng>) {
+    //     assert!(taken >= time::MIN_TIME);
+    //     let taken = taken.fuzz(rng);
+    //     if let Some(units) = self.entries.get_mut(&oid) {
+    //         *units -= taken;
+    //         debug!("   {oid} forced acted for {taken} and has {units}");
+    //     }
+    // }
 
     pub fn dump(&self, game: &Game) -> String {
         let mut text = String::with_capacity(1024);

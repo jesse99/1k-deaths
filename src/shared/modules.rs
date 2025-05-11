@@ -44,16 +44,16 @@ pub enum Command {
     Move(Point),
 }
 
-#[derive(Copy, Clone)]
-pub enum Item {
-    Axe,
-    Sword,
-}
+// #[derive(Copy, Clone)]
+// pub enum Item {
+//     Axe,
+//     Sword,
+// }
 
 #[derive(Copy, Clone)]
 pub enum Species {
-    Ay,
-    Bhederin,
+    // Ay,
+    // Bhederin,
     Human,
 }
 
@@ -69,7 +69,7 @@ pub enum Terrain {
 
 pub struct Tile {
     pub terrain: Terrain,
-    pub items: Vec<Item>,
+    // pub items: Vec<Item>,
     pub character: Option<Species>,
     // equipped: Vec<Item>,    // TODO might also want something like aura
 }

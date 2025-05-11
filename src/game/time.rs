@@ -8,13 +8,13 @@ pub const CARDINAL_MOVE: Time = Time { t: 8 * SECS_TO_TIME };
 pub const DIAGNOL_MOVE: Time = Time {
     t: 11 * SECS_TO_TIME + 314 * MS_TO_TIME,
 };
-pub const DESTROY_EMP_SWORD: Time = Time { t: 24 * SECS_TO_TIME };
+// pub const DESTROY_EMP_SWORD: Time = Time { t: 24 * SECS_TO_TIME };
 pub const FLOOD: Time = Time { t: 32 * SECS_TO_TIME };
-pub const MOVE_THRU_SHALLOW_WATER: Time = Time { t: 2 * SECS_TO_TIME };
-pub const OPEN_DOOR: Time = Time { t: 10 * SECS_TO_TIME };
-pub const PICK_UP: Time = Time { t: 4 * SECS_TO_TIME };
-pub const SHOVE_DOORMAN: Time = Time { t: 16 * SECS_TO_TIME };
-pub const SPEAK_TO_SPECTATOR: Time = Time { t: 2 * SECS_TO_TIME };
+// pub const MOVE_THRU_SHALLOW_WATER: Time = Time { t: 2 * SECS_TO_TIME };
+// pub const OPEN_DOOR: Time = Time { t: 10 * SECS_TO_TIME };
+// pub const PICK_UP: Time = Time { t: 4 * SECS_TO_TIME };
+// pub const SHOVE_DOORMAN: Time = Time { t: 16 * SECS_TO_TIME };
+// pub const SPEAK_TO_SPECTATOR: Time = Time { t: 2 * SECS_TO_TIME };
 
 pub const MIN_TIME: Time = Time { t: 1 * SECS_TO_TIME };
 
@@ -31,9 +31,9 @@ impl Time {
         Time { t: 0 }
     }
 
-    pub fn max() -> Time {
-        Time { t: i64::MAX }
-    }
+    // pub fn max() -> Time {
+    //     Time { t: i64::MAX }
+    // }
 
     /// Used by the scheduler.
     pub fn fuzz(&self, rng: &RefCell<dyn RngCore>) -> Time {
@@ -42,16 +42,16 @@ impl Time {
         Time { t: taken }
     }
 
-    pub fn as_ms(&self) -> i64 {
-        self.t
-    }
+    // pub fn as_ms(&self) -> i64 {
+    //     self.t
+    // }
 }
 
 /// In general this only should be used for "extra" time. For the most part use the constants
 /// above (e.g. CARDINAL_MOVE).
-pub fn secs(s: i64) -> Time {
-    Time { t: s * SECS_TO_TIME }
-}
+// pub fn secs(s: i64) -> Time {
+//     Time { t: s * SECS_TO_TIME }
+// }
 
 // /// In general this only should be used for "extra" time. For the most part use the constants
 // /// above (e.g. CARDINAL_MOVE).

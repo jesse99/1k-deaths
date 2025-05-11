@@ -113,13 +113,13 @@ impl crate::shared::Game for Game {
         if loc == player_loc {
             Some(Tile {
                 terrain,
-                items: Vec::new(),
+                // items: Vec::new(),
                 character: Some(Species::Human),
             })
         } else {
             Some(Tile {
                 terrain,
-                items: Vec::new(),
+                // items: Vec::new(),
                 character: None,
             })
         }
@@ -128,7 +128,7 @@ impl crate::shared::Game for Game {
     fn default(&self) -> Tile {
         Tile {
             terrain: self.store.find(DEFAULT_CELL_ID).unwrap(),
-            items: Vec::new(),
+            // items: Vec::new(),
             character: None,
         }
     }

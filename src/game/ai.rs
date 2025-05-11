@@ -263,7 +263,7 @@ fn do_flood_deep(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
     }
 }
 
-fn do_flood_shallow(game: &mut Game, oid: Oid, loc: Point) -> Acted {
+fn do_flood_shallow(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
     if let Some(new_loc) = game.find_neighbor(&loc, |candidate| {
         let neigh_oid = game.cell_ids.get(&candidate).unwrap_or(&DEFAULT_CELL_ID);
         let terrain: Terrain = game.store.find(*neigh_oid).unwrap();
