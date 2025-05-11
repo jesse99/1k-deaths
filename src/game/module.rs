@@ -195,7 +195,7 @@ impl crate::shared::Game for Game {
             result.push_str("\nmessages:\n");
             snapshot_messages(&mut result, self, args.num_messages as usize);
         }
-        result.push_str("\n");
+        result.push('\n');
         result.push_str(&self.scheduler.dump(self));
         result
     }
@@ -212,10 +212,10 @@ impl Game {
     pub fn get_terrain(&self, loc: Point) -> Terrain {
         if let Some(&cell_oid) = self.cell_ids.get(&loc) {
             let terrain = self.store.find::<Terrain>(cell_oid);
-            terrain.expect(&format!("expected a terrain for {cell_oid}"))
+            terrain.unwrap_or_else(|| panic!("expected a terrain for {cell_oid}"))
         } else {
             let terrain = self.store.find::<Terrain>(DEFAULT_CELL_ID);
-            terrain.expect(&format!("expected a terrain for the default cell"))
+            terrain.expect("expected a terrain for the default cell")
         }
     }
 
@@ -326,7 +326,7 @@ fn build_level(game: &mut Game, level: &str) {
                     game.store.create(oid, Terrain::DeepWater);
                     game.scheduler.add(oid, -time::DEEP_FLOOD.fuzz(&game.rng));
                 }
-                _ => panic!("bad char: {}", ch),
+                _ => panic!("bad char: {ch}"),
             };
             loc = Point::new(loc.x + 1, loc.y);
         } else {

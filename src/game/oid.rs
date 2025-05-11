@@ -1,4 +1,4 @@
-use arraystring::{typenum::U16, ArrayString};
+use arraystring::{ArrayString, typenum::U16};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -20,7 +20,7 @@ impl Oid {
     pub fn new(tag: &str, value: u32) -> Oid {
         Oid {
             tag: Some(TagStr::from_str_truncate(tag)),
-            value: value,
+            value,
         }
     }
 
@@ -31,10 +31,7 @@ impl Oid {
 
     #[cfg(debug_assertions)]
     pub const fn without_tag(value: u32) -> Oid {
-        Oid {
-            tag: None,
-            value: value,
-        }
+        Oid { tag: None, value }
     }
 
     #[cfg(not(debug_assertions))]

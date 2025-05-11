@@ -61,7 +61,7 @@ fn init_logging(options: &Args) {
         .set_thread_level(LevelFilter::Off) // don't log thread IDs
         .build();
     // Unwrapping File::create is a little lame but it actually returns a decent error message.
-    let _ = WriteLogger::init(log_level, config, File::create(&options.log_path).unwrap()).unwrap();
+    WriteLogger::init(log_level, config, File::create(&options.log_path).unwrap()).unwrap();
 }
 
 fn main() -> io::Result<()> {

@@ -5,7 +5,7 @@ use crate::shared::{Point, Terrain};
 
 pub enum Acted {
     /// An object did something that took time.
-    Acted(Time),
+    For(Time),
 
     /// An object elected to do nothing (either it doesn't have enough time to do anything
     /// or it decided to wait to do something better when it has more time).
@@ -195,7 +195,7 @@ fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
 // TODO move do functions into their own module
 fn do_flood_deep(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
     if let Some(new_loc) = game.find_neighbor(&loc, |candidate| {
-        let neigh_oid = game.cell_ids.get(&candidate).unwrap_or(&DEFAULT_CELL_ID);
+        let neigh_oid = game.cell_ids.get(candidate).unwrap_or(&DEFAULT_CELL_ID);
         let terrain: Terrain = game.store.find(*neigh_oid).unwrap();
         terrain == Terrain::Dirt || terrain == Terrain::ShallowWater
     }) {
@@ -215,7 +215,7 @@ fn do_flood_deep(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
             }
             _ => panic!("expected dirt or shallow water"),
         };
-        Acted::Acted(time::DEEP_FLOOD)
+        Acted::For(time::DEEP_FLOOD)
     } else {
         // No where left to flood.
         debug!("{loc} no where left to deep flood");
@@ -225,7 +225,7 @@ fn do_flood_deep(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
 
 fn do_flood_shallow(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
     if let Some(new_loc) = game.find_neighbor(&loc, |candidate| {
-        let neigh_oid = game.cell_ids.get(&candidate).unwrap_or(&DEFAULT_CELL_ID);
+        let neigh_oid = game.cell_ids.get(candidate).unwrap_or(&DEFAULT_CELL_ID);
         let terrain: Terrain = game.store.find(*neigh_oid).unwrap();
         terrain == Terrain::Dirt
     }) {
@@ -233,7 +233,7 @@ fn do_flood_shallow(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
         let neigh_oid = game.cell_ids.get(&new_loc).unwrap_or(&DEFAULT_CELL_ID);
         game.store.replace(*neigh_oid, Terrain::ShallowWater);
         game.scheduler.add(*neigh_oid, Time::zero());
-        Acted::Acted(time::SHALLOW_FLOOD)
+        Acted::For(time::SHALLOW_FLOOD)
     } else {
         // No where left to flood.
         Acted::Removed

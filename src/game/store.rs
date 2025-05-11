@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::hash::Hash;
-use std::ops::Range;
+// use std::ops::Range;
 
 type Values = FnvHashMap<u16, Vec<u8>>; // u16 is the TypeId for a particular value type
 type ListValue = FnvHashMap<u16, Vec<Vec<u8>>>; // like `Values` except that there is a list of values
@@ -67,7 +67,7 @@ where
         let id = value.id();
 
         let bytes: Vec<u8> = postcard::to_allocvec(&value).unwrap();
-        let values = self.primitives.entry(key).or_insert_with(|| Values::default());
+        let values = self.primitives.entry(key).or_default();
         let old = values.insert(id, bytes);
         debug!("replace {key} with {value}");
         assert!(self.good_id(value));
@@ -93,16 +93,13 @@ where
     where
         VALUE: DeserializeOwned + TypeId + Display + Default,
     {
-        self.primitives
-            .get(&key)
-            .map(|values| {
-                let id = VALUE::default().id();
-                values.get(&id).map(|bytes| {
-                    let value: VALUE = from_bytes(bytes).unwrap();
-                    value
-                })
+        self.primitives.get(&key).and_then(|values| {
+            let id = VALUE::default().id();
+            values.get(&id).map(|bytes| {
+                let value: VALUE = from_bytes(bytes).unwrap();
+                value
             })
-            .flatten()
+        })
     }
 }
 
@@ -111,105 +108,105 @@ impl<KEY> Store<KEY>
 where
     KEY: Hash + Eq + Display + Copy,
 {
-    /// Used for lists of VALUEs.
-    #[must_use]
-    pub fn len<VALUE>(&self, key: KEY) -> usize
-    where
-        VALUE: Serialize + TypeId + Display + Default,
-    {
-        let id = VALUE::default().id();
-        self.lists
-            .get(&key)
-            .map_or(0, |lists| lists.get(&id).map_or(0, |list| list.len()))
-    }
+    // /// Used for lists of VALUEs.
+    // #[must_use]
+    // pub fn len<VALUE>(&self, key: KEY) -> usize
+    // where
+    //     VALUE: Serialize + TypeId + Display + Default,
+    // {
+    //     let id = VALUE::default().id();
+    //     self.lists
+    //         .get(&key)
+    //         .map_or(0, |lists| lists.get(&id).map_or(0, |list| list.len()))
+    // }
 
-    /// Used for lists of VALUEs.
-    #[must_use]
-    pub fn get_all<VALUE>(&self, key: KEY) -> Vec<VALUE>
-    where
-        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
-    {
-        let id = VALUE::default().id();
-        self.lists.get(&key).map_or(vec![], |lists| {
-            lists.get(&id).map_or(vec![], |list| {
-                list.iter().map(|bytes| from_bytes(bytes).unwrap()).collect()
-            })
-        })
-    }
+    // /// Used for lists of VALUEs.
+    // #[must_use]
+    // pub fn get_all<VALUE>(&self, key: KEY) -> Vec<VALUE>
+    // where
+    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    // {
+    //     let id = VALUE::default().id();
+    //     self.lists.get(&key).map_or(vec![], |lists| {
+    //         lists.get(&id).map_or(vec![], |list| {
+    //             list.iter().map(|bytes| from_bytes(bytes).unwrap()).collect()
+    //         })
+    //     })
+    // }
 
-    /// Used for lists of VALUEs.
-    #[must_use]
-    pub fn get_last<VALUE>(&self, key: KEY) -> Option<VALUE>
-    where
-        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
-    {
-        let id = VALUE::default().id();
-        self.lists.get(&key).map_or(None, |lists| {
-            lists
-                .get(&id)
-                .map_or(None, |list| list.last().map(|bytes| from_bytes(bytes).unwrap()))
-        })
-    }
+    // /// Used for lists of VALUEs.
+    // #[must_use]
+    // pub fn get_last<VALUE>(&self, key: KEY) -> Option<VALUE>
+    // where
+    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    // {
+    //     let id = VALUE::default().id();
+    //     self.lists.get(&key).and_then(|lists| {
+    //         lists
+    //             .get(&id)
+    //             .and_then(|list| list.last().map(|bytes| from_bytes(bytes).unwrap()))
+    //     })
+    // }
 
-    /// Used for lists of VALUEs.
-    #[must_use]
-    pub fn get_range<VALUE>(&self, key: KEY, range: Range<usize>) -> Vec<VALUE>
-    where
-        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
-    {
-        let id = VALUE::default().id();
-        self.lists.get(&key).map_or(vec![], |lists| {
-            lists.get(&id).map_or(vec![], |list| {
-                list[range].iter().map(|bytes| from_bytes(bytes).unwrap()).collect()
-            })
-        })
-    }
+    // /// Used for lists of VALUEs.
+    // #[must_use]
+    // pub fn get_range<VALUE>(&self, key: KEY, range: Range<usize>) -> Vec<VALUE>
+    // where
+    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    // {
+    //     let id = VALUE::default().id();
+    //     self.lists.get(&key).map_or(vec![], |lists| {
+    //         lists.get(&id).map_or(vec![], |list| {
+    //             list[range].iter().map(|bytes| from_bytes(bytes).unwrap()).collect()
+    //         })
+    //     })
+    // }
 
-    /// Used for lists of VALUEs.
-    pub fn append<VALUE>(&mut self, key: KEY, value: VALUE)
-    where
-        VALUE: Serialize + TypeId + Display,
-    {
-        let lists = self.lists.entry(key).or_insert_with(|| ListValue::default());
+    // /// Used for lists of VALUEs.
+    // pub fn append<VALUE>(&mut self, key: KEY, value: VALUE)
+    // where
+    //     VALUE: Serialize + TypeId + Display,
+    // {
+    //     let lists = self.lists.entry(key).or_default();
 
-        let id = value.id();
-        let list = lists.entry(id).or_insert_with(|| vec![]);
+    //     let id = value.id();
+    //     let list = lists.entry(id).or_default();
 
-        let bytes: Vec<u8> = postcard::to_allocvec(&value).unwrap();
-        list.push(bytes);
-        assert!(self.good_id(value));
-    }
+    //     let bytes: Vec<u8> = postcard::to_allocvec(&value).unwrap();
+    //     list.push(bytes);
+    //     assert!(self.good_id(value));
+    // }
 
-    /// Used for lists of VALUEs. Removes a value using an equality test.
-    pub fn remove_value<VALUE>(&mut self, key: KEY, value: VALUE)
-    where
-        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default + PartialEq,
-    {
-        let id = VALUE::default().id();
-        if let Some(lists) = self.lists.get_mut(&key) {
-            if let Some(list) = lists.get_mut(&id) {
-                if let Some(index) = list.iter().position(|bytes| {
-                    let x: VALUE = from_bytes(bytes).unwrap();
-                    x == value
-                }) {
-                    list.remove(index);
-                }
-            }
-        }
-    }
+    // /// Used for lists of VALUEs. Removes a value using an equality test.
+    // pub fn remove_value<VALUE>(&mut self, key: KEY, value: VALUE)
+    // where
+    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default + PartialEq,
+    // {
+    //     let id = VALUE::default().id();
+    //     if let Some(lists) = self.lists.get_mut(&key) {
+    //         if let Some(list) = lists.get_mut(&id) {
+    //             if let Some(index) = list.iter().position(|bytes| {
+    //                 let x: VALUE = from_bytes(bytes).unwrap();
+    //                 x == value
+    //             }) {
+    //                 list.remove(index);
+    //             }
+    //         }
+    //     }
+    // }
 
-    /// Used for lists of VALUEs.
-    pub fn remove_range<VALUE>(&mut self, key: KEY, range: Range<usize>)
-    where
-        VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
-    {
-        let id = VALUE::default().id();
-        if let Some(lists) = self.lists.get_mut(&key) {
-            if let Some(list) = lists.get_mut(&id) {
-                list.drain(range);
-            }
-        }
-    }
+    // /// Used for lists of VALUEs.
+    // pub fn remove_range<VALUE>(&mut self, key: KEY, range: Range<usize>)
+    // where
+    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    // {
+    //     let id = VALUE::default().id();
+    //     if let Some(lists) = self.lists.get_mut(&key) {
+    //         if let Some(list) = lists.get_mut(&id) {
+    //             list.drain(range);
+    //         }
+    //     }
+    // }
 }
 
 // Debug support
@@ -225,7 +222,7 @@ where
         let id = value.id();
         self.ids
             .insert(std::any::type_name::<VALUE>().to_string(), id)
-            .map_or(true, |old_id| old_id == id)
+            .is_none_or(|old_id| old_id == id)
     }
 }
 
@@ -262,13 +259,13 @@ mod tests {
 
     impl Display for Key {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "{:?}", self)
+            write!(f, "{self:?}")
         }
     }
 
     impl Display for Address {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "{:?}", self)
+            write!(f, "{self:?}")
         }
     }
 
@@ -291,33 +288,33 @@ mod tests {
         assert!(value.is_none());
     }
 
-    #[test]
-    fn test_list() {
-        let mut store = Store::new();
+    // #[test]
+    // fn test_list() {
+    //     let mut store = Store::new();
 
-        let len = store.len::<Address>(Key::History);
-        assert_eq!(len, 0);
+    //     let len = store.len::<Address>(Key::History);
+    //     assert_eq!(len, 0);
 
-        store.append(Key::History, Address::new("park ave"));
-        store.append(Key::History, Address::new("main street"));
-        store.append(Key::History, Address::new("downtown"));
+    //     store.append(Key::History, Address::new("park ave"));
+    //     store.append(Key::History, Address::new("main street"));
+    //     store.append(Key::History, Address::new("downtown"));
 
-        let len = store.len::<Address>(Key::History);
-        assert_eq!(len, 3);
+    //     let len = store.len::<Address>(Key::History);
+    //     assert_eq!(len, 3);
 
-        let slice = store.get_range::<Address>(Key::History, 0..1);
-        assert_eq!(slice.len(), 1);
-        assert_eq!(slice[0].street, "park ave");
+    //     let slice = store.get_range::<Address>(Key::History, 0..1);
+    //     assert_eq!(slice.len(), 1);
+    //     assert_eq!(slice[0].street, "park ave");
 
-        let slice = store.get_all::<Address>(Key::History);
-        assert_eq!(slice.len(), 3);
-        assert_eq!(slice[0].street, "park ave");
-        assert_eq!(slice[1].street, "main street");
-        assert_eq!(slice[2].street, "downtown");
+    //     let slice = store.get_all::<Address>(Key::History);
+    //     assert_eq!(slice.len(), 3);
+    //     assert_eq!(slice[0].street, "park ave");
+    //     assert_eq!(slice[1].street, "main street");
+    //     assert_eq!(slice[2].street, "downtown");
 
-        store.remove_range::<Address>(Key::History, 0..2);
-        let slice = store.get_all::<Address>(Key::History);
-        assert_eq!(slice.len(), 1);
-        assert_eq!(slice[0].street, "downtown");
-    }
+    //     store.remove_range::<Address>(Key::History, 0..2);
+    //     let slice = store.get_all::<Address>(Key::History);
+    //     assert_eq!(slice.len(), 1);
+    //     assert_eq!(slice[0].street, "downtown");
+    // }
 }

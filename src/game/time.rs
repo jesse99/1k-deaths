@@ -148,7 +148,7 @@ fn rand_normal64(x: i64, percent: i32, rng: &RefCell<dyn RngCore>) -> i64 {
     // Could use a generic for this but the type bounds get pretty gnarly.
     let rng = &mut *rng.borrow_mut();
     let scaling: f64 = rng.sample(StandardNormal); // ~95% are in -2..2
-    let scaling = if scaling >= -2.0 && scaling <= 2.0 {
+    let scaling = if (-2.0..=2.0).contains(&scaling) {
         scaling / 2.0 // all are in -1..1
     } else {
         0.0 // the few outliers are mapped to the mode

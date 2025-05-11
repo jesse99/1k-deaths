@@ -116,7 +116,7 @@ impl Scheduler {
                 return PlayersTurn::Yes;
             } else {
                 match ai::active_timer(game, entry.oid, entry.units) {
-                    Acted::Acted(duration) => {
+                    Acted::For(duration) => {
                         assert!(duration >= time::MIN_TIME);
                         assert!(duration <= entry.units);
                         game.scheduler.obj_acted(entry.oid, duration, &game.rng);
