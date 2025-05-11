@@ -31,7 +31,6 @@ use rand::prelude::SliceRandom;
 use rand::rngs::SmallRng;
 use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::io::{Error, Write};
 
 pub enum PlayersTurn {
     Yes,
@@ -72,15 +71,20 @@ impl Scheduler {
                 "NPCs should start out with zero or negative time units"
             );
         }
-        // info!("added {oid} to the scheduler");
+        debug!("added {oid} to the scheduler");
         let old = self.entries.insert(oid, initial);
         debug_assert!(old.is_none(), "{oid} is already scheduled!");
+    }
+
+    pub fn is_scheduled(&self, oid: Oid) -> bool {
+        self.entries.get(&oid).is_some()
     }
 
     pub fn remove(&mut self, oid: Oid) {
         // Note that objects can remove themselves from scheduling if they have nothing
         // left to do so this may be a no-op.
         self.entries.remove(&oid);
+        debug!("removed {oid} from the scheduler");
     }
 
     /// Gives the next object a chance to act.
@@ -122,6 +126,7 @@ impl Scheduler {
                     Acted::DidntAct => (),
                     Acted::Removed => {
                         // game.stream.push(Action::Object);
+                        game.scheduler.entries.remove(&entry.oid);
                         return PlayersTurn::No; // there's been some sort of state change so the UI may need to update
                     }
                 }
@@ -141,7 +146,7 @@ impl Scheduler {
         let taken = taken.fuzz(rng);
         let units = self.entries.get_mut(&&Oid::without_tag(0)).unwrap();
         *units -= taken;
-        trace!("   player acted for {taken} and has {units}");
+        debug!("   player acted for {taken} and has {units}");
     }
 
     /// This is used when an object causes another object to use up some of its time.
@@ -152,23 +157,29 @@ impl Scheduler {
         let taken = taken.fuzz(rng);
         if let Some(units) = self.entries.get_mut(&oid) {
             *units -= taken;
-            trace!("   {oid} forced acted for {taken} and has {units}");
+            debug!("   {oid} forced acted for {taken} and has {units}");
         }
     }
 
-    pub fn dump<W: Write>(&self, writer: &mut W, _game: &Game) -> Result<(), Error> {
-        write!(writer, "scheduler is at {}\n", self.now)?;
+    pub fn dump(&self, game: &Game) -> String {
+        let mut text = String::with_capacity(1024);
+        text.push_str(&format!("scheduler is at {}\n", self.now));
 
-        let mut items: Vec<Entry> = self.entries.iter().map(|(&oid, &units)| Entry { oid, units }).collect();
-        items.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
+        let mut round = self.round.clone();
+        round.sort_by(|a, b| a.units.partial_cmp(&b.units).unwrap());
 
-        // TODO: dump everything in the Store associated with the oid? or summary value?
-        // write!(writer, "   oid  units dname\n")?;
-        // for entry in items.iter().rev() {
-        //     let obj = game.level.obj(entry.oid);
-        //     write!(writer, "   {} {} {}\n", entry.oid, entry.units, obj.dname())?;
-        // }
-        Ok(())
+        text.push_str(&format!("current round:\n"));
+        for item in &round {
+            text.push_str(&format!("   {} has {}\n", game.obj_to_str(item.oid), item.units));
+        }
+
+        text.push_str(&format!("other entries:\n"));
+        for (oid, time) in self.entries.iter() {
+            if round.iter().find(|e| e.oid == *oid).is_none() {
+                text.push_str(&format!("   {} has {time}\n", game.obj_to_str(*oid)));
+            }
+        }
+        text
     }
 }
 
@@ -181,10 +192,11 @@ impl Scheduler {
         let taken = taken.fuzz(rng);
         let units = self.entries.get_mut(&oid).unwrap();
         *units -= taken;
-        trace!("   {oid} acted for {taken} and has {units}");
+        debug!("   {oid} acted for {taken} and has {units}");
     }
 }
 
+// Note that this is called only when the current round is empty.
 fn advance_time(game: &mut Game) {
     game.scheduler.now += time::DIAGNOL_MOVE;
     for units in game.scheduler.entries.values_mut() {
@@ -208,7 +220,7 @@ fn advance_time(game: &mut Game) {
 struct Entry {
     oid: Oid,
     /// Amount of time this object currently has to perform an action.
-    units: Time,
+    units: Time, // TODO bad name
 }
 
 impl Ord for Entry {

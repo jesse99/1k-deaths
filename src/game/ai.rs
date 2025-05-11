@@ -24,11 +24,10 @@ pub enum Acted {
 /// to other objects time units (it's used with objects that want to schedule future
 /// actions further into the future than would normally be the case).
 pub fn active_timer(game: &mut Game, oid: Oid, units: Time) -> Acted {
-    let terrain: Terrain = game.store.find(oid).unwrap();
-    if terrain == Terrain::ShallowWater {
-        shallow_flood(game, oid, units)
-    } else {
-        Acted::DidntAct
+    match game.store.find(oid).unwrap() {
+        Terrain::DeepWater => deep_flood(game, oid, units),
+        Terrain::ShallowWater => shallow_flood(game, oid, units),
+        _ => Acted::DidntAct,
     }
 
     // if let Some(obj) = game.level.try_obj(oid) {
@@ -199,8 +198,26 @@ pub fn passive_timer(_game: &mut Game, _oid: Oid, _units: Time) {}
 //     }
 // }
 
+fn deep_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
+    if units >= time::FLOOD {
+        trace!("attempt deep flood with {oid}");
+        let flood = game.rng().random_bool(0.03);
+        let loc: Point = game.store.find(oid).unwrap();
+        if flood {
+            trace!("{oid} at {loc} is deep flooding");
+            do_flood_deep(game, oid, loc)
+        } else {
+            trace!("{oid} at {loc} skipped deep flooding");
+            Acted::DidntAct
+        }
+    } else {
+        Acted::DidntAct
+    }
+}
+
 fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
     if units >= time::FLOOD {
+        trace!("attempt shallow flood with {oid}");
         let flood = game.rng().random_bool(0.05);
         let loc: Point = game.store.find(oid).unwrap();
         if flood {
@@ -216,6 +233,36 @@ fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
 }
 
 // TODO move do functions into their own module
+fn do_flood_deep(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
+    if let Some(new_loc) = game.find_neighbor(&loc, |candidate| {
+        let neigh_oid = game.cell_ids.get(&candidate).unwrap_or(&DEFAULT_CELL_ID);
+        let terrain: Terrain = game.store.find(*neigh_oid).unwrap();
+        terrain == Terrain::Dirt || terrain == Terrain::ShallowWater
+    }) {
+        debug!("flood deep from {loc} to {new_loc}");
+        let neigh_oid = game.cell_ids.get(&new_loc).unwrap();
+        match game.store.find(*neigh_oid).unwrap() {
+            Terrain::Dirt => {
+                game.store.replace(*neigh_oid, Terrain::ShallowWater);
+                game.scheduler.add(*neigh_oid, Time::zero());
+            }
+            Terrain::ShallowWater => {
+                let _ = game.store.replace(*neigh_oid, Terrain::DeepWater);
+                if !game.scheduler.is_scheduled(*neigh_oid) {
+                    // shallow water can become de-scheduled
+                    game.scheduler.add(*neigh_oid, Time::zero());
+                }
+            }
+            _ => panic!("expected dirt or shallow water"),
+        };
+        Acted::Acted(time::FLOOD)
+    } else {
+        // No where left to flood.
+        debug!("{loc} no where left to deep flood");
+        Acted::Removed
+    }
+}
+
 fn do_flood_shallow(game: &mut Game, oid: Oid, loc: Point) -> Acted {
     if let Some(new_loc) = game.find_neighbor(&loc, |candidate| {
         let neigh_oid = game.cell_ids.get(&candidate).unwrap_or(&DEFAULT_CELL_ID);
@@ -229,7 +276,6 @@ fn do_flood_shallow(game: &mut Game, oid: Oid, loc: Point) -> Acted {
         Acted::Acted(time::FLOOD)
     } else {
         // No where left to flood.
-        game.scheduler.remove(oid);
         Acted::Removed
     }
 }

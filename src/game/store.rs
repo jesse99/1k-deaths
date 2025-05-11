@@ -13,7 +13,7 @@ use std::hash::Hash;
 use std::ops::Range;
 
 type Values = FnvHashMap<u16, Vec<u8>>; // u16 is the TypeId for a particular value type
-type ListValue = FnvHashMap<u16, Vec<Vec<u8>>>; // like Values except that there is a list of values
+type ListValue = FnvHashMap<u16, Vec<Vec<u8>>>; // like `Values` except that there is a list of values
 
 /// Records all the game state.
 #[derive(Serialize, Deserialize)]
@@ -54,6 +54,7 @@ where
     where
         VALUE: Serialize + TypeId + Display,
     {
+        debug!("creating {key} -> {value}");
         let had_old = self.replace(key, value);
         assert!(!had_old);
     }
@@ -68,6 +69,7 @@ where
         let bytes: Vec<u8> = postcard::to_allocvec(&value).unwrap();
         let values = self.primitives.entry(key).or_insert_with(|| Values::default());
         let old = values.insert(id, bytes);
+        debug!("replace {key} with {value}");
         assert!(self.good_id(value));
         old.is_some()
     }
@@ -80,7 +82,9 @@ where
     {
         if let Some(values) = self.primitives.get_mut(&key) {
             let id = VALUE::default().id();
-            values.remove(&id);
+            if values.remove(&id).is_some() {
+                debug!("remove {key}");
+            }
         }
     }
 

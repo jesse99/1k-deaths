@@ -15,7 +15,7 @@ pub static LAST_ID: u32 = 1;
 
 pub struct Game {
     pub messages: VecDeque<Message>,
-    pub cell_ids: FnvHashMap<Point, Oid>,
+    pub cell_ids: FnvHashMap<Point, Oid>, // TODO rename this terrain_ids?
     pub store: Store<Oid>,
     pub scheduler: Scheduler,
     pub rng: RefCell<SmallRng>,
@@ -186,13 +186,17 @@ impl crate::shared::Game for Game {
             result.push('\n');
         }
 
-        let mut result = String::with_capacity(1024);
+        let mut result = String::with_capacity(2 * 1024);
         if args.radius > 0 {
+            result.push_str("map:\n");
             snapshot_map(&mut result, self, args.radius);
         }
         if args.num_messages > 0 {
+            result.push_str("\nmessages:\n");
             snapshot_messages(&mut result, self, args.num_messages as usize);
         }
+        result.push_str("\n");
+        result.push_str(&self.scheduler.dump(self));
         result
     }
 }
@@ -252,6 +256,25 @@ impl Game {
         }
     }
 
+    pub fn obj_to_str(&self, oid: Oid) -> String {
+        let mut text = String::new();
+        if let Some(terrain) = self.store.find(oid) {
+            match terrain {
+                Terrain::DeepWater => text += "deep water",
+                Terrain::Dirt => text += "dirt",
+                Terrain::RockWall => text += "rock wall",
+                Terrain::ShallowWater => text += "shallow water",
+            }
+        }
+        if oid == PLAYER_ID {
+            text += "player";
+        }
+        if let Some(loc) = self.store.find::<Point>(oid) {
+            text += &format!(" at {loc}");
+        }
+        format!("{text} #{}", oid.value)
+    }
+
     fn new_oid<T>(&mut self, obj: T) -> Oid
     where
         T: Display,
@@ -273,7 +296,9 @@ fn build_level(game: &mut Game, level: &str) {
                 '@' => {
                     let oid = game.new_oid(loc);
                     game.cell_ids.insert(loc, oid);
+                    game.store.create(oid, loc);
                     game.store.create(oid, Terrain::Dirt);
+
                     game.store.create(PLAYER_ID, loc);
                     game.store.create(PLAYER_ID, ActiveTime {});
                     game.scheduler.add(PLAYER_ID, time::DIAGNOL_MOVE);
@@ -299,6 +324,7 @@ fn build_level(game: &mut Game, level: &str) {
                     game.cell_ids.insert(loc, oid);
                     game.store.create(oid, loc);
                     game.store.create(oid, Terrain::DeepWater);
+                    game.scheduler.add(oid, time::Time::zero());
                 }
                 _ => panic!("bad char: {}", ch),
             };
