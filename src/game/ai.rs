@@ -1,5 +1,3 @@
-use rand::Rng;
-
 // use super::actions::Scheduled;
 // use super::primitives::PathFind;
 use super::*;
@@ -119,29 +117,6 @@ pub fn passive_timer(_game: &mut Game, _oid: Oid, _units: Time) {}
 //     time::secs(t)
 // }
 
-// fn deep_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
-//     if units >= time::FLOOD {
-//         let flood = {
-//             let rng = &mut *game.rng();
-//             rng.gen_bool(0.05)
-//         };
-//         let loc = game.loc(oid).unwrap();
-//         if flood {
-//             trace!("{oid} at {loc} is deep flooding");
-
-//             match game.do_flood_deep(oid, loc) {
-//                 Scheduled::Yes => (),
-//                 Scheduled::No => return Acted::Removed,
-//             }
-//         } else {
-//             trace!("{oid} at {loc} skipped deep flooding");
-//         }
-//         Acted::Acted(time::FLOOD)
-//     } else {
-//         Acted::DidntAct
-//     }
-// }
-
 // /// Returns the next location from start to target using the lowest Time path.
 // fn find_next_loc_to(game: &Game, ch: &Object, start: Point, target: Point) -> Option<Point> {
 //     let callback = |loc: Point, neighbors: &mut Vec<(Point, Time)>| successors(game, ch, loc, target, neighbors);
@@ -198,35 +173,20 @@ pub fn passive_timer(_game: &mut Game, _oid: Oid, _units: Time) {}
 //     }
 // }
 
+// TODO not all water should flood?
 fn deep_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
-    if units >= time::FLOOD {
-        trace!("attempt deep flood with {oid}");
-        let flood = game.rng().random_bool(0.03);
+    if units >= time::DEEP_FLOOD {
         let loc: Point = game.store.find(oid).unwrap();
-        if flood {
-            trace!("{oid} at {loc} is deep flooding");
-            do_flood_deep(game, oid, loc)
-        } else {
-            trace!("{oid} at {loc} skipped deep flooding");
-            Acted::DidntAct
-        }
+        do_flood_deep(game, oid, loc)
     } else {
         Acted::DidntAct
     }
 }
 
 fn shallow_flood(game: &mut Game, oid: Oid, units: Time) -> Acted {
-    if units >= time::FLOOD {
-        trace!("attempt shallow flood with {oid}");
-        let flood = game.rng().random_bool(0.05);
+    if units >= time::SHALLOW_FLOOD {
         let loc: Point = game.store.find(oid).unwrap();
-        if flood {
-            trace!("{oid} at {loc} is shallow flooding");
-            do_flood_shallow(game, oid, loc)
-        } else {
-            trace!("{oid} at {loc} skipped shallow flooding");
-            Acted::DidntAct
-        }
+        do_flood_shallow(game, oid, loc)
     } else {
         Acted::DidntAct
     }
@@ -255,7 +215,7 @@ fn do_flood_deep(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
             }
             _ => panic!("expected dirt or shallow water"),
         };
-        Acted::Acted(time::FLOOD)
+        Acted::Acted(time::DEEP_FLOOD)
     } else {
         // No where left to flood.
         debug!("{loc} no where left to deep flood");
@@ -273,7 +233,7 @@ fn do_flood_shallow(game: &mut Game, _oid: Oid, loc: Point) -> Acted {
         let neigh_oid = game.cell_ids.get(&new_loc).unwrap_or(&DEFAULT_CELL_ID);
         game.store.replace(*neigh_oid, Terrain::ShallowWater);
         game.scheduler.add(*neigh_oid, Time::zero());
-        Acted::Acted(time::FLOOD)
+        Acted::Acted(time::SHALLOW_FLOOD)
     } else {
         // No where left to flood.
         Acted::Removed

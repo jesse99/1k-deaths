@@ -2,21 +2,26 @@ use rand::prelude::*;
 use rand_distr::StandardNormal;
 use std::cell::RefCell;
 use std::fmt::{self, Formatter};
-use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
 
 pub const CARDINAL_MOVE: Time = Time { t: 8 * SECS_TO_TIME };
 pub const DIAGNOL_MOVE: Time = Time {
     t: 11 * SECS_TO_TIME + 314 * MS_TO_TIME,
 };
 // pub const DESTROY_EMP_SWORD: Time = Time { t: 24 * SECS_TO_TIME };
-pub const FLOOD: Time = Time { t: 32 * SECS_TO_TIME };
+pub const SHALLOW_FLOOD: Time = Time {
+    t: 20 * CARDINAL_MOVE.t,
+};
+pub const DEEP_FLOOD: Time = Time {
+    t: 30 * CARDINAL_MOVE.t,
+};
 // pub const MOVE_THRU_SHALLOW_WATER: Time = Time { t: 2 * SECS_TO_TIME };
 // pub const OPEN_DOOR: Time = Time { t: 10 * SECS_TO_TIME };
 // pub const PICK_UP: Time = Time { t: 4 * SECS_TO_TIME };
 // pub const SHOVE_DOORMAN: Time = Time { t: 16 * SECS_TO_TIME };
 // pub const SPEAK_TO_SPECTATOR: Time = Time { t: 2 * SECS_TO_TIME };
 
-pub const MIN_TIME: Time = Time { t: 1 * SECS_TO_TIME };
+pub const MIN_TIME: Time = Time { t: SECS_TO_TIME };
 
 #[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Time {
@@ -47,8 +52,8 @@ impl Time {
     // }
 }
 
-/// In general this only should be used for "extra" time. For the most part use the constants
-/// above (e.g. CARDINAL_MOVE).
+// /// In general this only should be used for "extra" time. For the most part use the constants
+// /// above (e.g. CARDINAL_MOVE).
 // pub fn secs(s: i64) -> Time {
 //     Time { t: s * SECS_TO_TIME }
 // }
@@ -123,6 +128,14 @@ impl Mul<i64> for Time {
 
     fn mul(self, rhs: i64) -> Self::Output {
         Time { t: self.t * rhs }
+    }
+}
+
+impl Neg for Time {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Time { t: -self.t }
     }
 }
 

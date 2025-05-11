@@ -317,14 +317,14 @@ fn build_level(game: &mut Game, level: &str) {
                     game.cell_ids.insert(loc, oid);
                     game.store.create(oid, loc);
                     game.store.create(oid, Terrain::ShallowWater);
-                    game.scheduler.add(oid, time::Time::zero());
+                    game.scheduler.add(oid, -time::SHALLOW_FLOOD.fuzz(&game.rng));
                 }
                 '_' => {
                     let oid = game.new_oid(loc);
                     game.cell_ids.insert(loc, oid);
                     game.store.create(oid, loc);
                     game.store.create(oid, Terrain::DeepWater);
-                    game.scheduler.add(oid, time::Time::zero());
+                    game.scheduler.add(oid, -time::DEEP_FLOOD.fuzz(&game.rng));
                 }
                 _ => panic!("bad char: {}", ch),
             };
