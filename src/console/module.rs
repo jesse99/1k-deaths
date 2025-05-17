@@ -168,9 +168,12 @@ impl Console {
         let args = SnapshotArgs::new();
         let text = self.game.snapshot(args);
 
-        let mut file = OpenOptions::new().append(true).create(true).open("state.txt")?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open("state.txt")?;
         file.write_all(text.as_bytes())?;
-        file.write_all("-".repeat(80).as_bytes())?;
         file.write_all("\n".as_bytes())?;
         Ok(())
     }
