@@ -10,10 +10,10 @@ pub const DIAGNOL_MOVE: Time = Time {
 };
 // pub const DESTROY_EMP_SWORD: Time = Time { t: 24 * SECS_TO_TIME };
 pub const SHALLOW_FLOOD: Time = Time {
-    t: 20 * CARDINAL_MOVE.t,
+    t: 50 * CARDINAL_MOVE.t,
 };
 pub const DEEP_FLOOD: Time = Time {
-    t: 30 * CARDINAL_MOVE.t,
+    t: 70 * CARDINAL_MOVE.t,
 };
 // pub const MOVE_THRU_SHALLOW_WATER: Time = Time { t: 2 * SECS_TO_TIME };
 // pub const OPEN_DOOR: Time = Time { t: 10 * SECS_TO_TIME };
