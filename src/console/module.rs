@@ -201,5 +201,6 @@ impl Drop for Console {
 fn message_to_color(message: &Message) -> style::Color {
     match message.kind {
         MessageKind::PlayerFailed => to_crossterm(Color::Red3),
+        MessageKind::UI => to_crossterm(Color::SteelBlue),
     }
 }

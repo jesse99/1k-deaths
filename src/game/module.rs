@@ -142,6 +142,13 @@ impl crate::shared::Game for Game {
         &self.messages
     }
 
+    fn add_ui_message(&mut self, text: &str) {
+        self.messages.append(Message {
+            kind: MessageKind::UI,
+            text: text.to_string(),
+        });
+    }
+
     fn snapshot(&self, args: SnapshotArgs) -> String {
         fn terrain_to_char(terrain: Terrain) -> char {
             match terrain {

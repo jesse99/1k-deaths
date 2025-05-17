@@ -26,6 +26,8 @@ pub enum MessageKind {
 
     // // Messages that are not normally shown.
     // Debug,
+    /// Something driven by the UI but not directly game related, e.g. a wizard examine command.
+    UI,
 }
 
 #[derive(Debug)]
@@ -108,6 +110,8 @@ pub trait Game {
 
     /// Returns oldest to newest messages.
     fn messages(&self) -> &VecDeque<Message>;
+
+    fn add_ui_message(&mut self, text: &str);
 
     /// The tile to use when the tile function returns None.
     fn default(&self) -> Tile;
