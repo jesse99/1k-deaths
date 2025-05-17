@@ -1,5 +1,6 @@
 use super::color::*;
 use crate::shared::*;
+use chrono::format::format;
 use crossterm::{
     QueueableCommand, cursor,
     event::{self, KeyEvent},
@@ -178,9 +179,19 @@ impl Console {
         Ok(())
     }
 
-    fn dump_game(&self) {
+    fn dump_game(&mut self) {
         if let Err(err) = self.dump() {
-            error!("failed to write state: {err}"); // TODO also write to messages?
+            let text = format!("failed to write state: {err}");
+            error!("{text}");
+            self.game.add_message(Message {
+                kind: MessageKind::Error,
+                text,
+            });
+        } else {
+            self.game.add_message(Message {
+                kind: MessageKind::UI,
+                text: "wrote state file".to_string(),
+            });
         }
     }
 }
@@ -200,7 +211,8 @@ impl Drop for Console {
 
 fn message_to_color(message: &Message) -> style::Color {
     match message.kind {
+        MessageKind::Error => to_crossterm(Color::Red),
         MessageKind::PlayerFailed => to_crossterm(Color::Red3),
-        MessageKind::UI => to_crossterm(Color::SteelBlue),
+        MessageKind::UI => to_crossterm(Color::Gold1),
     }
 }

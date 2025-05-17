@@ -142,11 +142,8 @@ impl crate::shared::Game for Game {
         &self.messages
     }
 
-    fn add_ui_message(&mut self, text: &str) {
-        self.messages.append(Message {
-            kind: MessageKind::UI,
-            text: text.to_string(),
-        });
+    fn add_message(&mut self, message: Message) {
+        self.messages.push_back(message);
     }
 
     fn snapshot(&self, args: SnapshotArgs) -> String {

@@ -11,8 +11,9 @@ use std::io;
 pub enum MessageKind {
     /// Player tried to do something but failed, e.g. move into a wall.
     PlayerFailed,
-    // /// Operation failed.
-    // Error,
+
+    /// Operation failed, e.g. write to file.
+    Error,
 
     // /// Player is near death, special message when entering a new level, etc.
     // Critical,
@@ -111,7 +112,8 @@ pub trait Game {
     /// Returns oldest to newest messages.
     fn messages(&self) -> &VecDeque<Message>;
 
-    fn add_ui_message(&mut self, text: &str);
+    /// Normally a UI or Error MessageKind.
+    fn add_message(&mut self, message: Message);
 
     /// The tile to use when the tile function returns None.
     fn default(&self) -> Tile;
