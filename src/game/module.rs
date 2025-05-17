@@ -1,5 +1,5 @@
 use super::time;
-use super::{ActiveTime, Oid, Scheduler, Store};
+use super::{Oid, Scheduler, Store};
 use crate::shared::*;
 use fnv::FnvHashMap;
 use rand::prelude::*;
@@ -300,7 +300,6 @@ fn build_level(game: &mut Game, level: &str) {
                     game.store.create(oid, Terrain::Dirt);
 
                     game.store.create(PLAYER_ID, loc);
-                    game.store.create(PLAYER_ID, ActiveTime {});
                     game.scheduler.add(PLAYER_ID, time::DIAGNOL_MOVE);
                 }
                 'A' => (), // TODO handle chars

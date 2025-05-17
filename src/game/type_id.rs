@@ -1,4 +1,4 @@
-use super::{ActiveTime, PassiveTime};
+use super::PassiveTime;
 use crate::shared::*;
 
 /// Every type used as a VALUE in the [`Store`] must implement this to return a unique
@@ -22,12 +22,6 @@ pub trait TypeId {
 impl TypeId for Point {
     fn id(&self) -> u16 {
         2
-    }
-}
-
-impl TypeId for ActiveTime {
-    fn id(&self) -> u16 {
-        3
     }
 }
 
