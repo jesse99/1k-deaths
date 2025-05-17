@@ -1,6 +1,5 @@
 use super::color::*;
 use crate::shared::*;
-use chrono::format::format;
 use crossterm::{
     QueueableCommand, cursor,
     event::{self, KeyEvent},
