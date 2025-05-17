@@ -2,14 +2,15 @@
 extern crate log;
 extern crate simplelog;
 
-mod console;
-mod game;
+mod backend;
 mod shared;
+mod terminal;
 
 use clap::{Parser, ValueEnum};
 use simplelog::{ConfigBuilder, LevelFilter, WriteLogger};
 use std::fs::File;
 use std::io;
+use terminal::console;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum LoggingLevel {
@@ -75,7 +76,7 @@ fn main() -> io::Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    let game = game::new(1);
-    let mut console = console::new(game);
-    console.run()
+    let game = backend::new(1);
+    let mut terminal = console::new(game);
+    terminal.run()
 }

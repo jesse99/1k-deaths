@@ -11,7 +11,7 @@ use std::io::{self, Write};
 
 const MAX_MESSAGES: u16 = 6;
 
-struct Console {
+pub struct Console {
     game: Box<dyn Game>,
     running: bool,
 }

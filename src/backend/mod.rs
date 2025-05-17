@@ -1,5 +1,5 @@
 mod ai;
-mod module;
+mod game;
 mod oid;
 mod scheduler;
 mod store;
@@ -15,4 +15,4 @@ use time::*;
 use type_id::*;
 use values::*;
 
-pub use module::*;
+pub use game::*;
