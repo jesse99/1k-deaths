@@ -7,6 +7,7 @@
 //! * A list of inventory Oids (may be empty).
 //! * A PassiveTime struct if they need to respond to passing time (e.e. to heal up).
 //!
+use super::Oid;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -18,12 +19,11 @@ use std::fmt;
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PassiveTime {}
 
-// #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-// pub enum Character {     //TODO: rename this Species? would need something else to indicate player (maybe the oid)
-//     #[default]
-//     Guard,
-//     Player,
-// }
+/// References the player or an NPC.
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+pub struct Character {
+    pub oid: Oid,
+}
 
 // #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 // pub struct Durability {
@@ -88,17 +88,17 @@ mod display_impl {
     use super::*;
     use fmt::Display;
 
+    impl Display for Character {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{self:?}")
+        }
+    }
+
     impl Display for PassiveTime {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "PassiveTime")
         }
     }
-
-    // impl Display for Character {
-    //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    //         write!(f, "{:?}", self)
-    //     }
-    // }
 
     // impl Display for Durability {
     //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

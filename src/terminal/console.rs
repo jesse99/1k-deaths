@@ -133,15 +133,17 @@ impl Console {
     }
 
     fn compose_tile(&self, tile: &Tile) -> (char, Color, Color) {
-        if tile.character.is_some() {
-            ('@', Color::Yellow, Color::Black)
-        } else {
-            match tile.terrain {
+        match tile.character {
+            Some(s) => match s {
+                Species::Ay => ('A', Color::Red, Color::Black),
+                Species::Human => ('@', Color::Yellow, Color::Black),
+            },
+            None => match tile.terrain {
                 Terrain::DeepWater => ('_', Color::CornflowerBlue, Color::Black),
                 Terrain::Dirt => (' ', Color::White, Color::Black),
                 Terrain::RockWall => ('#', Color::RosyBrown, Color::Black),
                 Terrain::ShallowWater => ('~', Color::SteelBlue1, Color::Black),
-            }
+            },
         }
     }
 

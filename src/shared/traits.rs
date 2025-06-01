@@ -53,9 +53,10 @@ pub enum Command {
 //     Sword,
 // }
 
-#[derive(Copy, Clone)]
+/// Allows UI to render characters differently.
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum Species {
-    // Ay,
+    Ay,
     // Bhederin,
     Human,
 }
@@ -127,6 +128,12 @@ pub trait UI {
 }
 
 impl Display for Terrain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Display for Species {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{self:?}")
     }

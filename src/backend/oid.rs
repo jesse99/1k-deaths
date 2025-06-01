@@ -4,13 +4,14 @@ use std::fmt;
 
 pub type TagStr = ArrayString<U16>;
 
-/// Used to uniquely identify objects in the [`Store`]. Oids are typically created with
-/// the various Level create methods.
+/// Used to uniquely identify objects in the [`Store`]. Objects are bundles of values,
+/// often enums (e.g. [`Species`]` and [`Terrain`]`) but also struct values (e.g. [`Point`]
+/// for a location on the map).
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Oid {
     // Used by Display so that we get more informative logging.
     #[cfg(debug_assertions)]
-    pub tag: Option<TagStr>, // Option to allow us to use stuff like PLAYER_ID, annoying but it is debug only and just for Display
+    pub tag: Option<TagStr>,
 
     pub value: u32,
 }

@@ -1,62 +1,28 @@
-use super::PassiveTime;
+use super::{Character, PassiveTime};
 use crate::shared::*;
 
 /// Every type used as a VALUE in the [`Store`] must implement this to return a unique
 /// numeric ID for that type. (This is checked at runtime for debug builds).
-pub trait TypeId {
-    fn id(&self) -> u16;
+pub trait TypeId<T> {
+    const ID: u16;
 }
 
-// impl TypeId for Oid {
-//     fn id(&self) -> u16 {
-//         0
-//     }
-// }
-
-// impl TypeId for Character {
-//     fn id(&self) -> u16 {
-//         1
-//     }
-// }
-
-impl TypeId for Point {
-    fn id(&self) -> u16 {
-        2
-    }
+impl<T> TypeId<T> for Character {
+    const ID: u16 = 1;
 }
 
-impl TypeId for PassiveTime {
-    fn id(&self) -> u16 {
-        4
-    }
+impl<T> TypeId<T> for PassiveTime {
+    const ID: u16 = 2;
 }
 
-// impl TypeId for InvItem {
-//     fn id(&self) -> u16 {
-//         5
-//     }
-// }
-
-impl TypeId for Terrain {
-    fn id(&self) -> u16 {
-        6
-    }
+impl<T> TypeId<T> for Point {
+    const ID: u16 = 3;
 }
 
-// impl TypeId for Portable {
-//     fn id(&self) -> u16 {
-//         7
-//     }
-// }
+impl<T> TypeId<T> for Species {
+    const ID: u16 = 4;
+}
 
-// impl TypeId for Message {
-//     fn id(&self) -> u16 {
-//         8
-//     }
-// }
-
-// impl TypeId for Durability {
-//     fn id(&self) -> u16 {
-//         9
-//     }
-// }
+impl<T> TypeId<T> for Terrain {
+    const ID: u16 = 5;
+}

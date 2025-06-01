@@ -22,9 +22,10 @@ pub enum Acted {
 /// to other objects time units (it's used with objects that want to schedule future
 /// actions further into the future than would normally be the case).
 pub fn active_timer(game: &mut Game, oid: Oid, units: Time) -> Acted {
-    match game.store.find(oid).unwrap() {
-        Terrain::DeepWater => deep_flood(game, oid, units),
-        Terrain::ShallowWater => shallow_flood(game, oid, units),
+    // TODO need to handle Character
+    match game.store.find(oid) {
+        Some(Terrain::DeepWater) => deep_flood(game, oid, units),
+        Some(Terrain::ShallowWater) => shallow_flood(game, oid, units),
         _ => Acted::DidntAct,
     }
 

@@ -1,4 +1,4 @@
-use arraystring::{typenum::U16, ArrayString};
+use arraystring::{ArrayString, typenum::U16};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -14,7 +14,7 @@ pub type TagStr = ArrayString<U16>;
 pub struct Oid {
     // Used by Display so that we get more informative logging.
     #[cfg(debug_assertions)]
-    pub tag: Option<TagStr>, // Option to allow us to use stuff like PLAYER_ID, annoying but it is debug only and just for Display
+    pub tag: Option<TagStr>,
 
     pub value: u32,
 }

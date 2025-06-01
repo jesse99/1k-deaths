@@ -169,13 +169,13 @@ impl Scheduler {
 
         text.push_str("current round:\n");
         for item in &round {
-            text.push_str(&format!("   {} has {}\n", game.obj_to_str(item.oid), item.units));
+            text.push_str(&format!("   {} has {}\n", game.summary_str(item.oid), item.units));
         }
 
         text.push_str("other entries:\n");
         for (oid, time) in self.entries.iter() {
             if round.iter().any(|e| e.oid == *oid) {
-                text.push_str(&format!("   {} has {time}\n", game.obj_to_str(*oid)));
+                text.push_str(&format!("   {} has {time}\n", game.summary_str(*oid)));
             }
         }
         text

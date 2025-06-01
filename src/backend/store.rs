@@ -10,7 +10,6 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::hash::Hash;
-// use std::ops::Range;
 
 type Values = FnvHashMap<u16, Vec<u8>>; // u16 is the TypeId for a particular value type
 type ListValue = FnvHashMap<u16, Vec<Vec<u8>>>; // like `Values` except that there is a list of values
@@ -52,7 +51,7 @@ where
     /// It's an error if there is already a type with VALUE for the key.
     pub fn create<VALUE>(&mut self, key: KEY, value: VALUE)
     where
-        VALUE: Serialize + TypeId + Display,
+        VALUE: Serialize + TypeId<VALUE> + Display,
     {
         debug!("creating {key} -> {value}");
         let had_old = self.replace(key, value);
@@ -62,15 +61,13 @@ where
     /// OK if the value's type isn't present. Returns true on replace.
     pub fn replace<VALUE>(&mut self, key: KEY, value: VALUE) -> bool
     where
-        VALUE: Serialize + TypeId + Display,
+        VALUE: Serialize + TypeId<VALUE> + Display,
     {
-        let id = value.id();
-
         let bytes: Vec<u8> = postcard::to_allocvec(&value).unwrap();
         let values = self.primitives.entry(key).or_default();
-        let old = values.insert(id, bytes);
+        let old = values.insert(VALUE::ID, bytes);
         debug!("replace {key} with {value}");
-        assert!(self.good_id(value));
+        assert!(self.good_id::<VALUE>());
         old.is_some()
     }
 
@@ -78,24 +75,35 @@ where
     #[allow(dead_code)] // TODO: remove this
     pub fn remove<VALUE>(&mut self, key: KEY)
     where
-        VALUE: DeserializeOwned + TypeId + Display + Default, // TODO: do we really need hints?
+        VALUE: DeserializeOwned + TypeId<VALUE> + Display,
     {
         if let Some(values) = self.primitives.get_mut(&key) {
-            let id = VALUE::default().id();
-            if values.remove(&id).is_some() {
+            if values.remove(&VALUE::ID).is_some() {
                 debug!("remove {key}");
             }
         }
     }
 
+    pub fn transfer<VALUE>(&mut self, from: KEY, to: KEY)
+    where
+        VALUE: DeserializeOwned + TypeId<VALUE> + Display,
+    {
+        let old_values = self.primitives.get_mut(&from).unwrap();
+        let bytes = old_values.remove(&VALUE::ID).unwrap();
+
+        let new_values = self.primitives.entry(to).or_default();
+        let old = new_values.insert(VALUE::ID, bytes);
+        assert!(old.is_none());
+        debug!("move from {from} to {to}");
+    }
+
     #[must_use]
     pub fn find<VALUE>(&self, key: KEY) -> Option<VALUE>
     where
-        VALUE: DeserializeOwned + TypeId + Display + Default,
+        VALUE: DeserializeOwned + TypeId<VALUE> + Display,
     {
         self.primitives.get(&key).and_then(|values| {
-            let id = VALUE::default().id();
-            values.get(&id).map(|bytes| {
+            values.get(&VALUE::ID).map(|bytes| {
                 let value: VALUE = from_bytes(bytes).unwrap();
                 value
             })
@@ -112,23 +120,21 @@ where
     // #[must_use]
     // pub fn len<VALUE>(&self, key: KEY) -> usize
     // where
-    //     VALUE: Serialize + TypeId + Display + Default,
+    //     VALUE: Serialize + TypeId<VALUE> + Display,
     // {
-    //     let id = VALUE::default().id();
     //     self.lists
     //         .get(&key)
-    //         .map_or(0, |lists| lists.get(&id).map_or(0, |list| list.len()))
+    //         .map_or(0, |lists| lists.get(&VALUE::ID).map_or(0, |list| list.len()))
     // }
 
     // /// Used for lists of VALUEs.
     // #[must_use]
     // pub fn get_all<VALUE>(&self, key: KEY) -> Vec<VALUE>
     // where
-    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    //     VALUE: DeserializeOwned + Serialize + TypeId<VALUE> + Display,
     // {
-    //     let id = VALUE::default().id();
     //     self.lists.get(&key).map_or(vec![], |lists| {
-    //         lists.get(&id).map_or(vec![], |list| {
+    //         lists.get(&VALUE::ID).map_or(vec![], |list| {
     //             list.iter().map(|bytes| from_bytes(bytes).unwrap()).collect()
     //         })
     //     })
@@ -138,12 +144,11 @@ where
     // #[must_use]
     // pub fn get_last<VALUE>(&self, key: KEY) -> Option<VALUE>
     // where
-    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    //     VALUE: DeserializeOwned + Serialize + TypeId<VALUE> + Display,
     // {
-    //     let id = VALUE::default().id();
     //     self.lists.get(&key).and_then(|lists| {
     //         lists
-    //             .get(&id)
+    //             .get(&VALUE::ID)
     //             .and_then(|list| list.last().map(|bytes| from_bytes(bytes).unwrap()))
     //     })
     // }
@@ -152,11 +157,10 @@ where
     // #[must_use]
     // pub fn get_range<VALUE>(&self, key: KEY, range: Range<usize>) -> Vec<VALUE>
     // where
-    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    //     VALUE: DeserializeOwned + Serialize + TypeId<VALUE> + Display,
     // {
-    //     let id = VALUE::default().id();
     //     self.lists.get(&key).map_or(vec![], |lists| {
-    //         lists.get(&id).map_or(vec![], |list| {
+    //         lists.get(&VALUE::ID).map_or(vec![], |list| {
     //             list[range].iter().map(|bytes| from_bytes(bytes).unwrap()).collect()
     //         })
     //     })
@@ -165,26 +169,23 @@ where
     // /// Used for lists of VALUEs.
     // pub fn append<VALUE>(&mut self, key: KEY, value: VALUE)
     // where
-    //     VALUE: Serialize + TypeId + Display,
+    //     VALUE: Serialize + TypeId<VALUE> + Display,
     // {
     //     let lists = self.lists.entry(key).or_default();
-
-    //     let id = value.id();
-    //     let list = lists.entry(id).or_default();
+    //     let list = lists.entry(VALUE::ID).or_default();
 
     //     let bytes: Vec<u8> = postcard::to_allocvec(&value).unwrap();
     //     list.push(bytes);
-    //     assert!(self.good_id(value));
+    //     assert!(self.good_id::<VALUE>());
     // }
 
     // /// Used for lists of VALUEs. Removes a value using an equality test.
     // pub fn remove_value<VALUE>(&mut self, key: KEY, value: VALUE)
     // where
-    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default + PartialEq,
+    //     VALUE: DeserializeOwned + Serialize + TypeId<VALUE> + Display + Default + PartialEq,
     // {
-    //     let id = VALUE::default().id();
     //     if let Some(lists) = self.lists.get_mut(&key) {
-    //         if let Some(list) = lists.get_mut(&id) {
+    //         if let Some(list) = lists.get_mut(&VALUE::ID) {
     //             if let Some(index) = list.iter().position(|bytes| {
     //                 let x: VALUE = from_bytes(bytes).unwrap();
     //                 x == value
@@ -198,11 +199,10 @@ where
     // /// Used for lists of VALUEs.
     // pub fn remove_range<VALUE>(&mut self, key: KEY, range: Range<usize>)
     // where
-    //     VALUE: DeserializeOwned + Serialize + TypeId + Display + Default,
+    //     VALUE: DeserializeOwned + Serialize + TypeId<VALUE> + Display + Default,
     // {
-    //     let id = VALUE::default().id();
     //     if let Some(lists) = self.lists.get_mut(&key) {
-    //         if let Some(list) = lists.get_mut(&id) {
+    //         if let Some(list) = lists.get_mut(&VALUE::ID) {
     //             list.drain(range);
     //         }
     //     }
@@ -215,14 +215,13 @@ where
     KEY: Hash + Eq + Display + Copy,
 {
     #[cfg(debug_assertions)]
-    fn good_id<VALUE>(&mut self, value: VALUE) -> bool
+    fn good_id<VALUE>(&mut self) -> bool
     where
-        VALUE: TypeId,
+        VALUE: TypeId<VALUE>,
     {
-        let id = value.id();
         self.ids
-            .insert(std::any::type_name::<VALUE>().to_string(), id)
-            .is_none_or(|old_id| old_id == id)
+            .insert(std::any::type_name::<VALUE>().to_string(), VALUE::ID)
+            .is_none_or(|old_id| old_id == VALUE::ID)
     }
 }
 
@@ -251,10 +250,8 @@ mod tests {
         }
     }
 
-    impl TypeId for Address {
-        fn id(&self) -> u16 {
-            0
-        }
+    impl<T> TypeId<T> for Address {
+        const ID: u16 = 1000;
     }
 
     impl Display for Key {

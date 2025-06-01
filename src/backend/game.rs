@@ -1,5 +1,5 @@
-use super::time;
-use super::{Oid, Scheduler, Store};
+use super::{Character, Oid, Scheduler, Store};
+use super::{Time, time};
 use crate::shared::*;
 use fnv::FnvHashMap;
 use rand::prelude::*;
@@ -15,12 +15,13 @@ pub static LAST_ID: u32 = 1;
 
 pub struct Game {
     pub messages: VecDeque<Message>,
-    pub cell_ids: FnvHashMap<Point, Oid>, // TODO rename this terrain_ids?
+    pub cell_ids: FnvHashMap<Point, Oid>, // TODO rename this level_oids?
     pub store: Store<Oid>,
     pub scheduler: Scheduler,
     pub rng: RefCell<SmallRng>,
     next_oid: u32,
     players_move: bool,
+    player_loc: Point,
 }
 
 pub fn new(seed: u64) -> Box<dyn crate::shared::Game> {
@@ -56,6 +57,7 @@ pub fn with_level(level: &str, seed: u64) -> Box<dyn crate::shared::Game> {
         scheduler: Scheduler::new(),
         rng,
         players_move: false,
+        player_loc: Point::origin(),
     });
     build_level(&mut game, level);
     game
@@ -63,7 +65,7 @@ pub fn with_level(level: &str, seed: u64) -> Box<dyn crate::shared::Game> {
 
 impl crate::shared::Game for Game {
     fn player_loc(&self) -> Point {
-        self.store.find(PLAYER_ID).unwrap()
+        self.player_loc
     }
 
     fn players_turn(&self) -> bool {
@@ -76,12 +78,17 @@ impl crate::shared::Game for Game {
             Command::Move(delta) => {
                 let old_loc = self.player_loc();
                 let new_loc = Point::new(old_loc.x + delta.x, old_loc.y + delta.y);
+
                 if let Some(err) = self.can_move_to(new_loc) {
                     self.add_message(MessageKind::PlayerFailed, err);
                 } else {
-                    self.store.replace(PLAYER_ID, new_loc);
+                    let old_oid = self.cell_ids.get(&old_loc).unwrap();
+                    let new_oid = self.cell_ids.get(&new_loc).unwrap();
+                    self.store.transfer::<Character>(*old_oid, *new_oid);
+                    self.player_loc = new_loc;
                 }
                 if delta.x == 0 || delta.y == 0 {
+                    // TODO moving into a wall should take less time? or no time?
                     self.scheduler.player_acted(time::CARDINAL_MOVE, &self.rng);
                 } else {
                     self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
@@ -107,14 +114,14 @@ impl crate::shared::Game for Game {
     // TODO maybe this should return a &Tile, that would allow us to cache this and
     // also get rid of the default method
     fn tile(&self, loc: Point) -> Option<Tile> {
-        let player_loc = self.player_loc();
         let oid = self.cell_ids.get(&loc).unwrap_or(&DEFAULT_CELL_ID);
         let terrain = self.store.find(*oid).unwrap();
-        if loc == player_loc {
+        if let Some(ch) = self.store.find::<Character>(*oid) {
+            let species = self.store.find(ch.oid).unwrap();
             Some(Tile {
                 terrain,
                 // items: Vec::new(),
-                character: Some(Species::Human),
+                character: Some(species),
             })
         } else {
             Some(Tile {
@@ -147,6 +154,13 @@ impl crate::shared::Game for Game {
     }
 
     fn snapshot(&self, args: SnapshotArgs) -> String {
+        fn species_to_char(species: Species) -> char {
+            match species {
+                Species::Ay => 'A',
+                Species::Human => '@',
+            }
+        }
+
         fn terrain_to_char(terrain: Terrain) -> char {
             match terrain {
                 Terrain::DeepWater => '_',
@@ -162,11 +176,12 @@ impl crate::shared::Game for Game {
                     let player_loc = game.player_loc();
                     let loc = Point::new(player_loc.x + dx, player_loc.y + dy);
                     let ch = if loc.distance2(player_loc) <= radius * radius {
-                        if loc == player_loc {
-                            '@'
-                        } else {
-                            terrain_to_char(game.get_terrain(loc))
-                        }
+                        let oid = game.cell_ids.get(&loc).unwrap_or(&DEFAULT_CELL_ID);
+                        game.store
+                            .find::<Character>(*oid)
+                            .map(|c| c.oid)
+                            .and_then(|o| game.store.find::<Species>(o))
+                            .map_or(terrain_to_char(game.get_terrain(loc)), species_to_char)
                     } else {
                         ' '
                     };
@@ -260,23 +275,46 @@ impl Game {
         }
     }
 
-    pub fn obj_to_str(&self, oid: Oid) -> String {
-        let mut text = String::new();
-        if let Some(terrain) = self.store.find(oid) {
-            match terrain {
-                Terrain::DeepWater => text += "deep water",
-                Terrain::Dirt => text += "dirt",
-                Terrain::RockWall => text += "rock wall",
-                Terrain::ShallowWater => text += "shallow water",
+    pub fn summary_str(&self, oid: Oid) -> String {
+        fn summary_player(store: &Store<Oid>, player_loc: Point, oid: Oid) -> Option<String> {
+            store.find::<Point>(oid).and_then(|loc| {
+                if loc == player_loc {
+                    Some("player".to_string())
+                } else {
+                    None
+                }
+            })
+        }
+
+        fn summary_species(store: &Store<Oid>, oid: Oid) -> Option<String> {
+            store.find::<Species>(oid).map(|s| match s {
+                Species::Ay => "ay".to_string(),
+                Species::Human => "human".to_string(),
+            })
+        }
+
+        fn summary_terrain(store: &Store<Oid>, oid: Oid) -> Option<String> {
+            match store.find(oid) {
+                Some(terrain) => match terrain {
+                    Terrain::DeepWater => Some("deep water".to_string()),
+                    Terrain::Dirt => Some("dirt".to_string()),
+                    Terrain::RockWall => Some("rock wall".to_string()),
+                    Terrain::ShallowWater => Some("shallow water".to_string()),
+                },
+                None => None,
             }
         }
-        if oid == PLAYER_ID {
-            text += "player";
-        }
+
+        let s = summary_player(&self.store, self.player_loc, oid)
+            .or(summary_species(&self.store, oid))
+            .or(summary_terrain(&self.store, oid))
+            .unwrap_or("?".to_string());
+
         if let Some(loc) = self.store.find::<Point>(oid) {
-            text += &format!(" at {loc}");
+            format!("{s} at {loc} #{}", oid.value)
+        } else {
+            format!("{s} #{}", oid.value)
         }
-        format!("{text} #{}", oid.value)
     }
 
     fn new_oid<T>(&mut self, obj: T) -> Oid
@@ -298,36 +336,55 @@ fn build_level(game: &mut Game, level: &str) {
                 '\n' => (),
                 '#' => (),
                 '@' => {
-                    let oid = game.new_oid(loc);
-                    game.cell_ids.insert(loc, oid);
-                    game.store.create(oid, loc);
-                    game.store.create(oid, Terrain::Dirt);
+                    let s = Species::Human;
+                    let ch_oid = PLAYER_ID;
+                    game.store.create(ch_oid, s);
+                    game.scheduler.add(ch_oid, time::DIAGNOL_MOVE);
 
-                    game.store.create(PLAYER_ID, loc);
-                    game.scheduler.add(PLAYER_ID, time::DIAGNOL_MOVE);
+                    let cell_oid = game.new_oid(loc);
+                    game.store.create(cell_oid, loc);
+                    game.store.create(cell_oid, Terrain::Dirt);
+                    game.store.create(cell_oid, Character { oid: ch_oid });
+                    game.cell_ids.insert(loc, cell_oid);
+
+                    game.player_loc = loc;
                 }
-                'A' => (), // TODO handle chars
-                'a' => (), // TODO handle items
+                'A' => {
+                    let s = Species::Ay;
+                    let ch_oid = game.new_oid(s);
+                    game.store.create(ch_oid, s);
+                    game.scheduler.add(ch_oid, Time::zero());
+
+                    let cell_oid = game.new_oid(loc);
+                    game.store.create(cell_oid, loc);
+                    game.store.create(cell_oid, Terrain::Dirt);
+                    game.store.create(cell_oid, Character { oid: ch_oid });
+                    game.cell_ids.insert(loc, cell_oid);
+                }
+                'a' => (),
                 's' => (), // TODO handle items
                 ' ' => {
-                    let oid = game.new_oid(loc);
-                    game.cell_ids.insert(loc, oid);
-                    game.store.create(oid, loc);
-                    game.store.create(oid, Terrain::Dirt);
+                    let cell_oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, cell_oid);
+
+                    game.store.create(cell_oid, loc);
+                    game.store.create(cell_oid, Terrain::Dirt);
                 }
                 '~' => {
-                    let oid = game.new_oid(loc);
-                    game.cell_ids.insert(loc, oid);
-                    game.store.create(oid, loc);
-                    game.store.create(oid, Terrain::ShallowWater);
-                    game.scheduler.add(oid, -time::SHALLOW_FLOOD.fuzz(&game.rng));
+                    let cell_oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, cell_oid);
+
+                    game.store.create(cell_oid, loc);
+                    game.store.create(cell_oid, Terrain::ShallowWater);
+                    game.scheduler.add(cell_oid, -time::SHALLOW_FLOOD.fuzz(&game.rng));
                 }
                 '_' => {
-                    let oid = game.new_oid(loc);
-                    game.cell_ids.insert(loc, oid);
-                    game.store.create(oid, loc);
-                    game.store.create(oid, Terrain::DeepWater);
-                    game.scheduler.add(oid, -time::DEEP_FLOOD.fuzz(&game.rng));
+                    let cell_oid = game.new_oid(loc);
+                    game.cell_ids.insert(loc, cell_oid);
+
+                    game.store.create(cell_oid, loc);
+                    game.store.create(cell_oid, Terrain::DeepWater);
+                    game.scheduler.add(cell_oid, -time::DEEP_FLOOD.fuzz(&game.rng));
                 }
                 _ => panic!("bad char: {ch}"),
             };
