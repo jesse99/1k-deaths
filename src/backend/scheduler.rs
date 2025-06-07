@@ -174,7 +174,7 @@ impl Scheduler {
 
         text.push_str("other entries:\n");
         for (oid, time) in self.entries.iter() {
-            if round.iter().any(|e| e.oid == *oid) {
+            if !round.iter().any(|e| e.oid == *oid) {
                 text.push_str(&format!("   {} has {time}\n", game.summary_str(*oid)));
             }
         }

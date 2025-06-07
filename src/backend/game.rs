@@ -205,6 +205,8 @@ impl crate::shared::Game for Game {
             result.push('\n');
         }
 
+        // TODO should print details for the player and nearby NPCs
+        // probably would have to just print the standard store values
         let mut result = String::with_capacity(2 * 1024);
         if args.radius > 0 {
             result.push_str("map:\n");
