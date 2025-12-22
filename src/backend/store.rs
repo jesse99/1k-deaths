@@ -77,10 +77,10 @@ where
     where
         VALUE: DeserializeOwned + TypeId<VALUE> + Display,
     {
-        if let Some(values) = self.primitives.get_mut(&key) {
-            if values.remove(&VALUE::ID).is_some() {
-                debug!("remove {key}");
-            }
+        if let Some(values) = self.primitives.get_mut(&key)
+            && values.remove(&VALUE::ID).is_some()
+        {
+            debug!("remove {key}");
         }
     }
 
