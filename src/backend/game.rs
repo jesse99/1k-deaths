@@ -21,7 +21,6 @@ pub struct Game {
     pub rng: RefCell<SmallRng>,
     next_oid: u32,
     players_move: bool,
-    player_loc: Point,
 }
 
 pub fn new(seed: u64) -> Box<dyn crate::shared::Game> {
@@ -57,7 +56,6 @@ pub fn with_level(level: &str, seed: u64) -> Box<dyn crate::shared::Game> {
         scheduler: Scheduler::new(),
         rng,
         players_move: false,
-        player_loc: Point::origin(),
     });
     build_level(&mut game, level);
     game
@@ -65,7 +63,7 @@ pub fn with_level(level: &str, seed: u64) -> Box<dyn crate::shared::Game> {
 
 impl crate::shared::Game for Game {
     fn player_loc(&self) -> Point {
-        self.player_loc
+        self.store.find(PLAYER_ID).unwrap()
     }
 
     fn players_turn(&self) -> bool {
@@ -76,7 +74,7 @@ impl crate::shared::Game for Game {
         debug!("executing {command:?}");
         match command {
             Command::Move(delta) => {
-                let old_loc = self.player_loc();
+                let old_loc: Point = self.store.find(PLAYER_ID).unwrap();
                 let new_loc = Point::new(old_loc.x + delta.x, old_loc.y + delta.y);
 
                 if let Some(err) = self.can_move_to(new_loc) {
@@ -85,7 +83,8 @@ impl crate::shared::Game for Game {
                     let old_oid = self.cell_ids.get(&old_loc).unwrap();
                     let new_oid = self.cell_ids.get(&new_loc).unwrap();
                     self.store.transfer::<Character>(*old_oid, *new_oid);
-                    self.player_loc = new_loc;
+                    // TODO characters need a Point value
+                    self.store.replace(PLAYER_ID, new_loc);
                 }
                 if delta.x == 0 || delta.y == 0 {
                     // TODO moving into a wall should take less time? or no time?
@@ -307,7 +306,9 @@ impl Game {
             }
         }
 
-        let s = summary_player(&self.store, self.player_loc, oid)
+        use crate::shared::traits::Game;
+        let player_loc = self.player_loc();
+        let s = summary_player(&self.store, player_loc, oid)
             .or(summary_species(&self.store, oid))
             .or(summary_terrain(&self.store, oid))
             .unwrap_or("?".to_string());
@@ -349,7 +350,7 @@ fn build_level(game: &mut Game, level: &str) {
                     game.store.create(cell_oid, Character { oid: ch_oid });
                     game.cell_ids.insert(loc, cell_oid);
 
-                    game.player_loc = loc;
+                    game.store.replace(PLAYER_ID, loc);
                 }
                 'A' => {
                     let s = Species::Ay;

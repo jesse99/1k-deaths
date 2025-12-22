@@ -1,5 +1,8 @@
 .DS_Store
 **/.*-back-color.xml
+.1k-deaths-back-color.xml
+.state-001-back-color.xml
+.state-back-color.xml
 saved.game
 .mimsy.rtf
 config.toml
