@@ -41,16 +41,18 @@ other rogue-likes\
 \f3\i zero or one of these, has an oid referencing itself\
 \pard\pardeftab720\sl420\partightenfactor0
 
-\f1\i0 \cf4 	Items        
-\f3\i      can be missing, has an array of oids for each item
-\f1\i0 \
-	Point              
+\f1\i0 \cf4 	Point              
 \f3\i location of the cell\
 
 \f1\i0 	Terrain           
 \f3\i type of the cell
 \f1\i0 \
-		\
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 	[Oid]         
+\f3\i      list of items at the cell
+\f1\i0 \
+\pard\pardeftab720\sl420\partightenfactor0
+\cf4 		\
 \pard\pardeftab720\sl420\partightenfactor0
 
 \f2\b \cf4 player 
@@ -58,7 +60,10 @@ other rogue-likes\
 \f2\b   
 \f3\i\b0 these oid\'92s need to be persistent 
 \f1\i0 \
-	Time             
+	Point             
+\f3\i location of the player\
+
+\f1\i0 	Time             
 \f3\i current accumulated time units\
 \pard\pardeftab720\sl420\partightenfactor0
 
@@ -92,12 +97,7 @@ NPCs
 
 \f2\b \cf4 Step 6a - It\'92s Alive! Alive!
 \f1\b0 \
-\'95\'a0Fix warnings\
-\'95 Try Copilot\
-\'95 can_move_to should return an enum\
-	- ok to move\
-	- can\'92t move (with error string)\
-	- interact (with nested enum?), eg attack, open door, etc\
+\'95 Add support for help\
 \'95\'a0Implement NPCs (and time)  \
 	- add store entries for Ay and Bhederin\
 	- for now have NPCs random walk\

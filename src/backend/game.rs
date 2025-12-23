@@ -13,6 +13,13 @@ pub static PLAYER_ID: Oid = Oid::without_tag(0);
 pub static DEFAULT_CELL_ID: Oid = Oid::without_tag(1);
 pub static LAST_ID: u32 = 1;
 
+enum BumpAction {
+    Attack(Oid),
+    Error(String),
+    // Interact(Oid),
+    Move,
+}
+
 pub struct Game {
     pub messages: VecDeque<Message>,
     pub cell_ids: FnvHashMap<Point, Oid>, // TODO rename this level_oids?
@@ -71,29 +78,43 @@ impl crate::shared::Game for Game {
     }
 
     fn player_action(&mut self, command: Command) {
+        let mut elapsed = None;
         debug!("executing {command:?}");
         match command {
             Command::Move(delta) => {
                 let old_loc: Point = self.store.find(PLAYER_ID).unwrap();
                 let new_loc = Point::new(old_loc.x + delta.x, old_loc.y + delta.y);
 
-                if let Some(err) = self.can_move_to(new_loc) {
-                    self.add_message(MessageKind::PlayerFailed, err);
-                } else {
-                    let old_oid = self.cell_ids.get(&old_loc).unwrap();
-                    let new_oid = self.cell_ids.get(&new_loc).unwrap();
-                    self.store.transfer::<Character>(*old_oid, *new_oid);
-                    // TODO characters need a Point value
-                    self.store.replace(PLAYER_ID, new_loc);
+                // TODO note that stuff like teleport will need to use slightly
+                // different code. Probably want to disallow stuff like porting to
+                // a loc with another character or into a wall.
+                match self.bump_action(new_loc) {
+                    BumpAction::Attack(_oid) => {
+                        self.add_message(MessageKind::PlayerFailed, "Attacking isnt implemented yet.".to_owned());
+                    }
+                    BumpAction::Error(err) => {
+                        self.add_message(MessageKind::PlayerFailed, err);
+                    }
+                    BumpAction::Move => {
+                        let old_oid = self.cell_ids.get(&old_loc).unwrap();
+                        let new_oid = self.cell_ids.get(&new_loc).unwrap();
+                        self.store.transfer::<Character>(*old_oid, *new_oid);
+                        // TODO characters also need a Point value?
+                        self.store.replace(PLAYER_ID, new_loc);
+
+                        if delta.x == 0 || delta.y == 0 {
+                            // TODO moving into a wall should take less time? or no time?
+                            elapsed = Some(time::CARDINAL_MOVE);
+                        } else {
+                            elapsed = Some(time::DIAGNOL_MOVE);
+                        }
+                    }
                 }
-                if delta.x == 0 || delta.y == 0 {
-                    // TODO moving into a wall should take less time? or no time?
-                    self.scheduler.player_acted(time::CARDINAL_MOVE, &self.rng);
-                } else {
-                    self.scheduler.player_acted(time::DIAGNOL_MOVE, &self.rng);
-                }
-                self.players_move = false; // TODO do this only for commands that take time
             }
+        }
+        if let Some(t) = elapsed {
+            self.scheduler.player_acted(t, &self.rng);
+            self.players_move = false;
         }
     }
 
@@ -239,6 +260,14 @@ impl Game {
         }
     }
 
+    pub fn get_char(&self, loc: Point) -> Option<Character> {
+        if let Some(&cell_oid) = self.cell_ids.get(&loc) {
+            self.store.find::<Character>(cell_oid)
+        } else {
+            None
+        }
+    }
+
     // The RNG doesn't directly affect the game state so we use interior mutability for it.
     pub fn rng(&self) -> RefMut<'_, dyn RngCore> {
         self.rng.borrow_mut()
@@ -259,12 +288,17 @@ impl Game {
         None
     }
 
-    fn can_move_to(&self, loc: Point) -> Option<String> {
-        match self.get_terrain(loc) {
-            Terrain::DeepWater => Some("The water is too deep.".to_owned()),
-            Terrain::Dirt => None, // TODO also check for characters
-            Terrain::RockWall => Some("A wall is in the way.".to_owned()),
-            Terrain::ShallowWater => None, // TODO should take extra time (and include a message)
+    fn bump_action(&self, loc: Point) -> BumpAction {
+        if let Some(ch) = self.get_char(loc) {
+            assert!(ch.oid != PLAYER_ID);
+            BumpAction::Attack(ch.oid)
+        } else {
+            match self.get_terrain(loc) {
+                Terrain::DeepWater => BumpAction::Error("The water is too deep.".to_owned()),
+                Terrain::Dirt => BumpAction::Move,
+                Terrain::RockWall => BumpAction::Error("A wall is in the way.".to_owned()),
+                Terrain::ShallowWater => BumpAction::Move, // TODO should take extra time (and include a message)
+            }
         }
     }
 
